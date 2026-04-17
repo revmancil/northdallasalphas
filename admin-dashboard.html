@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1209,6 +1209,41 @@
          PAGE EDITOR PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-pages">
+
+      <!-- Hero Image Manager -->
+      <div class="section-card" style="margin-bottom:24px;">
+        <div class="section-card-header">
+          <h3>Hero Background Image</h3>
+          <span>Home page hero section</span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Upload or paste a URL for the background image on the home page hero section.</p>
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="width:180px;height:110px;border-radius:8px;overflow:hidden;border:2px solid #333;flex-shrink:0;background:#111;display:flex;align-items:center;justify-content:center;">
+              <img id="heroImgPreview" src="" alt="Hero preview" style="width:100%;height:100%;object-fit:cover;display:none;" />
+              <div id="heroImgPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:6px;color:rgba(255,255,255,0.25);">
+                <span style="font-size:0.7rem;">No image set</span>
+              </div>
+            </div>
+            <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px;">
+              <label style="font-size:0.78rem;font-weight:700;color:#ccc;text-transform:uppercase;">Image URL</label>
+              <input type="text" id="heroImgUrl" placeholder="Paste image URL or upload below" style="background:#2a2a2a;border:1px solid #444;color:#fff;border-radius:5px;padding:9px 12px;font-size:0.85rem;width:100%;" oninput="previewHeroImg()" />
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button onclick="document.getElementById('heroFileInput').click()" style="background:#C9A84C;color:#000;border:none;padding:8px 16px;border-radius:5px;cursor:pointer;font-weight:700;">Upload Photo</button>
+                <input type="file" id="heroFileInput" accept="image/*" style="display:none" onchange="handleHeroUpload(event)" />
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button onclick="saveHeroImage()" style="background:#C9A84C;color:#000;border:none;padding:8px 18px;border-radius:5px;cursor:pointer;font-weight:700;">Save Hero Image</button>
+                <button onclick="clearHeroImage()" style="background:transparent;border:1px solid #666;color:#ccc;padding:8px 14px;border-radius:5px;cursor:pointer;">Clear</button>
+              </div>
+              <p id="heroImgStatus" style="font-size:0.75rem;color:#999;margin:0;"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Content Editor -->
+      <div class="section-card">
       <div class="section-card">
         <div class="section-card-header">
           <h3><i class="fas fa-edit" style="color:var(--gold);margin-right:8px;"></i>Page Content Editor</h3>
@@ -1590,6 +1625,7 @@ function showPanel(id) {
   if (id === 'announcements') loadAnnouncement();
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
+  if (id === 'pages')         loadHeroImagePanel();
 }
 
 function logout() {

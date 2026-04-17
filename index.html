@@ -531,6 +531,15 @@ function renderHomeEventsList(events) {
   }
 })();
 
+// Load hero background image from admin setting
+(function loadHeroBg() {
+  const saved = localStorage.getItem('nda_hero_image');
+  if (saved) {
+    const heroBg = document.querySelector('.hero-bg');
+    if (heroBg) heroBg.style.backgroundImage = "url('" + saved + "')";
+  }
+})();
+
 // Init events section
 (function() {
   const events = homeGetEvents();
