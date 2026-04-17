@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Events | North Dallas Alphas</title>
+  <meta name="description" content="Upcoming events from the Xi Tau Lambda Chapter of Alpha Phi Alpha — Ice Cold events, the Annual Alpha Legacy Scholarship Gala, and more." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    /* ── Featured Event Hero ── */
+    .gala-hero {
+      background: var(--black);
+      padding: 80px 0;
+      position: relative;
+      overflow: hidden;
+    }
+    .gala-hero-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.15;
+    }
+    .gala-inner {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .gala-img {
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .gala-img img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+    }
+    .gala-img .no-flyer-placeholder {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: linear-gradient(135deg, #111 0%, #1c1c1c 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .gala-img .no-flyer-placeholder i {
+      font-size: 3rem;
+      color: rgba(201,168,76,0.25);
+    }
+    .gala-img .no-flyer-placeholder span {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+    .gala-text .events-feature-badge {
+      display: inline-block;
+      background: var(--gold);
+      color: var(--black);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 2px;
+      margin-bottom: 20px;
+    }
+    .gala-text h2 {
+      font-size: clamp(1.8rem, 3vw, 2.8rem);
+      color: var(--white);
+      margin-bottom: 18px;
+    }
+    .gala-text p {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.97rem;
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+    .gala-details {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .gala-detail {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+    }
+    .gala-detail i { color: var(--gold); width: 18px; }
+
+    /* ── All Events List ── */
+    .all-events {
+      padding: 90px 0;
+      background: var(--gray-100);
+    }
+    .event-full-card {
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 14px rgba(0,0,0,0.06);
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+    .event-full-card:hover {
+      box-shadow: 0 6px 24px rgba(0,0,0,0.1);
+      transform: translateY(-2px);
+    }
+    .event-full-card.is-featured {
+      border-left: 4px solid var(--gold);
+    }
+    .event-full-date {
+      background: var(--black);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      flex-shrink: 0;
+    }
+    .event-full-date .day {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .event-full-date .month {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: rgba(255,255,255,0.55);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .event-full-date .year {
+      font-size: 0.68rem;
+      color: rgba(255,255,255,0.3);
+      margin-top: 2px;
+    }
+    .event-full-body {
+      padding: 24px 28px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .event-full-info { flex: 1; }
+    .event-full-info h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 6px;
+    }
+    .event-full-info .event-desc {
+      font-size: 0.9rem;
+      color: var(--gray-600);
+      margin-top: 4px;
+      line-height: 1.6;
+    }
+    .event-full-info .event-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 10px;
+    }
+    .event-full-info .event-meta span {
+      font-size: 0.83rem;
+      color: var(--gray-600);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .event-full-info .event-meta i {
+      color: var(--gold);
+      font-size: 0.8rem;
+    }
+    .event-flyer-thumb {
+      width: 80px;
+      height: 80px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1.5px solid var(--gray-200);
+    }
+    .event-flyer-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .featured-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.3);
+      color: var(--gold);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 6px;
+    }
+    .no-events-msg {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--gray-400);
+    }
+    .no-events-msg i { font-size: 2.5rem; margin-bottom: 14px; display: block; }
+
+    @media (max-width: 768px) {
+      .gala-inner { grid-template-columns: 1fr; gap: 36px; }
+      .event-full-card { grid-template-columns: 90px 1fr; }
+      .event-flyer-thumb { width: 60px; height: 60px; }
+    }
+
+    /* ── Event Detail Modal ── */
+    .event-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.72);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .event-modal-overlay.open { display: flex; }
+    .event-modal {
+      background: #fff;
+      border-radius: 14px;
+      max-width: 760px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+      animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+      position: relative;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.92) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .event-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: rgba(0,0,0,0.08);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #333;
+      transition: background 0.2s;
+      z-index: 10;
+    }
+    .event-modal-close:hover { background: rgba(0,0,0,0.16); }
+    .event-modal-flyer {
+      width: 100%;
+      max-height: 380px;
+      overflow: hidden;
+      border-radius: 14px 14px 0 0;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .event-modal-flyer img {
+      width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      display: block;
+    }
+    .event-modal-flyer.no-flyer-modal {
+      padding: 40px;
+      min-height: 120px;
+    }
+    .event-modal-flyer.no-flyer-modal i {
+      font-size: 3rem;
+      color: rgba(255,255,255,0.2);
+    }
+    .event-modal-body {
+      padding: 28px 32px 32px;
+    }
+    .event-modal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(201,168,76,0.1);
+      border: 1px solid rgba(201,168,76,0.35);
+      color: var(--gold);
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 100px;
+      margin-bottom: 10px;
+    }
+    .event-modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--gray-800);
+      margin-bottom: 14px;
+      line-height: 1.25;
+    }
+    .event-modal-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .event-modal-meta span {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.88rem;
+      color: var(--gray-600);
+    }
+    .event-modal-meta i { color: var(--gold); }
+    .event-modal-desc {
+      font-size: 0.97rem;
+      color: var(--gray-700);
+      line-height: 1.75;
+      margin-bottom: 24px;
+      white-space: pre-line;
+    }
+    .event-modal-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    /* Clickable card cue */
+    .event-full-card {
+      cursor: pointer;
+    }
+    .event-full-card .view-detail-hint {
+      font-size: 0.76rem;
+      color: var(--gold);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      opacity: 0.8;
+    }
+    @media (max-width: 600px) {
+      .event-modal-body { padding: 20px 18px 24px; }
+      .event-modal-title { font-size: 1.3rem; }
+      .event-modal-flyer { max-height: 240px; }
+      .event-modal-flyer img { max-height: 240px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Announcement Bar -->
+<div class="announce-bar" id="announceBar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<!-- Navigation -->
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html">About</a>
+      <a href="leadership.html">Leadership</a>
+      <a href="events.html" class="active">Events</a>
+      <a href="membership.html">Membership</a>
+      <a href="news.html">News</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+      <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="leadership.html">Leadership</a>
+  <a href="events.html">Events</a>
+  <a href="membership.html">Membership</a>
+  <a href="news.html">News</a>
+  <a href="contact.html">Contact</a>
+  <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+  <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<!-- Page Header -->
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">What's Happening</span>
+    <h1>Events</h1>
+    <p>Join the North Dallas Alphas at our upcoming community events, social gatherings, and the annual scholarship gala.</p>
+  </div>
+</section>
+
+<!-- ── Featured Event ── -->
+<section class="gala-hero" id="featured-event">
+  <div class="gala-hero-bg" id="featuredBg"></div>
+  <div class="container">
+    <div class="gala-inner" id="featuredEventInner">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- ── All Events ── -->
+<section class="all-events">
+  <div class="container">
+    <span class="section-label">Upcoming</span>
+    <h2 class="section-title" style="margin-bottom: 40px;" id="allEventsHeading">All Events</h2>
+    <div id="allEventsList">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="membership-cta">
+  <div class="membership-cta-inner">
+    <span class="section-label">Stay Connected</span>
+    <h2>Questions About <span>Events?</span></h2>
+    <p>Reach out to our team for sponsorship opportunities, ticket information, or any event inquiries.</p>
+    <div class="cta-actions">
+      <a href="contact.html" class="btn btn-gold"><i class="fas fa-envelope"></i> Contact Us</a>
+      <a href="/cdn-cgi/l/email-protection#55141906121511332226343b3e3a33347b3a2732" class="btn btn-outline">Gala Sponsorship</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row">
+          <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" />
+          <div>
+            <div class="footer-brand-name">North Dallas Alphas</div>
+            <div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div>
+          </div>
+        </div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="leadership.html">Leadership</a></li>
+          <li><a href="events.html">Events</a></li>
+          <li><a href="membership.html">Membership</a></li>
+          <li><a href="news.html">News</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get Involved</h4>
+        <ul>
+          <li><a href="membership.html">Interested in Alpha?</a></li>
+          <li><a href="#featured-event">Scholarship Gala</a></li>
+          <li><a href="contact.html">Sponsor an Event</a></li>
+          <li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="footer-contact-item">
+          <i class="fas fa-envelope"></i>
+          <a href="/cdn-cgi/l/email-protection#c68fa8a0a98688a9b4b2ae82a7aaaaa7b587aab6aea7b5e8a9b4a1" style="color:rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="ca83a4aca58a84a5b8bea28eaba6a6abb98ba6baa2abb9e4a5b8ad">[email&#160;protected]</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp;
+        <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;"
+           onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'">
+          <i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login
+        </a>
+      </p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+<script>
+/* ============================================================
+   EVENTS PAGE — Fully dynamic from localStorage (admin data)
+============================================================ */
+
+// Global store for modal lookups
+let allEventsStore = [];
+
+// ── Default events (fallback when no admin data saved) ──
+const DEFAULT_EVENTS = [
+  {
+    name: 'Ice Cold Happy Hour',
+    location: '4Thirteen Sports Lounge, 755 SH 121, Lewisville, TX 75067',
+    datetime: '04/24/2026 7:06 PM',
+    featured: false,
+    flyer: ''
+  },
+  {
+    name: 'Ice Cold Outdoor Gathering',
+    location: 'Mariner Point Park, 1 Sunfish Dr, Grapevine, TX 76051',
+    datetime: '04/26/2026',
+    featured: false,
+    flyer: ''
+  },
+  {
+    name: '14th Annual Alpha Legacy Scholarship Gala',
+    location: 'Frisco Hall, 5353 Independence Pkwy, Frisco TX',
+    datetime: '06/13/2026 6:00 PM',
+    featured: true,
+    flyer: ''
+  }
+];
+
+// ── Load events from localStorage ──
+function getEvents() {
+  const stored = localStorage.getItem('nda_events');
+  return stored ? JSON.parse(stored) : DEFAULT_EVENTS;
+}
+
+// ── Parse date string into parts ──
+function parseEventDate(dtStr) {
+  if (!dtStr) return { day: '—', month: '—', year: '—', time: '' };
+  // Expect formats: "MM/DD/YYYY" or "MM/DD/YYYY H:MM AM/PM"
+  const parts = dtStr.trim().split(' ');
+  const datePart = parts[0] || '';
+  const timePart = parts.slice(1).join(' ');
+  const segs = datePart.split('/');
+  if (segs.length < 3) {
+    return { day: '?', month: dtStr, year: '', time: timePart };
+  }
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const m = parseInt(segs[0], 10);
+  const d = parseInt(segs[1], 10);
+  const y = segs[2];
+  return {
+    day:   isNaN(d) ? '?' : String(d),
+    month: (!isNaN(m) && m >= 1 && m <= 12) ? monthNames[m - 1] : segs[0],
+    year:  y || '',
+    time:  timePart
+  };
+}
+
+// ── Render the Featured Event hero section ──
+function renderFeaturedEvent(events) {
+  const featured = events.find(e => e.featured) || events[events.length - 1];
+  if (!featured) return;
+
+  const inner = document.getElementById('featuredEventInner');
+  const bg    = document.getElementById('featuredBg');
+
+  // Set background blur image — use flyer if available, else chapter-event.jpg
+  const bgSrc = featured.flyer || 'images/chapter-event.jpg';
+  bg.style.backgroundImage = `url('${bgSrc}')`;
+
+  // Build flyer image HTML
+  let flyerHtml;
+  if (featured.flyer) {
+    flyerHtml = `
+      <img src="${featured.flyer}"
+           alt="${escHtml(featured.name)} flyer"
+           onerror="this.parentElement.innerHTML='<div class=\\'no-flyer-placeholder\\'><i class=\\'fas fa-calendar-alt\\'></i><span>Flyer Coming Soon</span></div>'" />`;
+  } else {
+    flyerHtml = `
+      <div class="no-flyer-placeholder">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Flyer Coming Soon</span>
+      </div>`;
+  }
+
+  // Date details
+  const parsed = parseEventDate(featured.datetime);
+  const dateLabel = parsed.month !== '—'
+    ? `${parsed.month} ${parsed.day}, ${parsed.year}`
+    : featured.datetime;
+
+  inner.innerHTML = `
+    <div class="gala-img fade-up">
+      ${flyerHtml}
+    </div>
+    <div class="gala-text fade-up">
+      <span class="events-feature-badge">🏆 Featured Event</span>
+      <h2>${escHtml(featured.name)}</h2>
+      <div class="gala-details">
+        ${dateLabel ? `<div class="gala-detail"><i class="fas fa-calendar"></i> <strong>${escHtml(dateLabel)}</strong></div>` : ''}
+        ${parsed.time ? `<div class="gala-detail"><i class="fas fa-clock"></i> Doors open at ${escHtml(parsed.time)}</div>` : ''}
+        ${featured.location ? `<div class="gala-detail"><i class="fas fa-map-marker-alt"></i> ${escHtml(featured.location)}</div>` : ''}
+      </div>
+      <div style="display:flex; flex-wrap:wrap; gap:12px;">
+        ${featured.registrationUrl
+          ? `<a href="${featured.registrationUrl}" target="_blank" class="btn btn-gold">
+              <i class="fas fa-ticket-alt"></i> Register Now
+             </a>`
+          : ''}
+        ${(featured.flyer || featured.description)
+          ? `<button class="btn btn-outline" onclick="openEventModal(allEventsStore.find(e=>e.featured)||allEventsStore[allEventsStore.length-1])">
+               <i class="fas fa-expand-alt"></i> View Full Details
+             </button>`
+          : ''}
+        <a href="contact.html" class="btn btn-outline">Become a Sponsor</a>
+      </div>
+    </div>
+  `;
+}
+
+// ── Render All Events list ──
+function renderAllEvents(events) {
+  const container = document.getElementById('allEventsList');
+  container.innerHTML = '';
+
+  if (!events || events.length === 0) {
+    container.innerHTML = `
+      <div class="no-events-msg">
+        <i class="fas fa-calendar-times"></i>
+        <p>No upcoming events at this time. Check back soon!</p>
+      </div>`;
+    return;
+  }
+
+  allEventsStore = events;
+
+  events.forEach((ev, idx) => {
+    const parsed = parseEventDate(ev.datetime);
+
+    const card = document.createElement('div');
+    card.className = 'event-full-card fade-up' + (ev.featured ? ' is-featured' : '');
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', 'View details for ' + ev.name);
+
+    const flyerThumb = ev.flyer
+      ? `<div class="event-flyer-thumb">
+           <img src="${ev.flyer}" alt="${escHtml(ev.name)} flyer"
+                onerror="this.parentElement.style.display='none'" />
+         </div>`
+      : '';
+
+    const featuredTag = ev.featured
+      ? `<div class="featured-tag"><i class="fas fa-star"></i> Featured</div>`
+      : '';
+
+    const hasDetails = ev.flyer || ev.description;
+    const detailHint = hasDetails
+      ? `<div class="view-detail-hint"><i class="fas fa-expand-alt"></i> Click to view details</div>`
+      : '';
+
+    // Determine right-side action: register button if URL exists, else fallback for featured
+    let actionBtn = '';
+    if (ev.registrationUrl) {
+      actionBtn = `<a href="${escHtml(ev.registrationUrl)}" target="_blank"
+          class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;"
+          onclick="event.stopPropagation()">
+          <i class="fas fa-ticket-alt"></i> Register
+        </a>`;
+    } else if (ev.featured) {
+      actionBtn = `<a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank"
+          class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;"
+          onclick="event.stopPropagation()">
+          Get Tickets
+        </a>`;
+    }
+
+    card.innerHTML = `
+      <div class="event-full-date">
+        <div class="day">${escHtml(parsed.day)}</div>
+        <div class="month">${escHtml(parsed.month)}</div>
+        <div class="year">${escHtml(parsed.year)}</div>
+      </div>
+      <div class="event-full-body">
+        <div class="event-full-info">
+          ${featuredTag}
+          <h3>${escHtml(ev.name)}</h3>
+          <div class="event-meta">
+            ${parsed.time ? `<span><i class="fas fa-clock"></i> ${escHtml(parsed.time)}</span>` : ''}
+            ${ev.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escHtml(ev.location)}</span>` : ''}
+          </div>
+          ${detailHint}
+        </div>
+        ${flyerThumb}
+        ${actionBtn}
+      </div>
+    `;
+
+    // Click / keyboard to open modal
+    card.addEventListener('click', function(e) {
+      // Don't open if clicking a link/button directly
+      if (e.target.closest('a, button')) return;
+      openEventModal(allEventsStore[idx]);
+    });
+    card.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openEventModal(allEventsStore[idx]);
+      }
+    });
+
+    container.appendChild(card);
+  });
+}
+
+// ── Load Announcement Bar ──
+function loadAnnouncement() {
+  const stored = JSON.parse(localStorage.getItem('nda_announce') || 'null');
+  if (stored && stored.text) {
+    const bar = document.getElementById('announceBar');
+    if (bar) {
+      bar.innerHTML = `${stored.text} &nbsp; <a href="${stored.linkUrl || '#featured-event'}">${stored.linkText || 'Learn More →'}</a>`;
+    }
+  }
+}
+
+// ── Utility: escape HTML ──
+function escHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Event Detail Modal ──
+function openEventModal(ev) {
+  const overlay = document.getElementById('eventModalOverlay');
+  const parsed  = parseEventDate(ev.datetime);
+  const dateLabel = parsed.month !== '—'
+    ? `${parsed.month} ${parsed.day}, ${parsed.year}`
+    : (ev.datetime || '');
+
+  // Flyer section
+  let flyerHtml = '';
+  if (ev.flyer) {
+    flyerHtml = `<div class="event-modal-flyer">
+      <img src="${escHtml(ev.flyer)}" alt="${escHtml(ev.name)} flyer"
+           onerror="this.parentElement.className='event-modal-flyer no-flyer-modal';this.parentElement.innerHTML='<i class=\'fas fa-calendar-alt\'></i>';" />
+    </div>`;
+  }
+
+  // Badge (featured only)
+  const badge = ev.featured
+    ? `<div class="event-modal-badge"><i class="fas fa-star"></i> Featured Event</div>` : '';
+
+  // Meta rows
+  const metaDate  = dateLabel ? `<span><i class="fas fa-calendar"></i> ${escHtml(dateLabel)}</span>` : '';
+  const metaTime  = parsed.time ? `<span><i class="fas fa-clock"></i> ${escHtml(parsed.time)}</span>` : '';
+  const metaLoc   = ev.location ? `<span><i class="fas fa-map-marker-alt"></i> ${escHtml(ev.location)}</span>` : '';
+
+  // Description
+  const desc = ev.description
+    ? `<div class="event-modal-desc">${escHtml(ev.description)}</div>` : '';
+
+  // Action buttons
+  let actions = '';
+  if (ev.registrationUrl) {
+    actions += `<a href="${escHtml(ev.registrationUrl)}" target="_blank" class="btn btn-gold"><i class="fas fa-ticket-alt"></i> Register Now</a>`;
+  }
+  actions += `<button class="btn btn-outline" onclick="closeEventModal()">Close</button>`;
+
+  overlay.querySelector('.event-modal').innerHTML = `
+    <button class="event-modal-close" onclick="closeEventModal()" aria-label="Close">&times;</button>
+    ${flyerHtml}
+    <div class="event-modal-body">
+      ${badge}
+      <h2 class="event-modal-title">${escHtml(ev.name)}</h2>
+      <div class="event-modal-meta">${metaDate}${metaTime}${metaLoc}</div>
+      ${desc}
+      <div class="event-modal-actions">${actions}</div>
+    </div>
+  `;
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEventModal() {
+  document.getElementById('eventModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+// Close on overlay click
+document.addEventListener('DOMContentLoaded', function() {
+  const overlay = document.getElementById('eventModalOverlay');
+  if (overlay) {
+    overlay.addEventListener('click', function(e) {
+      if (e.target === overlay) closeEventModal();
+    });
+  }
+  // Keyboard: Escape closes modal
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeEventModal();
+  });
+});
+
+// ── Init ──
+(function() {
+  loadAnnouncement();
+  const events = getEvents();
+  renderFeaturedEvent(events);
+  renderAllEvents(events);
+})();
+</script>
+
+<!-- Event Detail Modal -->
+<div class="event-modal-overlay" id="eventModalOverlay" role="dialog" aria-modal="true" aria-label="Event Details">
+  <div class="event-modal"></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chapter History | North Dallas Alphas — Xi Tau Lambda</title>
+  <meta name="description" content="Learn the history of the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. Chartered in 1984 as chapter #607 in North Dallas County." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .history-section { padding: 90px 0; background: var(--white); }
+    .history-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .history-img { width: 100%; border-radius: 4px; border: 3px solid rgba(201,168,76,0.25); }
+    .history-text p { color: var(--gray-600); font-size: 0.97rem; line-height: 1.75; margin-bottom: 18px; }
+    .charter-section { background: var(--black); padding: 90px 0; }
+    .charter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 40px; }
+    .charter-card { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 4px; padding: 18px 20px; }
+    .charter-card .name { font-family: 'Playfair Display', serif; color: var(--gold); font-size: 0.95rem; font-weight: 600; }
+    .charter-card .note { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 4px; }
+    .timeline-section { padding: 90px 0; background: var(--gray-100); }
+    .timeline { position: relative; max-width: 800px; margin: 0 auto; padding-top: 20px; }
+    .timeline::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--gold); opacity: 0.3; transform: translateX(-50%); }
+    .tl-item { display: flex; gap: 32px; margin-bottom: 48px; position: relative; }
+    .tl-item:nth-child(even) { flex-direction: row-reverse; }
+    .tl-item:nth-child(even) .tl-body { text-align: right; }
+    .tl-dot { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 14px; height: 14px; background: var(--gold); border-radius: 50%; border: 3px solid var(--white); box-shadow: 0 0 0 3px rgba(201,168,76,0.3); z-index: 1; }
+    .tl-body { flex: 1; background: var(--white); border-radius: 6px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); max-width: calc(50% - 30px); }
+    .tl-year { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; margin-bottom: 8px; }
+    .tl-body h4 { font-size: 1.05rem; font-weight: 700; color: var(--gray-800); margin-bottom: 8px; }
+    .tl-body p { font-size: 0.88rem; color: var(--gray-600); line-height: 1.6; }
+    @media (max-width: 768px) {
+      .history-layout { grid-template-columns: 1fr; gap: 32px; }
+      .timeline::before { left: 20px; }
+      .tl-item, .tl-item:nth-child(even) { flex-direction: column; padding-left: 50px; }
+      .tl-item:nth-child(even) .tl-body { text-align: left; }
+      .tl-dot { left: 20px; }
+      .tl-body { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="about.html" class="active">About</a>
+      <a href="leadership.html">Leadership</a>
+      <a href="events.html">Events</a>
+      <a href="membership.html">Membership</a>
+      <a href="news.html">News</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+      <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="leadership.html">Leadership</a>
+  <a href="events.html">Events</a>
+  <a href="membership.html">Membership</a>
+  <a href="news.html">News</a>
+  <a href="contact.html">Contact</a>
+  <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+  <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Our Story</span>
+    <h1>Chapter History</h1>
+    <p>The legacy of Xi Tau Lambda Chapter — 40+ years of leadership, service, and brotherhood in North Dallas.</p>
+  </div>
+</section>
+
+<!-- History -->
+<section class="history-section">
+  <div class="container">
+    <div class="history-layout">
+      <div class="fade-up">
+        <img src="images/event-photo.jpg" alt="Xi Tau Lambda Chapter" class="history-img" />
+        <div style="margin-top: 20px; background: var(--black); border-radius: 6px; padding: 24px;">
+          <div style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; margin-bottom: 12px;">Quick Facts</div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+              <span style="color:rgba(255,255,255,0.5);">Chartered</span>
+              <span style="color:var(--gold); font-weight:600;">March 3, 1984</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+              <span style="color:rgba(255,255,255,0.5);">Chapter Number</span>
+              <span style="color:var(--gold); font-weight:600;">#607</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+              <span style="color:rgba(255,255,255,0.5);">Charter Members</span>
+              <span style="color:var(--gold); font-weight:600;">22</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+              <span style="color:rgba(255,255,255,0.5);">Location</span>
+              <span style="color:var(--gold); font-weight:600;">North Dallas County, TX</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="history-text fade-up">
+        <span class="section-label">Founding</span>
+        <h2 class="section-title">Born From a Growing Community</h2>
+        <div class="gold-bar left"></div>
+        <p>The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was chartered on March 3, 1984, in North Dallas County (Texas), and assigned chapter key #607. North Dallas and the surrounding suburbs were experiencing explosive growth during the early 1980's, driven by rapid business expansion, followed by an influx of young professionals and college graduates.</p>
+        <p>Needless to say, numerous Alpha men were among the ranks of those fueling the population growth of North Dallas, and with that came opportunities to bring Alpha's dynamic leadership and service to the North Dallas community.</p>
+
+        <span class="section-label" style="margin-top: 32px;">Programs & Service</span>
+        <h3 style="font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--gray-800); margin-bottom:16px;">A Legacy of Community Impact</h3>
+        <p>Shortly after its formation, Xi Tau Lambda Chapter was fully integrated into all levels of the fraternity, with many of its members holding key leadership positions at the state, regional, and national level. The hallmark of the chapter's early success was rooted in the brothers' ability to execute Alpha's national programs, such as Big Brothers/Big Sisters, Project Alpha in conjunction with the March of Dimes, voter registration initiatives, and Go-to-High-School, Go-to-College.</p>
+        <p>In 1995, Xi Tau Lambda Chapter was one of 15 chapters nationwide to receive a special grant from the W. K. Kellogg Foundation to pioneer a teen male mentoring and rites of passage initiative called the Sankofa Project. To establish ongoing support, the Xi Tau Lambda Foundation was established as a separate non-profit, 501(c)(3) organization.</p>
+
+        <span class="section-label" style="margin-top: 32px;">Arts & Culture</span>
+        <h3 style="font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--gray-800); margin-bottom:16px;">Cultural Enrichment</h3>
+        <p>Xi Tau Lambda Chapter established several local partnerships within the Dallas arts community, including a decade-plus partnership with The Dallas Black Dance Theater, an alliance with Junior Players, and The Black Academy of Arts and Letters.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Charter Members -->
+<section class="charter-section">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">The Founding</span>
+      <h2 class="section-title light">Our 22 Charter Members</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub light" style="margin: 0 auto 40px;">Twenty-two charter members shared in the excitement and celebration of the newly established Xi Tau Lambda Chapter on March 3, 1984.</p>
+    </div>
+    <div class="charter-grid">
+      <div class="charter-card fade-in"><div class="name">Bro. James Allen, Jr.</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Kenneth O. Baker</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Craig E. Brown</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Cedric A. Carr</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Rodney Carter</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Desi A. Crouther</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Rory W. Chandler</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Robert S. Gordon</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Oliver N. Greene</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Stephen A. Gregg</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. David Hines</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Steven Jackson</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Albert Johnson</div><div class="note">Omega Chapter</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Ronnie Johnson</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Elvin Magee</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Michael McCain</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Billy Owens</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Willie A. Reeves, Jr.</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Sylvester Taylor</div><div class="note">Omega Chapter</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Nathan Watkins</div><div class="note">Omega Chapter</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Boyce Willis</div></div>
+      <div class="charter-card fade-in"><div class="name">Bro. Leon Wilson</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Timeline -->
+<section class="timeline-section">
+  <div class="container">
+    <div class="text-center fade-up" style="margin-bottom: 60px;">
+      <span class="section-label">Chapter Milestones</span>
+      <h2 class="section-title">Key Moments in Our History</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="timeline">
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">1984</div>
+          <h4>Xi Tau Lambda Chartered</h4>
+          <p>22 charter members establish the 607th seat in the House of Alpha on March 3, 1984 in North Dallas County.</p>
+        </div>
+      </div>
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">1995</div>
+          <h4>Sankofa Project Launched</h4>
+          <p>One of 15 chapters nationwide selected for a W. K. Kellogg Foundation grant to pioneer the Sankofa Project — a teen male mentoring and rites of passage initiative.</p>
+        </div>
+      </div>
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">1996</div>
+          <h4>First Alpha Legacy Celebration</h4>
+          <p>Xi Tau Lambda holds its inaugural Alpha Legacy Celebration, which becomes the chapter's premier annual fundraiser supporting educational goals and programs.</p>
+        </div>
+      </div>
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">1999</div>
+          <h4>93rd Anniversary Convention</h4>
+          <p>Xi Tau Lambda teams up with Alpha Sigma Lambda Chapter to co-host Alpha Phi Alpha's 93rd Anniversary Convention — the last convention of the 20th century — in Dallas, TX.</p>
+        </div>
+      </div>
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">2017</div>
+          <h4>54th TCAC District Convention</h4>
+          <p>Xi Tau Lambda hosts the 54th Texas Council of Alpha Chapters (TCAC) District Convention in Richardson, TX.</p>
+        </div>
+      </div>
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">2019–Present</div>
+          <h4>MISD Mentoring Partnership</h4>
+          <p>Xi Tau Lambda begins mentoring at Scott Johnson Middle School, expanding to Boyd High School in 2021 and John R. Roach Detention Center in 2022.</p>
+        </div>
+      </div>
+      <div class="tl-item fade-up">
+        <div class="tl-dot"></div>
+        <div class="tl-body">
+          <div class="tl-year">2024</div>
+          <h4>40 Years of Service</h4>
+          <p>Xi Tau Lambda celebrates over four decades of leadership, scholarship, and service to North Dallas County and beyond.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row">
+          <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" />
+          <div>
+            <div class="footer-brand-name">North Dallas Alphas</div>
+            <div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div>
+          </div>
+        </div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter, seated in North Dallas County. Chapter #607, chartered March 3, 1984.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">Chapter History</a></li>
+          <li><a href="events.html">Events</a></li>
+          <li><a href="membership.html">Membership</a></li>
+          <li><a href="news.html">News</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get Involved</h4>
+        <ul>
+          <li><a href="membership.html">Interested in Alpha?</a></li>
+          <li><a href="events.html#gala">Scholarship Gala</a></li>
+          <li><a href="contact.html">Sponsor an Event</a></li>
+          <li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="footer-contact-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>224 W. Campbell Road #443<br />Richardson, TX 75080</span>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-envelope"></i>
+          <a href="/cdn-cgi/l/email-protection#5a13343c351a1435282e321e3b36363b291b362a323b297435283d" style="color: rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="84cdeae2ebc4caebf6f0ecc0e5e8e8e5f7c5e8f4ece5f7aaebf6e3">[email&#160;protected]</span></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. All rights reserved. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+</body>
+</html>

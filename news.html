@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>News | North Dallas Alphas</title>
+  <meta name="description" content="Latest news and community impact from the Xi Tau Lambda Chapter of Alpha Phi Alpha." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .news-page { padding: 90px 0; background: var(--white); }
+    .news-page-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 48px; }
+    .news-featured-card { background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 20px rgba(0,0,0,0.08); margin-bottom: 32px; }
+    .news-featured-card img { width: 100%; height: 320px; object-fit: cover; }
+    .news-featured-card .body { padding: 32px; }
+    .news-featured-card .body .news-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--gold); }
+    .news-featured-card .body h2 { font-size: 1.6rem; font-weight: 700; color: var(--gray-800); margin: 10px 0 14px; }
+    .news-featured-card .body p { font-size: 0.95rem; color: var(--gray-600); line-height: 1.72; }
+    .news-sidebar h3 { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--gray-800); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--gold); }
+    .sidebar-item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--gray-200); }
+    .sidebar-item img { width: 72px; height: 72px; object-fit: cover; border-radius: 4px; flex-shrink: 0; }
+    .sidebar-item .info .tag { font-size: 0.68rem; font-weight: 700; color: var(--gold); letter-spacing: 0.1em; text-transform: uppercase; }
+    .sidebar-item .info h4 { font-size: 0.88rem; font-weight: 700; color: var(--gray-800); margin-top: 4px; line-height: 1.4; }
+    .impact-timeline { background: var(--black); padding: 90px 0; }
+    .timeline-rows { margin-top: 48px; }
+    .tl-row { display: grid; grid-template-columns: 140px 1fr; gap: 32px; margin-bottom: 0; }
+    .tl-row:not(:last-child) .tl-row-content { border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 32px; margin-bottom: 32px; }
+    .tl-row-year { font-family: 'Playfair Display', serif; font-size: 2.4rem; font-weight: 800; color: rgba(201,168,76,0.3); line-height: 1; padding-top: 4px; text-align: right; }
+    .tl-row-content h4 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 10px; }
+    .tl-row-content p { font-size: 0.9rem; color: rgba(255,255,255,0.6); line-height: 1.7; }
+    @media (max-width: 768px) {
+      .news-page-grid { grid-template-columns: 1fr; }
+      .tl-row { grid-template-columns: 80px 1fr; }
+      .tl-row-year { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+      <a href="membership.html">Membership</a><a href="news.html" class="active">News</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+      <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+  <a href="membership.html">Membership</a><a href="news.html">News</a><a href="contact.html">Contact</a>
+  <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+  <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Stay Informed</span>
+    <h1>Chapter News</h1>
+    <p>Stories of impact, recognition, and brotherhood from the North Dallas Alphas.</p>
+  </div>
+</section>
+
+<!-- News Grid -->
+<section class="news-page">
+  <div class="container">
+    <div class="news-page-grid">
+      <div>
+        <div class="news-featured-card fade-up">
+          <img src="images/chapter-event.jpg" alt="Xi Tau Lambda 40 Years of Service" />
+          <div class="body">
+            <span class="news-tag">Milestone</span>
+            <h2>Xi Tau Lambda Prepares to Celebrate 40 Years of Service</h2>
+            <p>We have provided scholarships to young men entering college as well as resources for responsible choices through Project Alpha. In our community, we have brought valuable partnerships to our city through our commitment to arts education for youth, civic participation, and mentoring of young men who are seeking guidance and direction.</p>
+            <p style="margin-top:14px;">From the Sankofa Project to the Alpha Legacy Scholarship Gala, four decades of Xi Tau Lambda represent a legacy of purpose-driven leadership that continues to shape North Dallas County.</p>
+            <div style="margin-top: 20px; font-size: 0.82rem; color: var(--gray-400);">December 2023</div>
+          </div>
+        </div>
+
+        <div class="news-featured-card fade-up">
+          <img src="images/service.jpg?v=2" alt="North Dallas Alphas Recognized in Frisco City Council" />
+          <div class="body">
+            <span class="news-tag">Recognition</span>
+            <h2>North Dallas Alphas Recognized in Frisco City Council</h2>
+            <p>The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was formally recognized by the Frisco City Council for their outstanding contributions to the Frisco community through service, mentoring, and scholarship.</p>
+            <div style="margin-top: 20px; font-size: 0.82rem; color: var(--gray-400);">2023</div>
+          </div>
+        </div>
+
+        <div class="news-featured-card fade-up">
+          <div style="background: var(--black); height: 280px; display:flex; align-items:center; justify-content:center;">
+            <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" style="height: 140px; width: 140px; object-fit: contain; opacity: 0.7;" />
+          </div>
+          <div class="body">
+            <span class="news-tag">Community</span>
+            <h2>MISD Impact Statement</h2>
+            <p>Since 2019, the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. has been an avid supporter of MISD schools, students, and families. Their commitment to the district began on the campus of Scott Johnson Middle School (SJMS) and has since then grown in complexity and size.</p>
+            <div style="margin-top: 20px; font-size: 0.82rem; color: var(--gray-400);">December 2023</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="fade-up">
+        <h3>More Stories</h3>
+        <div class="sidebar-item">
+          <img src="images/scholarship.jpg?v=2" alt="Sankofa Foundation scholarship recipients at Alpha Legacy Gala" />
+          <div class="info">
+            <div class="tag">Scholarship</div>
+            <h4>Alpha Legacy Scholarship Gala Funds Next Generation</h4>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <img src="images/brotherhood.jpg?v=2" alt="Xi Tau Lambda brothers group photo" />
+          <div class="info">
+            <div class="tag">Brotherhood</div>
+            <h4>50 Years of Brotherhood Celebrated Nationwide</h4>
+          </div>
+        </div>
+        <div class="sidebar-item">
+          <img src="images/service.jpg?v=2" alt="Xi Tau Lambda brothers at community outreach table" />
+          <div class="info">
+            <div class="tag">Service</div>
+            <h4>Mentoring Program Expanded to Collin County Detention Center</h4>
+          </div>
+        </div>
+        <div style="margin-top: 32px; background: var(--black); border-radius: 8px; padding: 28px; text-align: center;">
+          <div style="font-size:0.72rem; font-weight:700; letter-spacing:0.15em; color:var(--gold); text-transform:uppercase; margin-bottom:12px;">Stay Connected</div>
+          <p style="font-size:0.87rem; color:rgba(255,255,255,0.55); margin-bottom:16px;">Get updates about chapter events, scholarship opportunities, and community impact.</p>
+          <a href="contact.html" class="btn btn-gold" style="width:100%; justify-content:center;">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Impact Timeline -->
+<section class="impact-timeline">
+  <div class="container">
+    <div class="fade-up">
+      <span class="section-label">MISD Partnership</span>
+      <h2 class="section-title light">A Legacy of Commitment</h2>
+      <div class="gold-bar left"></div>
+      <p style="color:rgba(255,255,255,0.55); max-width:600px; font-size:0.97rem;">Since 2019, Xi Tau Lambda Chapter has been an avid supporter of MISD schools, students, and families — growing in complexity and reach each year.</p>
+    </div>
+    <div class="timeline-rows" style="margin-top: 48px;">
+      <div class="tl-row fade-up">
+        <div class="tl-row-year">2019</div>
+        <div class="tl-row-content">
+          <h4>Scott Johnson Middle School</h4>
+          <p>Xi Tau Lambda began mentoring the young men of Scott Johnson's "Boys II Men" program. Monthly, brothers presented the fraternity's Alpha Legacy curriculum to these young men, establishing a foundation of excellence and purpose.</p>
+        </div>
+      </div>
+      <div class="tl-row fade-up">
+        <div class="tl-row-year">2021</div>
+        <div class="tl-row-content">
+          <h4>Boyd High School Expansion</h4>
+          <p>Due to the resounding success and impact of its Alpha Legacy program at SJMS, McKinney ISD invited Xi Tau Lambda to expand its partnership by bringing its Alpha Legacy curriculum and monthly mentoring program to the campus of Boyd High School.</p>
+        </div>
+      </div>
+      <div class="tl-row fade-up">
+        <div class="tl-row-year">2022</div>
+        <div class="tl-row-content">
+          <h4>John R. Roach Detention Center</h4>
+          <p>McKinney ISD invited the Xi Tau Lambda Chapter to deepen its commitment to MISD by extending its mentoring program to the young men of Collin County's John R. Roach Detention Center — reaching those who need guidance most.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+      </div>
+      <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="membership.html">Interested in Alpha?</a></li><li><a href="events.html#gala">Scholarship Gala</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="/cdn-cgi/l/email-protection#bff6d1d9d0fff1d0cdcbd7fbded3d3deccfed3cfd7decc91d0cdd8" style="color:rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="83caede5ecc3cdecf1f7ebc7e2efefe2f0c2eff3ebe2f0adecf1e4">[email&#160;protected]</span></a></div></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+</body>
+</html>

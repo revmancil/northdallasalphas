@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Membership | North Dallas Alphas — Xi Tau Lambda</title>
+  <meta name="description" content="Interested in joining Alpha Phi Alpha Fraternity, Inc. through Xi Tau Lambda? Learn about membership requirements and how to apply." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .values-section { background: var(--black); padding: 90px 0; }
+    .values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+    .value-card { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.15); border-radius: 6px; padding: 28px 24px; text-align: center; transition: all 0.3s ease; }
+    .value-card:hover { background: rgba(201,168,76,0.1); border-color: rgba(201,168,76,0.35); transform: translateY(-4px); }
+    .value-card .icon { width: 52px; height: 52px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+    .value-card .icon i { color: var(--gold); font-size: 1.1rem; }
+    .value-card h4 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 10px; }
+    .value-card p { font-size: 0.88rem; color: rgba(255,255,255,0.55); line-height: 1.65; }
+    .requirements-section { padding: 90px 0; background: var(--white); }
+    .req-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 40px; }
+    .req-item { display: flex; gap: 16px; padding: 22px; background: var(--gray-100); border-radius: 6px; border-left: 4px solid var(--gold); }
+    .req-num { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 800; color: rgba(201,168,76,0.2); line-height: 1; min-width: 40px; }
+    .req-content h4 { font-size: 0.95rem; font-weight: 700; color: var(--gray-800); margin-bottom: 6px; }
+    .req-content p { font-size: 0.87rem; color: var(--gray-600); line-height: 1.55; }
+    .steps-section { background: var(--black); padding: 90px 0; }
+    .steps-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-top: 48px; }
+    .step-card { text-align: center; }
+    .step-num { width: 60px; height: 60px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 800; color: var(--black); }
+    .step-card h4 { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--white); margin-bottom: 8px; }
+    .step-card p { font-size: 0.85rem; color: rgba(255,255,255,0.55); line-height: 1.6; }
+    @media (max-width: 768px) {
+      .values-grid { grid-template-columns: 1fr; }
+      .req-grid { grid-template-columns: 1fr; }
+      .steps-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+      <a href="membership.html" class="active">Membership</a><a href="news.html">News</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+      <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+  <a href="membership.html">Membership</a><a href="news.html">News</a><a href="contact.html">Contact</a>
+  <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+  <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Join Our Chapter</span>
+    <h1>Membership</h1>
+    <p>An Alpha Phi Alpha Member's Greatest Interest is Outside of Himself.</p>
+  </div>
+</section>
+
+<!-- Values -->
+<section class="values-section">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">What We Value</span>
+      <h2 class="section-title light">Who We're Looking For</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub light" style="margin: 0 auto;">We value those who believe that their membership in Alpha Phi Alpha is the presentation of their personal commitment to these time-valued ideals.</p>
+    </div>
+    <div class="values-grid">
+      <div class="value-card fade-in"><div class="icon"><i class="fas fa-book"></i></div><h4>Knowledge</h4><p>A commitment to academic excellence and lifelong learning that elevates yourself and your community.</p></div>
+      <div class="value-card fade-in"><div class="icon"><i class="fas fa-trophy"></i></div><h4>Achievement</h4><p>Striving for excellence in your chosen vocation and delivering results that reflect your character.</p></div>
+      <div class="value-card fade-in"><div class="icon"><i class="fas fa-hands-helping"></i></div><h4>Service</h4><p>A genuine desire to serve the communities in which you live, not just participate in them.</p></div>
+      <div class="value-card fade-in"><div class="icon"><i class="fas fa-shield-alt"></i></div><h4>Integrity</h4><p>Honest, principled behavior that protects the reputation and legacy of Alpha Phi Alpha.</p></div>
+      <div class="value-card fade-in"><div class="icon"><i class="fas fa-star"></i></div><h4>Excellence</h4><p>A standard of quality in all things — from personal conduct to professional achievement.</p></div>
+      <div class="value-card fade-in"><div class="icon"><i class="fas fa-users"></i></div><h4>Community</h4><p>Active, meaningful engagement with the communities we serve across North Dallas County.</p></div>
+    </div>
+    <div class="text-center" style="margin-top: 48px; padding: 36px; background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px;">
+      <p style="font-family:'Playfair Display',serif; font-size:1.2rem; font-style:italic; color:var(--gold); line-height:1.5; max-width:680px; margin: 0 auto;">
+        "We are not looking for candidates who are not interested in serving the communities in which they live. This ship does not need anchors."
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Requirements -->
+<section class="requirements-section" id="requirements">
+  <div class="container">
+    <div class="fade-up">
+      <span class="section-label">Eligibility</span>
+      <h2 class="section-title">Membership Requirements</h2>
+      <div class="gold-bar left"></div>
+      <p class="section-sub" style="margin-bottom: 0;">Any male holder of an earned baccalaureate degree from an accredited college or university may be presented as a candidate for membership in an alumni chapter provided that he meets the following:</p>
+    </div>
+    <div class="req-grid">
+      <div class="req-item fade-up"><div class="req-num">01</div><div class="req-content"><h4>Earned Baccalaureate Degree</h4><p>Has been minimally conferred a 4-year baccalaureate degree from an accredited institution (includes accredited online university).</p></div></div>
+      <div class="req-item fade-up"><div class="req-num">02</div><div class="req-content"><h4>Good Character</h4><p>Demonstrates a track record of honesty, integrity, and principled behavior in personal and professional life.</p></div></div>
+      <div class="req-item fade-up"><div class="req-num">03</div><div class="req-content"><h4>Registered to Vote</h4><p>Is registered to vote, if eligible and qualified — a reflection of your commitment to civic engagement.</p></div></div>
+      <div class="req-item fade-up"><div class="req-num">04</div><div class="req-content"><h4>Member Sponsor</h4><p>Is sponsored by a member in good standing from Xi Tau Lambda Chapter.</p></div></div>
+      <div class="req-item fade-up"><div class="req-num">05</div><div class="req-content"><h4>Member Recommendation</h4><p>Is recommended by a member in good standing from Xi Tau Lambda Chapter.</p></div></div>
+      <div class="req-item fade-up"><div class="req-num">06</div><div class="req-content"><h4>National Research</h4><p>All potential candidates are encouraged to visit <a href="https://www.apa1906.net" target="_blank" style="color:var(--gold);">www.apa1906.net</a> to learn more about Alpha Phi Alpha.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- Steps -->
+<section class="steps-section">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">The Process</span>
+      <h2 class="section-title light">Next Steps</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card fade-in"><div class="step-num">1</div><h4>Review Requirements</h4><p>Read through the eligibility requirements and confirm you meet the academic and character standards.</p></div>
+      <div class="step-card fade-in"><div class="step-num">2</div><h4>Research Alpha</h4><p>Visit apa1906.net to learn about the fraternity's history, programs, and the brotherhood commitment.</p></div>
+      <div class="step-card fade-in"><div class="step-num">3</div><h4>Contact Us</h4><p>Reach out to our Membership Chair at <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b0fdd5ddd2d5c2c3d8d9c0f0fedfc2c4d8f4d1dcdcd1c3f1dcc0d8d1c39edfc2d7">[email&#160;protected]</a> to express your interest.</p></div>
+      <div class="step-card fade-in"><div class="step-num">4</div><h4>Connect with Brothers</h4><p>Attend an upcoming event to meet the brothers of Xi Tau Lambda and learn more about our chapter.</p></div>
+    </div>
+    <div class="text-center" style="margin-top: 48px;">
+      <a href="/cdn-cgi/l/email-protection#f3be969e919681809b9a83b3bd9c81879bb7929f9f9280b29f839b9280dd9c8194" class="btn btn-gold"><i class="fas fa-envelope"></i> Email Membership Team</a>
+    </div>
+  </div>
+</section>
+
+<!-- Reactivation -->
+<section id="reactivation" style="padding: 90px 0; background: var(--gray-100);">
+  <div class="container">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;" class="fade-up">
+      <div>
+        <span class="section-label">Returning Brothers</span>
+        <h2 class="section-title" style="font-size: 2rem;">Interested in Reactivating?</h2>
+        <div class="gold-bar left"></div>
+        <p style="color:var(--gray-600); margin-bottom:16px;">If you are an Alpha brother who has been inactive and would like to reactivate your membership with Xi Tau Lambda Chapter, we welcome your return.</p>
+        <p style="color:var(--gray-600); margin-bottom:28px;">Reactivation gives you the opportunity to reconnect with brotherhood, contribute to our community programs, and resume your journey in Alpha Phi Alpha.</p>
+        <a href="/cdn-cgi/l/email-protection#7f321a121d1a0d0c17160f3f31100d0b173b1e13131e0c3e130f171e0c51100d18" class="btn btn-gold"><i class="fas fa-redo"></i> Inquire About Reactivation</a>
+      </div>
+      <div style="background: var(--black); border-radius: 8px; padding: 36px;">
+        <div style="font-size:0.72rem; font-weight:700; letter-spacing:0.15em; color:var(--gold); text-transform:uppercase; margin-bottom:16px;">Visiting Brother?</div>
+        <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:20px;">If you are an Alpha brother visiting the North Dallas area, we'd love to connect. Reach out to let us know you're in town.</p>
+        <a href="contact.html" class="btn btn-outline">Get in Touch</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+      </div>
+      <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Membership</h4><ul><li><a href="#requirements">Requirements</a></li><li><a href="#reactivation">Reactivation</a></li><li><a href="/cdn-cgi/l/email-protection#c08da5ada2a5b2b3a8a9b0808eafb2b4a884a1acaca1b381acb0a8a1b3eeafb2a7">Email Membership</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="/cdn-cgi/l/email-protection#2d6048404f485f5e45445d6d63425f5945694c41414c5e6c415d454c5e03425f4a" style="color:rgba(255,255,255,0.55); font-size:0.82rem;"><span class="__cf_email__" data-cfemail="d09db5bdb2b5a2a3b8b9a0909ebfa2a4b894b1bcbcb1a391bca0b8b1a3febfa2b7">[email&#160;protected]</span></a></div><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="/cdn-cgi/l/email-protection#7c35121a133c32130e0814381d10101d0f3d100c141d0f52130e1b" style="color:rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="c881a6aea78886a7babca08ca9a4a4a9bb89a4b8a0a9bbe6a7baaf">[email&#160;protected]</span></a></div></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+</body>
+</html>

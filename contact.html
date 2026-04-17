@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact | North Dallas Alphas</title>
+  <meta name="description" content="Contact the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. in North Dallas County." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .contact-section { padding: 90px 0; background: var(--white); }
+    .contact-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+    .contact-cards { display: flex; flex-direction: column; gap: 16px; margin-bottom: 32px; }
+    .contact-card { display: flex; gap: 18px; padding: 22px; background: var(--gray-100); border-radius: 6px; border-left: 4px solid var(--gold); transition: all 0.3s ease; }
+    .contact-card:hover { background: var(--gold-pale); transform: translateX(4px); }
+    .contact-card .icon { width: 46px; height: 46px; background: var(--black); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .contact-card .icon i { color: var(--gold); font-size: 1rem; }
+    .contact-card .info h4 { font-size: 0.88rem; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .contact-card .info p, .contact-card .info a { font-size: 0.95rem; color: var(--gray-800); font-weight: 500; }
+    .contact-card .info a:hover { color: var(--gold); }
+    .contact-form { background: var(--gray-100); border-radius: 8px; padding: 40px; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gray-800); margin-bottom: 8px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 13px 16px; border: 1.5px solid var(--gray-200); border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.95rem; color: var(--gray-800); background: var(--white); transition: all 0.25s ease; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
+    .form-group textarea { resize: vertical; min-height: 130px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-submit { width: 100%; justify-content: center; padding: 16px; font-size: 0.9rem; }
+    .success-msg { display: none; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.4); border-radius: 4px; padding: 16px 20px; margin-top: 16px; color: var(--gold); font-size: 0.9rem; font-weight: 500; }
+    .quick-contacts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 60px; }
+    .quick-card { background: var(--black); border-radius: 8px; padding: 28px 24px; text-align: center; }
+    .quick-card .qicon { width: 52px; height: 52px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .quick-card .qicon i { color: var(--gold); font-size: 1.1rem; }
+    .quick-card h4 { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--white); margin-bottom: 8px; }
+    .quick-card p { font-size: 0.83rem; color: rgba(255,255,255,0.5); margin-bottom: 16px; line-height: 1.55; }
+    .quick-card a { font-size: 0.82rem; color: var(--gold); font-weight: 600; word-break: break-all; }
+    @media (max-width: 768px) {
+      .contact-layout { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .quick-contacts { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+      <a href="membership.html">Membership</a><a href="news.html">News</a>
+      <a href="contact.html">Contact</a>
+      <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+      <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+  <a href="membership.html">Membership</a><a href="news.html">News</a><a href="contact.html">Contact</a>
+  <a href="https://northdallasalphas.org/alpha-interest" target="_blank" class="nav-interested">Interested in Alpha?</a>
+  <a href="https://northdallasalphas.org/members/" target="_blank" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Reach Out</span>
+    <h1>Contact Us</h1>
+    <p>Questions about membership, events, sponsorship, or general inquiries — we're here to help.</p>
+  </div>
+</section>
+
+<section class="contact-section">
+  <div class="container">
+    <div class="contact-layout">
+      <!-- Left: Info -->
+      <div class="fade-up">
+        <span class="section-label">Get In Touch</span>
+        <h2 class="section-title" style="font-size: 2rem;">We'd Love to Hear From You</h2>
+        <div class="gold-bar left"></div>
+        <p style="color:var(--gray-600); margin-bottom:28px;">Whether you're curious about membership, planning to attend an event, interested in sponsoring the gala, or simply want to connect — reach out and a brother will be in touch.</p>
+
+        <div class="contact-cards">
+          <div class="contact-card">
+            <div class="icon"><i class="fas fa-map-marker-alt"></i></div>
+            <div class="info">
+              <h4>Mailing Address</h4>
+              <p>224 W. Campbell Road #443<br />Richardson, TX 75080</p>
+            </div>
+          </div>
+          <div class="contact-card">
+            <div class="icon"><i class="fas fa-envelope"></i></div>
+            <div class="info">
+              <h4>General Inquiries</h4>
+              <a href="/cdn-cgi/l/email-protection#eba2858d84aba584999f83af8a87878a98aa879b838a98c584998c"><span class="__cf_email__" data-cfemail="5e173038311e10312c2a361a3f32323f2d1f322e363f2d70312c39">[email&#160;protected]</span></a>
+            </div>
+          </div>
+          <div class="contact-card">
+            <div class="icon"><i class="fas fa-user-plus"></i></div>
+            <div class="info">
+              <h4>Membership</h4>
+              <a href="/cdn-cgi/l/email-protection#2f624a424d4a5d5c47465f6f61405d5b476b4e43434e5c6e435f474e5c01405d48"><span class="__cf_email__" data-cfemail="38755d555a5d4a4b5051487876574a4c507c595454594b79544850594b16574a5f">[email&#160;protected]</span></a>
+            </div>
+          </div>
+          <div class="contact-card">
+            <div class="icon"><i class="fas fa-award"></i></div>
+            <div class="info">
+              <h4>Gala & Sponsorship</h4>
+              <a href="/cdn-cgi/l/email-protection#4e0f021d090e0a28393d2f202521282f60213c29"><span class="__cf_email__" data-cfemail="fdbcb1aebabdb99b8a8e9c9396929b9cd3928f9a">[email&#160;protected]</span></a>
+              <p style="font-size:0.85rem; margin-top:2px;">(337) 244-2564</p>
+            </div>
+          </div>
+        </div>
+
+        <div style="background: var(--black); border-radius: 8px; padding: 28px;">
+          <div style="font-size:0.72rem; font-weight:700; letter-spacing:0.15em; color:var(--gold); text-transform:uppercase; margin-bottom:10px;">Service Area</div>
+          <p style="font-size:0.88rem; color:rgba(255,255,255,0.55); line-height:1.65;">Xi Tau Lambda Chapter serves North Dallas County, including Richardson, Plano, Frisco, McKinney, Allen, Lewisville, Grapevine, and surrounding communities.</p>
+        </div>
+      </div>
+
+      <!-- Right: Form -->
+      <div class="contact-form fade-up">
+        <h3 style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--gray-800); margin-bottom:24px;">Send a Message</h3>
+        <form id="contactForm" novalidate>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="firstName">First Name *</label>
+              <input type="text" id="firstName" name="firstName" placeholder="John" required />
+            </div>
+            <div class="form-group">
+              <label for="lastName">Last Name *</label>
+              <input type="text" id="lastName" name="lastName" placeholder="Doe" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address *</label>
+            <input type="email" id="email" name="email" placeholder="your@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <select id="subject" name="subject">
+              <option value="">Select a topic...</option>
+              <option value="membership">Membership Inquiry</option>
+              <option value="gala">Scholarship Gala / Tickets</option>
+              <option value="sponsorship">Event Sponsorship</option>
+              <option value="visiting">Visiting Brother</option>
+              <option value="reactivation">Reactivation</option>
+              <option value="general">General Question</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="message">Message *</label>
+            <textarea id="message" name="message" placeholder="Tell us how we can help you..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-gold form-submit">
+            <i class="fas fa-paper-plane"></i> Send Message
+          </button>
+          <div class="success-msg" id="successMsg">
+            <i class="fas fa-check-circle"></i> Thank you! Your message has been received. A brother will be in touch with you soon.
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Quick Contact Cards -->
+    <div class="quick-contacts fade-up">
+      <div class="quick-card">
+        <div class="qicon"><i class="fas fa-user-plus"></i></div>
+        <h4>Membership</h4>
+        <p>Interested in joining Xi Tau Lambda? Contact our Membership Chair for more information.</p>
+        <a href="/cdn-cgi/l/email-protection#602d050d02051213080910202e0f12140824010c0c0113210c100801134e0f1207"><span class="__cf_email__" data-cfemail="2b664e46494e595843425b6b6544595f436f4a47474a586a475b434a580544594c">[email&#160;protected]</span></a>
+      </div>
+      <div class="quick-card">
+        <div class="qicon"><i class="fas fa-award"></i></div>
+        <h4>Gala & Sponsorship</h4>
+        <p>Secure your table, sponsor the event, or purchase individual tickets for the Scholarship Gala.</p>
+        <a href="/cdn-cgi/l/email-protection#2968657a6e696d4f5e5a484742464f4807465b4e"><span class="__cf_email__" data-cfemail="a6e7eaf5e1e6e2c0d1d5c7c8cdc9c0c788c9d4c1">[email&#160;protected]</span></a>
+      </div>
+      <div class="quick-card">
+        <div class="qicon"><i class="fas fa-info-circle"></i></div>
+        <h4>General Info</h4>
+        <p>For all other inquiries about the chapter, events, or community programs.</p>
+        <a href="/cdn-cgi/l/email-protection#60290e060f202e0f12140824010c0c0113210c100801134e0f1207"><span class="__cf_email__" data-cfemail="c78ea9a1a88789a8b5b3af83a6ababa6b486abb7afa6b4e9a8b5a0">[email&#160;protected]</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+      </div>
+      <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="membership.html">Interested in Alpha?</a></li><li><a href="events.html#gala">Scholarship Gala</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-map-marker-alt"></i><span>224 W. Campbell Road #443<br/>Richardson, TX 75080</span></div><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="/cdn-cgi/l/email-protection#236a4d454c636d4c51574b67424f4f4250624f534b42500d4c5144" style="color:rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="1d54737b725d53726f6975597c71717c6e5c716d757c6e33726f7a">[email&#160;protected]</span></a></div></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+<script>
+  // Contact form handler
+  document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button[type="submit"]');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+    setTimeout(() => {
+      document.getElementById('successMsg').style.display = 'block';
+      this.reset();
+      btn.innerHTML = '<i class="fas fa-check"></i> Message Sent!';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
+        btn.disabled = false;
+        document.getElementById('successMsg').style.display = 'none';
+      }, 5000);
+    }, 900);
+  });
+</script>
+</body>
+</html>

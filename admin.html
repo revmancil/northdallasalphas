@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #0a0a0a;
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --white: #ffffff;
+      --gray-100: #f8f8f8;
+      --gray-200: #e8e8e8;
+      --gray-600: #666;
+      --red: #e74c3c;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--black);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Background texture */
+    body::before {
+      content: 'ΑΦΑ';
+      position: fixed;
+      font-family: 'Playfair Display', serif;
+      font-size: 60vw;
+      font-weight: 800;
+      color: rgba(201,168,76,0.025);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .login-wrap {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 420px;
+      padding: 24px;
+    }
+
+    /* Logo / Brand */
+    .login-brand {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .login-brand img {
+      height: 72px;
+      width: 72px;
+      object-fit: contain;
+      border-radius: 50%;
+      border: 2px solid rgba(201,168,76,0.5);
+      margin-bottom: 14px;
+    }
+    .login-brand h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1.2;
+    }
+    .login-brand p {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Card */
+    .login-card {
+      background: #111;
+      border: 1px solid rgba(201,168,76,0.15);
+      border-radius: 10px;
+      padding: 36px 32px;
+    }
+    .login-card h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+    .login-card .subtitle {
+      font-size: 0.83rem;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 28px;
+    }
+
+    /* Form */
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.5);
+      margin-bottom: 8px;
+    }
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.25);
+      font-size: 0.9rem;
+    }
+    .input-wrap input {
+      width: 100%;
+      padding: 13px 14px 13px 40px;
+      background: rgba(255,255,255,0.05);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.25s ease;
+    }
+    .input-wrap input:focus {
+      outline: none;
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.05);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+    }
+    .input-wrap input::placeholder { color: rgba(255,255,255,0.2); }
+
+    /* Toggle password visibility */
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.3);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--gold); }
+
+    /* Error */
+    .error-msg {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(231,76,60,0.1);
+      border: 1px solid rgba(231,76,60,0.3);
+      border-radius: 6px;
+      padding: 12px 16px;
+      color: #e74c3c;
+      font-size: 0.85rem;
+      margin-bottom: 18px;
+    }
+    .error-msg.show { display: flex; }
+
+    /* Submit */
+    .btn-login {
+      width: 100%;
+      padding: 14px;
+      background: var(--gold);
+      color: var(--black);
+      border: none;
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .btn-login:hover {
+      background: var(--gold-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(201,168,76,0.3);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .btn-login:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: var(--black);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* Back link */
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.35);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .back-link:hover { color: var(--gold); }
+    .back-link i { margin-right: 6px; }
+
+    /* Shake animation for wrong password */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    /* Attempts warning */
+    .attempts-warn {
+      font-size: 0.75rem;
+      color: rgba(231,76,60,0.7);
+      text-align: right;
+      margin-top: 5px;
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <!-- Brand -->
+  <div class="login-brand">
+    <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" />
+    <h1>North Dallas Alphas</h1>
+    <p>Admin Portal · Xi Tau Lambda</p>
+  </div>
+
+  <!-- Login Card -->
+  <div class="login-card" id="loginCard">
+    <h2>Administrator Login</h2>
+    <p class="subtitle">Enter your credentials to access the site dashboard.</p>
+
+    <div class="error-msg" id="errorMsg">
+      <i class="fas fa-exclamation-circle"></i>
+      <span id="errorText">Incorrect username or password. Please try again.</span>
+    </div>
+
+    <form id="loginForm" novalidate>
+      <div class="form-group">
+        <label for="username">Username</label>
+        <div class="input-wrap">
+          <i class="fas fa-user"></i>
+          <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="username" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" name="password" placeholder="Enter password" autocomplete="current-password" required />
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password visibility">
+            <i class="fas fa-eye" id="toggleIcon"></i>
+          </button>
+        </div>
+        <div class="attempts-warn" id="attemptsWarn"></div>
+      </div>
+
+      <button type="submit" class="btn-login" id="loginBtn">
+        <i class="fas fa-sign-in-alt"></i>
+        Sign In
+      </button>
+    </form>
+  </div>
+
+  <a href="index.html" class="back-link">
+    <i class="fas fa-arrow-left"></i> Back to Website
+  </a>
+
+</div>
+
+<script>
+  // ── Credentials (change these as needed) ──
+  const ADMIN_USER = 'xtladmin';
+  const ADMIN_PASS = 'NDA1906!';
+  const SESSION_KEY = 'nda_admin_auth';
+  const MAX_ATTEMPTS = 5;
+  const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+  // If already logged in, go straight to dashboard
+  if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+    window.location.href = 'admin-dashboard.html';
+  }
+
+  const form       = document.getElementById('loginForm');
+  const loginBtn   = document.getElementById('loginBtn');
+  const errorMsg   = document.getElementById('errorMsg');
+  const errorText  = document.getElementById('errorText');
+  const card       = document.getElementById('loginCard');
+  const togglePw   = document.getElementById('togglePw');
+  const toggleIcon = document.getElementById('toggleIcon');
+  const attemptsWarn = document.getElementById('attemptsWarn');
+
+  // Toggle password visibility
+  togglePw.addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    if (pw.type === 'password') {
+      pw.type = 'text';
+      toggleIcon.className = 'fas fa-eye-slash';
+    } else {
+      pw.type = 'password';
+      toggleIcon.className = 'fas fa-eye';
+    }
+  });
+
+  // Track failed attempts in sessionStorage
+  function getAttempts() {
+    const data = JSON.parse(sessionStorage.getItem('nda_attempts') || '{"count":0,"ts":0}');
+    // Reset if lockout expired
+    if (data.count >= MAX_ATTEMPTS && Date.now() - data.ts > LOCKOUT_MS) {
+      sessionStorage.removeItem('nda_attempts');
+      return { count: 0, ts: 0 };
+    }
+    return data;
+  }
+  function bumpAttempts() {
+    const data = getAttempts();
+    data.count = (data.count || 0) + 1;
+    data.ts = Date.now();
+    sessionStorage.setItem('nda_attempts', JSON.stringify(data));
+    return data.count;
+  }
+  function clearAttempts() {
+    sessionStorage.removeItem('nda_attempts');
+  }
+
+  // Check lockout on load
+  (function checkLockout() {
+    const data = getAttempts();
+    if (data.count >= MAX_ATTEMPTS) {
+      const remaining = Math.ceil((LOCKOUT_MS - (Date.now() - data.ts)) / 60000);
+      lockForm(`Too many failed attempts. Please wait ${remaining} minute(s) and try again.`);
+    }
+  })();
+
+  function lockForm(msg) {
+    loginBtn.disabled = true;
+    document.getElementById('username').disabled = true;
+    document.getElementById('password').disabled = true;
+    showError(msg);
+  }
+
+  function showError(msg) {
+    errorText.textContent = msg;
+    errorMsg.classList.add('show');
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 400);
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    errorMsg.classList.remove('show');
+
+    const data = getAttempts();
+    if (data.count >= MAX_ATTEMPTS) {
+      const remaining = Math.ceil((LOCKOUT_MS - (Date.now() - data.ts)) / 60000);
+      lockForm(`Too many failed attempts. Try again in ${remaining} minute(s).`);
+      return;
+    }
+
+    const user = document.getElementById('username').value.trim();
+    const pass = document.getElementById('password').value;
+
+    if (!user || !pass) {
+      showError('Please enter both username and password.');
+      return;
+    }
+
+    // Loading state
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<div class="spinner"></div> Signing In…';
+
+    setTimeout(() => {
+      if (user === ADMIN_USER && pass === ADMIN_PASS) {
+        clearAttempts();
+        sessionStorage.setItem(SESSION_KEY, 'true');
+        sessionStorage.setItem('nda_admin_user', user);
+        loginBtn.innerHTML = '<i class="fas fa-check"></i> Success! Redirecting…';
+        setTimeout(() => {
+          window.location.href = 'admin-dashboard.html';
+        }, 700);
+      } else {
+        const count = bumpAttempts();
+        const remaining = MAX_ATTEMPTS - count;
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+        if (remaining > 0) {
+          showError(`Incorrect username or password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`);
+          attemptsWarn.style.display = 'block';
+          attemptsWarn.textContent = `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before lockout`;
+        } else {
+          lockForm('Too many failed attempts. Please wait 5 minutes and try again.');
+        }
+      }
+    }, 800);
+  });
+</script>
+
+</body>
+</html>
