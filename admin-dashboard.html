@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1209,50 +1209,6 @@
          PAGE EDITOR PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-pages">
-
-  <!-- ── Hero Image Manager ── -->
-  <div class="section-card" style="margin-bottom:24px;">
-    <div class="section-card-header">
-      <h3><i class="fas fa-image" style="color:var(--gold);margin-right:8px;"></i>Hero Background Image</h3>
-      <span>Home page hero section</span>
-    </div>
-    <div class="section-card-body">
-      <p class="hint-text">Upload or paste a URL for the background image shown behind the hero text on the home page.</p>
-      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
-        <div id="heroImgPreviewWrap" style="width:180px;height:110px;border-radius:8px;overflow:hidden;border:2px solid var(--gray-200);flex-shrink:0;background:#111;display:flex;align-items:center;justify-content:center;">
-          <img id="heroImgPreview" src="" alt="Hero preview" style="width:100%;height:100%;object-fit:cover;display:none;" onerror="this.style.display='none';document.getElementById('heroImgPlaceholder').style.display='flex'" />
-          <div id="heroImgPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:6px;color:rgba(255,255,255,0.25);">
-            <i class="fas fa-image" style="font-size:1.8rem;"></i>
-            <span style="font-size:0.7rem;">No image set</span>
-          </div>
-        </div>
-        <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:10px;">
-          <label style="font-size:0.78rem;font-weight:700;color:var(--gray-200);text-transform:uppercase;letter-spacing:0.06em;">Image URL</label>
-          <input type="text" id="heroImgUrl" placeholder="Paste image URL or upload below…" style="background:var(--gray-50);border:1px solid var(--gray-200);color:var(--white);border-radius:5px;padding:9px 12px;font-size:0.85rem;width:100%;" oninput="previewHeroImg()" />
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <button class="flyer-upload-btn" onclick="document.getElementById('heroFileInput').click()">
-              <i class="fas fa-upload"></i> Upload Photo
-            </button>
-            <input type="file" id="heroFileInput" accept="image/*" style="display:none" onchange="handleHeroUpload(event)" />
-            <span style="font-size:0.75rem;color:var(--gray-400);">JPG, PNG, WEBP · Wide landscape photo works best</span>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:4px;">
-            <button class="btn-save" style="padding:8px 18px;font-size:0.82rem;" onclick="saveHeroImage()">
-              <i class="fas fa-save"></i> Save Hero Image
-            </button>
-            <button onclick="clearHeroImage()" style="padding:8px 14px;font-size:0.82rem;background:transparent;border:1px solid var(--gray-600);color:var(--gray-300);border-radius:6px;cursor:pointer;">
-              <i class="fas fa-times"></i> Clear
-            </button>
-          </div>
-          <p id="heroImgStatus" style="font-size:0.75rem;color:var(--gray-400);margin:0;"></p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── Page Content Editor ── -->
-  <div class="section-card">
-
       <div class="section-card">
         <div class="section-card-header">
           <h3><i class="fas fa-edit" style="color:var(--gold);margin-right:8px;"></i>Page Content Editor</h3>
@@ -1631,11 +1587,10 @@ function showPanel(id) {
   if (id === 'events')        loadEventsList();
   if (id === 'officers')      loadOfficersPanel();
   if (id === 'presidents')    loadPresidentsPanel();
- if (id === 'announcements') loadAnnouncement();
-if (id === 'settings')      loadSettings();
-if (id === 'dashboard')     updateDashboardStats();
-if (id === 'pages')         loadHeroImagePanel();
-
+  if (id === 'announcements') loadAnnouncement();
+  if (id === 'settings')      loadSettings();
+  if (id === 'dashboard')     updateDashboardStats();
+}
 
 function logout() {
   sessionStorage.removeItem(SESSION_KEY);
@@ -2277,67 +2232,6 @@ function cancelEdit() {
   const stored = localStorage.getItem(`nda_section_${currentPage}_${currentSection}`);
   document.getElementById('editorArea').innerHTML = stored || sec?.default || '';
   showToast('Changes discarded.', 'error');
-}
-
-// ══════════════════════════════════════════════════
-// HERO IMAGE MANAGER
-// ══════════════════════════════════════════════════
-function loadHeroImagePanel() {
-  const stored = localStorage.getItem('nda_hero_image') || '';
-  const urlInput = document.getElementById('heroImgUrl');
-  if (urlInput) urlInput.value = stored;
-  if (stored) _applyHeroPreview(stored);
-}
-
-function previewHeroImg() {
-  const url = document.getElementById('heroImgUrl').value.trim();
-  _applyHeroPreview(url);
-}
-
-function _applyHeroPreview(url) {
-  const img         = document.getElementById('heroImgPreview');
-  const placeholder = document.getElementById('heroImgPlaceholder');
-  const status      = document.getElementById('heroImgStatus');
-  if (!img) return;
-  if (url) {
-    img.src = url;
-    img.style.display = 'block';
-    if (placeholder) placeholder.style.display = 'none';
-    if (status) status.textContent = '';
-  } else {
-    img.style.display = 'none';
-    img.src = '';
-    if (placeholder) placeholder.style.display = 'flex';
-    if (status) status.textContent = '';
-  }
-}
-
-function handleHeroUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const dataUrl = ev.target.result;
-    document.getElementById('heroImgUrl').value = dataUrl;
-    _applyHeroPreview(dataUrl);
-    document.getElementById('heroImgStatus').textContent = '✓ Photo loaded — click Save Hero Image to apply.';
-  };
-  reader.readAsDataURL(file);
-  e.target.value = '';
-}
-
-function saveHeroImage() {
-  const url = document.getElementById('heroImgUrl').value.trim();
-  localStorage.setItem('nda_hero_image', url);
-  _applyHeroPreview(url);
-  showToast(url ? 'Hero image saved! Refresh the home page to see it.' : 'Hero image cleared.', 'success');
-}
-
-function clearHeroImage() {
-  document.getElementById('heroImgUrl').value = '';
-  localStorage.removeItem('nda_hero_image');
-  _applyHeroPreview('');
-  showToast('Hero image cleared.', 'info');
 }
 
 // ══════════════════════════════════════════════════
