@@ -2015,7 +2015,7 @@ function removeOfficer(i) {
   showToast('Officer slot removed. Click "Save All Officers" to confirm.', 'error');
 }
 
-function savePresident() {
+async function savePresident() {
   const p = {
     name:      document.getElementById('presName').value.trim(),
     title:     document.getElementById('presTitle').value.trim(),
@@ -2025,10 +2025,10 @@ function savePresident() {
     bio:       document.getElementById('presBio').value.trim()
   };
   localStorage.setItem('nda_president', JSON.stringify(p));
-  showToast('Chapter President info saved! Refresh the Leadership page to see changes.');
+  try { const ex = await sb.getAll('president','select=id&limit=1'); if(ex&&ex.length>0){await sb.update('president',ex[0].id,{name:p.name,title:p.title,badge:p.badge,bio:p.bio,photo:p.photo,year:p.adminYear});}else{await sb.insert('president',{name:p.name,title:p.title,badge:p.badge,bio:p.bio,photo:p.photo,year:p.adminYear});} showToast('President saved to database!'); } catch(err){console.error('Supabase error:',err);showToast('Saved locally only.','error');}
 }
 
-function saveOfficers() {
+async function saveOfficers() {
   // Re-read values from named inputs per row
   officersData.forEach((o, i) => {
     const titleEl = document.querySelector(`#officersTableBody tr:nth-child(${i+1}) input:nth-of-type(1)`);
@@ -2040,7 +2040,7 @@ function saveOfficers() {
   });
   localStorage.setItem('nda_officers', JSON.stringify(officersData));
   renderOfficersTable();
-  showToast('Officers saved! Refresh the Leadership page to see changes.');
+  try { const ex = await sb.getAll('officers','select=id'); for(const r of ex) await sb.delete('officers',r.id); for(let i=0;i<officersData.length;i++){const o=officersData[i];await sb.insert('officers',{title:o.title,name:o.name,photo:o.photo,sort_order:i});} showToast('Officers saved to database!'); } catch(err){console.error('Supabase error:',err);showToast('Saved locally only.','error');}
 }
 
 // ══════════════════════════════════════════════════
@@ -2127,7 +2127,7 @@ function removePresident(i) {
   showToast('President row removed.', 'error');
 }
 
-function savePresidents() {
+async function savePresidents() {
   presidentsData.forEach((p, i) => {
     const nameEl  = document.querySelector(`#presidentsTableBody tr:nth-child(${i+1}) input:nth-of-type(1)`);
     const yearsEl = document.querySelector(`#presidentsTableBody tr:nth-child(${i+1}) input:nth-of-type(2)`);
@@ -2138,7 +2138,7 @@ function savePresidents() {
   });
   localStorage.setItem('nda_past_presidents', JSON.stringify(presidentsData));
   renderPresidentsTable();
-  showToast('Past presidents saved! Refresh the Leadership page to see changes.');
+  try { const ex = await sb.getAll('past_presidents','select=id'); for(const r of ex) await sb.delete('past_presidents',r.id); for(let i=0;i<presidentsData.length;i++){const p2=presidentsData[i];await sb.insert('past_presidents',{name:p2.name,years:p2.years,photo:p2.photo,sort_order:i});} showToast('Past presidents saved to database!'); } catch(err){console.error('Supabase error:',err);showToast('Saved locally only.','error');}
 }
 
 // ══════════════════════════════════════════════════
@@ -2277,14 +2277,14 @@ function updateAnnouncePreview() {
   document.getElementById('announcePreview').innerHTML = `${t} &nbsp; <u>${lt}</u>`;
 }
 
-function saveAnnouncement() {
+async function saveAnnouncement() {
   const data = {
     text:     document.getElementById('announceText').value,
     linkText: document.getElementById('announceLinkText').value,
     linkUrl:  document.getElementById('announceLinkUrl').value
   };
   localStorage.setItem('nda_announce', JSON.stringify(data));
-  showToast('Announcement saved! All pages will show the updated bar on reload.');
+  try { const ex = await sb.getAll('announcements','select=id&limit=1'); if(ex&&ex.length>0){await sb.update('announcements',ex[0].id,{text:data.text,link_text:data.linkText,link_url:data.linkUrl,active:true});}else{await sb.insert('announcements',{text:data.text,link_text:data.linkText,link_url:data.linkUrl,active:true});} showToast('Announcement saved to database!'); } catch(err){console.error('Supabase error:',err);showToast('Saved locally only.','error');}
 }
 
 // ══════════════════════════════════════════════════
