@@ -2241,9 +2241,14 @@ function execCmd(cmd) {
   document.execCommand(cmd, false, null);
 }
 
-function saveSection() {
+async async function saveSection() {
   const content = document.getElementById('editorArea').innerHTML;
   localStorage.setItem(`nda_section_${currentPage}_${currentSection}`, content);
+  try {
+    const secId = currentPage + "_" + currentSection;
+    await sb.upsert("page_sections", {id: secId, content: content}, "id");
+    showToast("Section saved to database!");
+  } catch(err){ console.error("Supabase error:",err); showToast("Section saved locally only.","error"); }
   showToast('Content saved to local storage. Changes are visible when you refresh the live page.');
 }
 
