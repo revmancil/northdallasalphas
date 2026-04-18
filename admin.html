@@ -344,42 +344,11 @@
     }
   });
 
-  // Track failed attempts in sessionStorage
-  function getAttempts() {
-    const data = JSON.parse(sessionStorage.getItem('nda_attempts') || '{"count":0,"ts":0}');
-    // Reset if lockout expired
-    if (data.count >= MAX_ATTEMPTS && Date.now() - data.ts > LOCKOUT_MS) {
-      sessionStorage.removeItem('nda_attempts');
-      return { count: 0, ts: 0 };
-    }
     return data;
   }
-  function bumpAttempts() {
-    const data = getAttempts();
-    data.count = (data.count || 0) + 1;
-    data.ts = Date.now();
-    sessionStorage.setItem('nda_attempts', JSON.stringify(data));
-    return data.count;
-  }
-  function clearAttempts() {
-    sessionStorage.removeItem('nda_attempts');
-  }
 
-  // Check lockout on load
-  (function checkLockout() {
-    const data = getAttempts();
-    if (data.count >= MAX_ATTEMPTS) {
-      const remaining = Math.ceil((LOCKOUT_MS - (Date.now() - data.ts)) / 60000);
-      lockForm(`Too many failed attempts. Please wait ${remaining} minute(s) and try again.`);
-    }
   })();
 
-  function lockForm(msg) {
-    loginBtn.disabled = true;
-    document.getElementById('username').disabled = true;
-    document.getElementById('password').disabled = true;
-    showError(msg);
-  }
 
   function showError(msg) {
     errorText.textContent = msg;
