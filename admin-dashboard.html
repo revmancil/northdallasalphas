@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin Dashboard | North Dallas Alphas</title>
   <meta name="robots" content="noindex, nofollow" />
+<script>
+const SUPABASE_URL="https://fbjervpgxnbyntylabfr.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg";
+const sb={url:SUPABASE_URL,key:SUPABASE_ANON_KEY,headers(e={}){return{"Content-Type":"application/json",apikey:this.key,Authorization:"Bearer "+this.key,...e}},async getAll(t,q=""){const r=await fetch(`${this.url}/rest/v1/${t}?${q}`,{headers:this.headers({"Prefer":"return=representation"})});if(!r.ok)throw new Error(await r.text());return r.json()},async insert(t,d){const r=await fetch(`${this.url}/rest/v1/${t}`,{method:"POST",headers:this.headers({"Prefer":"return=representation"}),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json()},async update(t,i,d){const r=await fetch(`${this.url}/rest/v1/${t}?id=eq.${i}`,{method:"PATCH",headers:this.headers({"Prefer":"return=representation"}),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json()},async upsert(t,d,c="id"){const r=await fetch(`${this.url}/rest/v1/${t}?on_conflict=${c}`,{method:"POST",headers:this.headers({"Prefer":"return=representation,resolution=merge-duplicates"}),body:JSON.stringify(d)});if(!r.ok)throw new Error(await r.text());return r.json()},async delete(t,i){const r=await fetch(`${this.url}/rest/v1/${t}?id=eq.${i}`,{method:"DELETE",headers:this.headers()});if(!r.ok)throw new Error(`DELETE failed: ${r.status}`);return true}};
+</script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <style>
@@ -942,8 +947,7 @@
       .event-reg-row,
       .event-desc-row { grid-column: span 5; }
     }
-  </style>
-<script src="js/supabase-config.js"></script></head>
+  </style></head>
 <body>
 
 <!-- ═══════════════════════════════════════
