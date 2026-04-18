@@ -277,10 +277,10 @@
 
     <form id="loginForm" novalidate>
       <div class="form-group">
-        <label for="username">Username</label>
+        <label for="username">Email Address</label>
         <div class="input-wrap">
-          <i class="fas fa-user"></i>
-          <input type="text" id="username" name="username" placeholder="Enter username" autocomplete="username" required />
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="username" name="username" placeholder="Enter admin email" autocomplete="email" required />
         </div>
       </div>
       <div class="form-group">
@@ -309,16 +309,18 @@
 </div>
 
 <script>
-  // ── Credentials (change these as needed) ──
-  const ADMIN_USER = 'xtladmin';
-  const ADMIN_PASS = 'NDA1906!';
+  const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
   const SESSION_KEY = 'nda_admin_auth';
-  const MAX_ATTEMPTS = 5;
-  const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
 
-  // If already logged in, go straight to dashboard
-  if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-    window.location.href = 'admin-dashboard.html';
+  // If already logged in via Supabase, go straight to dashboard
+  const existingSession = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+  if (existingSession && existingSession.access_token) {
+    const exp = existingSession.expires_at || 0;
+    if (Date.now() / 1000 < exp) {
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      window.location.href = 'admin-dashboard.html';
+    }
   }
 
   const form       = document.getElementById('loginForm');
@@ -386,52 +388,41 @@
     setTimeout(() => card.classList.remove('shake'), 400);
   }
 
-  form.addEventListener('submit', function (e) {
+  form.addEventListener('submit', async function(e) {
     e.preventDefault();
     errorMsg.classList.remove('show');
-
-    const data = getAttempts();
-    if (data.count >= MAX_ATTEMPTS) {
-      const remaining = Math.ceil((LOCKOUT_MS - (Date.now() - data.ts)) / 60000);
-      lockForm(`Too many failed attempts. Try again in ${remaining} minute(s).`);
-      return;
-    }
-
-    const user = document.getElementById('username').value.trim();
-    const pass = document.getElementById('password').value;
-
-    if (!user || !pass) {
-      showError('Please enter both username and password.');
-      return;
-    }
-
-    // Loading state
+    const email = document.getElementById('username').value.trim();
+    const pass  = document.getElementById('password').value;
+    if (!email || !pass) { showError('Please enter your email and password.'); return; }
     loginBtn.disabled = true;
-    loginBtn.innerHTML = '<div class="spinner"></div> Signing In…';
-
-    setTimeout(() => {
-      if (user === ADMIN_USER && pass === ADMIN_PASS) {
-        clearAttempts();
-        sessionStorage.setItem(SESSION_KEY, 'true');
-        sessionStorage.setItem('nda_admin_user', user);
-        loginBtn.innerHTML = '<i class="fas fa-check"></i> Success! Redirecting…';
-        setTimeout(() => {
-          window.location.href = 'admin-dashboard.html';
-        }, 700);
-      } else {
-        const count = bumpAttempts();
-        const remaining = MAX_ATTEMPTS - count;
+    loginBtn.innerHTML = '<div class="spinner"></div> Signing In...';
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({ email: email, password: pass })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.access_token) {
         loginBtn.disabled = false;
         loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
-        if (remaining > 0) {
-          showError(`Incorrect username or password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.`);
-          attemptsWarn.style.display = 'block';
-          attemptsWarn.textContent = `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before lockout`;
-        } else {
-          lockForm('Too many failed attempts. Please wait 5 minutes and try again.');
-        }
+        showError(data.error_description || data.msg || 'Invalid email or password.');
+        return;
       }
-    }, 800);
+      localStorage.setItem('nda_sb_session', JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at: Math.floor(Date.now() / 1000) + data.expires_in
+      }));
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      sessionStorage.setItem('nda_admin_user', email);
+      loginBtn.innerHTML = '<i class="fas fa-check"></i> Success! Redirecting...';
+      setTimeout(function() { window.location.href = 'admin-dashboard.html'; }, 700);
+    } catch(err) {
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+      showError('Network error. Please check your connection and try again.');
+    }
   });
 </script>
 
