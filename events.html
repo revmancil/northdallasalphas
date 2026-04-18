@@ -855,6 +855,14 @@ document.addEventListener('DOMContentLoaded', function() {
   loadAnnouncement();
   renderFeaturedEvent(events);
   renderAllEvents(events);
+  // Force show all animated elements after async load
+  setTimeout(() => {
+    document.querySelectorAll(".fade-up, .fade-in").forEach(el => {
+      el.classList.add("visible");
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+    });
+  }, 100);
 })();
 </script>
 
