@@ -2241,7 +2241,7 @@ function execCmd(cmd) {
   document.execCommand(cmd, false, null);
 }
 
-async async function saveSection() {
+async function saveSection() {
   const content = document.getElementById('editorArea').innerHTML;
   localStorage.setItem(`nda_section_${currentPage}_${currentSection}`, content);
   try {
