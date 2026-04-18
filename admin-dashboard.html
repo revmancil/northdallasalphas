@@ -1862,8 +1862,7 @@ function removeEvent(i) {
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
 }
 
-function saveEvents() {
-  // Read current input values
+async function saveEvents() {
   document.querySelectorAll('.event-row').forEach((row, i) => {
     const inputs = row.querySelectorAll('input[type="text"]');
     if (eventsData[i]) {
@@ -1872,7 +1871,6 @@ function saveEvents() {
       eventsData[i].datetime = inputs[2] ? inputs[2].value : eventsData[i].datetime;
     }
   });
-  // Also persist any registration URLs and descriptions typed but not yet applied
   eventsData.forEach((ev, i) => {
     const regInput  = document.getElementById('reg-url-' + i);
     const descInput = document.getElementById('desc-text-' + i);
@@ -1880,8 +1878,23 @@ function saveEvents() {
     if (descInput) ev.description      = descInput.value.trim();
   });
   localStorage.setItem('nda_events', JSON.stringify(eventsData));
+  try {
+    const existing = await sb.getAll('events', 'select=id');
+    for (const row of existing) { await sb.delete('events', row.id); }
+    for (let i = 0; i < eventsData.length; i++) {
+      const ev = eventsData[i];
+      await sb.insert('events', {
+        name: ev.name||'', location: ev.location||'', datetime: ev.datetime||'',
+        featured: ev.featured||false, flyer: ev.flyer||'',
+        description: ev.description||'', reg_url: ev.registrationUrl||'', sort_order: i
+      });
+    }
+    showToast('Events saved to database! All devices will see the changes.');
+  } catch(err) {
+    console.error('Supabase error:', err);
+    showToast('Saved locally only. Check console for errors.', 'error');
+  }
   renderEventsList();
-  showToast('Events saved successfully! The events page will reflect these changes.');
 }
 
 // ══════════════════════════════════════════════════
