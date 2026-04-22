@@ -641,7 +641,9 @@ function renderOfficers() {
       : `<div class="photo-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div>`;
 
     const card = document.createElement('div');
-    card.className = 'officer-card fade-in';
+    // Cards are rendered after initial animation observer setup on some devices.
+    // Mark as visible immediately to avoid hidden grids on mobile/tablet.
+    card.className = 'officer-card fade-in visible';
     card.innerHTML = `
       <div class="officer-card-photo">${photoHtml}</div>
       <div class="officer-card-body">
@@ -665,7 +667,8 @@ function renderPastPresidents() {
       : `<div class="photo-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div><span class="president-num-badge">${p.num}</span>`;
 
     const card = document.createElement('div');
-    card.className = 'president-card fade-in';
+    // Keep animation class for styling consistency, but force visible state.
+    card.className = 'president-card fade-in visible';
     card.innerHTML = `
       <div class="president-card-photo">${photoHtml}</div>
       <div class="president-card-body">
