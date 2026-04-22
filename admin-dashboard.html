@@ -1485,7 +1485,7 @@
           <span>Create and export email campaigns</span>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Build a campaign like Mailchimp: fill your campaign details, pull in events and announcements, then preview/copy/download the finished HTML email.</p>
+          <p class="hint-text">Build a campaign like Mailchimp: add, edit, and reorder sections (header, body, images, CTA, events, footer), then preview/copy/download the finished HTML email.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
             <div class="field-group">
               <label>Campaign Name</label>
@@ -1500,53 +1500,34 @@
               <input type="text" id="nlPreheader" placeholder="Upcoming events, chapter highlights, and ways to engage." />
             </div>
             <div class="field-group">
-              <label>Header Title</label>
-              <input type="text" id="nlHeaderTitle" placeholder="North Dallas Alphas Newsletter" />
+              <label>Template Name</label>
+              <input type="text" id="nlTemplateName" placeholder="Monthly Standard Template" />
             </div>
             <div class="field-group">
-              <label>Issue Label</label>
-              <input type="text" id="nlIssueLabel" placeholder="April 2026 Edition" />
-            </div>
-            <div class="field-group" style="grid-column:span 2;">
-              <label>Intro Message</label>
-              <textarea id="nlIntro" rows="4" placeholder="Write your opening message to chapter members and supporters..."></textarea>
-            </div>
-            <div class="field-group">
-              <label>Primary CTA Text</label>
-              <input type="text" id="nlCtaText" placeholder="View Full Events Calendar" />
-            </div>
-            <div class="field-group">
-              <label>Primary CTA URL</label>
-              <input type="text" id="nlCtaUrl" placeholder="https://northdallasalphas.org/events.html" />
-            </div>
-            <div class="field-group">
-              <label>Event Count</label>
-              <select id="nlEventCount">
-                <option value="3">Top 3 events</option>
-                <option value="5">Top 5 events</option>
-                <option value="8">Top 8 events</option>
+              <label>Saved Templates</label>
+              <select id="nlTemplateSelect">
+                <option value="">Select template...</option>
               </select>
             </div>
-            <div class="field-group">
-              <label>Content Options</label>
-              <div style="display:flex;gap:16px;align-items:center;padding-top:8px;">
-                <label style="display:flex;gap:8px;align-items:center;font-size:0.82rem;color:var(--gray-700);font-weight:500;letter-spacing:0;">
-                  <input type="checkbox" id="nlIncludeEvents" checked />
-                  Include upcoming events
-                </label>
-                <label style="display:flex;gap:8px;align-items:center;font-size:0.82rem;color:var(--gray-700);font-weight:500;letter-spacing:0;">
-                  <input type="checkbox" id="nlIncludeAnnouncement" checked />
-                  Include latest announcement
-                </label>
-              </div>
-            </div>
             <div class="field-group" style="grid-column:span 2;">
-              <label>Footer Note</label>
-              <textarea id="nlFooterNote" rows="3" placeholder="You are receiving this email from Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc."></textarea>
+              <label>Newsletter Sections</label>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                <button type="button" class="btn-sm success" onclick="addNewsletterSection('header')"><i class="fas fa-heading"></i> Header</button>
+                <button type="button" class="btn-sm edit" onclick="addNewsletterSection('text')"><i class="fas fa-align-left"></i> Body Text</button>
+                <button type="button" class="btn-sm view" onclick="addNewsletterSection('image')"><i class="fas fa-image"></i> Image</button>
+                <button type="button" class="btn-sm view" onclick="addNewsletterSection('cta')"><i class="fas fa-link"></i> CTA Button</button>
+                <button type="button" class="btn-sm view" onclick="addNewsletterSection('events')"><i class="fas fa-calendar-alt"></i> Events Feed</button>
+                <button type="button" class="btn-sm view" onclick="addNewsletterSection('announcement')"><i class="fas fa-bullhorn"></i> Announcement</button>
+                <button type="button" class="btn-sm danger" onclick="addNewsletterSection('footer')"><i class="fas fa-shoe-prints"></i> Footer</button>
+              </div>
+              <div id="nlSectionsEditor" style="display:flex;flex-direction:column;gap:10px;"></div>
             </div>
           </div>
           <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:16px;">
             <button class="btn-sm view" onclick="loadNewsletterDefaults()"><i class="fas fa-rotate-right"></i> Reset Defaults</button>
+            <button class="btn-sm success" onclick="saveNewsletterTemplate()"><i class="fas fa-floppy-disk"></i> Save Template</button>
+            <button class="btn-sm view" onclick="loadSelectedNewsletterTemplate()"><i class="fas fa-folder-open"></i> Load Template</button>
+            <button class="btn-sm edit" onclick="loadNewsletterTemplateOptions()"><i class="fas fa-arrows-rotate"></i> Refresh Templates</button>
             <button class="btn-sm success" onclick="generateNewsletterPreview()"><i class="fas fa-wand-magic-sparkles"></i> Generate Preview</button>
             <button class="btn-sm edit" onclick="copyNewsletterHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
             <button class="btn-sm view" onclick="downloadNewsletterHtml()"><i class="fas fa-download"></i> Download HTML</button>
@@ -1580,6 +1561,30 @@
           </div>
           <div id="memberRequestsList">
             <div class="hint-text" style="margin:0;">Loading member requests...</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-id-badge" style="color:var(--gold);margin-right:8px;"></i>Member Compliance Records</h3>
+          <span><span id="memberComplianceCount">0</span> active members</span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Set chapter active date, IMDP certification, and Risk Management certification. These values are read-only in the member portal.</p>
+          <div id="memberComplianceList">
+            <div class="hint-text" style="margin:0;">Loading compliance records...</div>
+          </div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-plane-arrival" style="color:var(--gold);margin-right:8px;"></i>Visiting Brother Requests</h3>
+          <span><span id="visitingPendingCount">0</span> pending</span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Review visiting brother submissions and approve or reject each request.</p>
+          <div id="visitingRequestsList">
+            <div class="hint-text" style="margin:0;">Loading visiting brother requests...</div>
           </div>
         </div>
       </div>
@@ -1792,6 +1797,8 @@ async function sbDeleteByFilter(table, filter, token) {
 
 const SITE_CONTENT_TABLE = 'site_content';
 const PAGE_SECTIONS_TABLE = 'page_sections';
+let pageSectionsCapabilityChecked = false;
+let pageSectionsAvailable = true;
 
 async function getContentJson(contentKey, fallbackValue) {
   const token = getAdminToken();
@@ -1824,6 +1831,18 @@ async function saveContentJson(contentKey, contentJson) {
   );
 }
 
+async function ensurePageSectionsAvailable(token) {
+  if (pageSectionsCapabilityChecked) return pageSectionsAvailable;
+  pageSectionsCapabilityChecked = true;
+  try {
+    await sbGet(PAGE_SECTIONS_TABLE, 'select=page_id&limit=1', token);
+    pageSectionsAvailable = true;
+  } catch (err) {
+    pageSectionsAvailable = false;
+  }
+  return pageSectionsAvailable;
+}
+
 function logout() {
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem('nda_admin_user');
@@ -1846,46 +1865,105 @@ function showToast(msg, type = 'success') {
 // ══════════════════════════════════════════════════
 async function loadMemberRequests() {
   const container = document.getElementById('memberRequestsList');
+  const complianceContainer = document.getElementById('memberComplianceList');
+  const visitingContainer = document.getElementById('visitingRequestsList');
   const countEl = document.getElementById('memberPendingCount');
-  if (!container || !countEl) return;
+  const complianceCountEl = document.getElementById('memberComplianceCount');
+  const visitingCountEl = document.getElementById('visitingPendingCount');
+  if (!container || !countEl || !complianceContainer || !complianceCountEl || !visitingContainer || !visitingCountEl) return;
   const token = getAdminToken();
   if (!token) {
     container.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Admin session expired. Please sign in again.</div>';
+    complianceContainer.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Admin session expired. Please sign in again.</div>';
+    visitingContainer.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Admin session expired. Please sign in again.</div>';
     countEl.textContent = '0';
+    complianceCountEl.textContent = '0';
+    visitingCountEl.textContent = '0';
     return;
   }
   container.innerHTML = '<div class="hint-text" style="margin:0;">Loading member requests...</div>';
+  complianceContainer.innerHTML = '<div class="hint-text" style="margin:0;">Loading compliance records...</div>';
+  visitingContainer.innerHTML = '<div class="hint-text" style="margin:0;">Loading visiting brother requests...</div>';
   try {
     const members = await sbGet(
       'members',
-      'status=in.(pending,active,rejected)&order=created_at.desc',
+      'status=in.(pending,active,rejected)&order=id.desc',
       token
     );
     const pending = (members || []).filter(m => (m.status || '').toLowerCase() === 'pending');
+    const activeMembers = (members || []).filter(function(m) { return (m.status || '').toLowerCase() === 'active'; });
     countEl.textContent = String(pending.length);
+    complianceCountEl.textContent = String(activeMembers.length);
     if (!pending.length) {
       container.innerHTML = '<div class="hint-text" style="margin:0;">No pending requests right now.</div>';
-      return;
+    } else {
+      container.innerHTML = pending.map(function(m) {
+        const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
+        const requested = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown time';
+        return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
+          '<div>' +
+          '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
+          '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:2px;">' + escHtml(m.email || 'No email provided') + '</div>' +
+          '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Requested: ' + escHtml(requested) + '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
+          '<button class="btn-sm success" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'active\')"><i class="fas fa-check"></i> Approve</button>' +
+          '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'rejected\')"><i class="fas fa-times"></i> Reject</button>' +
+          '</div>' +
+          '</div>';
+      }).join('');
     }
-    container.innerHTML = pending.map(function(m) {
-      const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
-      const requested = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown time';
-      return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
-        '<div>' +
-        '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
-        '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:2px;">' + escHtml(m.email || 'No email provided') + '</div>' +
-        '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Requested: ' + escHtml(requested) + '</div>' +
-        '</div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
-        '<button class="btn-sm success" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'active\')"><i class="fas fa-check"></i> Approve</button>' +
-        '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'rejected\')"><i class="fas fa-times"></i> Reject</button>' +
-        '</div>' +
-        '</div>';
-    }).join('');
+    renderMemberComplianceList(activeMembers);
+    await loadVisitingBrotherRequests(token);
   } catch (err) {
     container.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load member requests: ' + escHtml(err.message || 'unknown error') + '</div>';
+    complianceContainer.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load compliance records: ' + escHtml(err.message || 'unknown error') + '</div>';
+    visitingContainer.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load visiting brother requests: ' + escHtml(err.message || 'unknown error') + '</div>';
     countEl.textContent = '0';
+    complianceCountEl.textContent = '0';
+    visitingCountEl.textContent = '0';
   }
+}
+
+function renderMemberComplianceList(members) {
+  const container = document.getElementById('memberComplianceList');
+  if (!container) return;
+  if (!members || !members.length) {
+    container.innerHTML = '<div class="hint-text" style="margin:0;">No active members found.</div>';
+    return;
+  }
+  container.innerHTML = members.map(function(m) {
+    const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
+    const id = String(m.id || '');
+    const activeDate = m.chapter_active_date || '';
+    const imdp = m.imdp_certified || '';
+    const risk = m.risk_mgmt_certified || '';
+    return '' +
+      '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">' +
+      '<div>' +
+      '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:2px;">' + escHtml(m.email || 'No email provided') + '</div>' +
+      '</div>' +
+      '<button class="btn-sm success" onclick="saveMemberCompliance(\'' + escHtml(id) + '\')"><i class="fas fa-save"></i> Save</button>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;">' +
+      '<div class="field-group" style="margin:0;"><label>Chapter Active Date</label><input type="date" id="member-active-date-' + escHtml(id) + '" value="' + escHtml(activeDate) + '" /></div>' +
+      '<div class="field-group" style="margin:0;"><label>IMDP Certification</label>' +
+      '<select id="member-imdp-' + escHtml(id) + '">' +
+      '<option value=""' + (imdp === '' ? ' selected' : '') + '>Not set</option>' +
+      '<option value="yes"' + (imdp === 'yes' ? ' selected' : '') + '>Certified</option>' +
+      '<option value="no"' + (imdp === 'no' ? ' selected' : '') + '>Not Certified</option>' +
+      '</select></div>' +
+      '<div class="field-group" style="margin:0;"><label>Risk Management Certification</label>' +
+      '<select id="member-risk-' + escHtml(id) + '">' +
+      '<option value=""' + (risk === '' ? ' selected' : '') + '>Not set</option>' +
+      '<option value="yes"' + (risk === 'yes' ? ' selected' : '') + '>Certified</option>' +
+      '<option value="no"' + (risk === 'no' ? ' selected' : '') + '>Not Certified</option>' +
+      '</select></div>' +
+      '</div>' +
+      '</div>';
+  }).join('');
 }
 
 async function updateMemberStatus(memberId, status) {
@@ -1898,16 +1976,150 @@ async function updateMemberStatus(memberId, status) {
   const approved = status === 'active';
   if (!confirm((approved ? 'Approve' : 'Reject') + ' this member request?')) return;
   try {
+    const payload = { status: status, updated_at: new Date().toISOString() };
+    if (approved) {
+      payload.chapter_active_date = new Date().toISOString().slice(0, 10);
+    }
     await sbPatch(
       'members',
       'id=eq.' + encodeURIComponent(memberId),
-      { status: status, updated_at: new Date().toISOString() },
+      payload,
       token
     );
     showToast(approved ? 'Member approved successfully.' : 'Member request rejected.', approved ? 'success' : 'info');
     await loadMemberRequests();
   } catch (err) {
     showToast('Could not update member status: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+async function saveMemberCompliance(memberId) {
+  if (!memberId) return;
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const activeDateEl = document.getElementById('member-active-date-' + memberId);
+  const imdpEl = document.getElementById('member-imdp-' + memberId);
+  const riskEl = document.getElementById('member-risk-' + memberId);
+  if (!activeDateEl || !imdpEl || !riskEl) return;
+  const payload = {
+    chapter_active_date: (activeDateEl.value || '').trim() || null,
+    imdp_certified: (imdpEl.value || '').trim(),
+    risk_mgmt_certified: (riskEl.value || '').trim(),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
+    showToast('Compliance fields saved successfully.');
+  } catch (err) {
+    showToast('Could not save compliance fields: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+async function loadVisitingBrotherRequests(token) {
+  const container = document.getElementById('visitingRequestsList');
+  const countEl = document.getElementById('visitingPendingCount');
+  if (!container || !countEl) return;
+  try {
+    const rows = await sbGet('visiting_brothers_requests', 'order=submitted_at.desc', token);
+    const requests = Array.isArray(rows) ? rows : [];
+    const pending = requests.filter(function(r) { return (r.status || '').toLowerCase() === 'pending'; });
+    countEl.textContent = String(pending.length);
+    if (!pending.length) {
+      container.innerHTML = '<div class="hint-text" style="margin:0;">No pending visiting brother requests.</div>';
+      return;
+    }
+    container.innerHTML = pending.map(function(r) {
+      const id = String(r.id || '');
+      const name = [r.first_name, r.last_name].filter(Boolean).join(' ').trim() || 'Unknown';
+      const when = r.submitted_at ? new Date(r.submitted_at).toLocaleString() : 'Unknown time';
+      const details = [
+        r.phone ? 'Phone: ' + r.phone : '',
+        r.city || r.state ? 'Location: ' + [r.city, r.state].filter(Boolean).join(', ') : '',
+        r.alpha_id ? 'Key Number: ' + r.alpha_id : '',
+        r.initiation_chapter ? 'Initiation Chapter: ' + r.initiation_chapter : '',
+        r.imdp_certified ? 'IMDP: ' + r.imdp_certified : '',
+        r.risk_mgmt_certified ? 'Risk Mgmt: ' + r.risk_mgmt_certified : ''
+      ].filter(Boolean);
+      return '' +
+        '<div style="padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
+        '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">' +
+        '<div>' +
+        '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:2px;">' + escHtml(r.email || 'No email provided') + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Submitted: ' + escHtml(when) + '</div>' +
+        (details.length ? '<div style="font-size:0.76rem;color:var(--gray-500);margin-top:6px;line-height:1.45;">' + escHtml(details.join(' | ')) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
+        '<button class="btn-sm success" onclick="updateVisitingRequestStatus(\'' + escHtml(id) + '\', \'approved\')"><i class="fas fa-check"></i> Approve</button>' +
+        '<button class="btn-sm danger" onclick="updateVisitingRequestStatus(\'' + escHtml(id) + '\', \'rejected\')"><i class="fas fa-times"></i> Reject</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load visiting requests: ' + escHtml(err.message || 'unknown error') + '</div>';
+    countEl.textContent = '0';
+  }
+}
+
+async function updateVisitingRequestStatus(requestId, status) {
+  if (!requestId) return;
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const approve = status === 'approved';
+  if (!confirm((approve ? 'Approve' : 'Reject') + ' this visiting brother request?')) return;
+  try {
+    const rows = await sbGet('visiting_brothers_requests', 'id=eq.' + encodeURIComponent(requestId) + '&limit=1', token);
+    const req = rows && rows.length ? rows[0] : null;
+    if (!req) throw new Error('Request not found.');
+    await sbPatch(
+      'visiting_brothers_requests',
+      'id=eq.' + encodeURIComponent(requestId),
+      { status: status, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      token
+    );
+    if (approve) {
+      const existing = await sbGet('members', 'email=eq.' + encodeURIComponent(req.email || '') + '&limit=1', token);
+      const memberPayload = {
+        first_name: req.first_name || '',
+        last_name: req.last_name || '',
+        email: req.email || '',
+        phone: req.phone || '',
+        city: req.city || '',
+        state: req.state || '',
+        member_since: req.member_since || '',
+        alpha_id: req.alpha_id || '',
+        initiation_date: req.initiation_date || '',
+        initiation_chapter: req.initiation_chapter || '',
+        college: req.college || '',
+        life_member: req.life_member || '',
+        life_member_number: req.life_member_number || '',
+        imdp_certified: req.imdp_certified || '',
+        risk_mgmt_certified: req.risk_mgmt_certified || '',
+        renewal_date: req.renewal_date || '',
+        linkedin: req.linkedin || '',
+        photo: req.photo || '',
+        bio: req.bio || '',
+        status: 'active',
+        chapter_active_date: new Date().toISOString().slice(0, 10),
+        updated_at: new Date().toISOString()
+      };
+      if (existing && existing.length) {
+        await sbPatch('members', 'id=eq.' + encodeURIComponent(existing[0].id), memberPayload, token);
+      } else {
+        await sbPost('members', Object.assign({}, memberPayload, { created_at: new Date().toISOString() }), token);
+      }
+    }
+    showToast(approve ? 'Visiting brother approved and member record updated.' : 'Visiting brother request rejected.', approve ? 'success' : 'info');
+    await loadMemberRequests();
+  } catch (err) {
+    showToast('Could not update visiting request: ' + (err.message || 'unknown error'), 'error');
   }
 }
 
@@ -2574,6 +2786,11 @@ async function loadSectionContent(pageId, sectionKey) {
     document.getElementById('editorArea').innerHTML = sec.default;
     return;
   }
+  const canUsePageSections = await ensurePageSectionsAvailable(token);
+  if (!canUsePageSections) {
+    document.getElementById('editorArea').innerHTML = sec.default;
+    return;
+  }
   try {
     const rows = await sbGet(
       PAGE_SECTIONS_TABLE,
@@ -2598,6 +2815,11 @@ async function saveSection() {
   const token = getAdminToken();
   if (!token) {
     showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const canUsePageSections = await ensurePageSectionsAvailable(token);
+  if (!canUsePageSections) {
+    showToast('Page sections table is unavailable. Run SUPABASE_CONTENT_SCHEMA.sql first.', 'error');
     return;
   }
   try {
@@ -2695,9 +2917,268 @@ async function saveAnnouncement() {
 // NEWSLETTER GENERATOR
 // ══════════════════════════════════════════════════
 let latestNewsletterHtml = '';
+let newsletterSections = [];
+let newsletterSectionCounter = 0;
+let newsletterTemplatesCapabilityChecked = false;
+let newsletterTemplatesAvailable = true;
 
 function newsletterEsc(str) {
   return escHtml(str || '');
+}
+
+function createNewsletterSection(type) {
+  newsletterSectionCounter += 1;
+  const id = 'nlsec_' + newsletterSectionCounter;
+  if (type === 'header') {
+    return { id: id, type: 'header', title: 'North Dallas Alphas Newsletter', subtitle: 'Monthly Chapter Update' };
+  }
+  if (type === 'text') {
+    return { id: id, type: 'text', title: 'Section Title', body: '<p>Add your content here. You can include <strong>bold text</strong>, links, and formatting.</p>' };
+  }
+  if (type === 'image') {
+    return { id: id, type: 'image', imageUrl: '', alt: 'Newsletter image', caption: '' };
+  }
+  if (type === 'cta') {
+    return { id: id, type: 'cta', text: 'Learn More', url: 'https://northdallasalphas.org' };
+  }
+  if (type === 'events') {
+    return { id: id, type: 'events', title: 'Upcoming Events', limit: 3 };
+  }
+  if (type === 'announcement') {
+    return { id: id, type: 'announcement', title: 'Chapter Announcement' };
+  }
+  return { id: id, type: 'footer', body: 'You are receiving this email because you are connected to Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. North Dallas Alphas, 224 W. Campbell Road #443, Richardson, TX 75080.' };
+}
+
+function addNewsletterSection(type) {
+  newsletterSections.push(createNewsletterSection(type));
+  renderNewsletterSectionsEditor();
+}
+
+function removeNewsletterSection(sectionId) {
+  newsletterSections = newsletterSections.filter(function(s) { return s.id !== sectionId; });
+  renderNewsletterSectionsEditor();
+}
+
+function moveNewsletterSection(sectionId, direction) {
+  const idx = newsletterSections.findIndex(function(s) { return s.id === sectionId; });
+  if (idx < 0) return;
+  const next = idx + direction;
+  if (next < 0 || next >= newsletterSections.length) return;
+  const tmp = newsletterSections[idx];
+  newsletterSections[idx] = newsletterSections[next];
+  newsletterSections[next] = tmp;
+  renderNewsletterSectionsEditor();
+}
+
+function setNewsletterSectionField(sectionId, field, value) {
+  const section = newsletterSections.find(function(s) { return s.id === sectionId; });
+  if (!section) return;
+  section[field] = value;
+}
+
+function sectionTypeLabel(type) {
+  const labels = {
+    header: 'Header',
+    text: 'Body Text',
+    image: 'Image',
+    cta: 'Button CTA',
+    events: 'Events Feed',
+    announcement: 'Announcement',
+    footer: 'Footer'
+  };
+  return labels[type] || type;
+}
+
+function renderNewsletterSectionsEditor() {
+  const wrap = document.getElementById('nlSectionsEditor');
+  if (!wrap) return;
+  if (!newsletterSections.length) {
+    wrap.innerHTML = '<div style="border:1px dashed var(--gray-300);border-radius:8px;padding:14px;color:var(--gray-500);font-size:0.82rem;">No sections yet. Use the buttons above to add your first section.</div>';
+    return;
+  }
+  wrap.innerHTML = newsletterSections.map(function(section, index) {
+    const controls = '' +
+      '<div style="display:flex;gap:6px;">' +
+      '<button type="button" class="btn-sm view" style="padding:4px 8px;" onclick="moveNewsletterSection(\'' + section.id + '\',-1)" ' + (index === 0 ? 'disabled' : '') + '><i class="fas fa-arrow-up"></i></button>' +
+      '<button type="button" class="btn-sm view" style="padding:4px 8px;" onclick="moveNewsletterSection(\'' + section.id + '\',1)" ' + (index === newsletterSections.length - 1 ? 'disabled' : '') + '><i class="fas fa-arrow-down"></i></button>' +
+      '<button type="button" class="btn-sm danger" style="padding:4px 8px;" onclick="removeNewsletterSection(\'' + section.id + '\')"><i class="fas fa-trash"></i></button>' +
+      '</div>';
+    let body = '';
+    if (section.type === 'header') {
+      body = '' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<input type="text" value="' + newsletterEsc(section.title) + '" placeholder="Header title" oninput="setNewsletterSectionField(\'' + section.id + '\',\'title\',this.value)" />' +
+        '<input type="text" value="' + newsletterEsc(section.subtitle || '') + '" placeholder="Subtitle / issue label" oninput="setNewsletterSectionField(\'' + section.id + '\',\'subtitle\',this.value)" />' +
+        '</div>';
+    } else if (section.type === 'text') {
+      body = '' +
+        '<div style="display:grid;grid-template-columns:1fr;gap:8px;">' +
+        '<input type="text" value="' + newsletterEsc(section.title || '') + '" placeholder="Section title" oninput="setNewsletterSectionField(\'' + section.id + '\',\'title\',this.value)" />' +
+        '<textarea rows="4" placeholder="Body HTML or plain text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'body\',this.value)">' + newsletterEsc(section.body || '') + '</textarea>' +
+        '<div style="font-size:0.72rem;color:var(--gray-500);">Tip: You can include simple HTML tags like &lt;p&gt;, &lt;strong&gt;, and &lt;a&gt;.</div>' +
+        '</div>';
+    } else if (section.type === 'image') {
+      body = '' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<input type="text" value="' + newsletterEsc(section.imageUrl || '') + '" placeholder="Image URL" oninput="setNewsletterSectionField(\'' + section.id + '\',\'imageUrl\',this.value)" />' +
+        '<input type="text" value="' + newsletterEsc(section.alt || '') + '" placeholder="Alt text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'alt\',this.value)" />' +
+        '<input type="text" style="grid-column:span 2;" value="' + newsletterEsc(section.caption || '') + '" placeholder="Image caption (optional)" oninput="setNewsletterSectionField(\'' + section.id + '\',\'caption\',this.value)" />' +
+        '</div>';
+    } else if (section.type === 'cta') {
+      body = '' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+        '<input type="text" value="' + newsletterEsc(section.text || '') + '" placeholder="Button text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'text\',this.value)" />' +
+        '<input type="text" value="' + newsletterEsc(section.url || '') + '" placeholder="Button URL" oninput="setNewsletterSectionField(\'' + section.id + '\',\'url\',this.value)" />' +
+        '</div>';
+    } else if (section.type === 'events') {
+      body = '' +
+        '<div style="display:grid;grid-template-columns:1fr 120px;gap:10px;">' +
+        '<input type="text" value="' + newsletterEsc(section.title || '') + '" placeholder="Section title" oninput="setNewsletterSectionField(\'' + section.id + '\',\'title\',this.value)" />' +
+        '<input type="number" min="1" max="12" value="' + newsletterEsc(section.limit || 3) + '" oninput="setNewsletterSectionField(\'' + section.id + '\',\'limit\',parseInt(this.value,10)||3)" />' +
+        '</div>';
+    } else if (section.type === 'announcement') {
+      body = '<input type="text" value="' + newsletterEsc(section.title || '') + '" placeholder="Section title" oninput="setNewsletterSectionField(\'' + section.id + '\',\'title\',this.value)" />';
+    } else {
+      body = '<textarea rows="3" placeholder="Footer text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'body\',this.value)">' + newsletterEsc(section.body || '') + '</textarea>';
+    }
+    return '' +
+      '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:10px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+      '<div style="font-size:0.78rem;font-weight:700;color:var(--gray-700);letter-spacing:.06em;text-transform:uppercase;">' + newsletterEsc(sectionTypeLabel(section.type)) + '</div>' +
+      controls +
+      '</div>' +
+      body +
+      '</div>';
+  }).join('');
+}
+
+async function ensureNewsletterTemplatesAvailable(token) {
+  if (newsletterTemplatesCapabilityChecked) return newsletterTemplatesAvailable;
+  newsletterTemplatesCapabilityChecked = true;
+  try {
+    await sbGet('newsletter_templates', 'select=id&limit=1', token);
+    newsletterTemplatesAvailable = true;
+  } catch (err) {
+    newsletterTemplatesAvailable = false;
+  }
+  return newsletterTemplatesAvailable;
+}
+
+function setNewsletterTemplateSelect(rows) {
+  const select = document.getElementById('nlTemplateSelect');
+  if (!select) return;
+  const options = ['<option value="">Select template...</option>'];
+  (rows || []).forEach(function(row) {
+    const label = (row.template_name || 'Untitled Template').trim();
+    options.push('<option value="' + newsletterEsc(String(row.id)) + '">' + newsletterEsc(label) + '</option>');
+  });
+  select.innerHTML = options.join('');
+}
+
+async function loadNewsletterTemplateOptions() {
+  const token = getAdminToken();
+  if (!token) return;
+  const isAvailable = await ensureNewsletterTemplatesAvailable(token);
+  if (!isAvailable) {
+    setNewsletterTemplateSelect([]);
+    return;
+  }
+  try {
+    const rows = await sbGet('newsletter_templates', 'select=id,template_name,updated_at&order=updated_at.desc', token);
+    setNewsletterTemplateSelect(rows);
+  } catch (err) {
+    showToast('Could not load templates: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+async function saveNewsletterTemplate() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const isAvailable = await ensureNewsletterTemplatesAvailable(token);
+  if (!isAvailable) {
+    showToast('newsletter_templates table is missing. Run the SQL schema script first.', 'error');
+    return;
+  }
+  const templateName = (document.getElementById('nlTemplateName').value || document.getElementById('nlCampaignName').value || '').trim();
+  const subject = (document.getElementById('nlSubject').value || '').trim();
+  const preheader = (document.getElementById('nlPreheader').value || '').trim();
+  if (!templateName) {
+    showToast('Please provide a template name.', 'error');
+    return;
+  }
+  if (!newsletterSections.length) {
+    showToast('Add at least one newsletter section before saving.', 'error');
+    return;
+  }
+  const payload = {
+    template_name: templateName,
+    subject: subject,
+    preheader: preheader,
+    sections_json: newsletterSections,
+    updated_at: new Date().toISOString()
+  };
+  try {
+    const existing = await sbGet('newsletter_templates', 'select=id&template_name=eq.' + encodeURIComponent(templateName) + '&limit=1', token);
+    if (Array.isArray(existing) && existing.length) {
+      await sbPatch('newsletter_templates', 'id=eq.' + encodeURIComponent(existing[0].id), payload, token);
+    } else {
+      payload.created_at = new Date().toISOString();
+      await sbPost('newsletter_templates', payload, token);
+    }
+    await loadNewsletterTemplateOptions();
+    showToast('Newsletter template saved.');
+  } catch (err) {
+    showToast('Could not save template: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+async function loadSelectedNewsletterTemplate() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const isAvailable = await ensureNewsletterTemplatesAvailable(token);
+  if (!isAvailable) {
+    showToast('newsletter_templates table is missing. Run the SQL schema script first.', 'error');
+    return;
+  }
+  const select = document.getElementById('nlTemplateSelect');
+  if (!select || !select.value) {
+    showToast('Select a template first.', 'error');
+    return;
+  }
+  try {
+    const rows = await sbGet('newsletter_templates', 'id=eq.' + encodeURIComponent(select.value) + '&limit=1', token);
+    if (!rows || !rows.length) {
+      showToast('Template not found.', 'error');
+      return;
+    }
+    const row = rows[0];
+    document.getElementById('nlTemplateName').value = row.template_name || '';
+    document.getElementById('nlCampaignName').value = row.template_name || '';
+    document.getElementById('nlSubject').value = row.subject || '';
+    document.getElementById('nlPreheader').value = row.preheader || '';
+    if (Array.isArray(row.sections_json) && row.sections_json.length) {
+      newsletterSections = row.sections_json.map(function(section) {
+        const copy = Object.assign({}, section || {});
+        newsletterSectionCounter += 1;
+        copy.id = 'nlsec_' + newsletterSectionCounter;
+        return copy;
+      });
+    } else {
+      newsletterSections = [];
+    }
+    renderNewsletterSectionsEditor();
+    document.getElementById('nlPreviewMeta').textContent = 'Template loaded: ' + (row.template_name || 'Template');
+    showToast('Template loaded successfully.');
+  } catch (err) {
+    showToast('Could not load template: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 function loadNewsletterDefaults() {
@@ -2707,33 +3188,26 @@ function loadNewsletterDefaults() {
   const defaults = {
     campaignName: month + ' ' + year + ' Chapter Update',
     subject: 'North Dallas Alphas - ' + month + ' Chapter Update',
-    preheader: 'Upcoming events, chapter highlights, and ways to stay engaged with Xi Tau Lambda.',
-    headerTitle: 'North Dallas Alphas Newsletter',
-    issueLabel: month + ' ' + year + ' Edition',
-    intro: 'Brothers and supporters, thank you for your continued support of Xi Tau Lambda Chapter. Below are the latest updates, featured events, and opportunities to engage with our mission of scholarship, service, and brotherhood.',
-    ctaText: 'View Full Events Calendar',
-    ctaUrl: 'https://northdallasalphas.org/events.html',
-    footerNote: 'You are receiving this email because you are connected to Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. North Dallas Alphas, 224 W. Campbell Road #443, Richardson, TX 75080.'
+    preheader: 'Upcoming events, chapter highlights, and ways to stay engaged with Xi Tau Lambda.'
   };
   const setVal = function(id, val) {
     const el = document.getElementById(id);
     if (el) el.value = val;
   };
   setVal('nlCampaignName', defaults.campaignName);
+  setVal('nlTemplateName', defaults.campaignName + ' Template');
   setVal('nlSubject', defaults.subject);
   setVal('nlPreheader', defaults.preheader);
-  setVal('nlHeaderTitle', defaults.headerTitle);
-  setVal('nlIssueLabel', defaults.issueLabel);
-  setVal('nlIntro', defaults.intro);
-  setVal('nlCtaText', defaults.ctaText);
-  setVal('nlCtaUrl', defaults.ctaUrl);
-  setVal('nlFooterNote', defaults.footerNote);
-  const includeEvents = document.getElementById('nlIncludeEvents');
-  const includeAnn = document.getElementById('nlIncludeAnnouncement');
-  const eventCount = document.getElementById('nlEventCount');
-  if (includeEvents) includeEvents.checked = true;
-  if (includeAnn) includeAnn.checked = true;
-  if (eventCount) eventCount.value = '3';
+  newsletterSections = [
+    createNewsletterSection('header'),
+    Object.assign(createNewsletterSection('text'), { title: 'Message from Xi Tau Lambda', body: '<p>Brothers and supporters, thank you for your continued support of Xi Tau Lambda Chapter. Below are the latest updates, featured events, and opportunities to engage with our mission of scholarship, service, and brotherhood.</p>' }),
+    Object.assign(createNewsletterSection('announcement'), { title: 'Latest Chapter Announcement' }),
+    Object.assign(createNewsletterSection('events'), { title: 'Upcoming Events', limit: 3 }),
+    Object.assign(createNewsletterSection('cta'), { text: 'View Full Events Calendar', url: 'https://northdallasalphas.org/events.html' }),
+    createNewsletterSection('footer')
+  ];
+  renderNewsletterSectionsEditor();
+  loadNewsletterTemplateOptions();
   if (!latestNewsletterHtml) {
     document.getElementById('nlPreviewMeta').textContent = 'Defaults loaded. Click Generate Preview.';
   }
@@ -2757,12 +3231,57 @@ function buildEventsNewsletterHtml(events) {
 }
 
 function createNewsletterHtml(config, events, announcementRow) {
-  const includeEvents = !!config.includeEvents;
-  const includeAnnouncement = !!config.includeAnnouncement;
-  const eventsHtml = includeEvents ? buildEventsNewsletterHtml(events) : '';
-  const announceHtml = (includeAnnouncement && announcementRow)
-    ? '<tr><td style="padding:0 0 18px 0;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff7df;border:1px solid #f0dca0;border-radius:8px;"><tr><td style="padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3a2f10;line-height:1.5;"><strong>Chapter Announcement:</strong> ' + newsletterEsc(announcementRow.text || '') + (announcementRow.link_url ? ' <a href="' + newsletterEsc(announcementRow.link_url) + '" style="color:#0a58ca;text-decoration:none;">' + newsletterEsc(announcementRow.link_text || 'Learn more') + '</a>' : '') + '</td></tr></table></td></tr>'
-    : '';
+  const sectionsHtml = newsletterSections.map(function(section) {
+    if (section.type === 'header') {
+      return '' +
+        '<tr><td style="background:#0f0f0f;padding:24px 28px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">' +
+        '<div style="font-size:22px;font-weight:700;letter-spacing:0.02em;">' + newsletterEsc(section.title || '') + '</div>' +
+        (section.subtitle ? '<div style="font-size:13px;color:#d3d3d3;margin-top:6px;">' + newsletterEsc(section.subtitle) + '</div>' : '') +
+        '</td></tr>';
+    }
+    if (section.type === 'text') {
+      return '' +
+        '<tr><td style="padding:20px 28px 8px 28px;font-family:Arial,Helvetica,sans-serif;">' +
+        (section.title ? '<div style="font-size:18px;font-weight:700;color:#1b1b1b;line-height:1.35;margin-bottom:10px;">' + newsletterEsc(section.title) + '</div>' : '') +
+        '<div style="font-size:14px;color:#4a4a4a;line-height:1.7;">' + (section.body || '') + '</div>' +
+        '</td></tr>';
+    }
+    if (section.type === 'image') {
+      if (!section.imageUrl) return '';
+      return '' +
+        '<tr><td style="padding:12px 28px 8px 28px;">' +
+        '<img src="' + newsletterEsc(section.imageUrl) + '" alt="' + newsletterEsc(section.alt || 'Newsletter image') + '" style="display:block;width:100%;max-width:584px;border-radius:8px;border:1px solid #e5e5e5;" />' +
+        (section.caption ? '<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#666;line-height:1.5;margin-top:8px;">' + newsletterEsc(section.caption) + '</div>' : '') +
+        '</td></tr>';
+    }
+    if (section.type === 'cta') {
+      if (!section.text || !section.url) return '';
+      return '' +
+        '<tr><td style="padding:10px 28px 18px 28px;">' +
+        '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#c9a84c;border-radius:4px;">' +
+        '<a href="' + newsletterEsc(section.url) + '" style="display:inline-block;padding:12px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#121212;text-decoration:none;">' + newsletterEsc(section.text) + '</a>' +
+        '</td></tr></table>' +
+        '</td></tr>';
+    }
+    if (section.type === 'events') {
+      const eventRows = buildEventsNewsletterHtml((events || []).slice(0, section.limit || 3));
+      if (!eventRows) return '';
+      return '' +
+        '<tr><td style="padding:4px 28px 6px 28px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#1b1b1b;">' + newsletterEsc(section.title || 'Upcoming Events') + '</td></tr>' +
+        '<tr><td style="padding:0 28px 8px 28px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%">' + eventRows + '</table></td></tr>';
+    }
+    if (section.type === 'announcement') {
+      if (!announcementRow) return '';
+      return '' +
+        '<tr><td style="padding:8px 28px 14px 28px;">' +
+        '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#fff7df;border:1px solid #f0dca0;border-radius:8px;"><tr><td style="padding:12px 14px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3a2f10;line-height:1.5;">' +
+        '<strong>' + newsletterEsc(section.title || 'Chapter Announcement') + ':</strong> ' + newsletterEsc(announcementRow.text || '') +
+        (announcementRow.link_url ? ' <a href="' + newsletterEsc(announcementRow.link_url) + '" style="color:#0a58ca;text-decoration:none;">' + newsletterEsc(announcementRow.link_text || 'Learn more') + '</a>' : '') +
+        '</td></tr></table></td></tr>';
+    }
+    return '' +
+      '<tr><td style="background:#f8f8f8;padding:18px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#7a7a7a;line-height:1.6;">' + newsletterEsc(section.body || '') + '</td></tr>';
+  }).join('');
 
   return '' +
   '<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>' + newsletterEsc(config.subject) + '</title></head>' +
@@ -2771,26 +3290,10 @@ function createNewsletterHtml(config, events, announcementRow) {
   '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#f4f4f4;padding:24px 0;">' +
   '<tr><td align="center">' +
   '<table role="presentation" cellpadding="0" cellspacing="0" width="640" style="width:640px;max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden;">' +
-  '<tr><td style="background:#0f0f0f;padding:24px 28px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">' +
-  '<div style="font-size:22px;font-weight:700;letter-spacing:0.02em;">' + newsletterEsc(config.headerTitle) + '</div>' +
-  '<div style="font-size:13px;color:#d3d3d3;margin-top:6px;">' + newsletterEsc(config.issueLabel) + '</div>' +
-  '</td></tr>' +
-  '<tr><td style="padding:24px 28px;font-family:Arial,Helvetica,sans-serif;">' +
+  '<tr><td style="padding:20px 28px 6px 28px;font-family:Arial,Helvetica,sans-serif;">' +
   '<div style="font-size:20px;font-weight:700;color:#1b1b1b;line-height:1.35;">' + newsletterEsc(config.subject) + '</div>' +
-  '<div style="font-size:14px;color:#4a4a4a;line-height:1.7;margin-top:12px;">' + newsletterEsc(config.intro) + '</div>' +
   '</td></tr>' +
-  '<tr><td style="padding:0 28px 8px 28px;">' +
-  '<table role="presentation" cellpadding="0" cellspacing="0" width="100%">' +
-  announceHtml +
-  (eventsHtml ? '<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:700;color:#1b1b1b;padding:0 0 12px 0;">Upcoming Events</td></tr>' + eventsHtml : '') +
-  '</table>' +
-  '</td></tr>' +
-  '<tr><td style="padding:8px 28px 28px 28px;">' +
-  '<table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background:#c9a84c;border-radius:4px;">' +
-  '<a href="' + newsletterEsc(config.ctaUrl) + '" style="display:inline-block;padding:12px 20px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#121212;text-decoration:none;">' + newsletterEsc(config.ctaText) + '</a>' +
-  '</td></tr></table>' +
-  '</td></tr>' +
-  '<tr><td style="background:#f8f8f8;padding:18px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#7a7a7a;line-height:1.6;">' + newsletterEsc(config.footerNote) + '</td></tr>' +
+  sectionsHtml +
   '</table>' +
   '</td></tr>' +
   '</table>' +
@@ -2806,25 +3309,25 @@ async function generateNewsletterPreview() {
   const config = {
     campaignName: (document.getElementById('nlCampaignName').value || '').trim(),
     subject: (document.getElementById('nlSubject').value || '').trim(),
-    preheader: (document.getElementById('nlPreheader').value || '').trim(),
-    headerTitle: (document.getElementById('nlHeaderTitle').value || '').trim(),
-    issueLabel: (document.getElementById('nlIssueLabel').value || '').trim(),
-    intro: (document.getElementById('nlIntro').value || '').trim(),
-    ctaText: (document.getElementById('nlCtaText').value || '').trim(),
-    ctaUrl: (document.getElementById('nlCtaUrl').value || '').trim(),
-    footerNote: (document.getElementById('nlFooterNote').value || '').trim(),
-    includeEvents: document.getElementById('nlIncludeEvents').checked,
-    includeAnnouncement: document.getElementById('nlIncludeAnnouncement').checked,
-    eventCount: parseInt(document.getElementById('nlEventCount').value, 10) || 3
+    preheader: (document.getElementById('nlPreheader').value || '').trim()
   };
-  if (!config.subject || !config.headerTitle) {
-    showToast('Please provide at least Subject and Header Title.', 'error');
+  if (!config.subject) {
+    showToast('Please provide an email subject.', 'error');
+    return;
+  }
+  if (!newsletterSections.length) {
+    showToast('Add at least one newsletter section.', 'error');
     return;
   }
   try {
+    const needsEvents = newsletterSections.some(function(s) { return s.type === 'events'; });
+    const needsAnnouncement = newsletterSections.some(function(s) { return s.type === 'announcement'; });
+    const maxEventLimit = newsletterSections
+      .filter(function(s) { return s.type === 'events'; })
+      .reduce(function(max, s) { return Math.max(max, s.limit || 3); }, 0);
     const fetches = [];
-    fetches.push(config.includeEvents ? sbGet('events', 'order=sort_order.asc&limit=' + config.eventCount, token) : Promise.resolve([]));
-    fetches.push(config.includeAnnouncement ? sbGet('announcements', 'active=eq.true&order=id.desc&limit=1', token) : Promise.resolve([]));
+    fetches.push(needsEvents ? sbGet('events', 'order=sort_order.asc&limit=' + (maxEventLimit || 3), token) : Promise.resolve([]));
+    fetches.push(needsAnnouncement ? sbGet('announcements', 'active=eq.true&order=id.desc&limit=1', token) : Promise.resolve([]));
     const results = await Promise.all(fetches);
     const events = results[0] || [];
     const announcementRows = results[1] || [];

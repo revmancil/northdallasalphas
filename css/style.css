@@ -237,7 +237,7 @@ h1, h2, h3, h4, h5 {
   background: var(--gold-light) !important;
   transform: translateY(-1px);
 }
-/* Interested in Alpha? link */
+/* Visiting Brothers link */
 .nav-interested {
   color: var(--gold) !important;
   font-size: 0.78rem !important;
