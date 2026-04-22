@@ -71,6 +71,43 @@ alter table if exists public.announcements
 alter table if exists public.page_sections
   add column if not exists created_at timestamptz default now();
 
+-- Legacy compatibility:
+-- Some older page_sections tables include an `id` primary key that is NOT NULL
+-- without a default. Current app writes by (page_id, section_key) and may
+-- insert rows without id, so ensure id can auto-generate if omitted.
+do $$
+declare
+  id_udt text;
+  id_default text;
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'page_sections'
+      and column_name = 'id'
+      and is_nullable = 'NO'
+  ) then
+    select c.udt_name, c.column_default
+    into id_udt, id_default
+    from information_schema.columns c
+    where c.table_schema = 'public'
+      and c.table_name = 'page_sections'
+      and c.column_name = 'id';
+
+    if id_default is null then
+      if id_udt = 'uuid' then
+        execute 'alter table public.page_sections alter column id set default gen_random_uuid()';
+      elsif id_udt in ('int4', 'int8') then
+        execute 'create sequence if not exists public.page_sections_id_seq';
+        execute 'alter table public.page_sections alter column id set default nextval(''public.page_sections_id_seq'')';
+      elsif id_udt in ('text', 'varchar') then
+        execute 'alter table public.page_sections alter column id set default replace(gen_random_uuid()::text, ''-'', '''')';
+      end if;
+    end if;
+  end if;
+end $$;
+
 alter table if exists public.members
   add column if not exists chapter_active_date date,
   add column if not exists imdp_certified text,
