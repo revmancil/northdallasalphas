@@ -132,6 +132,49 @@ function setLoading(btnId, loading, html) {
   btn.disabled = loading;
   btn.innerHTML = loading ? '<div class="spinner"></div> Please wait…' : html;
 }
+function parseAuthError(data) {
+  if (!data || typeof data !== 'object') return '';
+  return String(data.msg || data.error_description || data.error || '').trim();
+}
+function isRateLimitError(message, statusCode) {
+  if (statusCode === 429) return true;
+  const msg = String(message || '').toLowerCase();
+  return msg.includes('rate limit') || msg.includes('too many requests') || msg.includes('security purposes') || msg.includes('over_email_send_rate_limit');
+}
+async function signInForRequestFlow(email, pass) {
+  const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email, password: pass })
+  });
+  const data = await res.json();
+  if (!res.ok || !data.access_token) return null;
+  return data;
+}
+async function upsertPendingMember(email, first, last, phone, accessToken) {
+  const authHeaders = accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {};
+  const selectRes = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id,status&limit=1', {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders }
+  });
+  const existingRows = await selectRes.json().catch(() => []);
+  const existing = Array.isArray(existingRows) && existingRows.length ? existingRows[0] : null;
+  if (existing && existing.id) {
+    const payload = { first_name: first, last_name: last, phone };
+    if (existing.status !== 'active') payload.status = 'pending';
+    await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(existing.id), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+    return;
+  }
+  await fetch(SUPABASE_URL + '/rest/v1/members', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=representation' },
+    body: JSON.stringify({ email, first_name: first, last_name: last, phone, status: 'pending' })
+  });
+}
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   hideMsg('loginError'); hideMsg('loginSuccess');
@@ -177,23 +220,44 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
   if (pass!==confirm) { showMsg('regError','error','Passwords do not match.'); return; }
   setLoading('regBtn', true, '<i class="fas fa-user-plus"></i> Request Access');
   try {
+    const existingLogin = await signInForRequestFlow(email, pass);
+    if (existingLogin && existingLogin.access_token) {
+      try { await upsertPendingMember(email, first, last, phone, existingLogin.access_token); } catch(e) {}
+      setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+      showMsg('regSuccess','success','Request already exists. Your access request has been submitted and is pending admin approval.');
+      document.getElementById('regForm').reset();
+      return;
+    }
     const res = await fetch(SUPABASE_URL+'/auth/v1/signup', {
       method:'POST', headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
       body: JSON.stringify({email, password:pass, data:{first_name:first, last_name:last, phone}})
     });
     const data = await res.json();
     if (!res.ok) {
+      const errorText = parseAuthError(data);
+      if (isRateLimitError(errorText, res.status)) {
+        const retryLogin = await signInForRequestFlow(email, pass);
+        if (retryLogin && retryLogin.access_token) {
+          try { await upsertPendingMember(email, first, last, phone, retryLogin.access_token); } catch(e) {}
+          setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+          showMsg('regSuccess','success','Request submitted. Email sending is temporarily rate-limited, but your account request is in the pending queue for admin review.');
+          document.getElementById('regForm').reset();
+          return;
+        }
+        setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+        showMsg('regError','error','Email send limit reached. Please wait 1-2 minutes and try again, or contact an administrator for manual approval.');
+        return;
+      }
+      if (/already registered|already been registered|user already exists/i.test(errorText.toLowerCase())) {
+        setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+        showMsg('regError','error','This email already has an account. Try Sign In or use Forgot Password.');
+        return;
+      }
       setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
-      showMsg('regError','error', data.msg || data.error_description || 'Registration failed.');
+      showMsg('regError','error', errorText || 'Registration failed.');
       return;
     }
-    if (data.access_token) {
-      await fetch(SUPABASE_URL+'/rest/v1/members', {
-        method:'POST',
-        headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+data.access_token,'Prefer':'return=representation'},
-        body: JSON.stringify({email, first_name:first, last_name:last, phone, status:'pending'})
-      });
-    }
+    try { await upsertPendingMember(email, first, last, phone, data.access_token || null); } catch(e) {}
     setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
     showMsg('regSuccess','success');
     document.getElementById('regForm').reset();
