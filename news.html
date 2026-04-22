@@ -42,6 +42,7 @@
   <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
 </div>
 
+<div id="pageShell">
 <nav class="site-nav" id="siteNav">
   <div class="nav-inner">
     <a href="index.html" class="nav-brand">
@@ -205,12 +206,36 @@
     </div>
   </div>
 </footer>
+</div>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
 <script>
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
 function sbHeaders() {
   return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+}
+function rebindSiteShellInteractions() {
+  const nav = document.getElementById('siteNav');
+  if (nav) {
+    const onScroll = function() {
+      if (window.scrollY > 40) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+  }
+  const hamburger = document.getElementById('hamburgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const mobileClose = document.getElementById('mobileClose');
+  if (hamburger && mobileMenu) hamburger.onclick = function() { mobileMenu.classList.add('open'); document.body.style.overflow = 'hidden'; };
+  if (mobileClose && mobileMenu) mobileClose.onclick = function() { mobileMenu.classList.remove('open'); document.body.style.overflow = ''; };
+  if (mobileMenu) mobileMenu.querySelectorAll('a').forEach(function(link) { link.onclick = function() { mobileMenu.classList.remove('open'); document.body.style.overflow = ''; }; });
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(function(link) {
+    const href = link.getAttribute('href');
+    if (href === currentPage || (currentPage === '' && href === 'index.html')) link.classList.add('active');
+    else link.classList.remove('active');
+  });
 }
 (async function initDynamicNews() {
   try {
@@ -228,10 +253,19 @@ function sbHeaders() {
     const sections = await secRes.json();
     const byKey = {};
     sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
+    if (byKey['full_shell']) {
+      const shellWrap = document.getElementById('pageShell');
+      if (shellWrap) {
+        shellWrap.innerHTML = byKey['full_shell'];
+        rebindSiteShellInteractions();
+        return;
+      }
+    }
     if (byKey['full_page']) {
       const fullPageWrap = document.getElementById('pageContent');
       if (fullPageWrap) {
         fullPageWrap.innerHTML = byKey['full_page'];
+        rebindSiteShellInteractions();
         return;
       }
     }

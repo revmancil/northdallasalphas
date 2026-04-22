@@ -1283,6 +1283,22 @@
               <button class="btn-save" onclick="saveSection()"><i class="fas fa-save"></i> Save Changes</button>
             </div>
           </div>
+          <div id="fullPageVisualEditor" style="display:none;margin-top:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+              <div style="font-size:0.8rem;color:var(--gray-600);">
+                Visual editor: edit text directly in the preview. Double-click images/links to update URLs.
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn-sm view" type="button" onclick="syncFullPageFromVisual()"><i class="fas fa-arrows-rotate"></i> Sync Visual → Source</button>
+                <button class="btn-sm edit" type="button" onclick="applyFullPageSourceToVisual()"><i class="fas fa-code"></i> Apply Source → Visual</button>
+              </div>
+            </div>
+            <iframe id="fullPageEditorFrame" title="Full Page Visual Editor" style="width:100%;min-height:520px;border:1px solid var(--gray-200);border-radius:8px;background:#fff;"></iframe>
+            <div style="margin-top:10px;">
+              <label style="display:block;font-size:0.73rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;">Full Page HTML Source</label>
+              <textarea id="fullPageSourceEditor" style="width:100%;min-height:200px;border:1px solid var(--gray-200);border-radius:8px;padding:10px 12px;font-family:Consolas,'Courier New',monospace;font-size:0.8rem;color:var(--gray-800);"></textarea>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2719,6 +2735,7 @@ const PAGE_SECTIONS = {
   home: {
     label: 'Home',
     sections: {
+      'full_shell':  { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for Home (navigation + mobile menu + page body + footer).</p>' },
       'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Home page content area (everything between navigation and footer).</p>' },
       hero:          { label: 'Hero / Banner Text',     default: '<p><strong>Headline:</strong> First of All, Servants of All, We Shall Transcend All</p><p><strong>Subheading:</strong> Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc., serving North Dallas County through scholarship, leadership, and community impact since 1984.</p>' },
       president:     { label: "President's Message",    default: '<p><strong>Welcome to Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter.</strong></p><p>I am Brother Cedric Washington, and I have the honor of serving as the 20th Chapter President. Xi Tau Lambda was chartered March 3, 1984 as the 607th seat in the House of Alpha.</p>' },
@@ -2729,6 +2746,7 @@ const PAGE_SECTIONS = {
   about: {
     label: 'Chapter History',
     sections: {
+      'full_shell':  { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for Chapter History (navigation + mobile menu + page body + footer).</p>' },
       'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Chapter History page content area (everything between navigation and footer).</p>' },
       'about-hero':  { label: 'Page Header',            default: '<p><strong>Title:</strong> Chapter History</p><p><strong>Subtitle:</strong> The story of Xi Tau Lambda Chapter — from founding to today.</p>' },
       'about-story': { label: 'Chapter Story',          default: '<p>Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was chartered on March 3, 1984, with 22 founding members. Located in North Dallas County, the chapter has grown to become one of the premier alumni chapters in the South Central Region.</p>' },
@@ -2738,6 +2756,7 @@ const PAGE_SECTIONS = {
   membership: {
     label: 'Membership',
     sections: {
+      'full_shell':  { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for Membership (navigation + mobile menu + page body + footer).</p>' },
       'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Membership page content area (everything between navigation and footer).</p>' },
       'mem-hero':    { label: 'Page Header',            default: '<p><strong>Title:</strong> Interested in Membership?</p><p><strong>Subtitle:</strong> Alpha Phi Alpha Fraternity, Inc. is seeking men of character, scholarship, and service.</p>' },
       'mem-require': { label: 'Requirements',           default: '<p>Membership requires: (1) Earned baccalaureate degree from an accredited institution, (2) Demonstrated commitment to service, (3) Exemplary character and leadership.</p>' },
@@ -2747,6 +2766,7 @@ const PAGE_SECTIONS = {
   news: {
     label: 'News',
     sections: {
+      'full_shell':  { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for News (navigation + mobile menu + page body + footer).</p>' },
       'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the News page content area (everything between navigation and footer).</p>' },
       'news-hero':   { label: 'Page Header',            default: '<p><strong>Title:</strong> Chapter News & Updates</p><p><strong>Subtitle:</strong> The latest from Xi Tau Lambda Chapter.</p>' },
       'news-body':   { label: 'Featured News Text',     default: '<p>Stay connected with the North Dallas Alphas for the latest on chapter events, scholarship recipients, and community initiatives.</p>' }
@@ -2755,6 +2775,7 @@ const PAGE_SECTIONS = {
   contact: {
     label: 'Contact',
     sections: {
+      'full_shell':  { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for Contact (navigation + mobile menu + page body + footer).</p>' },
       'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Contact page content area (everything between navigation and footer).</p>' },
       'contact-hero':{ label: 'Page Header',            default: '<p><strong>Title:</strong> Contact Us</p><p><strong>Subtitle:</strong> Reach out to the North Dallas Alphas.</p>' },
       'contact-info':{ label: 'Contact Details Note',   default: '<p>General Inquiries: Info@NorthDallasAlphas.org<br/>Membership: Membership@NorthDallasAlphas.org<br/>Mailing Address: 224 W. Campbell Road #443, Richardson, TX 75080</p>' }
@@ -2763,6 +2784,7 @@ const PAGE_SECTIONS = {
   visiting: {
     label: 'Visiting Brothers',
     sections: {
+      'full_shell':   { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for Visiting Brothers (navigation + mobile menu + page body + footer).</p>' },
       'full_page':    { label: 'Full Page (Advanced)',   default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Visiting Brothers page content area (everything between navigation and footer).</p>' },
       'visiting-hero':{ label: 'Page Header',            default: '<p><strong>Title:</strong> Visiting Brothers</p><p><strong>Subtitle:</strong> Visiting the North Dallas area? Submit your profile details and our admin team will review your request.</p>' }
     }
@@ -2771,6 +2793,81 @@ const PAGE_SECTIONS = {
 
 let currentPage    = 'home';
 let currentSection = 'hero';
+const PAGE_SOURCE_FILES = {
+  home: 'index.html',
+  about: 'about.html',
+  membership: 'membership.html',
+  news: 'news.html',
+  contact: 'contact.html',
+  visiting: 'visiting-brothers.html'
+};
+
+function toggleFullPageVisualEditor(showVisual) {
+  const visualWrap = document.getElementById('fullPageVisualEditor');
+  const editorArea = document.getElementById('editorArea');
+  if (visualWrap) visualWrap.style.display = showVisual ? 'block' : 'none';
+  if (editorArea) editorArea.style.display = showVisual ? 'none' : 'block';
+}
+
+function buildFullPageEditorSrcDoc(contentHtml) {
+  const safeContent = contentHtml || '';
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8" />' +
+    '<link rel="stylesheet" href="css/style.css" />' +
+    '<style>body{margin:0;padding:18px;background:#fff;color:#111;font-family:Inter,Arial,sans-serif;}#visualRoot{outline:none;}#visualRoot img{max-width:100%;height:auto;cursor:pointer;}#visualRoot a{cursor:pointer;} .helper{position:sticky;top:0;background:#fff7df;border:1px solid #f0dca0;border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:12px;color:#4a3d18;z-index:10;}</style>' +
+    '</head><body>' +
+    '<div class="helper">Edit text directly. Double-click images to change src/alt and links to change href.</div>' +
+    '<div id="visualRoot" contenteditable="true">' + safeContent + '</div>' +
+    '<script>document.addEventListener("dblclick",function(e){var t=e.target;if(t&&t.tagName==="IMG"){e.preventDefault();var s=prompt("Image URL",t.getAttribute("src")||"");if(s!==null){t.setAttribute("src",s);}var a=prompt("Image alt text",t.getAttribute("alt")||"");if(a!==null){t.setAttribute("alt",a);}return;}if(t&&t.tagName==="A"){e.preventDefault();var h=prompt("Link URL",t.getAttribute("href")||"");if(h!==null){t.setAttribute("href",h);}}});</script>' +
+    '</body></html>';
+}
+
+function syncFullPageFromVisual() {
+  const frame = document.getElementById('fullPageEditorFrame');
+  const source = document.getElementById('fullPageSourceEditor');
+  const editor = document.getElementById('editorArea');
+  if (!frame || !source || !editor || !frame.contentDocument) return;
+  const root = frame.contentDocument.getElementById('visualRoot');
+  if (!root) return;
+  const html = root.innerHTML;
+  source.value = html;
+  editor.innerHTML = html;
+}
+
+function applyFullPageSourceToVisual() {
+  const source = document.getElementById('fullPageSourceEditor');
+  const editor = document.getElementById('editorArea');
+  const frame = document.getElementById('fullPageEditorFrame');
+  if (!source || !editor || !frame) return;
+  const html = source.value || '';
+  editor.innerHTML = html;
+  frame.srcdoc = buildFullPageEditorSrcDoc(html);
+}
+
+async function getDefaultSectionContent(pageId, sectionKey, fallbackHtml) {
+  const file = PAGE_SOURCE_FILES[pageId];
+  if (!file) return fallbackHtml || '';
+  try {
+    const res = await fetch(file, { cache: 'no-store' });
+    if (!res.ok) return fallbackHtml || '';
+    const htmlText = await res.text();
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+    const targetId = sectionKey === 'full_shell' ? 'pageShell' : 'pageContent';
+    const wrap = doc.getElementById(targetId);
+    return wrap ? wrap.innerHTML : (fallbackHtml || '');
+  } catch (err) {
+    return fallbackHtml || '';
+  }
+}
+
+async function initializeVisualEditorForSection(pageId, sectionKey, html, fallbackHtml) {
+  const finalHtml = (html && html.trim()) ? html : await getDefaultSectionContent(pageId, sectionKey, fallbackHtml);
+  const editor = document.getElementById('editorArea');
+  const source = document.getElementById('fullPageSourceEditor');
+  const frame = document.getElementById('fullPageEditorFrame');
+  if (editor) editor.innerHTML = finalHtml;
+  if (source) source.value = finalHtml;
+  if (frame) frame.srcdoc = buildFullPageEditorSrcDoc(finalHtml);
+}
 
 function loadPageSection(pageId) {
   currentPage = pageId;
@@ -2814,15 +2911,19 @@ async function loadSectionContent(pageId, sectionKey) {
   if (!page) return;
   const sec = page.sections[sectionKey];
   if (!sec) return;
+  const isFullPage = sectionKey === 'full_page' || sectionKey === 'full_shell';
+  toggleFullPageVisualEditor(isFullPage);
 
   const token = getAdminToken();
   if (!token) {
     document.getElementById('editorArea').innerHTML = sec.default;
+    if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, '', sec.default);
     return;
   }
   const canUsePageSections = await ensurePageSectionsAvailable(token);
   if (!canUsePageSections) {
     document.getElementById('editorArea').innerHTML = sec.default;
+    if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, '', sec.default);
     showToast('Could not access page sections. Run SUPABASE_CONTENT_SCHEMA.sql if not applied, or refresh and try again. ' + (pageSectionsCapabilityError ? '(' + pageSectionsCapabilityError + ')' : ''), 'error');
     return;
   }
@@ -2834,8 +2935,10 @@ async function loadSectionContent(pageId, sectionKey) {
     );
     const html = rows && rows.length && rows[0].content_html ? rows[0].content_html : sec.default;
     document.getElementById('editorArea').innerHTML = html;
+    if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, html, sec.default);
   } catch (err) {
     document.getElementById('editorArea').innerHTML = sec.default;
+    if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, '', sec.default);
     showToast('Could not load section content from Supabase.', 'error');
   }
 }
@@ -2846,6 +2949,9 @@ function execCmd(cmd) {
 }
 
 async function saveSection() {
+  if (currentSection === 'full_page' || currentSection === 'full_shell') {
+    syncFullPageFromVisual();
+  }
   const content = document.getElementById('editorArea').innerHTML;
   const token = getAdminToken();
   if (!token) {
@@ -2924,11 +3030,12 @@ async function resetFullPageToDefault() {
   try {
     await sbDeleteByFilter(
       PAGE_SECTIONS_TABLE,
-      'page_id=eq.' + encodeURIComponent(currentPage) + '&section_key=eq.' + encodeURIComponent('full_page'),
+      'page_id=eq.' + encodeURIComponent(currentPage) + '&section_key=in.(' + encodeURIComponent('full_page') + ',' + encodeURIComponent('full_shell') + ')',
       token
     );
-    if (currentSection === 'full_page') {
-      document.getElementById('editorArea').innerHTML = page.sections['full_page'].default || '';
+    if (currentSection === 'full_page' || currentSection === 'full_shell') {
+      document.getElementById('editorArea').innerHTML = page.sections[currentSection].default || '';
+      await initializeVisualEditorForSection(currentPage, currentSection, '', page.sections[currentSection].default || '');
     }
     showToast('Full page override removed. Defaults restored.');
   } catch (err) {
