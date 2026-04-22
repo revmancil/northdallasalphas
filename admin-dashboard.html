@@ -2246,7 +2246,7 @@ function renderEventsList() {
     flyerRow.innerHTML = `
       <div class="flyer-preview-wrap" id="flyer-preview-${i}">
         ${previewSrc
-          ? `<img src="${escHtml(previewSrc)}" alt="Event flyer" onerror="this.parentElement.innerHTML='<div class=\\'no-flyer\\'><i class=\\'fas fa-image\\'></i></div>'" />`
+          ? `<img src="${escHtml(previewSrc)}" alt="Event flyer" onerror="if(this.parentElement){this.parentElement.innerHTML='<div class=\\'no-flyer\\'><i class=\\'fas fa-image\\'></i></div>'}" />`
           : `<div class="no-flyer"><i class="fas fa-image"></i></div>`
         }
       </div>
@@ -2387,7 +2387,11 @@ function updateFlyerPreview(i) {
   eventsData[i].flyer = url;
   const wrap = document.getElementById('flyer-preview-' + i);
   if (url) {
-    wrap.innerHTML = `<img src="${escHtml(url)}" alt="Flyer preview" onerror="this.parentElement.innerHTML='<div class=\\'no-flyer\\'><i class=\\'fas fa-image\\'></i></div>'" />`;
+    if (isInvalidImageUrl(url)) {
+      wrap.innerHTML = '<div class="no-flyer"><i class="fas fa-image"></i></div>';
+    } else {
+      wrap.innerHTML = `<img src="${escHtml(url)}" alt="Flyer preview" onerror="if(this.parentElement){this.parentElement.innerHTML='<div class=\\'no-flyer\\'><i class=\\'fas fa-image\\'></i></div>'}" />`;
+    }
   } else {
     wrap.innerHTML = `<div class="no-flyer"><i class="fas fa-image"></i></div>`;
   }
@@ -2555,7 +2559,7 @@ function renderOfficersTable() {
       <td>
         <div style="display:flex;align-items:center;gap:5px;">
           <div id="officer-photo-preview-${i}" style="width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--gray-100);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:0.8rem;">
-            ${o.photo ? `<img src="${escHtml(o.photo)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'" />` : '<i class="fas fa-user"></i>'}
+            ${(o.photo && !isInvalidImageUrl(o.photo)) ? `<img src="${escHtml(o.photo)}" style="width:100%;height:100%;object-fit:cover;" onerror="if(this.parentElement){this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'}" />` : '<i class="fas fa-user"></i>'}
           </div>
           <input type="text" value="${escHtml(o.photo)}" placeholder="Photo URL" id="officer-photo-url-${i}" onchange="officersData[${i}].photo=this.value; updateOfficerPhotoPreview(${i})" style="flex:1;" />
         </div>
@@ -2672,7 +2676,7 @@ function renderPresidentsTable() {
       <td>
         <div style="display:flex;align-items:center;gap:5px;">
           <div id="pres-photo-preview-${i}" style="width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gray-200);background:var(--gray-100);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:0.8rem;">
-            ${p.photo ? `<img src="${escHtml(p.photo)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'" />` : '<i class="fas fa-user"></i>'}
+            ${(p.photo && !isInvalidImageUrl(p.photo)) ? `<img src="${escHtml(p.photo)}" style="width:100%;height:100%;object-fit:cover;" onerror="if(this.parentElement){this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'}" />` : '<i class="fas fa-user"></i>'}
           </div>
           <input type="text" value="${escHtml(p.photo)}" placeholder="Photo URL" id="pres-photo-url-${i}" onchange="presidentsData[${i}].photo=this.value; updatePresidentPhotoPreview(${i})" style="flex:1;" />
         </div>
@@ -3123,6 +3127,14 @@ function newsletterEsc(str) {
   return escHtml(str || '');
 }
 
+function isInvalidImageUrl(url) {
+  const val = String(url || '').trim();
+  if (!val) return true;
+  // Guard against accidentally saved JS/template fragments being treated as URLs.
+  if (val.includes('newsletterEsc(') || val.includes('${') || val.includes(' + ')) return true;
+  return false;
+}
+
 function createNewsletterSection(type) {
   newsletterSectionCounter += 1;
   const id = 'nlsec_' + newsletterSectionCounter;
@@ -3444,7 +3456,7 @@ function createNewsletterHtml(config, events, announcementRow) {
         '</td></tr>';
     }
     if (section.type === 'image') {
-      if (!section.imageUrl) return '';
+      if (isInvalidImageUrl(section.imageUrl)) return '';
       return '' +
         '<tr><td style="padding:12px 28px 8px 28px;">' +
         '<img src="' + newsletterEsc(section.imageUrl) + '" alt="' + newsletterEsc(section.alt || 'Newsletter image') + '" style="display:block;width:100%;max-width:584px;border-radius:8px;border:1px solid #e5e5e5;" />' +
@@ -3633,8 +3645,8 @@ function updatePresPhotoPreview() {
   const url = document.getElementById('presPhoto').value.trim();
   const wrap = document.getElementById('presPhotoPreview');
   if (!wrap) return;
-  if (url) {
-    wrap.innerHTML = `<img src="${escHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\'fas fa-user\'></i>'" />`;
+  if (url && !isInvalidImageUrl(url)) {
+    wrap.innerHTML = `<img src="${escHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="if(this.parentElement){this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'}" />`;
   } else {
     wrap.innerHTML = '<i class="fas fa-user"></i>';
   }
@@ -3666,8 +3678,8 @@ function updateOfficerPhotoPreview(i) {
   const wrap   = document.getElementById('officer-photo-preview-' + i);
   if (!urlEl || !wrap) return;
   const url = urlEl.value.trim();
-  if (url) {
-    wrap.innerHTML = `<img src="${escHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\'fas fa-user\'></i>'" />`;
+  if (url && !isInvalidImageUrl(url)) {
+    wrap.innerHTML = `<img src="${escHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="if(this.parentElement){this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'}" />`;
   } else {
     wrap.innerHTML = '<i class="fas fa-user"></i>';
   }
@@ -3705,8 +3717,8 @@ function updatePresidentPhotoPreview(i) {
   const wrap   = document.getElementById('pres-photo-preview-' + i);
   if (!urlEl || !wrap) return;
   const url = urlEl.value.trim();
-  if (url) {
-    wrap.innerHTML = `<img src="${escHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='<i class=\'fas fa-user\'></i>'" />`;
+  if (url && !isInvalidImageUrl(url)) {
+    wrap.innerHTML = `<img src="${escHtml(url)}" style="width:100%;height:100%;object-fit:cover;" onerror="if(this.parentElement){this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'}" />`;
   } else {
     wrap.innerHTML = '<i class="fas fa-user"></i>';
   }
