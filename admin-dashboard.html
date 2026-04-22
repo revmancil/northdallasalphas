@@ -2641,7 +2641,7 @@ async function loadAnnouncement() {
   let row = null;
   if (token) {
     try {
-      const rows = await sbGet('announcements', 'active=eq.true&order=created_at.desc&limit=1', token);
+      const rows = await sbGet('announcements', 'active=eq.true&order=id.desc&limit=1', token);
       row = rows && rows.length ? rows[0] : null;
     } catch (err) {
       row = null;
@@ -2824,7 +2824,7 @@ async function generateNewsletterPreview() {
   try {
     const fetches = [];
     fetches.push(config.includeEvents ? sbGet('events', 'order=sort_order.asc&limit=' + config.eventCount, token) : Promise.resolve([]));
-    fetches.push(config.includeAnnouncement ? sbGet('announcements', 'active=eq.true&order=created_at.desc&limit=1', token) : Promise.resolve([]));
+    fetches.push(config.includeAnnouncement ? sbGet('announcements', 'active=eq.true&order=id.desc&limit=1', token) : Promise.resolve([]));
     const results = await Promise.all(fetches);
     const events = results[0] || [];
     const announcementRows = results[1] || [];

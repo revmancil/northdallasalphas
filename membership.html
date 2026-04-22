@@ -190,7 +190,7 @@ function sbHeaders() {
 }
 (async function initDynamicMembership() {
   try {
-    const announceRes = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=created_at.desc&limit=1', { headers: sbHeaders() });
+    const announceRes = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
     if (announceRes.ok) {
       const rows = await announceRes.json();
       const row = rows && rows.length ? rows[0] : null;

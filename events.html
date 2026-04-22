@@ -745,7 +745,7 @@ function renderAllEvents(events) {
 
 // ── Load Announcement Bar ──
 function loadAnnouncement() {
-  return sb.getAll('announcements', 'active=eq.true&order=created_at.desc&limit=1')
+  return sb.getAll('announcements', 'active=eq.true&order=id.desc&limit=1')
     .then(function(rows) {
       const row = rows && rows.length ? rows[0] : null;
       if (!row || !row.text) return;

@@ -690,7 +690,7 @@ document.getElementById('changePassForm').addEventListener('submit', async funct
 async function loadAnnouncements() {
   const c = document.getElementById('dashboardAnnouncements');
   try {
-    const data = await sbGet('announcements', 'active=eq.true&order=created_at.desc&limit=5', SUPABASE_ANON_KEY);
+    const data = await sbGet('announcements', 'active=eq.true&order=id.desc&limit=5', SUPABASE_ANON_KEY);
     if (!data || !data.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No active announcements.</p></div>'; return; }
     c.innerHTML = data.map(function(a) {
       return '<div class="notif-item"><div class="notif-icon"><i class="fas fa-bullhorn"></i></div>' +
