@@ -2811,13 +2811,14 @@ function toggleFullPageVisualEditor(showVisual) {
 
 function buildFullPageEditorSrcDoc(contentHtml) {
   const safeContent = contentHtml || '';
+  const editorScript = 'document.addEventListener("dblclick",function(e){var t=e.target;if(t&&t.tagName==="IMG"){e.preventDefault();var s=prompt("Image URL",t.getAttribute("src")||"");if(s!==null){t.setAttribute("src",s);}var a=prompt("Image alt text",t.getAttribute("alt")||"");if(a!==null){t.setAttribute("alt",a);}return;}if(t&&t.tagName==="A"){e.preventDefault();var h=prompt("Link URL",t.getAttribute("href")||"");if(h!==null){t.setAttribute("href",h);}}});';
   return '<!DOCTYPE html><html><head><meta charset="UTF-8" />' +
     '<link rel="stylesheet" href="css/style.css" />' +
     '<style>body{margin:0;padding:18px;background:#fff;color:#111;font-family:Inter,Arial,sans-serif;}#visualRoot{outline:none;}#visualRoot img{max-width:100%;height:auto;cursor:pointer;}#visualRoot a{cursor:pointer;} .helper{position:sticky;top:0;background:#fff7df;border:1px solid #f0dca0;border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:12px;color:#4a3d18;z-index:10;}</style>' +
     '</head><body>' +
     '<div class="helper">Edit text directly. Double-click images to change src/alt and links to change href.</div>' +
     '<div id="visualRoot" contenteditable="true">' + safeContent + '</div>' +
-    '<script>document.addEventListener("dblclick",function(e){var t=e.target;if(t&&t.tagName==="IMG"){e.preventDefault();var s=prompt("Image URL",t.getAttribute("src")||"");if(s!==null){t.setAttribute("src",s);}var a=prompt("Image alt text",t.getAttribute("alt")||"");if(a!==null){t.setAttribute("alt",a);}return;}if(t&&t.tagName==="A"){e.preventDefault();var h=prompt("Link URL",t.getAttribute("href")||"");if(h!==null){t.setAttribute("href",h);}}});</script>' +
+    '<script>' + editorScript + '<\\/script>' +
     '</body></html>';
 }
 
