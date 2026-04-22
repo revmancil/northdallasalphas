@@ -10,7 +10,15 @@
   <style>
     .history-section { padding: 90px 0; background: var(--white); }
     .history-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
-    .history-img { width: 100%; border-radius: 4px; border: 3px solid rgba(201,168,76,0.25); }
+    .history-img {
+      width: 100%;
+      display: block;
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      object-position: center 18%;
+      border-radius: 4px;
+      border: 3px solid rgba(201,168,76,0.25);
+    }
     .history-text p { color: var(--gray-600); font-size: 0.97rem; line-height: 1.75; margin-bottom: 18px; }
     .charter-section { background: var(--black); padding: 90px 0; }
     .charter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 40px; }
@@ -30,6 +38,7 @@
     .tl-body p { font-size: 0.88rem; color: var(--gray-600); line-height: 1.6; }
     @media (max-width: 768px) {
       .history-layout { grid-template-columns: 1fr; gap: 32px; }
+      .history-img { object-position: center 15%; }
       .timeline::before { left: 20px; }
       .tl-item, .tl-item:nth-child(even) { flex-direction: column; padding-left: 50px; }
       .tl-item:nth-child(even) .tl-body { text-align: left; }
@@ -99,7 +108,7 @@
   <div class="container">
     <div class="history-layout">
       <div class="fade-up">
-        <img src="images/event-photo.jpg" alt="Xi Tau Lambda Chapter" class="history-img" />
+        <img src="images/chapter-founders.png" alt="Xi Tau Lambda Charter Founders" class="history-img" />
         <div style="margin-top: 20px; background: var(--black); border-radius: 6px; padding: 24px;">
           <div style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; margin-bottom: 12px;">Quick Facts</div>
           <div style="display: flex; flex-direction: column; gap: 10px;">
