@@ -527,7 +527,7 @@ const sb={url:SUPABASE_URL,key:SUPABASE_ANON_KEY,headers(e={}){return{"Content-T
 </script>
 <script>
 /* ============================================================
-   EVENTS PAGE — Fully dynamic from localStorage (admin data)
+   EVENTS PAGE — Fully dynamic from Supabase
 ============================================================ */
 
 // Global store for modal lookups
@@ -558,10 +558,9 @@ const DEFAULT_EVENTS = [
   }
 ];
 
-// ── Load events from localStorage ──
+// ── Local fallback events when DB is unavailable ──
 function getEvents() {
-  const stored = localStorage.getItem('nda_events');
-  return stored ? JSON.parse(stored) : DEFAULT_EVENTS;
+  return DEFAULT_EVENTS;
 }
 
 // ── Parse date string into parts ──
@@ -746,14 +745,57 @@ function renderAllEvents(events) {
 
 // ── Load Announcement Bar ──
 function loadAnnouncement() {
-  const stored = JSON.parse(localStorage.getItem('nda_announce') || 'null');
-  if (stored && stored.text) {
-    const bar = document.getElementById('announceBar');
-    if (bar) {
-      bar.innerHTML = `${stored.text} &nbsp; <a href="${stored.linkUrl || '#featured-event'}">${stored.linkText || 'Learn More →'}</a>`;
-    }
-  }
+  return sb.getAll('announcements', 'active=eq.true&order=created_at.desc&limit=1')
+    .then(function(rows) {
+      const row = rows && rows.length ? rows[0] : null;
+      if (!row || !row.text) return;
+      const bar = document.getElementById('announceBar');
+      if (bar) {
+        bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || '#featured-event'}">${row.link_text || 'Learn More →'}</a>`;
+      }
+    })
+    .catch(function() {
+      // Keep static announcement on failure.
+    });
 }
+
+function normalizeEvents(rows) {
+  if (!rows || !rows.length) return null;
+  return rows.map(function(r) {
+    return {
+      name: r.name || '',
+      location: r.location || '',
+      datetime: r.datetime || '',
+      featured: !!r.featured,
+      flyer: r.flyer || '',
+      description: r.description || '',
+      registrationUrl: r.reg_url || r.registrationUrl || ''
+    };
+  });
+}
+
+// ── Init ── load from Supabase first
+(async function() {
+  let events = null;
+  try {
+    const rows = await sb.getAll('events', 'order=sort_order.asc');
+    events = normalizeEvents(rows);
+  } catch (err) {
+    console.warn('Supabase load failed:', err);
+  }
+  if (!events) events = getEvents();
+  await loadAnnouncement();
+  renderFeaturedEvent(events);
+  renderAllEvents(events);
+  // Force show all animated elements after async load
+  setTimeout(() => {
+    document.querySelectorAll(".fade-up, .fade-in").forEach(el => {
+      el.classList.add("visible");
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+    });
+  }, 100);
+})();
 
 // ── Utility: escape HTML ──
 function escHtml(str) {
@@ -837,33 +879,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// ── Init ── load from Supabase first
-(async function() {
-  let events = null;
-  try {
-    const rows = await sb.getAll("events", "order=sort_order.asc");
-    if (rows && rows.length > 0) {
-      events = rows.map(r => ({
-        name: r.name, location: r.location, datetime: r.datetime,
-        featured: r.featured, flyer: r.flyer,
-        description: r.description, registrationUrl: r.reg_url
-      }));
-      localStorage.setItem("nda_events", JSON.stringify(events));
-    }
-  } catch(err) { console.warn("Supabase load failed:", err); }
-  if (!events) events = getEvents();
-  loadAnnouncement();
-  renderFeaturedEvent(events);
-  renderAllEvents(events);
-  // Force show all animated elements after async load
-  setTimeout(() => {
-    document.querySelectorAll(".fade-up, .fade-in").forEach(el => {
-      el.classList.add("visible");
-      el.style.opacity = "1";
-      el.style.transform = "translateY(0)";
-    });
-  }, 100);
-})();
 </script>
 
 <!-- Event Detail Modal -->

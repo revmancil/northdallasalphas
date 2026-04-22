@@ -571,28 +571,36 @@ const DEFAULT_PRESIDENTS = [
   { num: '19th', name: 'Bro. [Name]', years: '[Year] – [Year]', photo: '' }
 ];
 
-// ── Load Data from localStorage (admin overrides defaults) ──
-function getPresident() {
-  const stored = localStorage.getItem('nda_president');
-  return stored ? JSON.parse(stored) : DEFAULT_PRESIDENT;
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+
+function sbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+  };
 }
-function getOfficers() {
-  const stored = localStorage.getItem('nda_officers');
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    // Ensure we always have 14 slots
-    while (parsed.length < 14) {
-      const idx = parsed.length;
-      parsed.push(DEFAULT_OFFICERS[idx] || { title: 'Officer', name: 'Bro. [Name]', photo: '' });
-    }
-    return parsed.slice(0, 14);
-  }
-  return DEFAULT_OFFICERS;
+
+async function getSiteContent(contentKey) {
+  const res = await fetch(
+    SUPABASE_URL + '/rest/v1/site_content?content_key=eq.' + encodeURIComponent(contentKey) + '&select=content_json&limit=1',
+    { headers: sbHeaders() }
+  );
+  if (!res.ok) throw new Error(await res.text());
+  const rows = await res.json();
+  return rows && rows.length ? rows[0].content_json : null;
 }
-function getPastPresidents() {
-  const stored = localStorage.getItem('nda_past_presidents');
-  return stored ? JSON.parse(stored) : DEFAULT_PRESIDENTS;
-}
+
+const leadershipData = {
+  president: { ...DEFAULT_PRESIDENT },
+  officers: DEFAULT_OFFICERS.map(function(o) { return { ...o }; }),
+  pastPresidents: DEFAULT_PRESIDENTS.map(function(p) { return { ...p }; })
+};
+
+function getPresident() { return leadershipData.president; }
+function getOfficers() { return leadershipData.officers; }
+function getPastPresidents() { return leadershipData.pastPresidents; }
 
 // ── Render President Feature Card ──
 function renderPresident() {
@@ -671,19 +679,38 @@ function renderPastPresidents() {
 }
 
 // ── Load Announcement Bar from localStorage ──
-function loadAnnouncement() {
-  const stored = JSON.parse(localStorage.getItem('nda_announce') || 'null');
-  if (stored && stored.text) {
-    const bar = document.getElementById('announceBar');
-    if (bar) {
-      bar.innerHTML = `${stored.text} &nbsp; <a href="${stored.linkUrl || 'events.html'}">${stored.linkText || 'Learn More →'}</a>`;
+async function loadAnnouncement() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=created_at.desc&limit=1', { headers: sbHeaders() });
+    if (!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    const row = rows && rows.length ? rows[0] : null;
+    if (row && row.text) {
+      const bar = document.getElementById('announceBar');
+      if (bar) {
+        bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
+      }
     }
+  } catch (err) {
+    // Keep static announcement on failure.
   }
 }
 
 // ── Init ──
-(function() {
-  loadAnnouncement();
+(async function() {
+  await loadAnnouncement();
+  try {
+    const [president, officers, pastPresidents] = await Promise.all([
+      getSiteContent('president'),
+      getSiteContent('officers'),
+      getSiteContent('past_presidents')
+    ]);
+    if (president) leadershipData.president = Object.assign({}, DEFAULT_PRESIDENT, president);
+    if (Array.isArray(officers) && officers.length) leadershipData.officers = officers;
+    if (Array.isArray(pastPresidents) && pastPresidents.length) leadershipData.pastPresidents = pastPresidents;
+  } catch (err) {
+    // Use defaults when Supabase content is unavailable.
+  }
   renderPresident();
   renderOfficers();
   renderPastPresidents();

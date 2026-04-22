@@ -973,6 +973,9 @@
     <button class="sidebar-link" onclick="showPanel('pages')">
       <i class="fas fa-edit"></i> Page Editor
     </button>
+    <button class="sidebar-link" onclick="showPanel('members')">
+      <i class="fas fa-user-check"></i> Member Requests
+    </button>
     <button class="sidebar-link" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
@@ -1089,6 +1092,10 @@
             <button class="action-btn" onclick="showPanel('events')">
               <i class="fas fa-calendar-plus"></i>
               <span>Add / Edit Events</span>
+            </button>
+            <button class="action-btn" onclick="showPanel('members')">
+              <i class="fas fa-user-check"></i>
+              <span>Review Member Requests</span>
             </button>
             <button class="action-btn" onclick="showPanel('officers')">
               <i class="fas fa-users"></i>
@@ -1462,6 +1469,27 @@
     </div>
 
     <!-- ══════════════════════════════════
+         MEMBER REQUESTS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-members">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-user-check" style="color:var(--gold);margin-right:8px;"></i>Member Access Requests</h3>
+          <span><span id="memberPendingCount">0</span> pending</span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Approve pending requests to grant portal access. Rejected requests remain in records with a "rejected" status.</p>
+          <div style="margin-bottom:14px;">
+            <button class="btn-sm view" onclick="loadMemberRequests()"><i class="fas fa-rotate-right"></i> Refresh Requests</button>
+          </div>
+          <div id="memberRequestsList">
+            <div class="hint-text" style="margin:0;">Loading member requests...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
          SETTINGS PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-settings">
@@ -1545,6 +1573,8 @@
 ============================================================ */
 
 // ── Auth Guard ──
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
 const SESSION_KEY = 'nda_admin_auth';
 if (sessionStorage.getItem(SESSION_KEY) !== 'true') {
   window.location.href = 'admin.html';
@@ -1557,6 +1587,7 @@ document.getElementById('userAvatar').textContent = uname[0].toUpperCase();
 const PANEL_META = {
   dashboard:     ['Dashboard',          'North Dallas Alphas Admin'],
   pages:         ['Page Content Editor','Edit text for each page section'],
+  members:       ['Member Requests',    'Approve and manage member portal access'],
   events:        ['Events Manager',     'Add, edit, remove & feature events'],
   officers:      ['Officers Manager',   'Manage current chapter officers (15 slots)'],
   presidents:    ['Past Presidents',    'Update past chapter president records'],
@@ -1585,11 +1616,114 @@ function showPanel(id) {
 
   // Load panel data
   if (id === 'events')        loadEventsList();
+  if (id === 'members')       loadMemberRequests();
   if (id === 'officers')      loadOfficersPanel();
   if (id === 'presidents')    loadPresidentsPanel();
   if (id === 'announcements') loadAnnouncement();
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
+}
+
+function getAdminSession() {
+  try {
+    return JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+  } catch (e) {
+    return null;
+  }
+}
+
+function getAdminToken() {
+  const s = getAdminSession();
+  return s && s.access_token ? s.access_token : null;
+}
+
+function sbHeaders(token) {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY)
+  };
+}
+
+async function sbGet(table, query, token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (query || ''), {
+    headers: sbHeaders(token)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbPatch(table, filter, data, token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+    method: 'PATCH',
+    headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=representation' }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbPost(table, data, token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
+    method: 'POST',
+    headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=representation' }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbUpsert(table, data, onConflict, token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?on_conflict=' + encodeURIComponent(onConflict), {
+    method: 'POST',
+    headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=representation,resolution=merge-duplicates' }),
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function sbDeleteByFilter(table, filter, token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + filter, {
+    method: 'DELETE',
+    headers: sbHeaders(token)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return true;
+}
+
+const SITE_CONTENT_TABLE = 'site_content';
+const PAGE_SECTIONS_TABLE = 'page_sections';
+
+async function getContentJson(contentKey, fallbackValue) {
+  const token = getAdminToken();
+  if (!token) return fallbackValue;
+  try {
+    const rows = await sbGet(
+      SITE_CONTENT_TABLE,
+      'content_key=eq.' + encodeURIComponent(contentKey) + '&limit=1',
+      token
+    );
+    if (!rows || !rows.length || rows[0].content_json == null) return fallbackValue;
+    return rows[0].content_json;
+  } catch (err) {
+    return fallbackValue;
+  }
+}
+
+async function saveContentJson(contentKey, contentJson) {
+  const token = getAdminToken();
+  if (!token) throw new Error('Admin session expired. Please sign in again.');
+  await sbUpsert(
+    SITE_CONTENT_TABLE,
+    {
+      content_key: contentKey,
+      content_json: contentJson,
+      updated_at: new Date().toISOString()
+    },
+    'content_key',
+    token
+  );
 }
 
 function logout() {
@@ -1610,6 +1744,76 @@ function showToast(msg, type = 'success') {
 }
 
 // ══════════════════════════════════════════════════
+// MEMBER REQUESTS
+// ══════════════════════════════════════════════════
+async function loadMemberRequests() {
+  const container = document.getElementById('memberRequestsList');
+  const countEl = document.getElementById('memberPendingCount');
+  if (!container || !countEl) return;
+  const token = getAdminToken();
+  if (!token) {
+    container.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Admin session expired. Please sign in again.</div>';
+    countEl.textContent = '0';
+    return;
+  }
+  container.innerHTML = '<div class="hint-text" style="margin:0;">Loading member requests...</div>';
+  try {
+    const members = await sbGet(
+      'members',
+      'status=in.(pending,active,rejected)&order=created_at.desc',
+      token
+    );
+    const pending = (members || []).filter(m => (m.status || '').toLowerCase() === 'pending');
+    countEl.textContent = String(pending.length);
+    if (!pending.length) {
+      container.innerHTML = '<div class="hint-text" style="margin:0;">No pending requests right now.</div>';
+      return;
+    }
+    container.innerHTML = pending.map(function(m) {
+      const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
+      const requested = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown time';
+      return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
+        '<div>' +
+        '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:2px;">' + escHtml(m.email || 'No email provided') + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Requested: ' + escHtml(requested) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
+        '<button class="btn-sm success" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'active\')"><i class="fas fa-check"></i> Approve</button>' +
+        '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'rejected\')"><i class="fas fa-times"></i> Reject</button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch (err) {
+    container.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load member requests: ' + escHtml(err.message || 'unknown error') + '</div>';
+    countEl.textContent = '0';
+  }
+}
+
+async function updateMemberStatus(memberId, status) {
+  if (!memberId) return;
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const approved = status === 'active';
+  if (!confirm((approved ? 'Approve' : 'Reject') + ' this member request?')) return;
+  try {
+    await sbPatch(
+      'members',
+      'id=eq.' + encodeURIComponent(memberId),
+      { status: status, updated_at: new Date().toISOString() },
+      token
+    );
+    showToast(approved ? 'Member approved successfully.' : 'Member request rejected.', approved ? 'success' : 'info');
+    await loadMemberRequests();
+  } catch (err) {
+    showToast('Could not update member status: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════
 // EVENTS MANAGER
 // ══════════════════════════════════════════════════
 const DEFAULT_EVENTS = [
@@ -1622,12 +1826,36 @@ let eventsData = [];
 let activeFlyerIndex = -1;
 
 function getEvents() {
-  const stored = localStorage.getItem('nda_events');
-  return stored ? JSON.parse(stored) : DEFAULT_EVENTS.map(e => ({...e}));
+  return DEFAULT_EVENTS.map(e => ({ ...e }));
 }
 
-function loadEventsList() {
-  eventsData = getEvents();
+async function loadEventsList() {
+  const token = getAdminToken();
+  if (!token) {
+    eventsData = getEvents();
+    renderEventsList();
+    return;
+  }
+  try {
+    const rows = await sbGet('events', 'order=sort_order.asc', token);
+    eventsData = (rows && rows.length)
+      ? rows.map(function(ev) {
+          return {
+            id: ev.id,
+            name: ev.name || '',
+            location: ev.location || '',
+            datetime: ev.datetime || '',
+            featured: !!ev.featured,
+            flyer: ev.flyer || '',
+            description: ev.description || '',
+            registrationUrl: ev.registrationUrl || ev.reg_url || ''
+          };
+        })
+      : getEvents();
+  } catch (err) {
+    eventsData = getEvents();
+    showToast('Could not load events from Supabase. Showing defaults.', 'error');
+  }
   renderEventsList();
 }
 
@@ -1781,33 +2009,29 @@ function toggleDescRow(i) {
 function saveDescription(i) {
   const txt = document.getElementById('desc-text-' + i).value.trim();
   eventsData[i].description = txt;
-  localStorage.setItem('nda_events', JSON.stringify(eventsData));
   renderEventsList();
-  showToast(txt ? `Description saved for "${eventsData[i].name}"!` : 'Description cleared.', 'success');
+  showToast(txt ? `Description updated for "${eventsData[i].name}". Click Save All Events.` : 'Description cleared. Click Save All Events.', 'info');
 }
 
 function clearDescription(i) {
   eventsData[i].description = '';
   document.getElementById('desc-text-' + i).value = '';
-  localStorage.setItem('nda_events', JSON.stringify(eventsData));
   renderEventsList();
-  showToast('Description removed.', 'info');
+  showToast('Description removed. Click Save All Events.', 'info');
 }
 
 function saveRegUrl(i) {
   const url = document.getElementById('reg-url-' + i).value.trim();
   eventsData[i].registrationUrl = url;
-  localStorage.setItem('nda_events', JSON.stringify(eventsData));
   renderEventsList();
-  showToast(url ? `Registration link saved for "${eventsData[i].name}"!` : 'Registration link cleared.', 'success');
+  showToast(url ? `Registration link updated for "${eventsData[i].name}". Click Save All Events.` : 'Registration link cleared. Click Save All Events.', 'info');
 }
 
 function clearRegUrl(i) {
   eventsData[i].registrationUrl = '';
   document.getElementById('reg-url-' + i).value = '';
-  localStorage.setItem('nda_events', JSON.stringify(eventsData));
   renderEventsList();
-  showToast('Registration link removed.', 'info');
+  showToast('Registration link removed. Click Save All Events.', 'info');
 }
 
 function updateFlyerPreview(i) {
@@ -1862,7 +2086,12 @@ function removeEvent(i) {
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
 }
 
-function saveEvents() {
+async function saveEvents() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
   // Read current input values
   document.querySelectorAll('.event-row').forEach((row, i) => {
     const inputs = row.querySelectorAll('input[type="text"]');
@@ -1879,9 +2108,27 @@ function saveEvents() {
     if (regInput)  ev.registrationUrl = regInput.value.trim();
     if (descInput) ev.description      = descInput.value.trim();
   });
-  localStorage.setItem('nda_events', JSON.stringify(eventsData));
-  renderEventsList();
-  showToast('Events saved successfully! The events page will reflect these changes.');
+  try {
+    const payload = eventsData.map(function(ev, idx) {
+      return {
+        name: ev.name || '',
+        location: ev.location || '',
+        datetime: ev.datetime || '',
+        featured: !!ev.featured,
+        flyer: ev.flyer || '',
+        description: ev.description || '',
+        reg_url: ev.registrationUrl || '',
+        sort_order: idx + 1,
+        updated_at: new Date().toISOString()
+      };
+    });
+    await sbDeleteByFilter('events', 'id=not.is.null', token);
+    if (payload.length) await sbPost('events', payload, token);
+    await loadEventsList();
+    showToast('Events saved to Supabase successfully.');
+  } catch (err) {
+    showToast('Could not save events to Supabase: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -1916,18 +2163,18 @@ const DEFAULT_OFFICERS = [
 let officersData = [];
 
 function getOfficerData() {
-  const stored = localStorage.getItem('nda_officers');
-  return stored ? JSON.parse(stored) : DEFAULT_OFFICERS.map(o => ({...o}));
+  return DEFAULT_OFFICERS.map(o => ({ ...o }));
 }
 
 function getPresidentData() {
-  const stored = localStorage.getItem('nda_president');
-  return stored ? JSON.parse(stored) : {...DEFAULT_PRESIDENT_DATA};
+  return { ...DEFAULT_PRESIDENT_DATA };
 }
 
-function loadOfficersPanel() {
+async function loadOfficersPanel() {
+  const p = await getContentJson('president', getPresidentData());
+  const officers = await getContentJson('officers', getOfficerData());
+
   // President form
-  const p = getPresidentData();
   document.getElementById('presName').value  = p.name  || '';
   document.getElementById('presTitle').value = p.title || '';
   document.getElementById('presBadge').value = p.badge || '';
@@ -1938,7 +2185,7 @@ function loadOfficersPanel() {
   updatePresPhotoPreview();
 
   // Officers table
-  officersData = getOfficerData();
+  officersData = Array.isArray(officers) ? officers.map(o => ({ ...o })) : getOfficerData();
   renderOfficersTable();
 }
 
@@ -1995,7 +2242,7 @@ function removeOfficer(i) {
   showToast('Officer slot removed. Click "Save All Officers" to confirm.', 'error');
 }
 
-function savePresident() {
+async function savePresident() {
   const p = {
     name:      document.getElementById('presName').value.trim(),
     title:     document.getElementById('presTitle').value.trim(),
@@ -2004,11 +2251,15 @@ function savePresident() {
     photo:     document.getElementById('presPhoto').value.trim(),
     bio:       document.getElementById('presBio').value.trim()
   };
-  localStorage.setItem('nda_president', JSON.stringify(p));
-  showToast('Chapter President info saved! Refresh the Leadership page to see changes.');
+  try {
+    await saveContentJson('president', p);
+    showToast('Chapter President info saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save president info: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
-function saveOfficers() {
+async function saveOfficers() {
   // Re-read values from named inputs per row
   officersData.forEach((o, i) => {
     const titleEl = document.querySelector(`#officersTableBody tr:nth-child(${i+1}) input:nth-of-type(1)`);
@@ -2018,9 +2269,13 @@ function saveOfficers() {
     if (nameEl)  o.name  = nameEl.value;
     if (photoEl) o.photo = photoEl.value.trim();
   });
-  localStorage.setItem('nda_officers', JSON.stringify(officersData));
-  renderOfficersTable();
-  showToast('Officers saved! Refresh the Leadership page to see changes.');
+  try {
+    await saveContentJson('officers', officersData);
+    renderOfficersTable();
+    showToast('Officers saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save officers: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -2040,12 +2295,12 @@ const DEFAULT_PAST_PRESIDENTS = Array.from({length: 19}, (_, i) => ({
 let presidentsData = [];
 
 function getPastPresidentsData() {
-  const stored = localStorage.getItem('nda_past_presidents');
-  return stored ? JSON.parse(stored) : DEFAULT_PAST_PRESIDENTS.map(p => ({...p}));
+  return DEFAULT_PAST_PRESIDENTS.map(p => ({ ...p }));
 }
 
-function loadPresidentsPanel() {
-  presidentsData = getPastPresidentsData();
+async function loadPresidentsPanel() {
+  const data = await getContentJson('past_presidents', getPastPresidentsData());
+  presidentsData = Array.isArray(data) ? data.map(p => ({ ...p })) : getPastPresidentsData();
   renderPresidentsTable();
 }
 
@@ -2107,7 +2362,7 @@ function removePresident(i) {
   showToast('President row removed.', 'error');
 }
 
-function savePresidents() {
+async function savePresidents() {
   presidentsData.forEach((p, i) => {
     const nameEl  = document.querySelector(`#presidentsTableBody tr:nth-child(${i+1}) input:nth-of-type(1)`);
     const yearsEl = document.querySelector(`#presidentsTableBody tr:nth-child(${i+1}) input:nth-of-type(2)`);
@@ -2116,9 +2371,13 @@ function savePresidents() {
     if (yearsEl) p.years = yearsEl.value;
     if (photoEl) p.photo = photoEl.value.trim();
   });
-  localStorage.setItem('nda_past_presidents', JSON.stringify(presidentsData));
-  renderPresidentsTable();
-  showToast('Past presidents saved! Refresh the Leadership page to see changes.');
+  try {
+    await saveContentJson('past_presidents', presidentsData);
+    renderPresidentsTable();
+    showToast('Past presidents saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save past presidents: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -2196,7 +2455,7 @@ function loadPageSection(pageId) {
   loadSectionContent(pageId, firstKey);
 }
 
-function loadSectionContent(pageId, sectionKey) {
+async function loadSectionContent(pageId, sectionKey) {
   currentPage    = pageId;
   currentSection = sectionKey;
 
@@ -2212,8 +2471,23 @@ function loadSectionContent(pageId, sectionKey) {
   const sec = page.sections[sectionKey];
   if (!sec) return;
 
-  const stored = localStorage.getItem(`nda_section_${pageId}_${sectionKey}`);
-  document.getElementById('editorArea').innerHTML = stored || sec.default;
+  const token = getAdminToken();
+  if (!token) {
+    document.getElementById('editorArea').innerHTML = sec.default;
+    return;
+  }
+  try {
+    const rows = await sbGet(
+      PAGE_SECTIONS_TABLE,
+      'page_id=eq.' + encodeURIComponent(pageId) + '&section_key=eq.' + encodeURIComponent(sectionKey) + '&limit=1',
+      token
+    );
+    const html = rows && rows.length && rows[0].content_html ? rows[0].content_html : sec.default;
+    document.getElementById('editorArea').innerHTML = html;
+  } catch (err) {
+    document.getElementById('editorArea').innerHTML = sec.default;
+    showToast('Could not load section content from Supabase.', 'error');
+  }
 }
 
 function execCmd(cmd) {
@@ -2221,16 +2495,35 @@ function execCmd(cmd) {
   document.execCommand(cmd, false, null);
 }
 
-function saveSection() {
+async function saveSection() {
   const content = document.getElementById('editorArea').innerHTML;
-  localStorage.setItem(`nda_section_${currentPage}_${currentSection}`, content);
-  showToast('Content saved to local storage. Changes are visible when you refresh the live page.');
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  try {
+    await sbUpsert(
+      PAGE_SECTIONS_TABLE,
+      {
+        page_id: currentPage,
+        section_key: currentSection,
+        content_html: content,
+        updated_at: new Date().toISOString()
+      },
+      'page_id,section_key',
+      token
+    );
+    showToast('Content saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save section content: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
-function cancelEdit() {
+async function cancelEdit() {
   const sec = PAGE_SECTIONS[currentPage]?.sections[currentSection];
-  const stored = localStorage.getItem(`nda_section_${currentPage}_${currentSection}`);
-  document.getElementById('editorArea').innerHTML = stored || sec?.default || '';
+  document.getElementById('editorArea').innerHTML = sec?.default || '';
+  await loadSectionContent(currentPage, currentSection);
   showToast('Changes discarded.', 'error');
 }
 
@@ -2243,11 +2536,28 @@ const DEFAULT_ANNOUNCE = {
   linkUrl: 'https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala'
 };
 
-function loadAnnouncement() {
-  const stored = JSON.parse(localStorage.getItem('nda_announce') || 'null') || DEFAULT_ANNOUNCE;
-  document.getElementById('announceText').value     = stored.text;
-  document.getElementById('announceLinkText').value = stored.linkText;
-  document.getElementById('announceLinkUrl').value  = stored.linkUrl;
+let currentAnnouncementId = null;
+
+async function loadAnnouncement() {
+  const token = getAdminToken();
+  let row = null;
+  if (token) {
+    try {
+      const rows = await sbGet('announcements', 'active=eq.true&order=created_at.desc&limit=1', token);
+      row = rows && rows.length ? rows[0] : null;
+    } catch (err) {
+      row = null;
+    }
+  }
+  currentAnnouncementId = row && row.id ? row.id : null;
+  const data = row ? {
+    text: row.text || DEFAULT_ANNOUNCE.text,
+    linkText: row.link_text || DEFAULT_ANNOUNCE.linkText,
+    linkUrl: row.link_url || DEFAULT_ANNOUNCE.linkUrl
+  } : DEFAULT_ANNOUNCE;
+  document.getElementById('announceText').value     = data.text;
+  document.getElementById('announceLinkText').value = data.linkText;
+  document.getElementById('announceLinkUrl').value  = data.linkUrl;
   updateAnnouncePreview();
 }
 
@@ -2257,14 +2567,30 @@ function updateAnnouncePreview() {
   document.getElementById('announcePreview').innerHTML = `${t} &nbsp; <u>${lt}</u>`;
 }
 
-function saveAnnouncement() {
+async function saveAnnouncement() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
   const data = {
     text:     document.getElementById('announceText').value,
-    linkText: document.getElementById('announceLinkText').value,
-    linkUrl:  document.getElementById('announceLinkUrl').value
+    link_text: document.getElementById('announceLinkText').value,
+    link_url:  document.getElementById('announceLinkUrl').value,
+    active: true,
+    updated_at: new Date().toISOString()
   };
-  localStorage.setItem('nda_announce', JSON.stringify(data));
-  showToast('Announcement saved! All pages will show the updated bar on reload.');
+  try {
+    if (currentAnnouncementId) {
+      await sbPatch('announcements', 'id=eq.' + encodeURIComponent(currentAnnouncementId), data, token);
+    } else {
+      const created = await sbPost('announcements', data, token);
+      currentAnnouncementId = Array.isArray(created) && created[0] ? created[0].id : currentAnnouncementId;
+    }
+    showToast('Announcement saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save announcement: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -2309,13 +2635,13 @@ function changePassword() {
 // ══════════════════════════════════════════════════
 // DASHBOARD STATS
 // ══════════════════════════════════════════════════
-function updateDashboardStats() {
-  const events     = JSON.parse(localStorage.getItem('nda_events') || 'null') || DEFAULT_EVENTS;
-  const officers   = JSON.parse(localStorage.getItem('nda_officers') || 'null') || DEFAULT_OFFICERS;
-  const presidents = JSON.parse(localStorage.getItem('nda_past_presidents') || 'null') || DEFAULT_PAST_PRESIDENTS;
-  document.getElementById('statEventCount').textContent     = events.length;
-  document.getElementById('statOfficerCount').textContent   = officers.length + 1;
-  document.getElementById('statPresidentCount').textContent = presidents.length;
+async function updateDashboardStats() {
+  const eventRows = await sbGet('events', 'select=id', getAdminToken()).catch(function() { return []; });
+  const officers  = await getContentJson('officers', DEFAULT_OFFICERS);
+  const presidents = await getContentJson('past_presidents', DEFAULT_PAST_PRESIDENTS);
+  document.getElementById('statEventCount').textContent     = eventRows.length || 0;
+  document.getElementById('statOfficerCount').textContent   = (Array.isArray(officers) ? officers.length : DEFAULT_OFFICERS.length) + 1;
+  document.getElementById('statPresidentCount').textContent = Array.isArray(presidents) ? presidents.length : DEFAULT_PAST_PRESIDENTS.length;
 }
 
 // ══════════════════════════════════════════════════

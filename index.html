@@ -414,9 +414,37 @@ const HOME_DEFAULT_EVENTS = [
   { name: '14th Annual Alpha Legacy Scholarship Gala', location: 'Frisco Hall, 5353 Independence Pkwy, Frisco TX', datetime: '06/13/2026 6:00 PM', featured: true, flyer: '' }
 ];
 
-function homeGetEvents() {
-  const stored = localStorage.getItem('nda_events');
-  return stored ? JSON.parse(stored) : HOME_DEFAULT_EVENTS;
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+
+function sbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+  };
+}
+
+async function homeGetEvents() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/events?order=sort_order.asc', { headers: sbHeaders() });
+    if (!res.ok) throw new Error('events failed');
+    const rows = await res.json();
+    if (!rows || !rows.length) return HOME_DEFAULT_EVENTS;
+    return rows.map(function(ev) {
+      return {
+        name: ev.name || '',
+        location: ev.location || '',
+        datetime: ev.datetime || '',
+        featured: !!ev.featured,
+        flyer: ev.flyer || '',
+        description: ev.description || '',
+        registrationUrl: ev.registrationUrl || ev.reg_url || ''
+      };
+    });
+  } catch (err) {
+    return HOME_DEFAULT_EVENTS;
+  }
 }
 
 function homeParseDate(dtStr) {
@@ -523,17 +551,75 @@ function renderHomeEventsList(events) {
 }
 
 // Load announcement bar
-(function loadHomeAnnounce() {
-  const stored = JSON.parse(localStorage.getItem('nda_announce') || 'null');
-  if (stored && stored.text) {
-    const bar = document.querySelector('.announce-bar');
-    if (bar) bar.innerHTML = `${stored.text} &nbsp; <a href="${stored.linkUrl || 'events.html'}">${stored.linkText || 'Learn More →'}</a>`;
+(async function loadHomeAnnounce() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=created_at.desc&limit=1', { headers: sbHeaders() });
+    if (!res.ok) throw new Error('announcement failed');
+    const rows = await res.json();
+    const row = rows && rows.length ? rows[0] : null;
+    if (row && row.text) {
+      const bar = document.querySelector('.announce-bar');
+      if (bar) bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
+    }
+  } catch (err) {
+    // Keep default static announcement on failure.
   }
 })();
 
+async function applyPageSectionContent() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.home&select=section_key,content_html', { headers: sbHeaders() });
+    if (!res.ok) return;
+    const rows = await res.json();
+    if (!rows || !rows.length) return;
+    const byKey = {};
+    rows.forEach(function(row) { byKey[row.section_key] = row.content_html || ''; });
+
+    if (byKey.hero) {
+      const h1 = document.querySelector('#hero h1');
+      const p = document.querySelector('#hero .hero-sub');
+      const tmp = document.createElement('div');
+      tmp.innerHTML = byKey.hero;
+      const ps = tmp.querySelectorAll('p');
+      if (ps[0]) h1.innerHTML = ps[0].innerHTML.replace(/^<strong>Headline:<\/strong>\s*/i, '');
+      if (ps[1]) p.innerHTML = ps[1].innerHTML.replace(/^<strong>Subheading:<\/strong>\s*/i, '');
+    }
+    if (byKey.president) {
+      const target = document.querySelector('.president-text p');
+      if (target) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = byKey.president;
+        const pNode = tmp.querySelector('p');
+        target.innerHTML = pNode ? pNode.innerHTML : byKey.president;
+      }
+    }
+    if (byKey.pillars) {
+      const target = document.querySelector('.pillars-header .section-sub');
+      if (target) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = byKey.pillars;
+        const pNode = tmp.querySelector('p');
+        target.innerHTML = pNode ? pNode.innerHTML : byKey.pillars;
+      }
+    }
+    if (byKey['cta-home']) {
+      const target = document.querySelector('.membership-cta p');
+      if (target) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = byKey['cta-home'];
+        const pNode = tmp.querySelector('p');
+        target.innerHTML = pNode ? pNode.innerHTML : byKey['cta-home'];
+      }
+    }
+  } catch (err) {
+    // Keep page defaults on failure.
+  }
+}
+
 // Init events section
-(function() {
-  const events = homeGetEvents();
+(async function() {
+  await applyPageSectionContent();
+  const events = await homeGetEvents();
   renderHomeFeatured(events);
   renderHomeEventsList(events);
 })();

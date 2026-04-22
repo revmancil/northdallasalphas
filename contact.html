@@ -220,6 +220,51 @@
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
 <script>
+  const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+  function sbHeaders() {
+    return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+  }
+  (async function initDynamicContact() {
+    try {
+      const announceRes = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=created_at.desc&limit=1', { headers: sbHeaders() });
+      if (announceRes.ok) {
+        const rows = await announceRes.json();
+        const row = rows && rows.length ? rows[0] : null;
+        if (row && row.text) {
+          const bar = document.querySelector('.announce-bar');
+          if (bar) bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
+        }
+      }
+      const secRes = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.contact&select=section_key,content_html', { headers: sbHeaders() });
+      if (secRes.ok) {
+        const sections = await secRes.json();
+        const byKey = {};
+        sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
+        if (byKey['contact-hero']) {
+          const target = document.querySelector('.page-header p');
+          if (target) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = byKey['contact-hero'];
+            const pNode = tmp.querySelector('p');
+            target.innerHTML = pNode ? pNode.innerHTML : byKey['contact-hero'];
+          }
+        }
+        if (byKey['contact-info']) {
+          const target = document.querySelector('.contact-layout .fade-up p');
+          if (target) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = byKey['contact-info'];
+            const pNode = tmp.querySelector('p');
+            target.innerHTML = pNode ? pNode.innerHTML : byKey['contact-info'];
+          }
+        }
+      }
+    } catch (err) {
+      // Keep static defaults on failure.
+    }
+  })();
+
   // Contact form handler
   document.getElementById('contactForm').addEventListener('submit', function(e) {
     e.preventDefault();
