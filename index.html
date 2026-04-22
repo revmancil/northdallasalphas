@@ -59,6 +59,7 @@
   <a href="member-login.html" class="nav-login-mobile">🔒 Members Login</a>
 </div>
 
+<div id="pageContent">
 <!-- ========================
      HERO
 ======================== -->
@@ -341,6 +342,7 @@
     </div>
   </div>
 </section>
+</div>
 
 <!-- ========================
      FOOTER
@@ -574,6 +576,13 @@ async function applyPageSectionContent() {
     if (!rows || !rows.length) return;
     const byKey = {};
     rows.forEach(function(row) { byKey[row.section_key] = row.content_html || ''; });
+    if (byKey['full_page']) {
+      const fullPageWrap = document.getElementById('pageContent');
+      if (fullPageWrap) {
+        fullPageWrap.innerHTML = byKey['full_page'];
+        return;
+      }
+    }
 
     if (byKey.hero) {
       const h1 = document.querySelector('#hero h1');

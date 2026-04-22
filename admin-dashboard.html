@@ -1016,6 +1016,9 @@
     <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('contact')">
       <i class="fas fa-envelope"></i> Contact
     </button>
+    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('visiting')">
+      <i class="fas fa-plane-arrival"></i> Visiting Brothers
+    </button>
   </div>
 
   <div class="sidebar-section">
@@ -1214,6 +1217,16 @@
                 <button class="btn-sm edit" onclick="showPanel('pages'); loadPageSection('contact')"><i class="fas fa-edit"></i> Edit</button>
               </div>
             </div>
+            <div class="page-item">
+              <div class="page-item-left">
+                <div class="page-icon"><i class="fas fa-plane-arrival"></i></div>
+                <div class="page-item-info"><div class="title">Visiting Brothers</div><div class="url">visiting-brothers.html</div></div>
+              </div>
+              <div class="page-actions">
+                <a href="visiting-brothers.html" target="_blank" class="btn-sm view"><i class="fas fa-eye"></i> View</a>
+                <button class="btn-sm edit" onclick="showPanel('pages'); loadPageSection('visiting')"><i class="fas fa-edit"></i> Edit</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1229,7 +1242,7 @@
           <span>Select a page section to edit</span>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Select the page and content section you want to edit. Changes are saved to your browser's local storage and applied when visitors load the page.</p>
+          <p class="hint-text">Select a page section to edit, or use <strong>Full Page (Advanced)</strong> to manage all page-body content at once. Changes are saved to Supabase and loaded live on public pages.</p>
 
           <!-- Page Tabs -->
           <div class="section-tabs" id="pageTabs">
@@ -1238,6 +1251,7 @@
             <button class="section-tab" onclick="loadPageSection('membership')">👤 Membership</button>
             <button class="section-tab" onclick="loadPageSection('news')">📰 News</button>
             <button class="section-tab" onclick="loadPageSection('contact')">✉️ Contact</button>
+            <button class="section-tab" onclick="loadPageSection('visiting')">✈️ Visiting Brothers</button>
           </div>
 
           <!-- Section Tabs (change based on page) -->
@@ -1262,6 +1276,9 @@
             </div>
             <div class="editor-area" id="editorArea" contenteditable="true"></div>
             <div class="editor-footer">
+              <button class="btn-sm danger" onclick="resetFullPageToDefault()" title="Remove full page override and restore section-based defaults">
+                <i class="fas fa-rotate-left"></i> Reset Full Page to Default
+              </button>
               <button class="btn-cancel" onclick="cancelEdit()">Discard Changes</button>
               <button class="btn-save" onclick="saveSection()"><i class="fas fa-save"></i> Save Changes</button>
             </div>
@@ -2697,6 +2714,7 @@ const PAGE_SECTIONS = {
   home: {
     label: 'Home',
     sections: {
+      'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Home page content area (everything between navigation and footer).</p>' },
       hero:          { label: 'Hero / Banner Text',     default: '<p><strong>Headline:</strong> First of All, Servants of All, We Shall Transcend All</p><p><strong>Subheading:</strong> Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc., serving North Dallas County through scholarship, leadership, and community impact since 1984.</p>' },
       president:     { label: "President's Message",    default: '<p><strong>Welcome to Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter.</strong></p><p>I am Brother Cedric Washington, and I have the honor of serving as the 20th Chapter President. Xi Tau Lambda was chartered March 3, 1984 as the 607th seat in the House of Alpha.</p>' },
       pillars:       { label: 'What We Stand For',      default: '<p><strong>Scholarship:</strong> Through the Xi Tau Lambda Foundation, we award scholarships and fund mentoring programs across North Dallas County.</p><p><strong>Service:</strong> From mentoring young men at McKinney ISD to civic causes, our brothers answer the call to serve.</p><p><strong>Brotherhood:</strong> Since 1984, Xi Tau Lambda has built a legacy of brotherhood that spans North Dallas and beyond.</p>' },
@@ -2706,6 +2724,7 @@ const PAGE_SECTIONS = {
   about: {
     label: 'Chapter History',
     sections: {
+      'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Chapter History page content area (everything between navigation and footer).</p>' },
       'about-hero':  { label: 'Page Header',            default: '<p><strong>Title:</strong> Chapter History</p><p><strong>Subtitle:</strong> The story of Xi Tau Lambda Chapter — from founding to today.</p>' },
       'about-story': { label: 'Chapter Story',          default: '<p>Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was chartered on March 3, 1984, with 22 founding members. Located in North Dallas County, the chapter has grown to become one of the premier alumni chapters in the South Central Region.</p>' },
       'about-mission':{ label: 'Mission & Vision',      default: '<p>Our mission is to develop leaders, promote brotherhood, and serve our community through scholarship, civic engagement, and cultural enrichment.</p>' }
@@ -2714,6 +2733,7 @@ const PAGE_SECTIONS = {
   membership: {
     label: 'Membership',
     sections: {
+      'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Membership page content area (everything between navigation and footer).</p>' },
       'mem-hero':    { label: 'Page Header',            default: '<p><strong>Title:</strong> Interested in Membership?</p><p><strong>Subtitle:</strong> Alpha Phi Alpha Fraternity, Inc. is seeking men of character, scholarship, and service.</p>' },
       'mem-require': { label: 'Requirements',           default: '<p>Membership requires: (1) Earned baccalaureate degree from an accredited institution, (2) Demonstrated commitment to service, (3) Exemplary character and leadership.</p>' },
       'mem-process': { label: 'Process Info',           default: '<p>For information about the membership process, please attend one of our informational sessions or contact us at Membership@NorthDallasAlphas.org.</p>' }
@@ -2722,6 +2742,7 @@ const PAGE_SECTIONS = {
   news: {
     label: 'News',
     sections: {
+      'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the News page content area (everything between navigation and footer).</p>' },
       'news-hero':   { label: 'Page Header',            default: '<p><strong>Title:</strong> Chapter News & Updates</p><p><strong>Subtitle:</strong> The latest from Xi Tau Lambda Chapter.</p>' },
       'news-body':   { label: 'Featured News Text',     default: '<p>Stay connected with the North Dallas Alphas for the latest on chapter events, scholarship recipients, and community initiatives.</p>' }
     }
@@ -2729,8 +2750,16 @@ const PAGE_SECTIONS = {
   contact: {
     label: 'Contact',
     sections: {
+      'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Contact page content area (everything between navigation and footer).</p>' },
       'contact-hero':{ label: 'Page Header',            default: '<p><strong>Title:</strong> Contact Us</p><p><strong>Subtitle:</strong> Reach out to the North Dallas Alphas.</p>' },
       'contact-info':{ label: 'Contact Details Note',   default: '<p>General Inquiries: Info@NorthDallasAlphas.org<br/>Membership: Membership@NorthDallasAlphas.org<br/>Mailing Address: 224 W. Campbell Road #443, Richardson, TX 75080</p>' }
+    }
+  },
+  visiting: {
+    label: 'Visiting Brothers',
+    sections: {
+      'full_page':    { label: 'Full Page (Advanced)',   default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Visiting Brothers page content area (everything between navigation and footer).</p>' },
+      'visiting-hero':{ label: 'Page Header',            default: '<p><strong>Title:</strong> Visiting Brothers</p><p><strong>Subtitle:</strong> Visiting the North Dallas area? Submit your profile details and our admin team will review your request.</p>' }
     }
   }
 };
@@ -2845,6 +2874,39 @@ async function cancelEdit() {
   document.getElementById('editorArea').innerHTML = sec?.default || '';
   await loadSectionContent(currentPage, currentSection);
   showToast('Changes discarded.', 'error');
+}
+
+async function resetFullPageToDefault() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  const page = PAGE_SECTIONS[currentPage];
+  if (!page || !page.sections || !page.sections['full_page']) {
+    showToast('This page does not support full-page reset.', 'error');
+    return;
+  }
+  const ok = confirm('Reset full-page override for "' + page.label + '"? This will restore section-based/default page content.');
+  if (!ok) return;
+  const canUsePageSections = await ensurePageSectionsAvailable(token);
+  if (!canUsePageSections) {
+    showToast('Page sections table is unavailable. Run SUPABASE_CONTENT_SCHEMA.sql first.', 'error');
+    return;
+  }
+  try {
+    await sbDeleteByFilter(
+      PAGE_SECTIONS_TABLE,
+      'page_id=eq.' + encodeURIComponent(currentPage) + '&section_key=eq.' + encodeURIComponent('full_page'),
+      token
+    );
+    if (currentSection === 'full_page') {
+      document.getElementById('editorArea').innerHTML = page.sections['full_page'].default || '';
+    }
+    showToast('Full page override removed. Defaults restored.');
+  } catch (err) {
+    showToast('Could not reset full page override: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════

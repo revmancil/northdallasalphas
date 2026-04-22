@@ -67,6 +67,7 @@
   <a href="member-login.html" class="nav-login-mobile">🔒 Members Login</a>
 </div>
 
+<div id="pageContent">
 <section class="page-header">
   <div class="container">
     <span class="section-label">Brotherhood Connection</span>
@@ -132,6 +133,7 @@
     </div>
   </div>
 </section>
+</div>
 
 <footer class="site-footer">
   <div class="container">
@@ -243,6 +245,34 @@ document.getElementById('visitingForm').addEventListener('submit', async functio
     const bar = document.querySelector('.announce-bar');
     if (bar) bar.innerHTML = row.text + ' &nbsp; <a href="' + (row.link_url || 'events.html') + '">' + (row.link_text || 'Learn More →') + '</a>';
   } catch (e) {}
+})();
+
+(async function initDynamicVisitingPage() {
+  try {
+    const secRes = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.visiting&select=section_key,content_html', { headers: vbHeaders() });
+    if (!secRes.ok) return;
+    const sections = await secRes.json();
+    const byKey = {};
+    sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
+    if (byKey['full_page']) {
+      const fullPageWrap = document.getElementById('pageContent');
+      if (fullPageWrap) {
+        fullPageWrap.innerHTML = byKey['full_page'];
+        return;
+      }
+    }
+    if (byKey['visiting-hero']) {
+      const target = document.querySelector('.page-header p');
+      if (target) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = byKey['visiting-hero'];
+        const pNode = tmp.querySelector('p');
+        target.innerHTML = pNode ? pNode.innerHTML : byKey['visiting-hero'];
+      }
+    }
+  } catch (e) {
+    // Keep static defaults on failure.
+  }
 })();
 </script>
 </body>

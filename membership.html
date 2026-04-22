@@ -70,6 +70,7 @@
   <a href="member-login.html" class="nav-login-mobile">🔒 Members Login</a>
 </div>
 
+<div id="pageContent">
 <section class="page-header">
   <div class="container">
     <span class="section-label">Join Our Chapter</span>
@@ -142,6 +143,7 @@
     </div>
   </div>
 </section>
+</div>
 
 <footer class="site-footer">
   <div class="container">
@@ -183,6 +185,13 @@ function sbHeaders() {
     const sections = await secRes.json();
     const byKey = {};
     sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
+    if (byKey['full_page']) {
+      const fullPageWrap = document.getElementById('pageContent');
+      if (fullPageWrap) {
+        fullPageWrap.innerHTML = byKey['full_page'];
+        return;
+      }
+    }
     if (byKey['mem-hero']) {
       const target = document.querySelector('.page-header p');
       if (target) {
