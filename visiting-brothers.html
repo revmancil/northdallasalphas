@@ -96,16 +96,10 @@
             <div class="vb-field"><label>City</label><input type="text" id="vbCity" /></div>
             <div class="vb-field"><label>State</label><input type="text" id="vbState" maxlength="2" /></div>
             <div class="vb-field"><label>Member Since</label><input type="text" id="vbMemberSince" placeholder="e.g. 2019" /></div>
-            <div class="vb-field"><label>Key Number</label><input type="text" id="vbAlphaId" /></div>
+            <div class="vb-field"><label>Alpha ID</label><input type="text" id="vbAlphaId" /></div>
             <div class="vb-field"><label>Initiation Date</label><input type="text" id="vbInitiationDate" placeholder="MM/DD/YYYY" /></div>
             <div class="vb-field"><label>Initiation Chapter</label><input type="text" id="vbInitiationChapter" /></div>
             <div class="vb-field"><label>College / University</label><input type="text" id="vbCollege" /></div>
-            <div class="vb-field"><label>Life Member</label><select id="vbLifeMember"><option value="">-- Select --</option><option value="yes">Yes</option><option value="no">No</option></select></div>
-            <div class="vb-field"><label>Life Member Number</label><input type="text" id="vbLifeMemberNumber" /></div>
-            <div class="vb-field"><label>IMDP Certification</label><select id="vbImdp"><option value="">-- Select --</option><option value="yes">Certified</option><option value="no">Not Certified</option></select></div>
-            <div class="vb-field"><label>Risk Management Certification</label><select id="vbRiskMgmt"><option value="">-- Select --</option><option value="yes">Certified</option><option value="no">Not Certified</option></select></div>
-            <div class="vb-field"><label>Chapter Renewal Date</label><input type="text" id="vbRenewalDate" placeholder="MM/DD/YYYY" /></div>
-            <div class="vb-field full"><label>LinkedIn URL</label><input type="url" id="vbLinkedin" /></div>
             <div class="vb-field full"><label>Photo URL</label><input type="url" id="vbPhoto" /></div>
             <div class="vb-field full"><label>Short Bio</label><textarea id="vbBio" placeholder="Share anything helpful for chapter verification."></textarea></div>
           </div>
@@ -206,12 +200,6 @@ document.getElementById('visitingForm').addEventListener('submit', async functio
     initiation_date: vbVal('vbInitiationDate'),
     initiation_chapter: vbVal('vbInitiationChapter'),
     college: vbVal('vbCollege'),
-    life_member: vbVal('vbLifeMember'),
-    life_member_number: vbVal('vbLifeMemberNumber'),
-    imdp_certified: vbVal('vbImdp'),
-    risk_mgmt_certified: vbVal('vbRiskMgmt'),
-    renewal_date: vbVal('vbRenewalDate'),
-    linkedin: vbVal('vbLinkedin'),
     photo: vbVal('vbPhoto'),
     bio: vbVal('vbBio'),
     submitted_at: new Date().toISOString(),

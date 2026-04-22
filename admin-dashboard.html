@@ -2038,7 +2038,7 @@ async function loadVisitingBrotherRequests(token) {
       const details = [
         r.phone ? 'Phone: ' + r.phone : '',
         r.city || r.state ? 'Location: ' + [r.city, r.state].filter(Boolean).join(', ') : '',
-        r.alpha_id ? 'Key Number: ' + r.alpha_id : '',
+        r.alpha_id ? 'Alpha ID: ' + r.alpha_id : '',
         r.initiation_chapter ? 'Initiation Chapter: ' + r.initiation_chapter : '',
         r.imdp_certified ? 'IMDP: ' + r.imdp_certified : '',
         r.risk_mgmt_certified ? 'Risk Mgmt: ' + r.risk_mgmt_certified : ''
