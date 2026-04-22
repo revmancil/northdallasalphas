@@ -1816,6 +1816,7 @@ const SITE_CONTENT_TABLE = 'site_content';
 const PAGE_SECTIONS_TABLE = 'page_sections';
 let pageSectionsCapabilityChecked = false;
 let pageSectionsAvailable = true;
+let pageSectionsCapabilityError = '';
 
 async function getContentJson(contentKey, fallbackValue) {
   const token = getAdminToken();
@@ -1850,12 +1851,16 @@ async function saveContentJson(contentKey, contentJson) {
 
 async function ensurePageSectionsAvailable(token) {
   if (pageSectionsCapabilityChecked) return pageSectionsAvailable;
-  pageSectionsCapabilityChecked = true;
   try {
     await sbGet(PAGE_SECTIONS_TABLE, 'select=page_id&limit=1', token);
+    pageSectionsCapabilityChecked = true;
     pageSectionsAvailable = true;
+    pageSectionsCapabilityError = '';
   } catch (err) {
+    // Keep unchecked so transient failures can retry.
+    pageSectionsCapabilityChecked = false;
     pageSectionsAvailable = false;
+    pageSectionsCapabilityError = err && err.message ? err.message : 'unknown error';
   }
   return pageSectionsAvailable;
 }
@@ -2818,6 +2823,7 @@ async function loadSectionContent(pageId, sectionKey) {
   const canUsePageSections = await ensurePageSectionsAvailable(token);
   if (!canUsePageSections) {
     document.getElementById('editorArea').innerHTML = sec.default;
+    showToast('Could not access page sections. Run SUPABASE_CONTENT_SCHEMA.sql if not applied, or refresh and try again. ' + (pageSectionsCapabilityError ? '(' + pageSectionsCapabilityError + ')' : ''), 'error');
     return;
   }
   try {
@@ -2848,21 +2854,42 @@ async function saveSection() {
   }
   const canUsePageSections = await ensurePageSectionsAvailable(token);
   if (!canUsePageSections) {
-    showToast('Page sections table is unavailable. Run SUPABASE_CONTENT_SCHEMA.sql first.', 'error');
+    showToast('Page sections are unavailable. Run SUPABASE_CONTENT_SCHEMA.sql if needed, or refresh and retry. ' + (pageSectionsCapabilityError ? '(' + pageSectionsCapabilityError + ')' : ''), 'error');
     return;
   }
   try {
-    await sbUpsert(
-      PAGE_SECTIONS_TABLE,
-      {
-        page_id: currentPage,
-        section_key: currentSection,
-        content_html: content,
-        updated_at: new Date().toISOString()
-      },
-      'page_id,section_key',
-      token
-    );
+    const payload = {
+      page_id: currentPage,
+      section_key: currentSection,
+      content_html: content,
+      updated_at: new Date().toISOString()
+    };
+    try {
+      await sbUpsert(
+        PAGE_SECTIONS_TABLE,
+        payload,
+        'page_id,section_key',
+        token
+      );
+    } catch (upsertErr) {
+      // Legacy Supabase schemas may not have a unique constraint for on_conflict.
+      // Fallback to "select -> patch existing or insert new" so admins can still save.
+      const existingRows = await sbGet(
+        PAGE_SECTIONS_TABLE,
+        'page_id=eq.' + encodeURIComponent(currentPage) + '&section_key=eq.' + encodeURIComponent(currentSection) + '&order=updated_at.desc.nullslast,id.desc&limit=1',
+        token
+      );
+      if (existingRows && existingRows.length && existingRows[0].id != null) {
+        await sbPatch(
+          PAGE_SECTIONS_TABLE,
+          'id=eq.' + encodeURIComponent(existingRows[0].id),
+          payload,
+          token
+        );
+      } else {
+        await sbPost(PAGE_SECTIONS_TABLE, payload, token);
+      }
+    }
     showToast('Content saved to Supabase.');
   } catch (err) {
     showToast('Could not save section content: ' + (err.message || 'unknown error'), 'error');
@@ -2891,7 +2918,7 @@ async function resetFullPageToDefault() {
   if (!ok) return;
   const canUsePageSections = await ensurePageSectionsAvailable(token);
   if (!canUsePageSections) {
-    showToast('Page sections table is unavailable. Run SUPABASE_CONTENT_SCHEMA.sql first.', 'error');
+    showToast('Page sections are unavailable. Run SUPABASE_CONTENT_SCHEMA.sql if needed, or refresh and retry. ' + (pageSectionsCapabilityError ? '(' + pageSectionsCapabilityError + ')' : ''), 'error');
     return;
   }
   try {
