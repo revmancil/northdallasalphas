@@ -1762,7 +1762,14 @@ function showPanel(id) {
 
 function getAdminSession() {
   try {
-    return JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+    const session = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+    if (!session) return null;
+    // Supabase sessions include expires_at (unix seconds). Avoid sending stale JWTs.
+    if (session.expires_at && Math.floor(Date.now() / 1000) >= Number(session.expires_at)) {
+      localStorage.removeItem('nda_sb_session');
+      return null;
+    }
+    return session;
   } catch (e) {
     return null;
   }
@@ -1782,9 +1789,16 @@ function sbHeaders(token) {
 }
 
 async function sbGet(table, query, token) {
-  const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (query || ''), {
+  const url = SUPABASE_URL + '/rest/v1/' + table + '?' + (query || '');
+  let res = await fetch(url, {
     headers: sbHeaders(token)
   });
+  // If a stale/invalid token slipped through, retry reads once as anon.
+  if (res.status === 401 && token) {
+    res = await fetch(url, {
+      headers: sbHeaders(null)
+    });
+  }
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
