@@ -669,10 +669,15 @@ function renderDirectoryList(members) {
     const initials = ((m.first_name||'')[0]||'') + ((m.last_name||'')[0]||'') || '?';
     const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email;
     const loc  = [m.city, m.state].filter(Boolean).join(', ');
+    const email = (m.email || '').trim();
+    const phone = (m.phone || '').trim();
     return '<div class="member-card">' +
       '<div class="member-card-avatar">' + (m.photo ? '<img src="' + escHtml(m.photo) + '" alt="' + escHtml(name) + '" />' : escHtml(initials)) + '</div>' +
       '<div class="member-card-info"><div class="mc-name">Bro. ' + escHtml(name) + '</div>' +
-      '<div class="mc-meta">' + escHtml(loc) + (m.member_since ? (loc?' &middot; ':'') + 'Since ' + escHtml(m.member_since) : '') + '</div></div>' +
+      '<div class="mc-meta">' + escHtml(loc) + (m.member_since ? (loc?' &middot; ':'') + 'Since ' + escHtml(m.member_since) : '') + '</div>' +
+      (email ? '<div class="mc-meta"><i class="fas fa-envelope" style="margin-right:6px;color:var(--gold);"></i><a href="mailto:' + escHtml(email) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(email) + '</a></div>' : '') +
+      (phone ? '<div class="mc-meta"><i class="fas fa-phone" style="margin-right:6px;color:var(--gold);"></i><a href="tel:' + escHtml(phone.replace(/\s+/g, '')) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(phone) + '</a></div>' : '') +
+      '</div>' +
       (m.linkedin ? '<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" style="color:var(--blue);font-size:1.1rem;"><i class="fab fa-linkedin"></i></a>' : '') +
       '</div>';
   }).join('');

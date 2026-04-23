@@ -1242,7 +1242,7 @@
           <span>Select a page section to edit</span>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Select a page section to edit, or use <strong>Full Page (Advanced)</strong> to manage all page-body content at once. Changes are saved to Supabase and loaded live on public pages.</p>
+          <p class="hint-text">Use <strong>Visual Page Editor (Recommended)</strong> to click directly on page content and edit it like a document. HTML source controls are hidden unless you choose to open them.</p>
 
           <!-- Page Tabs -->
           <div class="section-tabs" id="pageTabs">
@@ -1286,15 +1286,18 @@
           <div id="fullPageVisualEditor" style="display:none;margin-top:14px;">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
               <div style="font-size:0.8rem;color:var(--gray-600);">
-                Visual editor: edit text directly in the preview. Double-click images/links to update URLs.
+                Visual editor: click and type directly in the preview. Double-click images/links to update URLs.
               </div>
               <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="btn-sm view" type="button" onclick="syncFullPageFromVisual()"><i class="fas fa-arrows-rotate"></i> Sync Visual → Source</button>
-                <button class="btn-sm edit" type="button" onclick="applyFullPageSourceToVisual()"><i class="fas fa-code"></i> Apply Source → Visual</button>
+                <button class="btn-sm edit" type="button" id="toggleHtmlSourceBtn" onclick="toggleFullPageSourceVisibility()"><i class="fas fa-code"></i> Show HTML Source (Advanced)</button>
               </div>
             </div>
             <iframe id="fullPageEditorFrame" title="Full Page Visual Editor" style="width:100%;min-height:520px;border:1px solid var(--gray-200);border-radius:8px;background:#fff;"></iframe>
-            <div style="margin-top:10px;">
+            <div id="fullPageSourceWrap" style="margin-top:10px;display:none;">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-bottom:8px;">
+                <button class="btn-sm view" type="button" onclick="syncFullPageFromVisual()"><i class="fas fa-arrows-rotate"></i> Refresh Source From Visual</button>
+                <button class="btn-sm edit" type="button" onclick="applyFullPageSourceToVisual()"><i class="fas fa-code"></i> Apply Source To Visual</button>
+              </div>
               <label style="display:block;font-size:0.73rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);margin-bottom:6px;">Full Page HTML Source</label>
               <textarea id="fullPageSourceEditor" style="width:100%;min-height:200px;border:1px solid var(--gray-200);border-radius:8px;padding:10px 12px;font-family:Consolas,'Courier New',monospace;font-size:0.8rem;color:var(--gray-800);"></textarea>
             </div>
@@ -3112,11 +3115,35 @@ const PAGE_SOURCE_FILES = {
   visiting: 'visiting-brothers.html'
 };
 
+// Friendlier labels for non-technical editors.
+Object.values(PAGE_SECTIONS).forEach(function(pageCfg) {
+  if (!pageCfg || !pageCfg.sections) return;
+  if (pageCfg.sections.full_shell) pageCfg.sections.full_shell.label = 'Visual Page Editor (Recommended)';
+  if (pageCfg.sections.full_page) pageCfg.sections.full_page.label = 'Visual Body Editor (No Nav/Footer)';
+});
+
 function toggleFullPageVisualEditor(showVisual) {
   const visualWrap = document.getElementById('fullPageVisualEditor');
   const editorArea = document.getElementById('editorArea');
+  const toolbar = document.querySelector('#editorPanel .editor-toolbar');
+  const sourceWrap = document.getElementById('fullPageSourceWrap');
+  const sourceBtn = document.getElementById('toggleHtmlSourceBtn');
   if (visualWrap) visualWrap.style.display = showVisual ? 'block' : 'none';
   if (editorArea) editorArea.style.display = showVisual ? 'none' : 'block';
+  if (toolbar) toolbar.style.display = showVisual ? 'none' : 'flex';
+  if (!showVisual && sourceWrap) sourceWrap.style.display = 'none';
+  if (sourceBtn) sourceBtn.innerHTML = '<i class="fas fa-code"></i> Show HTML Source (Advanced)';
+}
+
+function toggleFullPageSourceVisibility(forceVisible) {
+  const sourceWrap = document.getElementById('fullPageSourceWrap');
+  const sourceBtn = document.getElementById('toggleHtmlSourceBtn');
+  if (!sourceWrap || !sourceBtn) return;
+  const shouldShow = typeof forceVisible === 'boolean' ? forceVisible : sourceWrap.style.display === 'none';
+  sourceWrap.style.display = shouldShow ? 'block' : 'none';
+  sourceBtn.innerHTML = shouldShow
+    ? '<i class="fas fa-eye-slash"></i> Hide HTML Source (Advanced)'
+    : '<i class="fas fa-code"></i> Show HTML Source (Advanced)';
 }
 
 function buildFullPageEditorSrcDoc(contentHtml) {
