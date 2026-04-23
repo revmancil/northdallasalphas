@@ -321,9 +321,20 @@
               <div class="profile-grid full">
                 <div class="pfield"><label>Short Bio</label><textarea id="pfBio" placeholder="Tell your brothers a bit about yourself..."></textarea></div>
                 <div class="pfield"><label>LinkedIn Profile URL</label><input type="url" id="pfLinkedin" placeholder="https://linkedin.com/in/yourname" /></div>
-                <div class="pfield"><label>Profile Photo URL</label><input type="url" id="pfPhoto" placeholder="https://..." oninput="updateProfilePreview()" /></div>
+                <div class="pfield">
+                  <label>Profile Photo</label>
+                  <input type="hidden" id="pfPhoto" />
+                  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px;">
+                    <button type="button" class="btn-outline" onclick="document.getElementById('pfPhotoFile').click()"><i class="fas fa-upload"></i> Upload photo</button>
+                    <button type="button" class="btn-outline" onclick="clearProfilePhoto()" style="border-color:rgba(239,68,68,0.35);color:var(--red);"><i class="fas fa-times"></i> Remove photo</button>
+                  </div>
+                  <p style="font-size:0.72rem;color:var(--gray-400);margin-bottom:8px;">JPG, PNG, or WebP. Large images are resized before saving.</p>
+                  <label style="font-size:0.72rem;color:var(--gray-400);display:block;margin-bottom:4px;">Or paste an image URL</label>
+                  <input type="text" id="pfPhotoUrl" placeholder="https://..." oninput="syncPhotoFromUrlField()" />
+                </div>
               </div>
             </div>
+            <input type="file" id="pfPhotoFile" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(event)" />
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button type="submit" class="btn-gold" id="saveProfileBtn"><i class="fas fa-save"></i> Save Profile</button>
             </div>
@@ -462,6 +473,91 @@ function closeSidebar() {
 function escHtml(str) {
   if (!str) return '';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function compressDataUrlToJpeg(dataUrl, maxSide, quality) {
+  return new Promise(function(resolve) {
+    try {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.naturalWidth;
+        var h = img.naturalHeight;
+        if (!w || !h) { resolve(dataUrl); return; }
+        var scale = Math.min(1, maxSide / Math.max(w, h));
+        w = Math.max(1, Math.round(w * scale));
+        h = Math.max(1, Math.round(h * scale));
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function() { resolve(dataUrl); };
+      img.src = dataUrl;
+    } catch (e) { resolve(dataUrl); }
+  });
+}
+
+async function ensureProfilePhotoFits(dataUrl) {
+  if (!dataUrl || String(dataUrl).indexOf('data:image') !== 0) return dataUrl;
+  var s = dataUrl;
+  var maxLen = 380000;
+  if (s.length <= maxLen) return s;
+  var plans = [
+    { side: 1024, q: 0.78 },
+    { side: 800, q: 0.72 },
+    { side: 640, q: 0.68 },
+    { side: 480, q: 0.62 },
+    { side: 360, q: 0.55 }
+  ];
+  for (var j = 0; j < plans.length; j++) {
+    s = await compressDataUrlToJpeg(s, plans[j].side, plans[j].q);
+    if (s.length <= maxLen) return s;
+  }
+  return s;
+}
+
+function syncPhotoFromUrlField() {
+  var urlEl = document.getElementById('pfPhotoUrl');
+  var hidden = document.getElementById('pfPhoto');
+  if (!urlEl || !hidden) return;
+  var u = urlEl.value.trim();
+  if (u) hidden.value = u;
+  updateProfilePreview();
+}
+
+function clearProfilePhoto() {
+  var hidden = document.getElementById('pfPhoto');
+  var urlEl = document.getElementById('pfPhotoUrl');
+  var fileEl = document.getElementById('pfPhotoFile');
+  if (hidden) hidden.value = '';
+  if (urlEl) urlEl.value = '';
+  if (fileEl) fileEl.value = '';
+  updateProfilePreview();
+}
+
+function handleProfilePhotoUpload(e) {
+  var file = e.target && e.target.files ? e.target.files[0] : null;
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    (async function() {
+      try {
+        var dataUrl = ev.target.result;
+        dataUrl = await ensureProfilePhotoFits(dataUrl);
+        document.getElementById('pfPhoto').value = dataUrl;
+        var urlEl = document.getElementById('pfPhotoUrl');
+        if (urlEl) urlEl.value = '';
+        updateProfilePreview();
+        showToast('Photo ready — click Save Profile to keep it.', 'success');
+      } catch (err) {
+        showToast('Could not process photo: ' + (err.message || 'unknown error'), 'error');
+      }
+    })();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
 }
 
 function parseDate(dtStr) {
@@ -609,7 +705,14 @@ function loadProfileForm(member) {
   document.getElementById('pfRenewalDate').value      = member.renewal_date      || '';
   document.getElementById('pfBio').value              = member.bio               || '';
   document.getElementById('pfLinkedin').value         = member.linkedin          || '';
-  document.getElementById('pfPhoto').value            = member.photo             || '';
+  var ph = member.photo || '';
+  document.getElementById('pfPhoto').value = ph;
+  var urlEl = document.getElementById('pfPhotoUrl');
+  if (urlEl) {
+    urlEl.value = (ph.indexOf('http://') === 0 || ph.indexOf('https://') === 0) ? ph : '';
+  }
+  var fileEl = document.getElementById('pfPhotoFile');
+  if (fileEl) fileEl.value = '';
   updateProfilePreview();
 }
 
@@ -659,6 +762,12 @@ document.getElementById('profileForm').addEventListener('submit', async function
       photo:               document.getElementById('pfPhoto').value.trim(),
       updated_at:          new Date().toISOString()
     };
+    if (updates.photo && updates.photo.indexOf('data:image') === 0 && updates.photo.length > 450000) {
+      showToast('Photo is still too large after compression. Try a smaller image or use a hosted image URL.', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-save"></i> Save Profile';
+      return;
+    }
     await sbPatch('members', 'email=eq.' + encodeURIComponent(currentMember.email), updates, currentSession.access_token);
     currentMember = Object.assign({}, currentMember, updates);
     showToast('Profile saved successfully!');
