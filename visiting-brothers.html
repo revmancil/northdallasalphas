@@ -98,7 +98,7 @@
             <div class="vb-field"><label>City</label><input type="text" id="vbCity" /></div>
             <div class="vb-field"><label>State</label><input type="text" id="vbState" maxlength="2" /></div>
             <div class="vb-field"><label>Member Since</label><input type="text" id="vbMemberSince" placeholder="e.g. 2019" /></div>
-            <div class="vb-field"><label>Alpha ID</label><input type="text" id="vbAlphaId" /></div>
+            <div class="vb-field"><label>Alpha ID *</label><input type="text" id="vbAlphaId" required /></div>
             <div class="vb-field"><label>Initiation Date</label><input type="text" id="vbInitiationDate" placeholder="MM/DD/YYYY" /></div>
             <div class="vb-field"><label>Initiation Chapter</label><input type="text" id="vbInitiationChapter" /></div>
             <div class="vb-field"><label>College / University</label><input type="text" id="vbCollege" /></div>
@@ -195,6 +195,17 @@ function vbVal(id) {
   const el = document.getElementById(id);
   return el ? el.value.trim() : '';
 }
+function normalizeAlphaId(value) {
+  return String(value || '').trim();
+}
+function verifyAlphaId(alphaId) {
+  const normalized = normalizeAlphaId(alphaId);
+  if (!normalized) return { ok: false, reason: 'Alpha ID is required.' };
+  if (!/^\d{4,}$/.test(normalized)) {
+    return { ok: false, reason: 'Alpha ID must be numeric and at least 4 digits.' };
+  }
+  return { ok: true, normalized: normalized };
+}
 
 function showVbMsg(ok, text) {
   const msg = document.getElementById('vbMsg');
@@ -207,13 +218,22 @@ document.getElementById('visitingForm').addEventListener('submit', async functio
   const firstName = vbVal('vbFirstName');
   const lastName = vbVal('vbLastName');
   const email = vbVal('vbEmail');
-  if (!firstName || !lastName || !email) {
-    showVbMsg(false, 'Please complete First Name, Last Name, and Email.');
+  const alphaIdRaw = vbVal('vbAlphaId');
+  if (!firstName || !lastName || !email || !alphaIdRaw) {
+    showVbMsg(false, 'Please complete First Name, Last Name, Email, and Alpha ID.');
     return;
   }
   const btn = document.getElementById('vbSubmitBtn');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  const alphaCheck = verifyAlphaId(alphaIdRaw);
+  if (!alphaCheck.ok) {
+    showVbMsg(false, alphaCheck.reason);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Visiting Request';
+    return;
+  }
+  const alphaId = alphaCheck.normalized;
   const payload = {
     status: 'pending',
     first_name: firstName,
@@ -223,7 +243,7 @@ document.getElementById('visitingForm').addEventListener('submit', async functio
     city: vbVal('vbCity'),
     state: vbVal('vbState'),
     member_since: vbVal('vbMemberSince'),
-    alpha_id: vbVal('vbAlphaId'),
+    alpha_id: alphaId,
     initiation_date: vbVal('vbInitiationDate'),
     initiation_chapter: vbVal('vbInitiationChapter'),
     college: vbVal('vbCollege'),

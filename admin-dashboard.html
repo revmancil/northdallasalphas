@@ -1621,6 +1621,38 @@
           </div>
         </div>
       </div>
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-address-book" style="color:var(--gold);margin-right:8px;"></i>Brothers Directory</h3>
+          <span><span id="brothersDirectoryCount">0</span> records</span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Maintain your chapter brother directory and mass upload records by CSV. This directory is for internal tracking and manual verification workflows.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            <button class="btn-sm edit" onclick="openBrothersDirectoryUpload()"><i class="fas fa-file-upload"></i> Mass Upload CSV</button>
+            <button class="btn-sm success" onclick="addBrotherDirectoryRow()"><i class="fas fa-user-plus"></i> Add Brother</button>
+            <button class="btn-sm view" onclick="loadBrothersDirectory()"><i class="fas fa-rotate-right"></i> Refresh</button>
+            <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveBrothersDirectory()"><i class="fas fa-save"></i> Save Directory</button>
+          </div>
+          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,last_name,email,phone,status</code> (minimum required: <code>alpha_id</code>).</p>
+          <div style="overflow-x:auto;">
+            <table class="officers-table">
+              <thead>
+                <tr>
+                  <th style="width:140px;">Alpha ID</th>
+                  <th style="width:150px;">First Name</th>
+                  <th style="width:150px;">Last Name</th>
+                  <th>Email</th>
+                  <th style="width:130px;">Phone</th>
+                  <th style="width:110px;">Status</th>
+                  <th style="width:40px;"></th>
+                </tr>
+              </thead>
+              <tbody id="brothersDirectoryBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════════════════════════════
@@ -1698,6 +1730,7 @@
 <input type="file" id="presPhotoInput"    accept="image/*" style="display:none;" onchange="handlePresPhotoUpload(event)" />
 <input type="file" id="officerPhotoInput" accept="image/*" style="display:none;" onchange="handleOfficerPhotoUpload(event)" />
 <input type="file" id="presidentPhotoInput" accept="image/*" style="display:none;" onchange="handlePresidentPhotoUpload(event)" />
+<input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
 
 <script>
 /* ============================================================
@@ -1954,6 +1987,7 @@ async function loadMemberRequests() {
   container.innerHTML = '<div class="hint-text" style="margin:0;">Loading member requests...</div>';
   complianceContainer.innerHTML = '<div class="hint-text" style="margin:0;">Loading compliance records...</div>';
   visitingContainer.innerHTML = '<div class="hint-text" style="margin:0;">Loading visiting brother requests...</div>';
+  loadBrothersDirectory();
   try {
     const members = await sbGet(
       'members',
@@ -2190,6 +2224,227 @@ async function updateVisitingRequestStatus(requestId, status) {
     await loadMemberRequests();
   } catch (err) {
     showToast('Could not update visiting request: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════
+// BROTHERS DIRECTORY
+// ══════════════════════════════════════════════════
+const BROTHERS_DIRECTORY_KEY = 'brothers_directory';
+let brothersDirectoryData = [];
+
+function normalizeAlphaId(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function sanitizeBrotherRecord(row) {
+  return {
+    alpha_id: normalizeAlphaId(row && row.alpha_id),
+    first_name: String((row && row.first_name) || '').trim(),
+    last_name: String((row && row.last_name) || '').trim(),
+    email: String((row && row.email) || '').trim(),
+    phone: String((row && row.phone) || '').trim(),
+    status: String((row && row.status) || 'active').trim().toLowerCase() || 'active'
+  };
+}
+
+function updateBrothersDirectoryCount() {
+  const countEl = document.getElementById('brothersDirectoryCount');
+  if (countEl) countEl.textContent = String(brothersDirectoryData.length);
+}
+
+function renderBrothersDirectoryTable() {
+  const body = document.getElementById('brothersDirectoryBody');
+  if (!body) return;
+  body.innerHTML = '';
+  if (!brothersDirectoryData.length) {
+    body.innerHTML = '<tr><td colspan="7" style="padding:10px;color:var(--gray-500);">No brothers in directory yet. Upload a CSV or add rows manually.</td></tr>';
+    updateBrothersDirectoryCount();
+    return;
+  }
+  brothersDirectoryData.forEach(function(row, i) {
+    const rec = sanitizeBrotherRecord(row);
+    const tr = document.createElement('tr');
+    tr.innerHTML = '' +
+      '<td><input type="text" value="' + escHtml(rec.alpha_id) + '" placeholder="Alpha ID" onchange="brothersDirectoryData[' + i + '].alpha_id=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.first_name) + '" placeholder="First Name" onchange="brothersDirectoryData[' + i + '].first_name=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.last_name) + '" placeholder="Last Name" onchange="brothersDirectoryData[' + i + '].last_name=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.email) + '" placeholder="email@example.com" onchange="brothersDirectoryData[' + i + '].email=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.phone) + '" placeholder="(555) 555-5555" onchange="brothersDirectoryData[' + i + '].phone=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.status) + '" placeholder="active" onchange="brothersDirectoryData[' + i + '].status=this.value" /></td>' +
+      '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(' + i + ')" title="Remove"><i class="fas fa-trash"></i></button></td>';
+    body.appendChild(tr);
+  });
+  updateBrothersDirectoryCount();
+}
+
+async function loadBrothersDirectory() {
+  const token = getAdminToken();
+  const body = document.getElementById('brothersDirectoryBody');
+  if (!body) return;
+  if (!token) {
+    body.innerHTML = '<tr><td colspan="7" style="padding:10px;color:var(--red);">Admin session expired. Please sign in again.</td></tr>';
+    updateBrothersDirectoryCount();
+    return;
+  }
+  try {
+    const rows = await getContentJson(BROTHERS_DIRECTORY_KEY, []);
+    brothersDirectoryData = Array.isArray(rows) ? rows.map(sanitizeBrotherRecord).filter(function(r) { return !!r.alpha_id; }) : [];
+    renderBrothersDirectoryTable();
+  } catch (err) {
+    body.innerHTML = '<tr><td colspan="7" style="padding:10px;color:var(--red);">Could not load directory: ' + escHtml(err.message || 'unknown error') + '</td></tr>';
+    updateBrothersDirectoryCount();
+  }
+}
+
+function addBrotherDirectoryRow() {
+  brothersDirectoryData.push({ alpha_id: '', first_name: '', last_name: '', email: '', phone: '', status: 'active' });
+  renderBrothersDirectoryTable();
+}
+
+function removeBrotherDirectoryRow(index) {
+  if (index < 0 || index >= brothersDirectoryData.length) return;
+  brothersDirectoryData.splice(index, 1);
+  renderBrothersDirectoryTable();
+}
+
+function openBrothersDirectoryUpload() {
+  const input = document.getElementById('brothersDirectoryCsvInput');
+  if (input) input.click();
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let cur = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        cur += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ',' && !inQuotes) {
+      out.push(cur);
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+function normalizeHeaderName(name) {
+  return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function mapHeaderIndexes(headers) {
+  const indexByKey = {};
+  headers.forEach(function(h, idx) {
+    const key = normalizeHeaderName(h);
+    if (key) indexByKey[key] = idx;
+  });
+  return {
+    alpha_id: indexByKey.alphaid,
+    first_name: indexByKey.firstname,
+    last_name: indexByKey.lastname,
+    email: indexByKey.email,
+    phone: indexByKey.phone || indexByKey.phonenumber,
+    status: indexByKey.status
+  };
+}
+
+function csvCell(values, idx) {
+  if (idx == null || idx < 0 || idx >= values.length) return '';
+  return String(values[idx] || '').trim();
+}
+
+function parseBrothersCsv(text) {
+  const lines = String(text || '').replace(/\r/g, '').split('\n').map(function(line) { return line.trim(); }).filter(Boolean);
+  if (lines.length < 2) return { records: [], errors: ['CSV must include a header row and at least one data row.'] };
+  const headerCells = parseCsvLine(lines[0]);
+  const mapped = mapHeaderIndexes(headerCells);
+  if (mapped.alpha_id == null) return { records: [], errors: ['CSV is missing required "alpha_id" column.'] };
+  const records = [];
+  const errors = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = parseCsvLine(lines[i]);
+    const alphaId = normalizeAlphaId(csvCell(cells, mapped.alpha_id));
+    if (!alphaId) {
+      errors.push('Row ' + (i + 1) + ' is missing Alpha ID.');
+      continue;
+    }
+    records.push(sanitizeBrotherRecord({
+      alpha_id: alphaId,
+      first_name: csvCell(cells, mapped.first_name),
+      last_name: csvCell(cells, mapped.last_name),
+      email: csvCell(cells, mapped.email),
+      phone: csvCell(cells, mapped.phone),
+      status: csvCell(cells, mapped.status) || 'active'
+    }));
+  }
+  return { records: records, errors: errors };
+}
+
+async function handleBrothersDirectoryUpload(event) {
+  const file = event && event.target && event.target.files ? event.target.files[0] : null;
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const parsed = parseBrothersCsv(text);
+    if (!parsed.records.length) {
+      showToast(parsed.errors[0] || 'No valid records found in CSV.', 'error');
+      return;
+    }
+    const byId = {};
+    brothersDirectoryData.forEach(function(row) {
+      const rec = sanitizeBrotherRecord(row);
+      if (rec.alpha_id) byId[rec.alpha_id] = rec;
+    });
+    parsed.records.forEach(function(rec) { byId[rec.alpha_id] = rec; });
+    brothersDirectoryData = Object.keys(byId).sort().map(function(key) { return byId[key]; });
+    renderBrothersDirectoryTable();
+    const warn = parsed.errors.length ? (' (' + parsed.errors.length + ' row(s) skipped)') : '';
+    showToast('Imported ' + parsed.records.length + ' brother record(s).' + warn, parsed.errors.length ? 'info' : 'success');
+  } catch (err) {
+    showToast('Could not read CSV file: ' + (err.message || 'unknown error'), 'error');
+  } finally {
+    if (event && event.target) event.target.value = '';
+  }
+}
+
+async function saveBrothersDirectory() {
+  const cleaned = [];
+  const seen = {};
+  let missingAlphaIdCount = 0;
+  brothersDirectoryData.forEach(function(row) {
+    const rec = sanitizeBrotherRecord(row);
+    if (!rec.alpha_id) {
+      missingAlphaIdCount++;
+      return;
+    }
+    if (seen[rec.alpha_id]) return;
+    seen[rec.alpha_id] = true;
+    cleaned.push(rec);
+  });
+  if (!cleaned.length) {
+    showToast('Directory is empty. Add at least one valid Alpha ID before saving.', 'error');
+    return;
+  }
+  try {
+    await saveContentJson(BROTHERS_DIRECTORY_KEY, cleaned);
+    brothersDirectoryData = cleaned;
+    renderBrothersDirectoryTable();
+    if (missingAlphaIdCount) {
+      showToast('Directory saved. ' + missingAlphaIdCount + ' row(s) without Alpha ID were skipped.', 'info');
+    } else {
+      showToast('Brothers directory saved to Supabase.');
+    }
+  } catch (err) {
+    showToast('Could not save brothers directory: ' + (err.message || 'unknown error'), 'error');
   }
 }
 
