@@ -979,6 +979,9 @@
     <button class="sidebar-link" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
+    <button class="sidebar-link" onclick="showPanel('gallery')">
+      <i class="fas fa-camera-retro"></i> Event Photos
+    </button>
     <button class="sidebar-link" onclick="showPanel('officers')">
       <i class="fas fa-users"></i> Officers Manager
     </button>
@@ -1012,6 +1015,9 @@
     </button>
     <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('news')">
       <i class="fas fa-newspaper"></i> News
+    </button>
+    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('gallery')">
+      <i class="fas fa-images"></i> Photo Gallery
     </button>
     <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('contact')">
       <i class="fas fa-envelope"></i> Contact
@@ -1119,6 +1125,10 @@
               <i class="fas fa-envelope-open-text"></i>
               <span>Build Newsletter</span>
             </button>
+            <button class="action-btn" onclick="showPanel('gallery')">
+              <i class="fas fa-images"></i>
+              <span>Event Photos</span>
+            </button>
             <button class="action-btn" onclick="showPanel('pages')">
               <i class="fas fa-edit"></i>
               <span>Edit Page Content</span>
@@ -1209,6 +1219,17 @@
             </div>
             <div class="page-item">
               <div class="page-item-left">
+                <div class="page-icon"><i class="fas fa-images"></i></div>
+                <div class="page-item-info"><div class="title">Photo Gallery</div><div class="url">gallery.html</div></div>
+              </div>
+              <div class="page-actions">
+                <a href="gallery.html" target="_blank" class="btn-sm view"><i class="fas fa-eye"></i> View</a>
+                <button class="btn-sm edit" onclick="showPanel('gallery')"><i class="fas fa-edit"></i> Photos</button>
+                <button class="btn-sm edit" onclick="showPanel('pages'); loadPageSection('gallery')" title="Page intro &amp; layout"><i class="fas fa-file-alt"></i> Page</button>
+              </div>
+            </div>
+            <div class="page-item">
+              <div class="page-item-left">
                 <div class="page-icon"><i class="fas fa-envelope"></i></div>
                 <div class="page-item-info"><div class="title">Contact</div><div class="url">contact.html</div></div>
               </div>
@@ -1250,6 +1271,7 @@
             <button class="section-tab" onclick="loadPageSection('about')">📖 Chapter History</button>
             <button class="section-tab" onclick="loadPageSection('membership')">👤 Membership</button>
             <button class="section-tab" onclick="loadPageSection('news')">📰 News</button>
+            <button class="section-tab" onclick="loadPageSection('gallery')">🖼️ Photo Gallery</button>
             <button class="section-tab" onclick="loadPageSection('contact')">✉️ Contact</button>
             <button class="section-tab" onclick="loadPageSection('visiting')">✈️ Visiting Brothers</button>
           </div>
@@ -1340,6 +1362,34 @@
 
           <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
             <button class="btn-save" onclick="saveEvents()"><i class="fas fa-save"></i> Save All Events</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         EVENT PHOTO GALLERY PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-gallery">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-images" style="color:var(--gold);margin-right:8px;"></i>Event Photo Gallery</h3>
+          <span>Shown on <a href="gallery.html" target="_blank" style="color:var(--blue);">gallery.html</a></span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">
+            Add photos from chapter events with optional titles and captions. Paste an image URL or upload from your computer (images are compressed for storage).
+            To edit the gallery page headline and intro text, open <strong>Page Editor</strong> and select the <strong>Photo Gallery</strong> tab.
+          </p>
+          <p class="hint-text" style="margin-top:8px;">
+            For large collections, prefer hosted image URLs (e.g. your website or cloud storage) so the gallery stays fast and reliable.
+          </p>
+          <div id="eventGalleryList" style="margin-top:18px;"></div>
+          <button class="btn-sm success" onclick="addEventGalleryRow()" style="margin-top:14px;">
+            <i class="fas fa-plus-circle"></i> Add Photo
+          </button>
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn-save" onclick="saveEventGallery()"><i class="fas fa-save"></i> Save Gallery</button>
           </div>
         </div>
       </div>
@@ -1733,6 +1783,7 @@
 <input type="file" id="presPhotoInput"    accept="image/*" style="display:none;" onchange="handlePresPhotoUpload(event)" />
 <input type="file" id="officerPhotoInput" accept="image/*" style="display:none;" onchange="handleOfficerPhotoUpload(event)" />
 <input type="file" id="presidentPhotoInput" accept="image/*" style="display:none;" onchange="handlePresidentPhotoUpload(event)" />
+<input type="file" id="eventGalleryPhotoInput" accept="image/*" style="display:none;" onchange="handleEventGalleryPhotoUpload(event)" />
 <input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
 
 <script>
@@ -1763,6 +1814,7 @@ const PANEL_META = {
   presidents:    ['Past Presidents',    'Update past chapter president records'],
   announcements: ['Announcement Bar',   'Edit the top announcement banner'],
   newsletter:    ['Newsletter Generator','Build and export chapter email campaigns'],
+  gallery:       ['Event Photo Gallery', 'Photos displayed on the public gallery page'],
   settings:      ['Settings',           'Admin account & chapter settings']
 };
 
@@ -1792,6 +1844,7 @@ function showPanel(id) {
   if (id === 'presidents')    loadPresidentsPanel();
   if (id === 'announcements') loadAnnouncement();
   if (id === 'newsletter')    loadNewsletterDefaults();
+  if (id === 'gallery')       loadEventGalleryPanel();
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
 }
@@ -3101,6 +3154,14 @@ const PAGE_SECTIONS = {
       'full_page':    { label: 'Full Page (Advanced)',   default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Visiting Brothers page content area (everything between navigation and footer).</p>' },
       'visiting-hero':{ label: 'Page Header',            default: '<p><strong>Title:</strong> Visiting Brothers</p><p><strong>Subtitle:</strong> Visiting the North Dallas area? Submit your profile details and our admin team will review your request.</p>' }
     }
+  },
+  gallery: {
+    label: 'Photo Gallery',
+    sections: {
+      'full_shell':   { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for Photo Gallery (navigation + mobile menu + page body + footer).</p>' },
+      'full_page':    { label: 'Full Page (Advanced)',   default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the Photo Gallery page content area (everything between navigation and footer).</p>' },
+      'gallery-hero': { label: 'Page Header Intro',      default: '<p><strong>Title:</strong> Event Photo Gallery</p><p><strong>Subtitle:</strong> Moments from chapter programs, service, and brotherhood across North Dallas County.</p>' }
+    }
   }
 };
 
@@ -3112,7 +3173,8 @@ const PAGE_SOURCE_FILES = {
   membership: 'membership.html',
   news: 'news.html',
   contact: 'contact.html',
-  visiting: 'visiting-brothers.html'
+  visiting: 'visiting-brothers.html',
+  gallery: 'gallery.html'
 };
 
 // Friendlier labels for non-technical editors.
@@ -3967,6 +4029,187 @@ async function updateDashboardStats() {
   document.getElementById('statEventCount').textContent     = eventRows.length || 0;
   document.getElementById('statOfficerCount').textContent   = (Array.isArray(officers) ? officers.length : DEFAULT_OFFICERS.length) + 1;
   document.getElementById('statPresidentCount').textContent = Array.isArray(presidents) ? presidents.length : DEFAULT_PAST_PRESIDENTS.length;
+}
+
+// ══════════════════════════════════════════════════
+// EVENT PHOTO GALLERY (site_content.event_gallery)
+// ══════════════════════════════════════════════════
+const EVENT_GALLERY_CONTENT_KEY = 'event_gallery';
+let eventGalleryData = [];
+let activeEventGalleryPhotoIndex = -1;
+
+async function loadEventGalleryPanel() {
+  const raw = await getContentJson(EVENT_GALLERY_CONTENT_KEY, []);
+  eventGalleryData = Array.isArray(raw)
+    ? raw.map(function(r) {
+        return {
+          photo: r && r.photo ? String(r.photo) : '',
+          title: r && r.title ? String(r.title) : '',
+          caption: r && r.caption ? String(r.caption) : ''
+        };
+      })
+    : [];
+  renderEventGalleryList();
+}
+
+function renderEventGalleryList() {
+  const wrap = document.getElementById('eventGalleryList');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  if (!eventGalleryData.length) {
+    wrap.innerHTML = '<p class="hint-text" style="margin:0;">No photos yet. Click &quot;Add Photo&quot; to begin.</p>';
+    return;
+  }
+  eventGalleryData.forEach(function(row, i) {
+    const box = document.createElement('div');
+    box.style.cssText =
+      'display:grid;grid-template-columns:76px 1fr auto;gap:12px;align-items:start;padding:14px;border:1px solid var(--gray-200);border-radius:8px;margin-bottom:10px;background:var(--white);';
+    const thumb =
+      row.photo && !isInvalidImageUrl(row.photo)
+        ? '<img src="' +
+          escHtml(row.photo) +
+          '" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:6px;border:1px solid var(--gray-200);" onerror="this.style.visibility=\'hidden\'" />'
+        : '<div style="width:76px;height:76px;border-radius:6px;background:var(--gray-100);display:flex;align-items:center;justify-content:center;color:var(--gray-400);"><i class="fas fa-image"></i></div>';
+    box.innerHTML =
+      thumb +
+      '<div style="min-width:0;">' +
+      '<label style="display:block;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);margin-bottom:4px;">Title / event</label>' +
+      '<input type="text" id="eg-title-' +
+      i +
+      '" value="' +
+      escHtml(row.title) +
+      '" placeholder="e.g. Alpha Legacy Gala 2026" style="width:100%;margin-bottom:8px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.88rem;" />' +
+      '<label style="display:block;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);margin-bottom:4px;">Caption</label>' +
+      '<input type="text" id="eg-caption-' +
+      i +
+      '" value="' +
+      escHtml(row.caption) +
+      '" placeholder="Short description" style="width:100%;margin-bottom:8px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.88rem;" />' +
+      '<label style="display:block;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);margin-bottom:4px;">Photo URL</label>' +
+      '<textarea id="eg-photo-' +
+      i +
+      '" rows="2" placeholder="Paste image URL" style="width:100%;padding:8px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.78rem;font-family:Consolas,monospace;resize:vertical;">' +
+      escHtml(row.photo) +
+      '</textarea>' +
+      '<button type="button" class="flyer-upload-btn" onclick="openEventGalleryPhotoUpload(' +
+      i +
+      ')" style="margin-top:6px;font-size:0.75rem;padding:5px 10px;"><i class="fas fa-upload"></i> Upload</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">' +
+      '<button type="button" class="btn-sm view" onclick="moveEventGalleryRow(' +
+      i +
+      ',-1)" title="Move up"' +
+      (i === 0 ? ' disabled' : '') +
+      '><i class="fas fa-arrow-up"></i></button>' +
+      '<button type="button" class="btn-sm view" onclick="moveEventGalleryRow(' +
+      i +
+      ',1)" title="Move down"' +
+      (i === eventGalleryData.length - 1 ? ' disabled' : '') +
+      '><i class="fas fa-arrow-down"></i></button>' +
+      '<button type="button" class="btn-sm danger" onclick="removeEventGalleryRow(' +
+      i +
+      ')" title="Remove"><i class="fas fa-trash"></i></button>' +
+      '</div>';
+    wrap.appendChild(box);
+  });
+  eventGalleryData.forEach(function(_, i) {
+    const t = document.getElementById('eg-title-' + i);
+    const c = document.getElementById('eg-caption-' + i);
+    const p = document.getElementById('eg-photo-' + i);
+    if (t) t.oninput = function() { eventGalleryData[i].title = t.value; };
+    if (c) c.oninput = function() { eventGalleryData[i].caption = c.value; };
+    if (p) p.oninput = function() { eventGalleryData[i].photo = p.value; };
+  });
+}
+
+function syncEventGalleryDataFromDom() {
+  eventGalleryData.forEach(function(_, i) {
+    const t = document.getElementById('eg-title-' + i);
+    const c = document.getElementById('eg-caption-' + i);
+    const p = document.getElementById('eg-photo-' + i);
+    if (t) eventGalleryData[i].title = t.value;
+    if (c) eventGalleryData[i].caption = c.value;
+    if (p) eventGalleryData[i].photo = p.value;
+  });
+}
+
+function addEventGalleryRow() {
+  syncEventGalleryDataFromDom();
+  eventGalleryData.push({ photo: '', title: '', caption: '' });
+  renderEventGalleryList();
+}
+
+function removeEventGalleryRow(i) {
+  syncEventGalleryDataFromDom();
+  eventGalleryData.splice(i, 1);
+  renderEventGalleryList();
+}
+
+function moveEventGalleryRow(i, delta) {
+  syncEventGalleryDataFromDom();
+  const j = i + delta;
+  if (j < 0 || j >= eventGalleryData.length) return;
+  const tmp = eventGalleryData[i];
+  eventGalleryData[i] = eventGalleryData[j];
+  eventGalleryData[j] = tmp;
+  renderEventGalleryList();
+}
+
+function openEventGalleryPhotoUpload(i) {
+  activeEventGalleryPhotoIndex = i;
+  syncEventGalleryDataFromDom();
+  const inp = document.getElementById('eventGalleryPhotoInput');
+  if (inp) inp.click();
+}
+
+function handleEventGalleryPhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file || activeEventGalleryPhotoIndex < 0) return;
+  const i = activeEventGalleryPhotoIndex;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    (async function() {
+      var dataUrl = ev.target.result;
+      dataUrl = await ensureInlinePhotoFits(dataUrl);
+      syncEventGalleryDataFromDom();
+      if (eventGalleryData[i]) eventGalleryData[i].photo = dataUrl;
+      renderEventGalleryList();
+      showToast('Photo attached. Click Save Gallery to publish.', 'info');
+    })();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+  activeEventGalleryPhotoIndex = -1;
+}
+
+async function saveEventGallery() {
+  syncEventGalleryDataFromDom();
+  const cleaned = [];
+  for (var k = 0; k < eventGalleryData.length; k++) {
+    var row = eventGalleryData[k];
+    var photo = (row.photo || '').trim();
+    if (!photo) continue;
+    if (photo.indexOf('data:image') === 0) {
+      photo = await ensureInlinePhotoFits(photo);
+    }
+    cleaned.push({
+      photo: photo,
+      title: (row.title || '').trim(),
+      caption: (row.caption || '').trim()
+    });
+  }
+  try {
+    await saveContentJson(EVENT_GALLERY_CONTENT_KEY, cleaned);
+    eventGalleryData = cleaned.length
+      ? cleaned.map(function(r) {
+          return { photo: r.photo, title: r.title, caption: r.caption };
+        })
+      : [];
+    renderEventGalleryList();
+    showToast('Gallery saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save gallery: ' + (err.message || 'unknown error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════

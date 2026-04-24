@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Gallery | North Dallas Alphas</title>
+  <meta name="description" content="Photos from Xi Tau Lambda Chapter programs, service projects, and brotherhood events — North Dallas Alphas." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .gallery-section { padding: 72px 0 96px; background: var(--gray-100); min-height: 42vh; }
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 22px;
+      margin-top: 8px;
+    }
+    .gallery-card {
+      border: none;
+      padding: 0;
+      margin: 0;
+      background: var(--white);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      text-align: left;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .gallery-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+    }
+    .gallery-card:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 2px;
+    }
+    .gallery-card img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      object-position: center;
+      display: block;
+      background: var(--gray-200);
+    }
+    .gallery-card-cap { padding: 14px 16px 16px; }
+    .gallery-card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 4px;
+      line-height: 1.35;
+    }
+    .gallery-card-desc {
+      font-size: 0.82rem;
+      color: var(--gray-600);
+      line-height: 1.55;
+      margin: 0;
+    }
+    .gallery-empty {
+      text-align: center;
+      padding: 56px 24px;
+      background: var(--white);
+      border-radius: 8px;
+      border: 1px dashed var(--gray-300);
+      max-width: 520px;
+      margin: 32px auto 0;
+    }
+    .gallery-empty i { font-size: 2.2rem; color: var(--gold); opacity: 0.5; margin-bottom: 14px; }
+    .gallery-empty p { font-size: 0.95rem; color: var(--gray-600); line-height: 1.65; margin: 0; }
+
+    .gallery-lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+    .gallery-lightbox.open { opacity: 1; visibility: visible; }
+    .gallery-lightbox-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.88);
+      cursor: pointer;
+    }
+    .gallery-lightbox-dialog {
+      position: relative;
+      z-index: 2;
+      max-width: min(1100px, 100%);
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .gallery-lightbox-dialog img {
+      max-width: 100%;
+      max-height: calc(92vh - 120px);
+      object-fit: contain;
+      border-radius: 4px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.45);
+    }
+    .gallery-lightbox-meta {
+      text-align: center;
+      max-width: 640px;
+      color: rgba(255,255,255,0.92);
+    }
+    .gallery-lightbox-meta h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: var(--gold);
+    }
+    .gallery-lightbox-meta p { margin: 0; font-size: 0.9rem; color: rgba(255,255,255,0.65); line-height: 1.55; }
+    .lb-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 3;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.45);
+      color: var(--white);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+    .lb-nav:hover { background: rgba(201,168,76,0.25); border-color: var(--gold); color: var(--gold); }
+    .lb-nav:disabled { opacity: 0.25; cursor: not-allowed; pointer-events: none; }
+    .lb-prev { left: 8px; }
+    .lb-next { right: 8px; }
+    .lb-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 4;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: var(--white);
+      font-size: 1.4rem;
+      line-height: 1;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    .lb-close:hover { background: rgba(201,168,76,0.35); color: var(--gold); }
+    @media (max-width: 640px) {
+      .lb-nav { width: 40px; height: 40px; font-size: 0.85rem; }
+      .lb-prev { left: 4px; }
+      .lb-next { right: 4px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+      <a href="membership.html">Membership</a><a href="news.html">News</a>
+      <a href="gallery.html" class="active">Gallery</a>
+      <a href="contact.html">Contact</a>
+      <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+      <a href="member-login.html" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+  <a href="membership.html">Membership</a><a href="news.html">News</a>
+  <a href="gallery.html">Gallery</a>
+  <a href="contact.html">Contact</a>
+  <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+  <a href="member-login.html" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<div id="pageContent">
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Xi Tau Lambda Chapter</span>
+    <h1>Event Photo Gallery</h1>
+    <p id="galleryHeroText">A visual record of our programs, service, and brotherhood across North Dallas County.</p>
+  </div>
+</section>
+
+<section class="gallery-section">
+  <div class="container">
+    <div class="gallery-grid" id="galleryGrid" aria-live="polite"></div>
+    <div class="gallery-empty" id="galleryEmpty" hidden>
+      <div><i class="fas fa-images" aria-hidden="true"></i></div>
+      <p>Photos from our events will appear here soon. Visit <a href="events.html">Upcoming Events</a> to join us, or check back after the next chapter program.</p>
+    </div>
+  </div>
+</section>
+
+<div class="gallery-lightbox" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <div class="gallery-lightbox-backdrop" id="lbBackdrop"></div>
+  <button type="button" class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button type="button" class="lb-nav lb-prev" id="lbPrev" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
+  <button type="button" class="lb-nav lb-next" id="lbNext" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
+  <div class="gallery-lightbox-dialog">
+    <img id="lbImg" src="" alt="" />
+    <div class="gallery-lightbox-meta" id="lbMeta"></div>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+      </div>
+      <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="leadership.html">Leadership</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="visiting-brothers.html">Visiting Brothers</a></li><li><a href="events.html#gala">Scholarship Gala</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="/cdn-cgi/l/email-protection#95dcfbf3fad5dbfae7e1fdd1f4f9f9f4e6d4f9e5fdf4e6bbfae7f2" style="color:rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="347d5a525b747a5b46405c7055585855477558445c55471a5b4653">[email&#160;protected]</span></a></div></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const EVENT_GALLERY_KEY = 'event_gallery';
+
+function sbHeaders() {
+  return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
+}
+
+function rebindSiteShellInteractions() {
+  const nav = document.getElementById('siteNav');
+  if (nav) {
+    const onScroll = function() {
+      if (window.scrollY > 40) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+  }
+  const hamburger = document.getElementById('hamburgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const mobileClose = document.getElementById('mobileClose');
+  if (hamburger && mobileMenu) hamburger.onclick = function() { mobileMenu.classList.add('open'); document.body.style.overflow = 'hidden'; };
+  if (mobileClose && mobileMenu) mobileClose.onclick = function() { mobileMenu.classList.remove('open'); document.body.style.overflow = ''; };
+  if (mobileMenu) mobileMenu.querySelectorAll('a').forEach(function(link) { link.onclick = function() { mobileMenu.classList.remove('open'); document.body.style.overflow = ''; }; });
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(function(link) {
+    const href = link.getAttribute('href');
+    if (href === currentPage || (currentPage === '' && href === 'index.html')) link.classList.add('active');
+    else link.classList.remove('active');
+  });
+}
+
+let galleryPhotos = [];
+let lbIndex = 0;
+
+function getVisibleGalleryItems() {
+  return galleryPhotos.filter(function(x) {
+    return x && x.photo && String(x.photo).trim();
+  });
+}
+
+function renderGalleryGrid() {
+  const grid = document.getElementById('galleryGrid');
+  const empty = document.getElementById('galleryEmpty');
+  if (!grid || !empty) return;
+  grid.innerHTML = '';
+  const items = getVisibleGalleryItems();
+  if (!items.length) {
+    empty.hidden = false;
+    return;
+  }
+  empty.hidden = true;
+  items.forEach(function(item, index) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'gallery-card fade-up';
+    btn.setAttribute('aria-label', (item.title || 'Event photo') + ', view larger');
+    const img = document.createElement('img');
+    img.src = item.photo;
+    img.alt = item.title || 'Chapter event photo';
+    img.loading = 'lazy';
+    img.onerror = function() {
+      img.style.display = 'none';
+    };
+    btn.appendChild(img);
+    const hasCap = (item.title && String(item.title).trim()) || (item.caption && String(item.caption).trim());
+    if (hasCap) {
+      const cap = document.createElement('div');
+      cap.className = 'gallery-card-cap';
+      if (item.title && String(item.title).trim()) {
+        const t = document.createElement('div');
+        t.className = 'gallery-card-title';
+        t.textContent = item.title;
+        cap.appendChild(t);
+      }
+      if (item.caption && String(item.caption).trim()) {
+        const p = document.createElement('p');
+        p.className = 'gallery-card-desc';
+        p.textContent = item.caption;
+        cap.appendChild(p);
+      }
+      btn.appendChild(cap);
+    }
+    btn.addEventListener('click', function() { openLightbox(index); });
+    grid.appendChild(btn);
+  });
+}
+
+function openLightbox(index) {
+  const items = getVisibleGalleryItems();
+  if (!items.length) return;
+  lbIndex = Math.max(0, Math.min(index, items.length - 1));
+  const box = document.getElementById('galleryLightbox');
+  if (box) {
+    box.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  updateLightbox();
+}
+
+function closeLightbox() {
+  const box = document.getElementById('galleryLightbox');
+  if (box) box.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function updateLightbox() {
+  const items = getVisibleGalleryItems();
+  const imgEl = document.getElementById('lbImg');
+  const meta = document.getElementById('lbMeta');
+  const prev = document.getElementById('lbPrev');
+  const next = document.getElementById('lbNext');
+  if (!items.length || !imgEl || !meta) return;
+  const item = items[lbIndex];
+  imgEl.src = item.photo;
+  imgEl.alt = item.title || 'Event photo';
+  meta.innerHTML = '';
+  if (item.title && String(item.title).trim()) {
+    const h = document.createElement('h3');
+    h.textContent = item.title;
+    meta.appendChild(h);
+  }
+  if (item.caption && String(item.caption).trim()) {
+    const p = document.createElement('p');
+    p.textContent = item.caption;
+    meta.appendChild(p);
+  }
+  if (prev) prev.disabled = lbIndex <= 0;
+  if (next) next.disabled = lbIndex >= items.length - 1;
+}
+
+function stepLightbox(delta) {
+  const items = getVisibleGalleryItems();
+  if (!items.length) return;
+  lbIndex = Math.max(0, Math.min(lbIndex + delta, items.length - 1));
+  updateLightbox();
+}
+
+function bindLightboxUi() {
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbBackdrop').addEventListener('click', closeLightbox);
+  document.getElementById('lbPrev').addEventListener('click', function(e) { e.stopPropagation(); stepLightbox(-1); });
+  document.getElementById('lbNext').addEventListener('click', function(e) { e.stopPropagation(); stepLightbox(1); });
+  document.addEventListener('keydown', function(e) {
+    const box = document.getElementById('galleryLightbox');
+    if (!box || !box.classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') stepLightbox(-1);
+    if (e.key === 'ArrowRight') stepLightbox(1);
+  });
+}
+
+async function getSiteContentJson(contentKey) {
+  const res = await fetch(
+    SUPABASE_URL + '/rest/v1/site_content?content_key=eq.' + encodeURIComponent(contentKey) + '&select=content_json&limit=1',
+    { headers: sbHeaders() }
+  );
+  if (!res.ok) return null;
+  const rows = await res.json();
+  return rows && rows.length ? rows[0].content_json : null;
+}
+
+(async function initGalleryPage() {
+  bindLightboxUi();
+  rebindSiteShellInteractions();
+  try {
+    const announceRes = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
+    if (announceRes.ok) {
+      const rows = await announceRes.json();
+      const row = rows && rows.length ? rows[0] : null;
+      if (row && row.text) {
+        const bar = document.querySelector('.announce-bar');
+        if (bar) bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
+      }
+    }
+
+    const secRes = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.gallery&select=section_key,content_html', { headers: sbHeaders() });
+    if (secRes.ok) {
+      const sections = await secRes.json();
+      const byKey = {};
+      sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
+      if (byKey['full_shell']) {
+        const shellWrap = document.getElementById('pageShell');
+        if (shellWrap) {
+          shellWrap.innerHTML = byKey['full_shell'];
+          rebindSiteShellInteractions();
+          return;
+        }
+      }
+      if (byKey['full_page']) {
+        const fullPageWrap = document.getElementById('pageContent');
+        if (fullPageWrap) {
+          fullPageWrap.innerHTML = byKey['full_page'];
+          rebindSiteShellInteractions();
+          return;
+        }
+      }
+      if (byKey['gallery-hero']) {
+        const target = document.getElementById('galleryHeroText');
+        if (target) {
+          const tmp = document.createElement('div');
+          tmp.innerHTML = byKey['gallery-hero'];
+          const pNode = tmp.querySelector('p');
+          target.innerHTML = pNode ? pNode.innerHTML : byKey['gallery-hero'];
+        }
+      }
+    }
+
+    const raw = await getSiteContentJson(EVENT_GALLERY_KEY);
+    if (Array.isArray(raw) && raw.length) {
+      galleryPhotos = raw.map(function(row) {
+        return {
+          photo: (row && row.photo) ? String(row.photo).trim() : '',
+          title: (row && row.title) ? String(row.title) : '',
+          caption: (row && row.caption) ? String(row.caption) : ''
+        };
+      });
+    }
+    renderGalleryGrid();
+  } catch (err) {
+    renderGalleryGrid();
+  }
+})();
+</script>
+</body>
+</html>
