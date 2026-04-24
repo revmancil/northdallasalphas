@@ -181,6 +181,7 @@ h1, h2, h3, h4, h5 {
   align-items: center;
   gap: 14px;
   flex-shrink: 0;
+  margin-right: 16px;
 }
 .nav-logo {
   height: 52px;
