@@ -288,6 +288,7 @@ function rebindSiteShellInteractions() {
 
 let galleryPhotos = [];
 let lbIndex = 0;
+let galleryUiBound = false;
 
 function getVisibleGalleryItems() {
   return galleryPhotos.filter(function(x) {
@@ -393,10 +394,16 @@ function stepLightbox(delta) {
 }
 
 function bindLightboxUi() {
-  document.getElementById('lbClose').addEventListener('click', closeLightbox);
-  document.getElementById('lbBackdrop').addEventListener('click', closeLightbox);
-  document.getElementById('lbPrev').addEventListener('click', function(e) { e.stopPropagation(); stepLightbox(-1); });
-  document.getElementById('lbNext').addEventListener('click', function(e) { e.stopPropagation(); stepLightbox(1); });
+  if (galleryUiBound) return;
+  const closeBtn = document.getElementById('lbClose');
+  const backdrop = document.getElementById('lbBackdrop');
+  const prevBtn = document.getElementById('lbPrev');
+  const nextBtn = document.getElementById('lbNext');
+  if (!closeBtn || !backdrop || !prevBtn || !nextBtn) return;
+  closeBtn.addEventListener('click', closeLightbox);
+  backdrop.addEventListener('click', closeLightbox);
+  prevBtn.addEventListener('click', function(e) { e.stopPropagation(); stepLightbox(-1); });
+  nextBtn.addEventListener('click', function(e) { e.stopPropagation(); stepLightbox(1); });
   document.addEventListener('keydown', function(e) {
     const box = document.getElementById('galleryLightbox');
     if (!box || !box.classList.contains('open')) return;
@@ -404,6 +411,7 @@ function bindLightboxUi() {
     if (e.key === 'ArrowLeft') stepLightbox(-1);
     if (e.key === 'ArrowRight') stepLightbox(1);
   });
+  galleryUiBound = true;
 }
 
 async function getSiteContentJson(contentKey) {
@@ -440,7 +448,8 @@ async function getSiteContentJson(contentKey) {
         if (shellWrap) {
           shellWrap.innerHTML = byKey['full_shell'];
           rebindSiteShellInteractions();
-          return;
+          galleryUiBound = false;
+          bindLightboxUi();
         }
       }
       if (byKey['full_page']) {
@@ -448,7 +457,8 @@ async function getSiteContentJson(contentKey) {
         if (fullPageWrap) {
           fullPageWrap.innerHTML = byKey['full_page'];
           rebindSiteShellInteractions();
-          return;
+          galleryUiBound = false;
+          bindLightboxUi();
         }
       }
       if (byKey['gallery-hero']) {
@@ -465,8 +475,9 @@ async function getSiteContentJson(contentKey) {
     const raw = await getSiteContentJson(EVENT_GALLERY_KEY);
     if (Array.isArray(raw) && raw.length) {
       galleryPhotos = raw.map(function(row) {
+        const photoValue = row && (row.photo || row.image || row.url || row.src);
         return {
-          photo: (row && row.photo) ? String(row.photo).trim() : '',
+          photo: photoValue ? String(photoValue).trim() : '',
           title: (row && row.title) ? String(row.title) : '',
           caption: (row && row.caption) ? String(row.caption) : ''
         };
