@@ -310,7 +310,9 @@ function renderGalleryGrid() {
   items.forEach(function(item, index) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'gallery-card fade-up';
+    // Cards are injected after initial animation observer setup on some browsers.
+    // Force visible state so loaded photos are never hidden.
+    btn.className = 'gallery-card fade-up visible';
     btn.setAttribute('aria-label', (item.title || 'Event photo') + ', view larger');
     const img = document.createElement('img');
     img.src = item.photo;
