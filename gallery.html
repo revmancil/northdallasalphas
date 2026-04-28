@@ -561,8 +561,9 @@ async function deleteGalleryPhoto(index) {
   const confirmed = confirm('Delete this photo from gallery and storage? This cannot be undone.');
   if (!confirmed) return;
   try {
+    const encodedPath = encodeURIComponent(item.path).replace(/%2F/g, '/');
     const delRes = await fetch(
-      SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_BUCKET + '/' + item.path,
+      SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_BUCKET + '/' + encodedPath,
       {
         method: 'DELETE',
         headers: adminAuthHeaders()

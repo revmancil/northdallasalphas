@@ -3283,24 +3283,26 @@ async function checkPageEditorStorageHealth(force) {
   pageEditorStorageCheckInFlight = true;
   setPageEditorStorageNotice('info', 'Checking page editor storage bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong>...');
   try {
-    const checkUrl = SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/__healthcheck__';
+    // Use list endpoint to validate bucket existence without requiring a known object path.
+    const checkUrl = SUPABASE_URL + '/storage/v1/object/list/' + PAGE_EDITOR_IMAGE_BUCKET;
     const res = await fetch(checkUrl, {
-      method: 'GET',
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ limit: 1, offset: 0 })
     });
     const body = await res.text().catch(function() { return ''; });
     const lowerBody = (body || '').toLowerCase();
-    if (res.status === 404) {
+    if (res.ok) {
       setPageEditorStorageNotice('ok', 'Page editor image bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> is reachable (public). Images dropped or uploaded here will render on the live site.');
       pageEditorStorageChecked = true;
       return;
     }
-    if (res.status === 400 && (lowerBody.indexOf('not public') >= 0 || lowerBody.indexOf('private') >= 0)) {
+    if ((res.status === 400 || res.status === 401 || res.status === 403) && (lowerBody.indexOf('not public') >= 0 || lowerBody.indexOf('private') >= 0)) {
       setPageEditorStorageNotice('warn', 'Bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> is private. Make it public in Supabase Storage so inline images can render on public pages.');
       pageEditorStorageChecked = true;
       return;
     }
-    if (res.status === 400 && lowerBody.indexOf('not found') >= 0) {
+    if ((res.status === 400 || res.status === 404) && (lowerBody.indexOf('not found') >= 0 || lowerBody.indexOf('does not exist') >= 0)) {
       setPageEditorStorageNotice('warn', 'Bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> was not found. Create it in Supabase Storage before uploading editor images.');
       pageEditorStorageChecked = true;
       return;
@@ -3424,24 +3426,43 @@ async function uploadPageEditorImageToStorage(file) {
   if (!token) throw new Error('Admin session expired. Please sign in again.');
   const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
   const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
-  const path = 'page-sections/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + safeExt;
-  const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + path;
-  const res = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + token,
-      'x-upsert': 'true',
-      'Content-Type': file.type || 'application/octet-stream'
-    },
-    body: file
-  });
-  if (!res.ok) {
-    let details = '';
-    try { details = await res.text(); } catch (e) {}
+  const fileStamp = Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+  const pathCandidates = [
+    'page-sections/' + fileStamp + '.' + safeExt,
+    'page-sections-' + fileStamp + '.' + safeExt
+  ];
+  let path = '';
+  let uploaded = false;
+  let details = '';
+  for (var idx = 0; idx < pathCandidates.length; idx++) {
+    path = pathCandidates[idx];
+    const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
+    const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + encodedPath;
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + token,
+        'x-upsert': 'true',
+        'Content-Type': file.type || 'application/octet-stream'
+      },
+      body: file
+    });
+    if (res.ok) {
+      uploaded = true;
+      break;
+    }
+    try { details = await res.text(); } catch (e) { details = ''; }
+    if (res.status !== 400) break;
+  }
+  if (!uploaded) {
+    const lowerDetails = String(details || '').toLowerCase();
+    if (lowerDetails.indexOf('bucket') >= 0 && (lowerDetails.indexOf('not found') >= 0 || lowerDetails.indexOf('does not exist') >= 0)) {
+      throw new Error('Image upload failed: bucket "' + PAGE_EDITOR_IMAGE_BUCKET + '" was not found in this Supabase project.');
+    }
     throw new Error('Image upload failed. Ensure the "' + PAGE_EDITOR_IMAGE_BUCKET + '" bucket exists and is writable. ' + (details || ''));
   }
-  return SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + path;
+  return SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + encodeURIComponent(path).replace(/%2F/g, '/');
 }
 
 async function uploadAndInsertEditorImage(file) {
@@ -4630,25 +4651,44 @@ async function uploadEventGalleryImageToStorage(file) {
   }
   const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
   const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
-  const path = 'event-gallery/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + safeExt;
-  const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + path;
-  const res = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + token,
-      'x-upsert': 'true',
-      'Content-Type': uploadFile.type || file.type || 'application/octet-stream'
-    },
-    body: uploadFile
-  });
-  if (!res.ok) {
-    let details = '';
-    try { details = await res.text(); } catch (e) {}
-    throw new Error('Gallery upload failed. Ensure bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" exists and is writable. ' + (details || ''));
+  const fileStamp = Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+  const pathCandidates = [
+    'event-gallery/' + fileStamp + '.' + safeExt,
+    'event-gallery-' + fileStamp + '.' + safeExt
+  ];
+  let lastDetails = '';
+  let path = '';
+  let uploaded = false;
+  for (var idx = 0; idx < pathCandidates.length; idx++) {
+    path = pathCandidates[idx];
+    const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
+    const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + encodedPath;
+    const res = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + token,
+        'x-upsert': 'true',
+        'Content-Type': uploadFile.type || file.type || 'application/octet-stream'
+      },
+      body: uploadFile
+    });
+    if (res.ok) {
+      uploaded = true;
+      break;
+    }
+    try { lastDetails = await res.text(); } catch (e) { lastDetails = ''; }
+    if (res.status !== 400) break;
+  }
+  if (!uploaded) {
+    const detailLower = String(lastDetails || '').toLowerCase();
+    if (detailLower.indexOf('bucket') !== -1 && detailLower.indexOf('not found') !== -1) {
+      throw new Error('Gallery upload failed: Supabase bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" was not found. Create it in Storage, set it public, then retry.');
+    }
+    throw new Error('Gallery upload failed. Ensure bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" exists and is writable. ' + (lastDetails || ''));
   }
   return {
-    url: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + path,
+    url: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + encodeURIComponent(path).replace(/%2F/g, '/'),
     path: path
   };
 }
