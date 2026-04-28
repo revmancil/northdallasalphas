@@ -1862,6 +1862,7 @@
 <input type="file" id="pageEditorImageInput" accept="image/*" style="display:none;" onchange="handlePageEditorImageUpload(event)" />
 <input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
@@ -1874,6 +1875,9 @@
 // ── Auth Guard ──
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 const SESSION_KEY = 'nda_admin_auth';
 if (sessionStorage.getItem(SESSION_KEY) !== 'true') {
   window.location.href = 'admin.html';
@@ -1923,7 +1927,7 @@ function showPanel(id) {
   if (id === 'announcements') loadAnnouncement();
   if (id === 'newsletter')    loadNewsletterDefaults();
   if (id === 'gallery')       loadEventGalleryPanel();
-  if (id === 'pages')         checkPageEditorStorageHealth();
+  if (id === 'pages')         setPageEditorStorageNotice('', '');
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
 }
@@ -3278,42 +3282,9 @@ function setPageEditorStorageNotice(kind, msg) {
 }
 
 async function checkPageEditorStorageHealth(force) {
-  if (pageEditorStorageCheckInFlight) return;
-  if (pageEditorStorageChecked && !force) return;
-  pageEditorStorageCheckInFlight = true;
-  setPageEditorStorageNotice('info', 'Checking page editor storage bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong>...');
-  try {
-    // Use list endpoint to validate bucket existence without requiring a known object path.
-    const checkUrl = SUPABASE_URL + '/storage/v1/object/list/' + PAGE_EDITOR_IMAGE_BUCKET;
-    const res = await fetch(checkUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-      body: JSON.stringify({ limit: 1, offset: 0 })
-    });
-    const body = await res.text().catch(function() { return ''; });
-    const lowerBody = (body || '').toLowerCase();
-    if (res.ok) {
-      setPageEditorStorageNotice('ok', 'Page editor image bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> is reachable (public). Images dropped or uploaded here will render on the live site.');
-      pageEditorStorageChecked = true;
-      return;
-    }
-    if ((res.status === 400 || res.status === 401 || res.status === 403) && (lowerBody.indexOf('not public') >= 0 || lowerBody.indexOf('private') >= 0)) {
-      setPageEditorStorageNotice('warn', 'Bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> is private. Make it public in Supabase Storage so inline images can render on public pages.');
-      pageEditorStorageChecked = true;
-      return;
-    }
-    if ((res.status === 400 || res.status === 404) && (lowerBody.indexOf('not found') >= 0 || lowerBody.indexOf('does not exist') >= 0)) {
-      setPageEditorStorageNotice('warn', 'Bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> was not found. Create it in Supabase Storage before uploading editor images.');
-      pageEditorStorageChecked = true;
-      return;
-    }
-    setPageEditorStorageNotice('warn', 'Could not confirm storage readiness for bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> (status ' + res.status + '). Image uploads may fail until this is fixed.');
-    pageEditorStorageChecked = true;
-  } catch (err) {
-    setPageEditorStorageNotice('warn', 'Storage health check failed for bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong>. ' + escHtml(err.message || 'Unknown error') + '.');
-  } finally {
-    pageEditorStorageCheckInFlight = false;
-  }
+  pageEditorStorageCheckInFlight = false;
+  pageEditorStorageChecked = true;
+  setPageEditorStorageNotice('', '');
 }
 
 function sanitizeEditorHtml(rawHtml) {
@@ -3424,45 +3395,30 @@ function setPageEditorHtml(html) {
 async function uploadPageEditorImageToStorage(file) {
   const token = getAdminToken();
   if (!token) throw new Error('Admin session expired. Please sign in again.');
+  if (!supabaseClient) throw new Error('Supabase client failed to initialize.');
   const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
   const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
-  const fileStamp = Date.now() + '-' + Math.random().toString(36).slice(2, 9);
-  const pathCandidates = [
-    'page-sections/' + fileStamp + '.' + safeExt,
-    'page-sections-' + fileStamp + '.' + safeExt
-  ];
-  let path = '';
-  let uploaded = false;
-  let details = '';
-  for (var idx = 0; idx < pathCandidates.length; idx++) {
-    path = pathCandidates[idx];
-    const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
-    const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + encodedPath;
-    const res = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + token,
-        'x-upsert': 'true',
-        'Content-Type': file.type || 'application/octet-stream'
-      },
-      body: file
+  const path = 'page-sections/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + safeExt;
+  try {
+    const uploadClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: {
+          Authorization: 'Bearer ' + token
+        }
+      }
     });
-    if (res.ok) {
-      uploaded = true;
-      break;
+    const result = await uploadClient.storage.from('page-editor').upload(path, file, {
+      upsert: true,
+      contentType: file.type || 'application/octet-stream'
+    });
+    if (result.error) {
+      throw result.error;
     }
-    try { details = await res.text(); } catch (e) { details = ''; }
-    if (res.status !== 400) break;
+    return SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + encodeURIComponent(path).replace(/%2F/g, '/');
+  } catch (err) {
+    console.error('Page editor upload failed (full error object):', err);
+    throw new Error(err && err.message ? err.message : 'Image upload failed for bucket "page-editor".');
   }
-  if (!uploaded) {
-    const lowerDetails = String(details || '').toLowerCase();
-    if (lowerDetails.indexOf('bucket') >= 0 && (lowerDetails.indexOf('not found') >= 0 || lowerDetails.indexOf('does not exist') >= 0)) {
-      throw new Error('Image upload failed: bucket "' + PAGE_EDITOR_IMAGE_BUCKET + '" was not found in this Supabase project.');
-    }
-    throw new Error('Image upload failed. Ensure the "' + PAGE_EDITOR_IMAGE_BUCKET + '" bucket exists and is writable. ' + (details || ''));
-  }
-  return SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + encodeURIComponent(path).replace(/%2F/g, '/');
 }
 
 async function uploadAndInsertEditorImage(file) {
@@ -4927,7 +4883,6 @@ function escHtml(str) {
 // ══════════════════════════════════════════════════
 (function init() {
   ensurePageEditorQuill();
-  checkPageEditorStorageHealth();
   loadSettings();
   updateDashboardStats();
   loadEventsList();
