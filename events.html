@@ -446,8 +446,18 @@
 <section class="all-events">
   <div class="container">
     <span class="section-label">Upcoming</span>
-    <h2 class="section-title" style="margin-bottom: 40px;" id="allEventsHeading">All Events</h2>
+    <h2 class="section-title" style="margin-bottom: 40px;" id="allEventsHeading">Upcoming Events</h2>
     <div id="allEventsList">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</section>
+
+<section class="all-events" id="pastEventsSection" style="display:none;">
+  <div class="container">
+    <span class="section-label">Archive</span>
+    <h2 class="section-title" style="margin-bottom: 40px;">Past Events</h2>
+    <div id="pastEventsList">
       <!-- Rendered by JS -->
     </div>
   </div>
@@ -652,22 +662,24 @@ function renderFeaturedEvent(events) {
 }
 
 // ── Render All Events list ──
-function renderAllEvents(events) {
-  const container = document.getElementById('allEventsList');
+function renderAllEvents(events, opts) {
+  const options = opts || {};
+  const container = document.getElementById(options.containerId || 'allEventsList');
+  if (!container) return;
   container.innerHTML = '';
 
   if (!events || events.length === 0) {
     container.innerHTML = `
       <div class="no-events-msg">
         <i class="fas fa-calendar-times"></i>
-        <p>No upcoming events at this time. Check back soon!</p>
+        <p>${escHtml(options.emptyMessage || 'No events to display.')}</p>
       </div>`;
     return;
   }
 
-  allEventsStore = events;
+  allEventsStore = Array.isArray(events) ? events.slice() : [];
 
-  events.forEach((ev, idx) => {
+  events.forEach((ev) => {
     const parsed = parseEventDate(ev.datetime);
 
     const card = document.createElement('div');
@@ -733,12 +745,12 @@ function renderAllEvents(events) {
     card.addEventListener('click', function(e) {
       // Don't open if clicking a link/button directly
       if (e.target.closest('a, button')) return;
-      openEventModal(allEventsStore[idx]);
+      openEventModal(ev);
     });
     card.addEventListener('keydown', function(e) {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        openEventModal(allEventsStore[idx]);
+        openEventModal(ev);
       }
     });
 
@@ -765,10 +777,19 @@ function loadAnnouncement() {
 function normalizeEvents(rows) {
   if (!rows || !rows.length) return null;
   return rows.map(function(r) {
+    const dtRaw = r.datetime ? String(r.datetime).trim() : '';
+    const datePart = dtRaw.split(' ')[0] || '';
+    const segs = datePart.split('/');
+    const fallbackDate =
+      segs.length === 3 && /^\d{4}$/.test(String(segs[2] || ''))
+        ? String(segs[2]) + '-' + String(segs[0] || '').padStart(2, '0') + '-' + String(segs[1] || '').padStart(2, '0')
+        : '';
+    const normalizedDate = (r.event_date ? String(r.event_date) : '').trim() || fallbackDate;
     return {
       name: r.name || '',
       location: r.location || '',
       datetime: r.datetime || '',
+      eventDate: normalizedDate,
       featured: !!r.featured,
       flyer: r.flyer || '',
       description: r.description || '',
@@ -777,19 +798,69 @@ function normalizeEvents(rows) {
   });
 }
 
+function toEventDateValue(ev) {
+  const raw = (ev && ev.eventDate ? String(ev.eventDate) : '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+  const dtRaw = (ev && ev.datetime ? String(ev.datetime) : '').trim();
+  const datePart = dtRaw.split(' ')[0] || '';
+  const segs = datePart.split('/');
+  if (segs.length === 3) {
+    const mm = String(segs[0] || '').padStart(2, '0');
+    const dd = String(segs[1] || '').padStart(2, '0');
+    const yyyy = String(segs[2] || '');
+    if (/^\d{4}$/.test(yyyy)) return yyyy + '-' + mm + '-' + dd;
+  }
+  return '';
+}
+
+function sortByEventDate(events, dir) {
+  const list = Array.isArray(events) ? events.slice() : [];
+  list.sort(function(a, b) {
+    const da = toEventDateValue(a) || '0000-00-00';
+    const db = toEventDateValue(b) || '0000-00-00';
+    if (da === db) return 0;
+    if (dir === 'desc') return da > db ? -1 : 1;
+    return da < db ? -1 : 1;
+  });
+  return list;
+}
+
 // ── Init ── load from Supabase first
 (async function() {
-  let events = null;
+  let upcomingEvents = null;
+  let pastEvents = null;
   try {
-    const rows = await sb.getAll('events', 'order=sort_order.asc');
-    events = normalizeEvents(rows);
+    // Use ISO date from current runtime to keep day-based filtering current.
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const [upcomingRows, pastRows] = await Promise.all([
+      sb.getAll('events', `event_date=gte.${todayIso}&order=event_date.asc&order=sort_order.asc`),
+      sb.getAll('events', `event_date=lt.${todayIso}&order=event_date.desc&order=sort_order.asc`)
+    ]);
+    upcomingEvents = sortByEventDate(normalizeEvents(upcomingRows) || [], 'asc');
+    pastEvents = sortByEventDate(normalizeEvents(pastRows) || [], 'desc');
   } catch (err) {
     console.warn('Supabase load failed:', err);
   }
-  if (!events) events = getEvents();
+  if (!upcomingEvents) {
+    upcomingEvents = sortByEventDate(getEvents(), 'asc');
+    pastEvents = [];
+  }
   await loadAnnouncement();
-  renderFeaturedEvent(events);
-  renderAllEvents(events);
+  renderFeaturedEvent(upcomingEvents);
+  renderAllEvents(upcomingEvents, {
+    containerId: 'allEventsList',
+    emptyMessage: 'No upcoming events at this time. Check back soon!'
+  });
+  const pastSection = document.getElementById('pastEventsSection');
+  if (pastEvents && pastEvents.length) {
+    if (pastSection) pastSection.style.display = '';
+    renderAllEvents(pastEvents, {
+      containerId: 'pastEventsList',
+      emptyMessage: 'No past events yet.'
+    });
+  } else if (pastSection) {
+    pastSection.style.display = 'none';
+  }
   // Force show all animated elements after async load
   setTimeout(() => {
     document.querySelectorAll(".fade-up, .fade-in").forEach(el => {
