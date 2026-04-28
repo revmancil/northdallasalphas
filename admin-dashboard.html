@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.quilljs.com/1.3.7/quill.snow.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -730,32 +731,33 @@
     }
     .editor-toolbar {
       background: var(--dark2);
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap;
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 8px 10px;
     }
-    .editor-toolbar-btn {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 4px;
-      color: rgba(255,255,255,0.75);
-      padding: 6px 9px;
-      font-size: 0.78rem;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: 'Inter', sans-serif;
+    .editor-toolbar .ql-formats { margin-right: 10px !important; }
+    .editor-toolbar .ql-picker-label,
+    .editor-toolbar .ql-picker-item,
+    .editor-toolbar .ql-stroke,
+    .editor-toolbar .ql-fill {
+      color: rgba(255,255,255,0.78);
+      stroke: rgba(255,255,255,0.78);
     }
-    .editor-toolbar-btn:hover {
-      background: rgba(201,168,76,0.15);
+    .editor-toolbar button:hover .ql-stroke,
+    .editor-toolbar button.ql-active .ql-stroke,
+    .editor-toolbar button:hover .ql-fill,
+    .editor-toolbar button.ql-active .ql-fill,
+    .editor-toolbar .ql-picker-label:hover,
+    .editor-toolbar .ql-picker-label.ql-active {
       color: var(--gold);
-      border-color: rgba(201,168,76,0.3);
+      stroke: var(--gold);
     }
-    .editor-toolbar-sep {
-      width: 1px; height: 20px;
-      background: rgba(255,255,255,0.1);
-      margin: 0 3px;
+    .editor-toolbar .ql-picker-options {
+      background: #1d1d1d;
+      border-color: rgba(255,255,255,0.12) !important;
+    }
+    .editor-toolbar .ql-picker-item:hover {
+      color: var(--gold);
     }
     .editor-area {
       min-height: 220px;
@@ -765,6 +767,38 @@
       color: var(--gray-800);
       outline: none;
       border: none;
+    }
+    .editor-panel .ql-container {
+      border: none;
+      min-height: 260px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--gray-800);
+      background: #fff;
+    }
+    .editor-panel .ql-editor {
+      min-height: 260px;
+      padding: 18px 20px;
+    }
+    .editor-panel .ql-editor h1,
+    .editor-panel .ql-editor h2,
+    .editor-panel .ql-editor h3 {
+      font-family: 'Playfair Display', serif;
+      color: var(--gray-800);
+      margin: 0.35em 0;
+    }
+    .editor-panel .ql-editor p,
+    .editor-panel .ql-editor li { color: var(--gray-700); }
+    .editor-panel .ql-editor a {
+      color: #1f5d96;
+      text-decoration: underline;
+    }
+    .editor-panel .ql-editor img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      margin: 12px 0;
     }
     .editor-footer {
       padding: 12px 16px;
@@ -1264,6 +1298,7 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">Use <strong>Visual Page Editor (Recommended)</strong> to click directly on page content and edit it like a document. HTML source controls are hidden unless you choose to open them.</p>
+          <div id="pageEditorStorageNotice" style="display:none;margin:0 0 14px;padding:10px 12px;border-radius:7px;font-size:0.8rem;line-height:1.45;"></div>
 
           <!-- Page Tabs -->
           <div class="section-tabs" id="pageTabs">
@@ -1281,22 +1316,33 @@
 
           <!-- Editor -->
           <div class="editor-panel" id="editorPanel">
-            <div class="editor-toolbar">
-              <button class="editor-toolbar-btn" onclick="execCmd('bold')" title="Bold"><i class="fas fa-bold"></i></button>
-              <button class="editor-toolbar-btn" onclick="execCmd('italic')" title="Italic"><i class="fas fa-italic"></i></button>
-              <button class="editor-toolbar-btn" onclick="execCmd('underline')" title="Underline"><i class="fas fa-underline"></i></button>
-              <div class="editor-toolbar-sep"></div>
-              <button class="editor-toolbar-btn" onclick="execCmd('justifyLeft')" title="Left"><i class="fas fa-align-left"></i></button>
-              <button class="editor-toolbar-btn" onclick="execCmd('justifyCenter')" title="Center"><i class="fas fa-align-center"></i></button>
-              <button class="editor-toolbar-btn" onclick="execCmd('justifyRight')" title="Right"><i class="fas fa-align-right"></i></button>
-              <div class="editor-toolbar-sep"></div>
-              <button class="editor-toolbar-btn" onclick="execCmd('insertUnorderedList')" title="Bullet List"><i class="fas fa-list-ul"></i></button>
-              <button class="editor-toolbar-btn" onclick="execCmd('insertOrderedList')" title="Numbered List"><i class="fas fa-list-ol"></i></button>
-              <div class="editor-toolbar-sep"></div>
-              <button class="editor-toolbar-btn" onclick="execCmd('undo')" title="Undo"><i class="fas fa-undo"></i></button>
-              <button class="editor-toolbar-btn" onclick="execCmd('redo')" title="Redo"><i class="fas fa-redo"></i></button>
+            <div class="editor-toolbar" id="pageEditorToolbar">
+              <span class="ql-formats">
+                <select class="ql-header">
+                  <option selected></option>
+                  <option value="1"></option>
+                  <option value="2"></option>
+                  <option value="3"></option>
+                </select>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-bold"></button>
+                <button class="ql-italic"></button>
+                <button class="ql-underline"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-list" value="ordered"></button>
+                <button class="ql-list" value="bullet"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-link"></button>
+                <button class="ql-image"></button>
+              </span>
+              <span class="ql-formats">
+                <button class="ql-clean"></button>
+              </span>
             </div>
-            <div class="editor-area" id="editorArea" contenteditable="true"></div>
+            <div class="editor-area" id="editorArea"></div>
             <div class="editor-footer">
               <button class="btn-sm danger" onclick="resetFullPageToDefault()" title="Remove full page override and restore section-based defaults">
                 <i class="fas fa-rotate-left"></i> Reset Full Page to Default
@@ -1798,8 +1844,10 @@
 <input type="file" id="officerPhotoInput" accept="image/*" style="display:none;" onchange="handleOfficerPhotoUpload(event)" />
 <input type="file" id="presidentPhotoInput" accept="image/*" style="display:none;" onchange="handlePresidentPhotoUpload(event)" />
 <input type="file" id="eventGalleryPhotoInput" accept="image/*" style="display:none;" onchange="handleEventGalleryPhotoUpload(event)" />
+<input type="file" id="pageEditorImageInput" accept="image/*" style="display:none;" onchange="handlePageEditorImageUpload(event)" />
 <input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
 
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
 /* ============================================================
    NORTH DALLAS ALPHAS — ADMIN DASHBOARD v3
@@ -1859,6 +1907,7 @@ function showPanel(id) {
   if (id === 'announcements') loadAnnouncement();
   if (id === 'newsletter')    loadNewsletterDefaults();
   if (id === 'gallery')       loadEventGalleryPanel();
+  if (id === 'pages')         checkPageEditorStorageHealth();
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
 }
@@ -3181,6 +3230,10 @@ const PAGE_SECTIONS = {
 
 let currentPage    = 'home';
 let currentSection = 'hero';
+let pageEditorQuill = null;
+const PAGE_EDITOR_IMAGE_BUCKET = 'page-editor';
+let pageEditorStorageCheckInFlight = false;
+let pageEditorStorageChecked = false;
 const PAGE_SOURCE_FILES = {
   home: 'index.html',
   about: 'about.html',
@@ -3191,6 +3244,212 @@ const PAGE_SOURCE_FILES = {
   gallery: 'gallery.html'
 };
 
+function setPageEditorStorageNotice(kind, msg) {
+  const box = document.getElementById('pageEditorStorageNotice');
+  if (!box) return;
+  if (!msg) {
+    box.style.display = 'none';
+    box.textContent = '';
+    return;
+  }
+  const stylesByKind = {
+    ok: 'border:1px solid rgba(39,174,96,0.25);background:rgba(39,174,96,0.08);color:#1f6f45;',
+    warn: 'border:1px solid rgba(231,76,60,0.3);background:rgba(231,76,60,0.08);color:#8f2a2a;',
+    info: 'border:1px solid rgba(52,152,219,0.26);background:rgba(52,152,219,0.08);color:#245a88;'
+  };
+  box.style.cssText = 'display:block;margin:0 0 14px;padding:10px 12px;border-radius:7px;font-size:0.8rem;line-height:1.45;' + (stylesByKind[kind] || stylesByKind.info);
+  box.innerHTML = msg;
+}
+
+async function checkPageEditorStorageHealth(force) {
+  if (pageEditorStorageCheckInFlight) return;
+  if (pageEditorStorageChecked && !force) return;
+  pageEditorStorageCheckInFlight = true;
+  setPageEditorStorageNotice('info', 'Checking page editor storage bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong>...');
+  try {
+    const checkUrl = SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/__healthcheck__';
+    const res = await fetch(checkUrl, {
+      method: 'GET',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    const body = await res.text().catch(function() { return ''; });
+    const lowerBody = (body || '').toLowerCase();
+    if (res.status === 404) {
+      setPageEditorStorageNotice('ok', 'Page editor image bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> is reachable (public). Images dropped or uploaded here will render on the live site.');
+      pageEditorStorageChecked = true;
+      return;
+    }
+    if (res.status === 400 && (lowerBody.indexOf('not public') >= 0 || lowerBody.indexOf('private') >= 0)) {
+      setPageEditorStorageNotice('warn', 'Bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> is private. Make it public in Supabase Storage so inline images can render on public pages.');
+      pageEditorStorageChecked = true;
+      return;
+    }
+    if (res.status === 400 && lowerBody.indexOf('not found') >= 0) {
+      setPageEditorStorageNotice('warn', 'Bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> was not found. Create it in Supabase Storage before uploading editor images.');
+      pageEditorStorageChecked = true;
+      return;
+    }
+    setPageEditorStorageNotice('warn', 'Could not confirm storage readiness for bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong> (status ' + res.status + '). Image uploads may fail until this is fixed.');
+    pageEditorStorageChecked = true;
+  } catch (err) {
+    setPageEditorStorageNotice('warn', 'Storage health check failed for bucket <strong>' + PAGE_EDITOR_IMAGE_BUCKET + '</strong>. ' + escHtml(err.message || 'Unknown error') + '.');
+  } finally {
+    pageEditorStorageCheckInFlight = false;
+  }
+}
+
+function sanitizeEditorHtml(rawHtml) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString('<div id="root">' + (rawHtml || '') + '</div>', 'text/html');
+  const root = doc.getElementById('root');
+  if (!root) return '';
+  const allowedTags = {
+    P: true, BR: true, STRONG: true, B: true, EM: true, I: true, U: true,
+    UL: true, OL: true, LI: true, A: true, IMG: true, H1: true, H2: true, H3: true, H4: true,
+    BLOCKQUOTE: true, SPAN: true
+  };
+  const nodes = Array.from(root.querySelectorAll('*'));
+  nodes.forEach(function(node) {
+    const tag = node.tagName;
+    if (!allowedTags[tag]) {
+      const parent = node.parentNode;
+      if (parent) {
+        while (node.firstChild) parent.insertBefore(node.firstChild, node);
+        parent.removeChild(node);
+      }
+      return;
+    }
+    const attrs = Array.from(node.attributes || []);
+    attrs.forEach(function(attr) {
+      const name = (attr.name || '').toLowerCase();
+      const value = attr.value || '';
+      const isEvent = name.indexOf('on') === 0;
+      if (isEvent) {
+        node.removeAttribute(attr.name);
+        return;
+      }
+      if (tag === 'A') {
+        if (name !== 'href' && name !== 'target' && name !== 'rel' && name !== 'title') node.removeAttribute(attr.name);
+        if (name === 'href' && !/^https?:\/\//i.test(value) && value.charAt(0) !== '/' && value.charAt(0) !== '#') node.removeAttribute('href');
+      } else if (tag === 'IMG') {
+        if (name !== 'src' && name !== 'alt' && name !== 'title') node.removeAttribute(attr.name);
+        if (name === 'src' && !/^https?:\/\//i.test(value) && !/^data:image\//i.test(value) && value.charAt(0) !== '/') {
+          node.removeAttribute('src');
+        }
+      } else {
+        if (name === 'style' || name === 'class' || name === 'id') node.removeAttribute(attr.name);
+      }
+    });
+    if (tag === 'A') {
+      node.setAttribute('target', '_blank');
+      node.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+  return root.innerHTML;
+}
+
+function ensurePageEditorQuill() {
+  if (pageEditorQuill || typeof Quill === 'undefined') return;
+  pageEditorQuill = new Quill('#editorArea', {
+    theme: 'snow',
+    modules: {
+      toolbar: {
+        container: '#pageEditorToolbar',
+        handlers: {
+          image: function() {
+            const input = document.getElementById('pageEditorImageInput');
+            if (input) input.click();
+          }
+        }
+      },
+      clipboard: { matchVisual: false }
+    },
+    formats: ['header', 'bold', 'italic', 'underline', 'list', 'link', 'image']
+  });
+  const root = pageEditorQuill.root;
+  root.addEventListener('drop', function(e) {
+    const dt = e.dataTransfer;
+    const file = dt && dt.files && dt.files.length ? dt.files[0] : null;
+    if (!file || !/^image\//i.test(file.type)) return;
+    e.preventDefault();
+    const range = pageEditorQuill.getSelection(true);
+    if (range) pageEditorQuill.setSelection(range.index, 0, 'silent');
+    uploadAndInsertEditorImage(file);
+  });
+  root.addEventListener('paste', function(e) {
+    const items = e.clipboardData && e.clipboardData.items ? Array.from(e.clipboardData.items) : [];
+    const imageItem = items.find(function(i) { return i && i.type && /^image\//i.test(i.type); });
+    if (!imageItem) return;
+    const file = imageItem.getAsFile ? imageItem.getAsFile() : null;
+    if (!file) return;
+    e.preventDefault();
+    uploadAndInsertEditorImage(file);
+  });
+}
+
+function getPageEditorHtml() {
+  if (pageEditorQuill) return pageEditorQuill.root.innerHTML;
+  const editor = document.getElementById('editorArea');
+  return editor ? editor.innerHTML : '';
+}
+
+function setPageEditorHtml(html) {
+  const safeHtml = sanitizeEditorHtml(html || '');
+  if (pageEditorQuill) {
+    pageEditorQuill.clipboard.dangerouslyPasteHTML(safeHtml || '<p><br></p>');
+    return;
+  }
+  const editor = document.getElementById('editorArea');
+  if (editor) editor.innerHTML = safeHtml;
+}
+
+async function uploadPageEditorImageToStorage(file) {
+  const token = getAdminToken();
+  if (!token) throw new Error('Admin session expired. Please sign in again.');
+  const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
+  const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = 'page-sections/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + safeExt;
+  const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + path;
+  const res = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + token,
+      'x-upsert': 'true',
+      'Content-Type': file.type || 'application/octet-stream'
+    },
+    body: file
+  });
+  if (!res.ok) {
+    let details = '';
+    try { details = await res.text(); } catch (e) {}
+    throw new Error('Image upload failed. Ensure the "' + PAGE_EDITOR_IMAGE_BUCKET + '" bucket exists and is writable. ' + (details || ''));
+  }
+  return SUPABASE_URL + '/storage/v1/object/public/' + PAGE_EDITOR_IMAGE_BUCKET + '/' + path;
+}
+
+async function uploadAndInsertEditorImage(file) {
+  ensurePageEditorQuill();
+  if (!pageEditorQuill) return;
+  try {
+    showToast('Uploading image...', 'info');
+    const imageUrl = await uploadPageEditorImageToStorage(file);
+    const range = pageEditorQuill.getSelection(true) || { index: pageEditorQuill.getLength(), length: 0 };
+    pageEditorQuill.insertEmbed(range.index, 'image', imageUrl, 'user');
+    pageEditorQuill.setSelection(range.index + 1, 0, 'silent');
+    showToast('Image uploaded and inserted.');
+  } catch (err) {
+    showToast(err.message || 'Could not upload image.', 'error');
+  }
+}
+
+function handlePageEditorImageUpload(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  uploadAndInsertEditorImage(file);
+  e.target.value = '';
+}
+
 // Friendlier labels for non-technical editors.
 Object.values(PAGE_SECTIONS).forEach(function(pageCfg) {
   if (!pageCfg || !pageCfg.sections) return;
@@ -3199,6 +3458,7 @@ Object.values(PAGE_SECTIONS).forEach(function(pageCfg) {
 });
 
 function toggleFullPageVisualEditor(showVisual) {
+  ensurePageEditorQuill();
   const visualWrap = document.getElementById('fullPageVisualEditor');
   const editorArea = document.getElementById('editorArea');
   const toolbar = document.querySelector('#editorPanel .editor-toolbar');
@@ -3238,22 +3498,20 @@ function buildFullPageEditorSrcDoc(contentHtml) {
 function syncFullPageFromVisual() {
   const frame = document.getElementById('fullPageEditorFrame');
   const source = document.getElementById('fullPageSourceEditor');
-  const editor = document.getElementById('editorArea');
-  if (!frame || !source || !editor || !frame.contentDocument) return;
+  if (!frame || !source || !frame.contentDocument) return;
   const root = frame.contentDocument.getElementById('visualRoot');
   if (!root) return;
   const html = root.innerHTML;
   source.value = html;
-  editor.innerHTML = html;
+  setPageEditorHtml(html);
 }
 
 function applyFullPageSourceToVisual() {
   const source = document.getElementById('fullPageSourceEditor');
-  const editor = document.getElementById('editorArea');
   const frame = document.getElementById('fullPageEditorFrame');
-  if (!source || !editor || !frame) return;
+  if (!source || !frame) return;
   const html = source.value || '';
-  editor.innerHTML = html;
+  setPageEditorHtml(html);
   frame.srcdoc = buildFullPageEditorSrcDoc(html);
 }
 
@@ -3275,10 +3533,9 @@ async function getDefaultSectionContent(pageId, sectionKey, fallbackHtml) {
 
 async function initializeVisualEditorForSection(pageId, sectionKey, html, fallbackHtml) {
   const finalHtml = (html && html.trim()) ? html : await getDefaultSectionContent(pageId, sectionKey, fallbackHtml);
-  const editor = document.getElementById('editorArea');
   const source = document.getElementById('fullPageSourceEditor');
   const frame = document.getElementById('fullPageEditorFrame');
-  if (editor) editor.innerHTML = finalHtml;
+  setPageEditorHtml(finalHtml);
   if (source) source.value = finalHtml;
   if (frame) frame.srcdoc = buildFullPageEditorSrcDoc(finalHtml);
 }
@@ -3311,6 +3568,7 @@ function loadPageSection(pageId) {
 }
 
 async function loadSectionContent(pageId, sectionKey) {
+  ensurePageEditorQuill();
   currentPage    = pageId;
   currentSection = sectionKey;
 
@@ -3330,13 +3588,13 @@ async function loadSectionContent(pageId, sectionKey) {
 
   const token = getAdminToken();
   if (!token) {
-    document.getElementById('editorArea').innerHTML = sec.default;
+    setPageEditorHtml(sec.default);
     if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, '', sec.default);
     return;
   }
   const canUsePageSections = await ensurePageSectionsAvailable(token);
   if (!canUsePageSections) {
-    document.getElementById('editorArea').innerHTML = sec.default;
+    setPageEditorHtml(sec.default);
     if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, '', sec.default);
     showToast('Could not access page sections. Run SUPABASE_CONTENT_SCHEMA.sql if not applied, or refresh and try again. ' + (pageSectionsCapabilityError ? '(' + pageSectionsCapabilityError + ')' : ''), 'error');
     return;
@@ -3348,25 +3606,30 @@ async function loadSectionContent(pageId, sectionKey) {
       token
     );
     const html = rows && rows.length && rows[0].content_html ? rows[0].content_html : sec.default;
-    document.getElementById('editorArea').innerHTML = html;
+    setPageEditorHtml(html);
     if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, html, sec.default);
   } catch (err) {
-    document.getElementById('editorArea').innerHTML = sec.default;
+    setPageEditorHtml(sec.default);
     if (isFullPage) await initializeVisualEditorForSection(pageId, sectionKey, '', sec.default);
     showToast('Could not load section content from Supabase.', 'error');
   }
 }
 
 function execCmd(cmd) {
-  document.getElementById('editorArea').focus();
-  document.execCommand(cmd, false, null);
+  ensurePageEditorQuill();
+  if (!pageEditorQuill) return;
+  pageEditorQuill.focus();
+  if (cmd === 'bold' || cmd === 'italic' || cmd === 'underline') {
+    const current = pageEditorQuill.getFormat()[cmd] === true;
+    pageEditorQuill.format(cmd, !current);
+  }
 }
 
 async function saveSection() {
   if (currentSection === 'full_page' || currentSection === 'full_shell') {
     syncFullPageFromVisual();
   }
-  const content = document.getElementById('editorArea').innerHTML;
+  const content = sanitizeEditorHtml(getPageEditorHtml());
   const token = getAdminToken();
   if (!token) {
     showToast('Admin session expired. Please sign in again.', 'error');
@@ -3418,7 +3681,7 @@ async function saveSection() {
 
 async function cancelEdit() {
   const sec = PAGE_SECTIONS[currentPage]?.sections[currentSection];
-  document.getElementById('editorArea').innerHTML = sec?.default || '';
+  setPageEditorHtml(sec?.default || '');
   await loadSectionContent(currentPage, currentSection);
   showToast('Changes discarded.', 'error');
 }
@@ -3448,7 +3711,7 @@ async function resetFullPageToDefault() {
       token
     );
     if (currentSection === 'full_page' || currentSection === 'full_shell') {
-      document.getElementById('editorArea').innerHTML = page.sections[currentSection].default || '';
+      setPageEditorHtml(page.sections[currentSection].default || '');
       await initializeVisualEditorForSection(currentPage, currentSection, '', page.sections[currentSection].default || '');
     }
     showToast('Full page override removed. Defaults restored.');
@@ -4405,6 +4668,8 @@ function escHtml(str) {
 // INIT
 // ══════════════════════════════════════════════════
 (function init() {
+  ensurePageEditorQuill();
+  checkPageEditorStorageHealth();
   loadSettings();
   updateDashboardStats();
   loadEventsList();
