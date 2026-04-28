@@ -1424,7 +1424,7 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">
-            Add photos from chapter events with optional titles and captions. Paste an image URL or upload from your computer (images are compressed for storage).
+            Add photos from chapter events with optional titles and captions. Paste an image URL or upload from your computer (uploads are sent to Supabase Storage bucket <strong>gallery-media</strong>).
             To edit the gallery page headline and intro text, open <strong>Page Editor</strong> and select the <strong>Photo Gallery</strong> tab.
           </p>
           <p class="hint-text" style="margin-top:8px;">
@@ -1441,7 +1441,7 @@
             </div>
             <div style="margin-top:8px;font-size:0.75rem;color:var(--gray-600);">
               Example format:
-              <code style="display:inline-block;margin-left:4px;padding:2px 6px;background:#eef5ff;border:1px solid #d9e9ff;border-radius:4px;color:#1f4e79;">https://&lt;project-ref&gt;.supabase.co/storage/v1/object/public/gallery/event-photo.jpg</code>
+              <code style="display:inline-block;margin-left:4px;padding:2px 6px;background:#eef5ff;border:1px solid #d9e9ff;border-radius:4px;color:#1f4e79;">https://&lt;project-ref&gt;.supabase.co/storage/v1/object/public/gallery-media/event-photo.jpg</code>
             </div>
           </div>
           <div id="eventGalleryList" style="margin-top:18px;"></div>
@@ -4312,6 +4312,7 @@ async function updateDashboardStats() {
 // EVENT PHOTO GALLERY (site_content.event_gallery)
 // ══════════════════════════════════════════════════
 const EVENT_GALLERY_CONTENT_KEY = 'event_gallery';
+const EVENT_GALLERY_IMAGE_BUCKET = 'gallery-media';
 let eventGalleryData = [];
 let activeEventGalleryPhotoIndex = -1;
 
@@ -4439,22 +4440,50 @@ function openEventGalleryPhotoUpload(i) {
   if (inp) inp.click();
 }
 
+async function uploadEventGalleryImageToStorage(file) {
+  const token = getAdminToken();
+  if (!token) throw new Error('Admin session expired. Please sign in again.');
+  const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
+  const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
+  const path = 'event-gallery/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + safeExt;
+  const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + path;
+  const res = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + token,
+      'x-upsert': 'true',
+      'Content-Type': file.type || 'application/octet-stream'
+    },
+    body: file
+  });
+  if (!res.ok) {
+    let details = '';
+    try { details = await res.text(); } catch (e) {}
+    throw new Error('Gallery upload failed. Ensure bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" exists and is writable. ' + (details || ''));
+  }
+  return SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + path;
+}
+
 function handleEventGalleryPhotoUpload(e) {
   const file = e.target.files[0];
-  if (!file || activeEventGalleryPhotoIndex < 0) return;
+  if (!file || activeEventGalleryPhotoIndex < 0) {
+    e.target.value = '';
+    return;
+  }
   const i = activeEventGalleryPhotoIndex;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    (async function() {
-      var dataUrl = ev.target.result;
-      dataUrl = await ensureInlinePhotoFits(dataUrl);
+  (async function() {
+    try {
+      showToast('Uploading photo to storage...', 'info');
+      const url = await uploadEventGalleryImageToStorage(file);
       syncEventGalleryDataFromDom();
-      if (eventGalleryData[i]) eventGalleryData[i].photo = dataUrl;
+      if (eventGalleryData[i]) eventGalleryData[i].photo = url;
       renderEventGalleryList();
-      showToast('Photo attached. Click Save Gallery to publish.', 'info');
-    })();
-  };
-  reader.readAsDataURL(file);
+      showToast('Photo uploaded. Click Save Gallery to publish.');
+    } catch (err) {
+      showToast(err.message || 'Could not upload gallery photo.', 'error');
+    }
+  })();
   e.target.value = '';
   activeEventGalleryPhotoIndex = -1;
 }
@@ -4466,9 +4495,6 @@ async function saveEventGallery() {
     var row = eventGalleryData[k];
     var photo = (row.photo || '').trim();
     if (!photo) continue;
-    if (photo.indexOf('data:image') === 0) {
-      photo = await ensureInlinePhotoFits(photo);
-    }
     cleaned.push({
       photo: photo,
       title: (row.title || '').trim(),
