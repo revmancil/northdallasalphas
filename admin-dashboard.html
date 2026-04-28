@@ -1424,7 +1424,7 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">
-            Add photos from chapter events with optional titles and captions. Paste an image URL or upload from your computer (uploads are sent to Supabase Storage bucket <strong>gallery-media</strong>).
+            Add photos from chapter events with optional titles and captions. Paste an image URL or upload from your computer (uploads are sent to Supabase Storage bucket <strong>chapter-media</strong>).
             To edit the gallery page headline and intro text, open <strong>Page Editor</strong> and select the <strong>Photo Gallery</strong> tab.
           </p>
           <p class="hint-text" style="margin-top:8px;">
@@ -1441,7 +1441,7 @@
             </div>
             <div style="margin-top:8px;font-size:0.75rem;color:var(--gray-600);">
               Example format:
-              <code style="display:inline-block;margin-left:4px;padding:2px 6px;background:#eef5ff;border:1px solid #d9e9ff;border-radius:4px;color:#1f4e79;">https://&lt;project-ref&gt;.supabase.co/storage/v1/object/public/gallery-media/event-photo.jpg</code>
+              <code style="display:inline-block;margin-left:4px;padding:2px 6px;background:#eef5ff;border:1px solid #d9e9ff;border-radius:4px;color:#1f4e79;">https://&lt;project-ref&gt;.supabase.co/storage/v1/object/public/chapter-media/event-photo.jpg</code>
             </div>
           </div>
           <div id="eventGalleryList" style="margin-top:18px;"></div>
@@ -1862,6 +1862,7 @@
 <input type="file" id="pageEditorImageInput" accept="image/*" style="display:none;" onchange="handlePageEditorImageUpload(event)" />
 <input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
 
+<script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
 <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 <script>
 /* ============================================================
@@ -4467,9 +4468,18 @@ async function updateDashboardStats() {
 // EVENT PHOTO GALLERY (site_content.event_gallery)
 // ══════════════════════════════════════════════════
 const EVENT_GALLERY_CONTENT_KEY = 'event_gallery';
-const EVENT_GALLERY_IMAGE_BUCKET = 'gallery-media';
+const EVENT_GALLERY_IMAGE_BUCKET = 'chapter-media';
 let eventGalleryData = [];
 let activeEventGalleryPhotoIndex = -1;
+
+function getStoragePathFromGalleryUrl(url) {
+  var value = String(url || '').trim();
+  if (!value) return '';
+  var marker = '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/';
+  var idx = value.indexOf(marker);
+  if (idx === -1) return '';
+  return decodeURIComponent(value.slice(idx + marker.length));
+}
 
 async function loadEventGalleryPanel() {
   const raw = await getContentJson(EVENT_GALLERY_CONTENT_KEY, []);
@@ -4477,6 +4487,7 @@ async function loadEventGalleryPanel() {
     ? raw.map(function(r) {
         return {
           photo: r && r.photo ? String(r.photo) : '',
+          path: r && r.path ? String(r.path) : '',
           title: r && r.title ? String(r.title) : '',
           caption: r && r.caption ? String(r.caption) : ''
         };
@@ -4551,7 +4562,10 @@ function renderEventGalleryList() {
     const p = document.getElementById('eg-photo-' + i);
     if (t) t.oninput = function() { eventGalleryData[i].title = t.value; };
     if (c) c.oninput = function() { eventGalleryData[i].caption = c.value; };
-    if (p) p.oninput = function() { eventGalleryData[i].photo = p.value; };
+    if (p) p.oninput = function() {
+      eventGalleryData[i].photo = p.value;
+      eventGalleryData[i].path = getStoragePathFromGalleryUrl(p.value);
+    };
   });
 }
 
@@ -4562,13 +4576,16 @@ function syncEventGalleryDataFromDom() {
     const p = document.getElementById('eg-photo-' + i);
     if (t) eventGalleryData[i].title = t.value;
     if (c) eventGalleryData[i].caption = c.value;
-    if (p) eventGalleryData[i].photo = p.value;
+    if (p) {
+      eventGalleryData[i].photo = p.value;
+      eventGalleryData[i].path = getStoragePathFromGalleryUrl(p.value);
+    }
   });
 }
 
 function addEventGalleryRow() {
   syncEventGalleryDataFromDom();
-  eventGalleryData.push({ photo: '', title: '', caption: '' });
+  eventGalleryData.push({ photo: '', path: '', title: '', caption: '' });
   renderEventGalleryList();
 }
 
@@ -4598,6 +4615,19 @@ function openEventGalleryPhotoUpload(i) {
 async function uploadEventGalleryImageToStorage(file) {
   const token = getAdminToken();
   if (!token) throw new Error('Admin session expired. Please sign in again.');
+  var uploadFile = file;
+  if (typeof imageCompression === 'function') {
+    try {
+      uploadFile = await imageCompression(file, {
+        maxWidthOrHeight: 1200,
+        initialQuality: 0.8,
+        useWebWorker: true
+      });
+    } catch (compressionErr) {
+      // Fallback to original file if compression fails.
+      uploadFile = file;
+    }
+  }
   const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
   const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
   const path = 'event-gallery/' + Date.now() + '-' + Math.random().toString(36).slice(2, 9) + '.' + safeExt;
@@ -4608,16 +4638,19 @@ async function uploadEventGalleryImageToStorage(file) {
       'apikey': SUPABASE_ANON_KEY,
       'Authorization': 'Bearer ' + token,
       'x-upsert': 'true',
-      'Content-Type': file.type || 'application/octet-stream'
+      'Content-Type': uploadFile.type || file.type || 'application/octet-stream'
     },
-    body: file
+    body: uploadFile
   });
   if (!res.ok) {
     let details = '';
     try { details = await res.text(); } catch (e) {}
     throw new Error('Gallery upload failed. Ensure bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" exists and is writable. ' + (details || ''));
   }
-  return SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + path;
+  return {
+    url: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + path,
+    path: path
+  };
 }
 
 function handleEventGalleryPhotoUpload(e) {
@@ -4630,9 +4663,12 @@ function handleEventGalleryPhotoUpload(e) {
   (async function() {
     try {
       showToast('Uploading photo to storage...', 'info');
-      const url = await uploadEventGalleryImageToStorage(file);
+      const uploaded = await uploadEventGalleryImageToStorage(file);
       syncEventGalleryDataFromDom();
-      if (eventGalleryData[i]) eventGalleryData[i].photo = url;
+      if (eventGalleryData[i]) {
+        eventGalleryData[i].photo = uploaded.url;
+        eventGalleryData[i].path = uploaded.path;
+      }
       renderEventGalleryList();
       showToast('Photo uploaded. Click Save Gallery to publish.');
     } catch (err) {
@@ -4652,6 +4688,7 @@ async function saveEventGallery() {
     if (!photo) continue;
     cleaned.push({
       photo: photo,
+      path: (row.path || '').trim(),
       title: (row.title || '').trim(),
       caption: (row.caption || '').trim()
     });
@@ -4660,7 +4697,7 @@ async function saveEventGallery() {
     await saveContentJson(EVENT_GALLERY_CONTENT_KEY, cleaned);
     eventGalleryData = cleaned.length
       ? cleaned.map(function(r) {
-          return { photo: r.photo, title: r.title, caption: r.caption };
+          return { photo: r.photo, path: r.path || '', title: r.title, caption: r.caption };
         })
       : [];
     renderEventGalleryList();

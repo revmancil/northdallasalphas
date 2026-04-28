@@ -7,6 +7,7 @@
   <meta name="description" content="Photos from Xi Tau Lambda Chapter programs, service projects, and brotherhood events — North Dallas Alphas." />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .gallery-section { padding: 72px 0 96px; background: var(--gray-100); min-height: 42vh; }
     .gallery-grid {
@@ -44,6 +45,25 @@
       background: var(--gray-200);
     }
     .gallery-card-cap { padding: 14px 16px 16px; }
+    .gallery-card-actions {
+      margin-top: 10px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    .gallery-delete-btn {
+      border: 1px solid rgba(170, 36, 36, 0.35);
+      background: #fff5f5;
+      color: #982626;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      cursor: pointer;
+      transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+    .gallery-delete-btn:hover { background: #ffe9e9; border-color: #aa2424; color: #7d1a1a; }
     .gallery-card-title {
       font-family: 'Playfair Display', serif;
       font-size: 1rem;
@@ -214,7 +234,7 @@
 
 <section class="gallery-section">
   <div class="container">
-    <div class="gallery-grid" id="galleryGrid" aria-live="polite"></div>
+    <div class="gallery-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" id="galleryGrid" aria-live="polite"></div>
     <div class="gallery-empty" id="galleryEmpty" hidden>
       <div><i class="fas fa-images" aria-hidden="true"></i></div>
       <p>Photos from our events will appear here soon. Visit <a href="events.html">Upcoming Events</a> to join us, or check back after the next chapter program.</p>
@@ -257,6 +277,7 @@
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
 const EVENT_GALLERY_KEY = 'event_gallery';
+const EVENT_GALLERY_BUCKET = 'chapter-media';
 
 function sbHeaders() {
   return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY };
@@ -289,6 +310,31 @@ function rebindSiteShellInteractions() {
 let galleryPhotos = [];
 let lbIndex = 0;
 let galleryUiBound = false;
+let isAdminUser = false;
+
+function getAdminToken() {
+  try {
+    const raw = localStorage.getItem('nda_sb_session');
+    if (!raw) return '';
+    const session = JSON.parse(raw);
+    const token = session && session.access_token ? String(session.access_token) : '';
+    const expiresAt = Number(session && session.expires_at ? session.expires_at : 0);
+    if (!token) return '';
+    if (expiresAt && Date.now() / 1000 >= expiresAt) return '';
+    return token;
+  } catch (err) {
+    return '';
+  }
+}
+
+function adminAuthHeaders() {
+  const token = getAdminToken();
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + token
+  };
+}
 
 function getVisibleGalleryItems() {
   return galleryPhotos.filter(function(x) {
@@ -308,6 +354,7 @@ function renderGalleryGrid() {
   }
   empty.hidden = true;
   items.forEach(function(item, index) {
+    const cardIndex = index;
     const btn = document.createElement('button');
     btn.type = 'button';
     // Cards are injected after initial animation observer setup on some browsers.
@@ -315,6 +362,7 @@ function renderGalleryGrid() {
     btn.className = 'gallery-card fade-up visible';
     btn.setAttribute('aria-label', (item.title || 'Event photo') + ', view larger');
     const img = document.createElement('img');
+    img.className = 'aspect-square object-cover w-full';
     img.src = item.photo;
     img.alt = item.title || 'Chapter event photo';
     img.loading = 'lazy';
@@ -338,6 +386,38 @@ function renderGalleryGrid() {
         p.textContent = item.caption;
         cap.appendChild(p);
       }
+      if (isAdminUser && item.path) {
+        const actions = document.createElement('div');
+        actions.className = 'gallery-card-actions';
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'gallery-delete-btn';
+        del.textContent = 'Delete';
+        del.addEventListener('click', function(ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          deleteGalleryPhoto(cardIndex);
+        });
+        actions.appendChild(del);
+        cap.appendChild(actions);
+      }
+      btn.appendChild(cap);
+    } else if (isAdminUser && item.path) {
+      const cap = document.createElement('div');
+      cap.className = 'gallery-card-cap';
+      const actions = document.createElement('div');
+      actions.className = 'gallery-card-actions';
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'gallery-delete-btn';
+      del.textContent = 'Delete';
+      del.addEventListener('click', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        deleteGalleryPhoto(cardIndex);
+      });
+      actions.appendChild(del);
+      cap.appendChild(actions);
       btn.appendChild(cap);
     }
     btn.addEventListener('click', function() { openLightbox(index); });
@@ -426,7 +506,86 @@ async function getSiteContentJson(contentKey) {
   return rows && rows.length ? rows[0].content_json : null;
 }
 
-(async function initGalleryPage() {
+async function saveSiteContentJson(contentKey, payload) {
+  const token = getAdminToken();
+  if (!token) throw new Error('Admin session expired');
+  const res = await fetch(SUPABASE_URL + '/rest/v1/site_content', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + token,
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({ content_key: contentKey, content_json: payload })
+  });
+  if (!res.ok) throw new Error('Failed to update gallery metadata');
+}
+
+async function listStoragePhotos() {
+  const listRes = await fetch(
+    SUPABASE_URL + '/storage/v1/object/list/' + EVENT_GALLERY_BUCKET,
+    {
+      method: 'POST',
+      headers: sbHeaders(),
+      body: JSON.stringify({ limit: 200, offset: 0, sortBy: { column: 'name', order: 'desc' } })
+    }
+  );
+  if (!listRes.ok) return [];
+  const files = await listRes.json();
+  if (!Array.isArray(files)) return [];
+  return files
+    .filter(function(file) {
+      if (!file || !file.name) return false;
+      const name = String(file.name).toLowerCase();
+      return /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(name);
+    })
+    .map(function(file) {
+      return {
+        name: String(file.name),
+        path: String(file.name),
+        photo: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_BUCKET + '/' + encodeURIComponent(String(file.name)).replace(/%2F/g, '/')
+      };
+    });
+}
+
+async function deleteGalleryPhoto(index) {
+  const token = getAdminToken();
+  if (!token) {
+    alert('Admin session expired. Sign in again to delete photos.');
+    return;
+  }
+  const items = getVisibleGalleryItems();
+  const item = items[index];
+  if (!item || !item.path) return;
+  const confirmed = confirm('Delete this photo from gallery and storage? This cannot be undone.');
+  if (!confirmed) return;
+  try {
+    const delRes = await fetch(
+      SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_BUCKET + '/' + item.path,
+      {
+        method: 'DELETE',
+        headers: adminAuthHeaders()
+      }
+    );
+    if (!delRes.ok) {
+      const text = await delRes.text().catch(function() { return ''; });
+      throw new Error(text || 'Storage delete failed');
+    }
+    const filtered = galleryPhotos.filter(function(x) {
+      return !(x.path === item.path || x.photo === item.photo);
+    });
+    galleryPhotos = filtered;
+    await saveSiteContentJson(EVENT_GALLERY_KEY, filtered.map(function(row) {
+      return { photo: row.photo || '', path: row.path || '', title: row.title || '', caption: row.caption || '' };
+    }));
+    renderGalleryGrid();
+  } catch (err) {
+    alert('Could not delete photo: ' + (err && err.message ? err.message : 'unknown error'));
+  }
+}
+
+async function initGalleryPage() {
   bindLightboxUi();
   rebindSiteShellInteractions();
   try {
@@ -474,22 +633,42 @@ async function getSiteContentJson(contentKey) {
       }
     }
 
-    const raw = await getSiteContentJson(EVENT_GALLERY_KEY);
-    if (Array.isArray(raw) && raw.length) {
-      galleryPhotos = raw.map(function(row) {
+    isAdminUser = !!getAdminToken();
+    const [rawMeta, storageItems] = await Promise.all([
+      getSiteContentJson(EVENT_GALLERY_KEY),
+      listStoragePhotos()
+    ]);
+    const metadataByPath = new Map();
+    if (Array.isArray(rawMeta)) {
+      rawMeta.forEach(function(row) {
+        if (!row || typeof row !== 'object') return;
+        const path = String(row.path || '').trim();
         const photoValue = row && (row.photo || row.image || row.url || row.src);
-        return {
-          photo: photoValue ? String(photoValue).trim() : '',
-          title: (row && row.title) ? String(row.title) : '',
-          caption: (row && row.caption) ? String(row.caption) : ''
-        };
+        if (path) metadataByPath.set(path, row);
+        else if (photoValue) metadataByPath.set(String(photoValue).trim(), row);
       });
     }
+    galleryPhotos = storageItems.map(function(file) {
+      const meta = metadataByPath.get(file.path) || metadataByPath.get(file.photo) || {};
+      return {
+        photo: file.photo,
+        path: file.path,
+        title: meta && meta.title ? String(meta.title) : '',
+        caption: meta && meta.caption ? String(meta.caption) : ''
+      };
+    });
     renderGalleryGrid();
   } catch (err) {
     renderGalleryGrid();
   }
-})();
+}
+
+const PhotoGallery = {
+  init: initGalleryPage,
+  refresh: renderGalleryGrid
+};
+
+PhotoGallery.init();
 </script>
 </body>
 </html>
