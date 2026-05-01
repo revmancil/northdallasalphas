@@ -791,7 +791,7 @@ function normalizeEvents(rows) {
       datetime: r.datetime || '',
       eventDate: normalizedDate,
       featured: !!r.featured,
-      flyer: r.flyer || '',
+      flyer: r.flyer || r.flyer_url || r.flyerUrl || '',
       description: r.description || '',
       registrationUrl: r.reg_url || r.registrationUrl || ''
     };
@@ -833,7 +833,7 @@ function sortByEventDate(events, dir) {
     // Use ISO date from current runtime to keep day-based filtering current.
     const todayIso = new Date().toISOString().slice(0, 10);
     const [upcomingRows, pastRows] = await Promise.all([
-      sb.getAll('events', `event_date=gte.${todayIso}&order=event_date.asc&order=sort_order.asc`),
+      sb.getAll('events', `or=(event_date.gte.${todayIso},event_date.is.null)&order=event_date.asc.nullslast&order=sort_order.asc`),
       sb.getAll('events', `event_date=lt.${todayIso}&order=event_date.desc&order=sort_order.asc`)
     ]);
     upcomingEvents = sortByEventDate(normalizeEvents(upcomingRows) || [], 'asc');
