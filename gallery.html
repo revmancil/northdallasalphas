@@ -522,13 +522,22 @@ async function saveSiteContentJson(contentKey, payload) {
   if (!res.ok) throw new Error('Failed to update gallery metadata');
 }
 
-async function listStoragePhotos() {
+function isImageFileName(name) {
+  return /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(String(name || '').toLowerCase());
+}
+
+async function listStorageFolder(prefix) {
   const listRes = await fetch(
     SUPABASE_URL + '/storage/v1/object/list/' + EVENT_GALLERY_BUCKET,
     {
       method: 'POST',
       headers: sbHeaders(),
-      body: JSON.stringify({ limit: 200, offset: 0, sortBy: { column: 'name', order: 'desc' } })
+      body: JSON.stringify({
+        limit: 200,
+        offset: 0,
+        sortBy: { column: 'name', order: 'desc' },
+        prefix: prefix || ''
+      })
     }
   );
   if (!listRes.ok) return [];
@@ -536,17 +545,31 @@ async function listStoragePhotos() {
   if (!Array.isArray(files)) return [];
   return files
     .filter(function(file) {
-      if (!file || !file.name) return false;
-      const name = String(file.name).toLowerCase();
-      return /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(name);
+      return file && file.name && isImageFileName(file.name);
     })
     .map(function(file) {
+      const baseName = String(file.name);
+      const fullPath = prefix ? (prefix.replace(/\/+$/, '') + '/' + baseName) : baseName;
       return {
-        name: String(file.name),
-        path: String(file.name),
-        photo: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_BUCKET + '/' + encodeURIComponent(String(file.name)).replace(/%2F/g, '/')
+        name: baseName,
+        path: fullPath,
+        photo: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_BUCKET + '/' + encodeURIComponent(fullPath).replace(/%2F/g, '/')
       };
     });
+}
+
+async function listStoragePhotos() {
+  const [rootFiles, folderFiles] = await Promise.all([
+    listStorageFolder(''),
+    listStorageFolder('event-gallery')
+  ]);
+  const seen = new Set();
+  return rootFiles.concat(folderFiles).filter(function(item) {
+    if (!item || !item.path) return false;
+    if (seen.has(item.path)) return false;
+    seen.add(item.path);
+    return true;
+  });
 }
 
 async function deleteGalleryPhoto(index) {
@@ -658,6 +681,23 @@ async function initGalleryPage() {
         caption: meta && meta.caption ? String(meta.caption) : ''
       };
     });
+    // Fallback: if storage listing is empty, still render metadata URLs so gallery is not blank.
+    if (!galleryPhotos.length && Array.isArray(rawMeta)) {
+      galleryPhotos = rawMeta
+        .map(function(row) {
+          if (!row || typeof row !== 'object') return null;
+          const photoValue = row.photo || row.image || row.url || row.src;
+          const photo = photoValue ? String(photoValue).trim() : '';
+          if (!photo) return null;
+          return {
+            photo: photo,
+            path: row.path ? String(row.path).trim() : '',
+            title: row.title ? String(row.title) : '',
+            caption: row.caption ? String(row.caption) : ''
+          };
+        })
+        .filter(Boolean);
+    }
     renderGalleryGrid();
   } catch (err) {
     renderGalleryGrid();
