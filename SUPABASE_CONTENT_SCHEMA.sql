@@ -210,3 +210,39 @@ on public.visiting_brothers_requests for all
 to authenticated
 using (true)
 with check (true);
+
+-- =============================================================================
+-- Storage: dedicated bucket for Events Manager flyers (NOT the event gallery)
+-- Gallery + site listing use bucket "chapter-media". Event flyer uploads from
+-- admin-dashboard use bucket "event-flyer-uploads" only. Run this block in the
+-- SQL editor if uploads return 400/404 for flyers.
+-- =============================================================================
+
+insert into storage.buckets (id, name, public)
+values ('event-flyer-uploads', 'event-flyer-uploads', true)
+on conflict (id) do update set public = excluded.public;
+
+drop policy if exists "event_flyer_uploads_select_anon" on storage.objects;
+create policy "event_flyer_uploads_select_anon"
+on storage.objects for select
+to anon, authenticated
+using (bucket_id = 'event-flyer-uploads');
+
+drop policy if exists "event_flyer_uploads_insert_auth" on storage.objects;
+create policy "event_flyer_uploads_insert_auth"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'event-flyer-uploads');
+
+drop policy if exists "event_flyer_uploads_update_auth" on storage.objects;
+create policy "event_flyer_uploads_update_auth"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'event-flyer-uploads')
+with check (bucket_id = 'event-flyer-uploads');
+
+drop policy if exists "event_flyer_uploads_delete_auth" on storage.objects;
+create policy "event_flyer_uploads_delete_auth"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'event-flyer-uploads');

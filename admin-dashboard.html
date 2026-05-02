@@ -2684,7 +2684,7 @@ function renderEventsList() {
           <i class="fas fa-upload"></i> Upload from Computer
         </button>
         <p style="font-size:0.72rem;color:var(--gray-400);margin-top:6px;">
-          Tip: Use <strong>Upload from Computer</strong> to store the image in Supabase (<code>chapter-media</code>), or paste a hosted image URL.
+          Tip: Use <strong>Upload from Computer</strong> to store the flyer in the <code>event-flyer-uploads</code> bucket (separate from the chapter photo gallery bucket), or paste a hosted image URL.
         </p>
       </div>
     `;
@@ -2852,10 +2852,7 @@ function handleFlyerFile(e) {
   (async function() {
     try {
       showToast('Uploading flyer to storage…', 'info');
-      const uploaded = await uploadEventGalleryImageToStorage(file, {
-        prefixA: 'event-flyers/',
-        prefixB: 'event-flyers-'
-      });
+      const uploaded = await uploadEventFlyerImageToStorage(file);
       eventsData[idx].flyer = uploaded.url;
       const urlInput = document.getElementById('flyer-url-' + idx);
       if (urlInput) urlInput.value = uploaded.url;
@@ -2865,7 +2862,7 @@ function handleFlyerFile(e) {
       }
       const btn = document.querySelector('#event-row-' + idx + ' .btn-flyer');
       if (btn) btn.classList.add('has-flyer');
-      showToast('Flyer saved to chapter-media. Click "Save All Events" to publish.', 'info');
+      showToast('Flyer saved to event-flyer-uploads. Click "Save All Events" to publish.', 'info');
     } catch (err) {
       showToast(err.message || 'Could not upload flyer.', 'error');
     }
@@ -2919,10 +2916,7 @@ async function saveEvents() {
       }
       try {
         const imgFile = dataUrlToImageFile(flyerVal, 'flyer');
-        const uploaded = await uploadEventGalleryImageToStorage(imgFile, {
-          prefixA: 'event-flyers/',
-          prefixB: 'event-flyers-'
-        });
+        const uploaded = await uploadEventFlyerImageToStorage(imgFile);
         eventsData[i].flyer = uploaded.url;
         const urlInput = document.getElementById('flyer-url-' + i);
         if (urlInput) urlInput.value = uploaded.url;
@@ -4492,7 +4486,10 @@ async function updateDashboardStats() {
 // EVENT PHOTO GALLERY (site_content.event_gallery)
 // ══════════════════════════════════════════════════
 const EVENT_GALLERY_CONTENT_KEY = 'event_gallery';
+/** Chapter event photo gallery (admin Event Photo Gallery panel + gallery.html). */
 const EVENT_GALLERY_IMAGE_BUCKET = 'chapter-media';
+/** Events Manager flyers only — separate bucket from gallery (see SUPABASE_CONTENT_SCHEMA.sql). */
+const EVENT_FLYER_STORAGE_BUCKET = 'event-flyer-uploads';
 let eventGalleryData = [];
 let activeEventGalleryPhotoIndex = -1;
 
@@ -4636,7 +4633,7 @@ function openEventGalleryPhotoUpload(i) {
   if (inp) inp.click();
 }
 
-async function uploadEventGalleryImageToStorage(file, folderOpts) {
+async function uploadImageToSupabaseBucket(file, bucketId, folderOpts) {
   const token = getAdminToken();
   if (!token) throw new Error('Admin session expired. Please sign in again.');
   const opts = folderOpts || {};
@@ -4651,7 +4648,6 @@ async function uploadEventGalleryImageToStorage(file, folderOpts) {
         useWebWorker: true
       });
     } catch (compressionErr) {
-      // Fallback to original file if compression fails.
       uploadFile = file;
     }
   }
@@ -4668,7 +4664,7 @@ async function uploadEventGalleryImageToStorage(file, folderOpts) {
   for (var idx = 0; idx < pathCandidates.length; idx++) {
     path = pathCandidates[idx];
     const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
-    const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + encodedPath;
+    const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + bucketId + '/' + encodedPath;
     const res = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
@@ -4689,14 +4685,25 @@ async function uploadEventGalleryImageToStorage(file, folderOpts) {
   if (!uploaded) {
     const detailLower = String(lastDetails || '').toLowerCase();
     if (detailLower.indexOf('bucket') !== -1 && detailLower.indexOf('not found') !== -1) {
-      throw new Error('Gallery upload failed: Supabase bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" was not found. Create it in Storage, set it public, then retry.');
+      throw new Error('Storage upload failed: bucket "' + bucketId + '" was not found. Run SUPABASE_CONTENT_SCHEMA.sql (storage section) or create the bucket in the Supabase Dashboard, then retry.');
     }
-    throw new Error('Gallery upload failed. Ensure bucket "' + EVENT_GALLERY_IMAGE_BUCKET + '" exists and is writable. ' + (lastDetails || ''));
+    throw new Error('Storage upload failed for bucket "' + bucketId + '". Ensure the bucket exists, is public for reads, and allows authenticated uploads. ' + (lastDetails || ''));
   }
   return {
-    url: SUPABASE_URL + '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + encodeURIComponent(path).replace(/%2F/g, '/'),
+    url: SUPABASE_URL + '/storage/v1/object/public/' + bucketId + '/' + encodeURIComponent(path).replace(/%2F/g, '/'),
     path: path
   };
+}
+
+async function uploadEventGalleryImageToStorage(file) {
+  return uploadImageToSupabaseBucket(file, EVENT_GALLERY_IMAGE_BUCKET, null);
+}
+
+async function uploadEventFlyerImageToStorage(file) {
+  return uploadImageToSupabaseBucket(file, EVENT_FLYER_STORAGE_BUCKET, {
+    prefixA: 'flyers/',
+    prefixB: 'flyer-'
+  });
 }
 
 function handleEventGalleryPhotoUpload(e) {
