@@ -475,6 +475,29 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
+function portalLocalTodayIso() {
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+}
+
+function portalEventRowDateKey(ev) {
+  const ed = ev.event_date ? String(ev.event_date).trim() : '';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(ed)) return ed;
+  const dtRaw = ev.datetime ? String(ev.datetime).trim() : '';
+  const datePart = dtRaw.split(' ')[0] || '';
+  const segs = datePart.split('/');
+  if (segs.length === 3 && /^\d{4}$/.test(String(segs[2] || ''))) {
+    return String(segs[2]) + '-' + String(segs[0] || '').padStart(2, '0') + '-' + String(segs[1] || '').padStart(2, '0');
+  }
+  return '';
+}
+
+function portalIsArchivedEvent(ev, todayIso) {
+  const d = portalEventRowDateKey(ev);
+  if (!d) return false;
+  return d < todayIso;
+}
+
 function compressDataUrlToJpeg(dataUrl, maxSide, quality) {
   return new Promise(function(resolve) {
     try {
@@ -820,7 +843,13 @@ async function init() {
   currentSession = getSession();
   if (!currentSession) { window.location.href = 'member-login.html'; return; }
   const userEmail = (currentSession.user && currentSession.user.email) ? currentSession.user.email : '';
-  try { allEvents = await sbGet('events', 'order=sort_order.asc', SUPABASE_ANON_KEY); } catch(e) { allEvents = []; }
+  try {
+    const rows = await sbGet('events', 'order=sort_order.asc', SUPABASE_ANON_KEY);
+    const todayIso = portalLocalTodayIso();
+    allEvents = (rows || []).filter(function(ev) { return !portalIsArchivedEvent(ev, todayIso); });
+  } catch (e) {
+    allEvents = [];
+  }
   try {
     const members = await sbGet('members', 'email=eq.' + encodeURIComponent(userEmail) + '&limit=1', currentSession.access_token);
     currentMember = (members && members.length) ? members[0] : null;

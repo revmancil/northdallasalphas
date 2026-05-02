@@ -607,9 +607,12 @@ function renderFeaturedEvent(events) {
   const inner = document.getElementById('featuredEventInner');
   const bg    = document.getElementById('featuredBg');
 
-  // Set background blur image — use flyer if available, else chapter-event.jpg
-  const bgSrc = featured.flyer || 'images/chapter-event.jpg';
-  bg.style.backgroundImage = `url('${bgSrc}')`;
+  // Background blur: flyer only (avoid wrong fallback imagery when no flyer is set)
+  if (featured.flyer) {
+    bg.style.backgroundImage = `url('${featured.flyer}')`;
+  } else {
+    bg.style.backgroundImage = 'none';
+  }
 
   // Build flyer image HTML
   let flyerHtml;
@@ -825,25 +828,37 @@ function sortByEventDate(events, dir) {
   return list;
 }
 
+function localTodayIso() {
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
+}
+
+function isEventArchived(ev, todayIso) {
+  const d = toEventDateValue(ev);
+  if (!d) return false;
+  return d < todayIso;
+}
+
 // ── Init ── load from Supabase first
 (async function() {
   let upcomingEvents = null;
   let pastEvents = null;
   try {
-    // Use ISO date from current runtime to keep day-based filtering current.
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const [upcomingRows, pastRows] = await Promise.all([
-      sb.getAll('events', `or=(event_date.gte.${todayIso},event_date.is.null)&order=event_date.asc.nullslast&order=sort_order.asc`),
-      sb.getAll('events', `event_date=lt.${todayIso}&order=event_date.desc&order=sort_order.asc`)
-    ]);
-    upcomingEvents = sortByEventDate(normalizeEvents(upcomingRows) || [], 'asc');
-    pastEvents = sortByEventDate(normalizeEvents(pastRows) || [], 'desc');
+    const todayIso = localTodayIso();
+    const allRows = await sb.getAll('events', 'order=sort_order.asc');
+    const normalized = normalizeEvents(allRows) || [];
+    const upcomingRaw = normalized.filter(function(ev) { return !isEventArchived(ev, todayIso); });
+    const pastRaw = normalized.filter(function(ev) { return isEventArchived(ev, todayIso); });
+    upcomingEvents = sortByEventDate(upcomingRaw, 'asc');
+    pastEvents = sortByEventDate(pastRaw, 'desc');
   } catch (err) {
     console.warn('Supabase load failed:', err);
   }
   if (!upcomingEvents) {
-    upcomingEvents = sortByEventDate(getEvents(), 'asc');
-    pastEvents = [];
+    const todayIso = localTodayIso();
+    const raw = sortByEventDate(getEvents(), 'asc');
+    upcomingEvents = raw.filter(function(ev) { return !isEventArchived(ev, todayIso); });
+    pastEvents = sortByEventDate(raw.filter(function(ev) { return isEventArchived(ev, todayIso); }), 'desc');
   }
   await loadAnnouncement();
   renderFeaturedEvent(upcomingEvents);

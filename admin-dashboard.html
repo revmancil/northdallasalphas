@@ -2684,7 +2684,7 @@ function renderEventsList() {
           <i class="fas fa-upload"></i> Upload from Computer
         </button>
         <p style="font-size:0.72rem;color:var(--gray-400);margin-top:6px;">
-          Tip: Upload your flyer to your website's media library and paste the URL above.
+          Tip: Use <strong>Upload from Computer</strong> to store the image in Supabase (<code>chapter-media</code>), or paste a hosted image URL.
         </p>
       </div>
     `;
@@ -2831,23 +2831,45 @@ function openFlyerUpload(i) {
   document.getElementById('flyerFileInput').click();
 }
 
+function dataUrlToImageFile(dataUrl, fallbackName) {
+  const raw = String(dataUrl || '').trim();
+  const m = raw.match(/^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i);
+  if (!m) throw new Error('Invalid image data');
+  const binStr = atob(m[2]);
+  const len = binStr.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) bytes[i] = binStr.charCodeAt(i);
+  const mime = m[1].toLowerCase();
+  const ext = mime.indexOf('png') !== -1 ? 'png' : mime.indexOf('webp') !== -1 ? 'webp' : 'jpg';
+  const name = (fallbackName || 'flyer').replace(/\.[a-z0-9]+$/i, '') + '.' + ext;
+  return new File([bytes], name, { type: mime });
+}
+
 function handleFlyerFile(e) {
   const file = e.target.files[0];
   if (!file || activeFlyerIndex < 0) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const dataUrl = ev.target.result;
-    eventsData[activeFlyerIndex].flyer = dataUrl;
-    // Update the URL input and preview
-    const urlInput = document.getElementById('flyer-url-' + activeFlyerIndex);
-    if (urlInput) urlInput.value = '(uploaded image)';
-    const wrap = document.getElementById('flyer-preview-' + activeFlyerIndex);
-    if (wrap) wrap.innerHTML = `<img src="${dataUrl}" alt="Flyer preview" />`;
-    const btn = document.querySelector(`#event-row-${activeFlyerIndex} .btn-flyer`);
-    if (btn) btn.classList.add('has-flyer');
-    showToast('Flyer uploaded. Click "Save All Events" to keep it.', 'info');
-  };
-  reader.readAsDataURL(file);
+  const idx = activeFlyerIndex;
+  (async function() {
+    try {
+      showToast('Uploading flyer to storage…', 'info');
+      const uploaded = await uploadEventGalleryImageToStorage(file, {
+        prefixA: 'event-flyers/',
+        prefixB: 'event-flyers-'
+      });
+      eventsData[idx].flyer = uploaded.url;
+      const urlInput = document.getElementById('flyer-url-' + idx);
+      if (urlInput) urlInput.value = uploaded.url;
+      const wrap = document.getElementById('flyer-preview-' + idx);
+      if (wrap) {
+        wrap.innerHTML = `<img src="${escHtml(uploaded.url)}" alt="Flyer preview" onerror="if(this.parentElement){this.parentElement.innerHTML='<div class=\\'no-flyer\\'><i class=\\'fas fa-image\\'></i></div>'}" />`;
+      }
+      const btn = document.querySelector('#event-row-' + idx + ' .btn-flyer');
+      if (btn) btn.classList.add('has-flyer');
+      showToast('Flyer saved to chapter-media. Click "Save All Events" to publish.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Could not upload flyer.', 'error');
+    }
+  })();
   e.target.value = '';
 }
 
@@ -2901,6 +2923,32 @@ async function saveEvents() {
     if (descInput) ev.description      = descInput.value.trim();
   });
   try {
+    let migratingFlyers = false;
+    for (let i = 0; i < eventsData.length; i++) {
+      const flyerVal = String(eventsData[i].flyer || '').trim();
+      if (!flyerVal.startsWith('data:image/')) continue;
+      if (!migratingFlyers) {
+        migratingFlyers = true;
+        showToast('Moving inline flyer images to Supabase storage…', 'info');
+      }
+      try {
+        const imgFile = dataUrlToImageFile(flyerVal, 'flyer');
+        const uploaded = await uploadEventGalleryImageToStorage(imgFile, {
+          prefixA: 'event-flyers/',
+          prefixB: 'event-flyers-'
+        });
+        eventsData[i].flyer = uploaded.url;
+        const urlInput = document.getElementById('flyer-url-' + i);
+        if (urlInput) urlInput.value = uploaded.url;
+        const wrap = document.getElementById('flyer-preview-' + i);
+        if (wrap) {
+          wrap.innerHTML = '<img src="' + escHtml(uploaded.url) + '" alt="Flyer preview" onerror="if(this.parentElement){this.parentElement.innerHTML=\'<div class=\\\'no-flyer\\\'><i class=\\\'fas fa-image\\\'></i></div>\'}" />';
+        }
+      } catch (upErr) {
+        showToast('Flyer row ' + (i + 1) + ': ' + (upErr.message || 'upload failed') + ' Remove the image or paste a URL.', 'error');
+        return;
+      }
+    }
     const payload = eventsData.map(function(ev, idx) {
       const eventDate = toEventDateKey(ev.datetime);
       return {
@@ -4605,9 +4653,12 @@ function openEventGalleryPhotoUpload(i) {
   if (inp) inp.click();
 }
 
-async function uploadEventGalleryImageToStorage(file) {
+async function uploadEventGalleryImageToStorage(file, folderOpts) {
   const token = getAdminToken();
   if (!token) throw new Error('Admin session expired. Please sign in again.');
+  const opts = folderOpts || {};
+  const prefixA = opts.prefixA != null ? opts.prefixA : 'event-gallery/';
+  const prefixB = opts.prefixB != null ? opts.prefixB : 'event-gallery-';
   var uploadFile = file;
   if (typeof imageCompression === 'function') {
     try {
@@ -4625,8 +4676,8 @@ async function uploadEventGalleryImageToStorage(file) {
   const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
   const fileStamp = Date.now() + '-' + Math.random().toString(36).slice(2, 9);
   const pathCandidates = [
-    'event-gallery/' + fileStamp + '.' + safeExt,
-    'event-gallery-' + fileStamp + '.' + safeExt
+    prefixA + fileStamp + '.' + safeExt,
+    prefixB + fileStamp + '.' + safeExt
   ];
   let lastDetails = '';
   let path = '';
