@@ -2886,20 +2886,6 @@ function removeEvent(i) {
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
 }
 
-function toEventDateKey(datetimeValue) {
-  const raw = String(datetimeValue || '').trim();
-  if (!raw) return null;
-  const datePart = raw.split(' ')[0] || '';
-  const segs = datePart.split('/');
-  if (segs.length !== 3) return null;
-  const mm = String(segs[0] || '').padStart(2, '0');
-  const dd = String(segs[1] || '').padStart(2, '0');
-  const yyyy = String(segs[2] || '');
-  if (!/^\d{4}$/.test(yyyy)) return null;
-  if (!/^\d{2}$/.test(mm) || !/^\d{2}$/.test(dd)) return null;
-  return yyyy + '-' + mm + '-' + dd;
-}
-
 async function saveEvents() {
   const token = getAdminToken();
   if (!token) {
@@ -2950,18 +2936,15 @@ async function saveEvents() {
       }
     }
     const payload = eventsData.map(function(ev, idx) {
-      const eventDate = toEventDateKey(ev.datetime);
       return {
         name: ev.name || '',
         location: ev.location || '',
         datetime: ev.datetime || '',
-        event_date: eventDate,
         featured: !!ev.featured,
         flyer: ev.flyer || '',
         description: ev.description || '',
         reg_url: ev.registrationUrl || '',
-        sort_order: idx + 1,
-        updated_at: new Date().toISOString()
+        sort_order: idx + 1
       };
     });
     await sbDeleteByFilter('events', 'id=not.is.null', token);

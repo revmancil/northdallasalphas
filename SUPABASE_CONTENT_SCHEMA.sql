@@ -59,7 +59,9 @@ alter table if exists public.events
   add column if not exists reg_url text,
   add column if not exists flyer text,
   add column if not exists featured boolean default false,
-  add column if not exists created_at timestamptz default now();
+  add column if not exists created_at timestamptz default now(),
+  add column if not exists event_date date,
+  add column if not exists updated_at timestamptz default now();
 
 alter table if exists public.announcements
   add column if not exists link_text text,
