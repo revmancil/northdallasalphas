@@ -2600,7 +2600,13 @@ let eventsData = [];
 let activeFlyerIndex = -1;
 
 function getEvents() {
-  return DEFAULT_EVENTS.map(e => ({ ...e }));
+  return DEFAULT_EVENTS.map(e => ({
+    ...e,
+    chapterRegistrationEnabled: false,
+    registrationFeeCents: 0,
+    registrationUrl: e.registrationUrl || '',
+    description: e.description || ''
+  }));
 }
 
 async function loadEventsList() {
@@ -2622,7 +2628,9 @@ async function loadEventsList() {
             featured: !!ev.featured,
             flyer: ev.flyer || '',
             description: ev.description || '',
-            registrationUrl: ev.registrationUrl || ev.reg_url || ''
+            registrationUrl: ev.registrationUrl || ev.reg_url || '',
+            chapterRegistrationEnabled: !!ev.chapter_registration_enabled,
+            registrationFeeCents: Math.max(0, parseInt(String(ev.registration_fee_cents ?? 0), 10) || 0)
           };
         })
       : getEvents();
@@ -2723,6 +2731,17 @@ function renderEventsList() {
         <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
           <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveRegUrl(${i})"><i class="fas fa-check"></i> Apply Link</button>
           <button class="btn-secondary" style="padding:6px 14px;font-size:0.8rem;background:transparent;border:1px solid var(--gray-600);color:var(--gray-300);border-radius:6px;cursor:pointer;" onclick="clearRegUrl(${i})"><i class="fas fa-times"></i> Clear</button>
+        </div>
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-300);line-height:1.45;">
+            <input type="checkbox" id="chapter-reg-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.chapterRegistrationEnabled ? 'checked' : ''} onchange="eventsData[${i}].chapterRegistrationEnabled=this.checked" />
+            <span><strong style="color:var(--gold);">Chapter website registration</strong> — modal on the public Events page (name, phone, email). Use fee <strong>0</strong> for free, or enter an amount for Stripe checkout. If an external registration link is filled above, that link is shown instead of this flow.</span>
+          </label>
+          <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <label style="font-size:0.78rem;color:var(--gray-400);">Registration fee (USD)</label>
+            <input type="number" id="reg-fee-${i}" min="0" step="0.01" style="width:110px;padding:7px 10px;border-radius:6px;border:1px solid var(--gray-600);background:var(--dark);color:var(--white);" value="${((ev.registrationFeeCents || 0) / 100).toFixed(2)}" oninput="eventsData[${i}].registrationFeeCents=Math.round((parseFloat(this.value)||0)*100)" />
+            <span style="font-size:0.72rem;color:var(--gray-500);">0.00 = free</span>
+          </div>
         </div>
       </div>
     `;
@@ -2871,7 +2890,7 @@ function handleFlyerFile(e) {
 }
 
 function addEvent() {
-  eventsData.push({ name: 'New Event', location: 'Location TBD', datetime: 'Date TBD', featured: false, flyer: '' });
+  eventsData.push({ name: 'New Event', location: 'Location TBD', datetime: 'Date TBD', featured: false, flyer: '', chapterRegistrationEnabled: false, registrationFeeCents: 0, registrationUrl: '', description: '' });
   renderEventsList();
   showToast('New event row added. Fill in the details and save.');
 }
@@ -2896,6 +2915,12 @@ async function saveEvents() {
       eventsData[i].name     = inputs[0] ? inputs[0].value : eventsData[i].name;
       eventsData[i].location = inputs[1] ? inputs[1].value : eventsData[i].location;
       eventsData[i].datetime = inputs[2] ? inputs[2].value : eventsData[i].datetime;
+    }
+    const ch = document.getElementById('chapter-reg-' + i);
+    const feeEl = document.getElementById('reg-fee-' + i);
+    if (eventsData[i]) {
+      if (ch) eventsData[i].chapterRegistrationEnabled = ch.checked;
+      if (feeEl) eventsData[i].registrationFeeCents = Math.round((parseFloat(feeEl.value) || 0) * 100);
     }
   });
   // Also persist any registration URLs and descriptions typed but not yet applied
@@ -2938,6 +2963,8 @@ async function saveEvents() {
         flyer: ev.flyer || '',
         description: ev.description || '',
         reg_url: ev.registrationUrl || '',
+        chapter_registration_enabled: !!ev.chapterRegistrationEnabled,
+        registration_fee_cents: Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0),
         sort_order: idx + 1
       };
     });

@@ -246,3 +246,77 @@ create policy "event_flyer_uploads_delete_auth"
 on storage.objects for delete
 to authenticated
 using (bucket_id = 'event-flyer-uploads');
+
+-- =============================================================================
+-- Chapter event registration (free via site, paid via Stripe Checkout) + dues
+-- =============================================================================
+
+alter table if exists public.events
+  add column if not exists chapter_registration_enabled boolean not null default false,
+  add column if not exists registration_fee_cents integer not null default 0;
+
+create table if not exists public.event_registrations (
+  id bigserial primary key,
+  event_id bigint references public.events(id) on delete set null,
+  full_name text not null default '',
+  phone text not null default '',
+  email text not null default '',
+  payment_status text not null default 'free',
+  amount_cents integer not null default 0,
+  stripe_checkout_session_id text,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists event_registrations_stripe_session_uidx
+  on public.event_registrations (stripe_checkout_session_id)
+  where stripe_checkout_session_id is not null;
+
+create table if not exists public.dues_payments (
+  id bigserial primary key,
+  member_id bigint,
+  full_name text not null default '',
+  phone text not null default '',
+  email text not null default '',
+  amount_cents integer not null default 0,
+  payment_status text not null default 'paid',
+  stripe_checkout_session_id text,
+  created_at timestamptz not null default now()
+);
+
+create unique index if not exists dues_payments_stripe_session_uidx
+  on public.dues_payments (stripe_checkout_session_id)
+  where stripe_checkout_session_id is not null;
+
+alter table public.event_registrations enable row level security;
+alter table public.dues_payments enable row level security;
+
+drop policy if exists "event_registrations_insert_free_anon" on public.event_registrations;
+create policy "event_registrations_insert_free_anon"
+on public.event_registrations for insert
+to anon, authenticated
+with check (
+  payment_status = 'free'
+  and coalesce(amount_cents, 0) = 0
+  and event_id is not null
+  and coalesce(nullif(trim(stripe_checkout_session_id), ''), null) is null
+);
+
+drop policy if exists "event_registrations_read_auth" on public.event_registrations;
+create policy "event_registrations_read_auth"
+on public.event_registrations for select
+to authenticated
+using (true);
+
+drop policy if exists "event_registrations_write_auth" on public.event_registrations;
+
+drop policy if exists "dues_payments_read_auth" on public.dues_payments;
+create policy "dues_payments_read_auth"
+on public.dues_payments for select
+to authenticated
+using (true);
+
+drop policy if exists "dues_payments_write_auth" on public.dues_payments;
+
+insert into public.site_content (content_key, content_json)
+values ('payments', '{"dues_amount_cents": 15000}'::jsonb)
+on conflict (content_key) do nothing;

@@ -1,0 +1,10 @@
+# Deploy functions: supabase functions deploy stripe-checkout
+# and register stripe-webhook URL in Stripe Dashboard → Webhooks.
+# Set secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY
+# Optional: PUBLIC_SITE_URL (default https://northdallasalphas.org), DUES_AMOUNT_CENTS
+
+[functions.stripe-checkout]
+verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false

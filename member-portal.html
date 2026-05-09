@@ -233,6 +233,19 @@
           <div style="margin-top:14px;padding:12px 16px;background:var(--gold-pale);border:1px solid var(--gold-pale2);border-radius:8px;font-size:0.82rem;color:var(--gray-400);"><i class="fas fa-envelope" style="color:var(--gold);margin-right:8px;"></i>Contact the Financial Secretary for payment inquiries.</div>
         </div>
       </div>
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header"><h3><i class="fas fa-credit-card"></i> Pay dues online</h3></div>
+        <div class="section-card-body">
+          <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;">Pay chapter dues securely with a card (Stripe). The payment amount is configured by chapter leadership. The email below must match the account you used to sign in.</p>
+          <div class="pfield" style="margin-top:14px;"><label>Full name</label><input type="text" id="duesPayName" autocomplete="name" /></div>
+          <div class="profile-grid" style="margin-top:12px;">
+            <div class="pfield"><label>Phone</label><input type="tel" id="duesPayPhone" autocomplete="tel" /></div>
+            <div class="pfield"><label>Email (signed-in account)</label><input type="email" id="duesPayEmail" autocomplete="email" readonly /></div>
+          </div>
+          <button type="button" class="btn-gold" style="margin-top:18px;" id="duesStripeBtn" onclick="startDuesStripeCheckout()"><i class="fas fa-lock"></i> Pay with card</button>
+          <p id="duesPayErr" style="display:none;color:var(--red);font-size:0.82rem;margin-top:12px;"></p>
+        </div>
+      </div>
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-dollar-sign"></i> Your Dues History</h3></div>
         <div class="section-card-body" id="duesList"><div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Loading dues records...</p></div></div>
@@ -360,6 +373,7 @@
 <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">Saved!</span></div><script>
 const SUPABASE_URL      = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const STRIPE_CHECKOUT_URL = SUPABASE_URL.replace(/\/?$/, '') + '/functions/v1/stripe-checkout';
 const MEMBER_SESSION_KEY = 'nda_member_session';
 
 let currentSession = null;
@@ -620,8 +634,71 @@ function renderDashboardEvents() {
   document.getElementById('statEventsCount').textContent = allEvents.length;
 }
 
+function prefillDuesPayFields() {
+  if (!currentMember || !currentSession) return;
+  var fn = (currentMember.first_name || '').trim();
+  var ln = (currentMember.last_name || '').trim();
+  var nameEl = document.getElementById('duesPayName');
+  var phoneEl = document.getElementById('duesPayPhone');
+  var emailEl = document.getElementById('duesPayEmail');
+  if (nameEl) nameEl.value = [fn, ln].filter(Boolean).join(' ').trim();
+  if (phoneEl) phoneEl.value = (currentMember.phone || '').trim();
+  var ue = (currentSession.user && currentSession.user.email) ? currentSession.user.email : (currentMember.email || '');
+  if (emailEl) emailEl.value = (ue || '').trim();
+}
+
+async function startDuesStripeCheckout() {
+  var errEl = document.getElementById('duesPayErr');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  if (!currentMember || !currentSession) {
+    if (errEl) { errEl.textContent = 'Sign in to pay dues.'; errEl.style.display = 'block'; }
+    return;
+  }
+  var fullName = document.getElementById('duesPayName').value.trim();
+  var phone = document.getElementById('duesPayPhone').value.trim();
+  var email = document.getElementById('duesPayEmail').value.trim().toLowerCase();
+  if (fullName.length < 2) {
+    if (errEl) { errEl.textContent = 'Enter your full name.'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (phone.length < 7) {
+    if (errEl) { errEl.textContent = 'Enter a valid phone number.'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (errEl) { errEl.textContent = 'Invalid email.'; errEl.style.display = 'block'; }
+    return;
+  }
+  var btn = document.getElementById('duesStripeBtn');
+  btn.disabled = true;
+  try {
+    var r = await fetch(STRIPE_CHECKOUT_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + currentSession.access_token
+      },
+      body: JSON.stringify({ mode: 'dues', fullName: fullName, phone: phone, email: email })
+    });
+    var payload = null;
+    try { payload = await r.json(); } catch (e1) { payload = { error: await r.text() }; }
+    if (!r.ok) throw new Error((payload && payload.error) ? payload.error : 'Could not start checkout.');
+    if (payload.url) {
+      window.location.href = payload.url;
+      return;
+    }
+    throw new Error((payload && payload.error) ? payload.error : 'Checkout unavailable.');
+  } catch (e) {
+    if (errEl) { errEl.textContent = (e && e.message) ? e.message : 'Payment could not be started.'; errEl.style.display = 'block'; }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 function renderDuesPanel() {
   const c = document.getElementById('duesList');
+  prefillDuesPayFields();
   if (!currentMember) { c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Sign in to view your dues.</p></div>'; return; }
   sbGet('dues', 'member_id=eq.' + currentMember.id + '&order=year.desc', currentSession.access_token)
     .then(function(dues) {
@@ -882,12 +959,23 @@ async function init() {
   if (currentMember && currentMember.photo) { pAvEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { pAvEl.textContent = initials.toUpperCase(); }
   loadProfileForm(currentMember);
+  prefillDuesPayFields();
   document.getElementById('statEventsCount').textContent = allEvents.length;
   document.getElementById('statDocCount').textContent    = '--';
   document.getElementById('statMemberCount').textContent = '--';
   document.getElementById('statDuesPaid').textContent    = '--';
   renderDashboardEvents();
   await loadAnnouncements();
+  (function duesReturnFlash() {
+    var q = new URLSearchParams(window.location.search);
+    if (q.get('dues') === 'success') {
+      showToast('Payment received. Thank you — the Financial Secretary will confirm your dues record.', 'success');
+      history.replaceState({}, '', 'member-portal.html');
+    } else if (q.get('dues') === 'cancel') {
+      showToast('Checkout was canceled.', 'error');
+      history.replaceState({}, '', 'member-portal.html');
+    }
+  })();
   const overlay = document.getElementById('loadingOverlay');
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity 0.4s';
