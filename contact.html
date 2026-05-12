@@ -34,6 +34,10 @@
     .quick-card h4 { font-family: 'Playfair Display', serif; font-size: 1.05rem; color: var(--white); margin-bottom: 8px; }
     .quick-card p { font-size: 0.83rem; color: rgba(255,255,255,0.5); margin-bottom: 16px; line-height: 1.55; }
     .quick-card a { font-size: 0.82rem; color: var(--gold); font-weight: 600; word-break: break-all; }
+    .contact-card.sankofa-card .sankofa-logo-wrap { flex-shrink: 0; width: 88px; height: 88px; display: flex; align-items: center; justify-content: center; }
+    .contact-card.sankofa-card .sankofa-logo-wrap img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+    .quick-card .qicon.qicon-img { padding: 6px; overflow: hidden; }
+    .quick-card .qicon.qicon-img img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
     @media (max-width: 768px) {
       .contact-layout { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
@@ -109,22 +113,23 @@
             <div class="icon"><i class="fas fa-envelope"></i></div>
             <div class="info">
               <h4>General Inquiries</h4>
-              <a href="/cdn-cgi/l/email-protection#165f78707956587964627e52777a7a7765577a667e776538796471"><span class="__cf_email__" data-cfemail="ace5c2cac3ece2c3ded8c4e8cdc0c0cddfedc0dcc4cddf82c3decb">[email&#160;protected]</span></a>
+              <a href="mailto:info@northdallasalphas.org">info@northdallasalphas.org</a>
             </div>
           </div>
           <div class="contact-card">
             <div class="icon"><i class="fas fa-user-plus"></i></div>
             <div class="info">
               <h4>Membership</h4>
-              <a href="/cdn-cgi/l/email-protection#e9a48c848b8c9b9a818099a9a7869b9d81ad888585889aa8859981889ac7869b8e"><span class="__cf_email__" data-cfemail="e8a58d858a8d9a9b808198a8a6879a9c80ac898484899ba9849880899bc6879a8f">[email&#160;protected]</span></a>
+              <a href="mailto:membership@northdallasalphas.org">membership@northdallasalphas.org</a>
             </div>
           </div>
-          <div class="contact-card">
-            <div class="icon"><i class="fas fa-award"></i></div>
+          <div class="contact-card sankofa-card">
+            <div class="sankofa-logo-wrap">
+              <img src="images/sankofa-foundation-logo.png" width="88" height="88" alt="Sankofa Foundation Dallas / Ft. Worth Logo" />
+            </div>
             <div class="info">
-              <h4>Gala & Sponsorship</h4>
-              <a href="/cdn-cgi/l/email-protection#b0f1fce3f7f0f4d6c7c3d1dedbdfd6d19edfc2d7"><span class="__cf_email__" data-cfemail="d3929f80949397b5a4a0b2bdb8bcb5b2fdbca1b4">[email&#160;protected]</span></a>
-              <p style="font-size:0.85rem; margin-top:2px;">(337) 244-2564</p>
+              <h4>Sankofa Foundation</h4>
+              <a href="https://dfwsankofa.org/" target="_blank" rel="noopener noreferrer">https://dfwsankofa.org/</a>
             </div>
           </div>
         </div>
@@ -185,19 +190,19 @@
         <div class="qicon"><i class="fas fa-user-plus"></i></div>
         <h4>Membership</h4>
         <p>Interested in joining Xi Tau Lambda? Contact our Membership Chair for more information.</p>
-        <a href="/cdn-cgi/l/email-protection#074a626a656275746f6e7747496875736f43666b6b6674466b776f667429687560"><span class="__cf_email__" data-cfemail="e8a58d858a8d9a9b808198a8a6879a9c80ac898484899ba9849880899bc6879a8f">[email&#160;protected]</span></a>
+        <a href="mailto:membership@northdallasalphas.org">membership@northdallasalphas.org</a>
       </div>
       <div class="quick-card">
-        <div class="qicon"><i class="fas fa-award"></i></div>
-        <h4>Gala & Sponsorship</h4>
-        <p>Secure your table, sponsor the event, or purchase individual tickets for the Scholarship Gala.</p>
-        <a href="/cdn-cgi/l/email-protection#36777a6571767250414557585d59505718594451"><span class="__cf_email__" data-cfemail="03424f50444347657470626d686c65622d6c7164">[email&#160;protected]</span></a>
+        <div class="qicon qicon-img"><img src="images/sankofa-foundation-logo.png" width="40" height="40" alt="Sankofa Foundation Dallas / Ft. Worth Logo" /></div>
+        <h4>Sankofa Foundation</h4>
+        <p>Programs, scholarships, and community service through the Sankofa Foundation of DFW.</p>
+        <a href="https://dfwsankofa.org/" target="_blank" rel="noopener noreferrer">https://dfwsankofa.org/</a>
       </div>
       <div class="quick-card">
         <div class="qicon"><i class="fas fa-info-circle"></i></div>
         <h4>General Info</h4>
         <p>For all other inquiries about the chapter, events, or community programs.</p>
-        <a href="/cdn-cgi/l/email-protection#c48daaa2ab848aabb6b0ac80a5a8a8a5b785a8b4aca5b7eaabb6a3"><span class="__cf_email__" data-cfemail="b0f9ded6dff0fedfc2c4d8f4d1dcdcd1c3f1dcc0d8d1c39edfc2d7">[email&#160;protected]</span></a>
+        <a href="mailto:info@northdallasalphas.org">info@northdallasalphas.org</a>
       </div>
     </div>
   </div>
@@ -269,22 +274,8 @@
         const sections = await secRes.json();
         const byKey = {};
         sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
-        if (byKey['full_shell']) {
-          const shellWrap = document.getElementById('pageShell');
-          if (shellWrap) {
-            shellWrap.innerHTML = byKey['full_shell'];
-            rebindSiteShellInteractions();
-            return;
-          }
-        }
-        if (byKey['full_page']) {
-          const fullPageWrap = document.getElementById('pageContent');
-          if (fullPageWrap) {
-            fullPageWrap.innerHTML = byKey['full_page'];
-            rebindSiteShellInteractions();
-            return;
-          }
-        }
+        // Intentionally ignore full_shell / full_page for contact: those keys replace the entire
+        // page with CMS HTML and hide edits made in contact.html (emails, Sankofa block, form).
         if (byKey['contact-hero']) {
           const target = document.querySelector('.page-header p');
           if (target) {
