@@ -25,8 +25,7 @@
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.12); }
     .form-group textarea { resize: vertical; min-height: 130px; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-submit { width: 100%; justify-content: center; padding: 16px; font-size: 0.9rem; }
-    .success-msg { display: none; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.4); border-radius: 4px; padding: 16px 20px; margin-top: 16px; color: var(--gold); font-size: 0.9rem; font-weight: 500; }
+    .form-submit { width: 100%; justify-content: center; padding: 16px; font-size: 0.9rem; box-sizing: border-box; text-decoration: none; text-align: center; }
     .quick-contacts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 60px; }
     .quick-card { background: var(--black); border-radius: 8px; padding: 28px 24px; text-align: center; }
     .quick-card .qicon { width: 52px; height: 52px; background: rgba(201,168,76,0.1); border: 1px solid rgba(201,168,76,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
@@ -174,12 +173,9 @@
             <label for="message">Message *</label>
             <textarea id="message" name="message" placeholder="Tell us how we can help you..." required></textarea>
           </div>
-          <button type="submit" class="btn btn-gold form-submit">
-            <i class="fas fa-paper-plane"></i> Send Message
-          </button>
-          <div class="success-msg" id="successMsg">
-            <i class="fas fa-check-circle"></i> Thank you! Your message has been received. A brother will be in touch with you soon.
-          </div>
+          <a href="mailto:info@northdallasalphas.org" class="btn btn-gold form-submit">
+            <i class="fas fa-envelope"></i> Email info@northdallasalphas.org
+          </a>
         </form>
       </div>
     </div>
@@ -187,9 +183,11 @@
     <!-- Quick Contact Cards -->
     <div class="quick-contacts fade-up">
       <div class="quick-card">
-        <div class="qicon"><i class="fas fa-user-plus"></i></div>
+        <div class="qicon qicon-img">
+          <img src="https://upload.wikimedia.org/wikipedia/en/thumb/2/2e/Alpha_Phi_Alpha_crest.png/320px-Alpha_Phi_Alpha_crest.png" width="40" height="40" alt="Alpha Phi Alpha Fraternity, Inc. coat of arms" loading="lazy" referrerpolicy="no-referrer" />
+        </div>
         <h4>Membership</h4>
-        <p>Interested in joining Xi Tau Lambda? Contact our Membership Chair for more information.</p>
+        <p>Interested in joining Alpha Phi Alpha Fraternity, Inc.? Contact our Membership Chair for more information.</p>
         <a href="mailto:membership@northdallasalphas.org">membership@northdallasalphas.org</a>
       </div>
       <div class="quick-card">
@@ -199,7 +197,7 @@
         <a href="https://dfwsankofa.org/" target="_blank" rel="noopener noreferrer">https://dfwsankofa.org/</a>
       </div>
       <div class="quick-card">
-        <div class="qicon"><i class="fas fa-info-circle"></i></div>
+        <div class="qicon qicon-img"><img src="images/xtl-logo.png" width="40" height="40" alt="Xi Tau Lambda Chapter logo" /></div>
         <h4>General Info</h4>
         <p>For all other inquiries about the chapter, events, or community programs.</p>
         <a href="mailto:info@northdallasalphas.org">info@northdallasalphas.org</a>
@@ -299,24 +297,6 @@
       // Keep static defaults on failure.
     }
   })();
-
-  // Contact form handler
-  document.getElementById('contactForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const btn = this.querySelector('button[type="submit"]');
-    btn.textContent = 'Sending...';
-    btn.disabled = true;
-    setTimeout(() => {
-      document.getElementById('successMsg').style.display = 'block';
-      this.reset();
-      btn.innerHTML = '<i class="fas fa-check"></i> Message Sent!';
-      setTimeout(() => {
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Message';
-        btn.disabled = false;
-        document.getElementById('successMsg').style.display = 'none';
-      }, 5000);
-    }, 900);
-  });
 </script>
 </body>
 </html>
