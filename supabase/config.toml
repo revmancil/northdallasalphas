@@ -2,9 +2,15 @@
 # and register stripe-webhook URL in Stripe Dashboard → Webhooks.
 # Set secrets: STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_ROLE_KEY
 # Optional: PUBLIC_SITE_URL (default https://northdallasalphas.org), DUES_AMOUNT_CENTS
+#
+# Chapter admin grants: supabase functions deploy grant-chapter-admin
+# (Uses SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY automatically in hosted env.)
 
 [functions.stripe-checkout]
 verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.grant-chapter-admin]
+verify_jwt = true

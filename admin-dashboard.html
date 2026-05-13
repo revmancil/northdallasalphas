@@ -1814,6 +1814,26 @@
             <button class="btn-save" onclick="saveSettings()"><i class="fas fa-save"></i> Save Settings</button>
           </div>
 
+          <div style="border-top:1px solid var(--gray-200);padding-top:22px;margin-bottom:24px;">
+            <h4 style="margin:0 0 10px;font-size:1rem;color:var(--gray-800);"><i class="fas fa-user-shield" style="color:var(--gold);margin-right:8px;"></i>Chapter administrators</h4>
+            <p class="hint-text" style="margin-bottom:12px;">Grant another brother access to this admin dashboard (Supabase sign-in at admin.html). The first admin must be added in the Supabase SQL Editor; after that, use the form below.</p>
+            <div id="chapterAdminsList" class="hint-text" style="margin-bottom:14px;">Loading list…</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;align-items:end;margin-bottom:12px;">
+              <div class="field-group" style="margin:0;">
+                <label for="grantAdminEmail">New admin email</label>
+                <input type="email" id="grantAdminEmail" placeholder="brother@example.com" autocomplete="off" />
+              </div>
+              <div class="field-group" style="margin:0;">
+                <label for="grantAdminPassword">Temporary password (min 8 characters)</label>
+                <input type="password" id="grantAdminPassword" placeholder="They should change after first login" autocomplete="new-password" />
+              </div>
+              <div>
+                <button type="button" class="btn-save" onclick="grantChapterAdminAccess()"><i class="fas fa-user-plus"></i> Grant admin access</button>
+              </div>
+            </div>
+            <p class="hint-text" style="margin:0;">Requires the <code>grant-chapter-admin</code> Edge Function and SQL in <code>SUPABASE_CONTENT_SCHEMA.sql</code>. If the account already exists, access is still granted; the password field is ignored by Supabase for existing users but must be filled here.</p>
+          </div>
+
           <!-- Password Change -->
           <div class="pw-change-section">
             <h4><i class="fas fa-shield-alt"></i> Change Admin Password</h4>
@@ -1875,6 +1895,7 @@
 // ── Auth Guard ──
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const GRANT_CHAPTER_ADMIN_FN = SUPABASE_URL + '/functions/v1/grant-chapter-admin';
 const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
@@ -2089,6 +2110,147 @@ function logout() {
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem('nda_admin_user');
   window.location.href = 'admin.html';
+}
+
+async function chapterAdminRecordCount(token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/chapter_admin_record_count', {
+    method: 'POST',
+    headers: sbHeaders(token),
+    body: '{}'
+  });
+  if (!res.ok) return null;
+  const j = await res.json();
+  if (typeof j === 'number') return j;
+  if (typeof j === 'string') return parseInt(j, 10);
+  return 0;
+}
+
+async function currentUserIsChapterAdminRpc(token) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/current_user_is_chapter_admin', {
+    method: 'POST',
+    headers: sbHeaders(token),
+    body: '{}'
+  });
+  if (!res.ok) return null;
+  return (await res.json()) === true;
+}
+
+async function verifyChapterAdminAccess() {
+  const token = getAdminToken();
+  if (!token) return;
+  let total = 0;
+  try {
+    const t = await chapterAdminRecordCount(token);
+    if (t === null || t === undefined) return;
+    total = typeof t === 'number' ? t : parseInt(String(t), 10) || 0;
+  } catch (e) {
+    return;
+  }
+  if (total === 0) return;
+  try {
+    const ok = await currentUserIsChapterAdminRpc(token);
+    if (ok !== true) {
+      alert('Your account does not have chapter administrator access. A chapter admin must add your email in Supabase (chapter_admins table), or sign in with an authorized admin account.');
+      logout();
+    }
+  } catch (e) {
+    return;
+  }
+}
+
+async function loadChapterAdminPanel() {
+  const el = document.getElementById('chapterAdminsList');
+  if (!el) return;
+  const token = getAdminToken();
+  if (!token) {
+    el.innerHTML = '<span style="color:var(--red);">Session expired.</span>';
+    return;
+  }
+  try {
+    const rows = await sbGet('chapter_admins', 'select=email,granted_at,granted_by&order=email.asc', token);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="hint-text" style="margin:0;">No administrators in the roster (or you are not listed). Seed the first admin in Supabase SQL: <code>insert into public.chapter_admins (email, granted_by) values (\'your@email.com\',\'bootstrap\');</code></div>';
+      return;
+    }
+    const me = (sessionStorage.getItem('nda_admin_user') || '').trim().toLowerCase();
+    el.innerHTML = '<div style="font-size:0.85rem;font-weight:600;color:var(--gray-700);margin-bottom:8px;">Current chapter admins</div>' +
+      rows.map(function(m) {
+        const em = (m.email || '').trim();
+        const when = m.granted_at ? new Date(m.granted_at).toLocaleString() : '';
+        const by = m.granted_by ? escHtml(m.granted_by) : '';
+        const safeData = encodeURIComponent(em);
+        const isSelf = em.toLowerCase() === me;
+        const removeBtn = isSelf
+          ? '<span class="hint-text" style="margin:0;">(you)</span>'
+          : '<button type="button" class="btn-sm danger" data-admin-email="' + safeData + '" onclick="removeChapterAdminFromBtn(this)">Remove</button>';
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-200);">' +
+          '<div><div style="font-weight:600;">' + escHtml(em) + '</div>' +
+          '<div style="font-size:0.75rem;color:var(--gray-500);margin-top:2px;">Added: ' + escHtml(when) + (by ? ' · by ' + by : '') + '</div></div>' +
+          removeBtn +
+          '</div>';
+      }).join('');
+  } catch (err) {
+    el.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load administrators: ' + escHtml(err.message || 'error') + '. Run the chapter_admins section in SUPABASE_CONTENT_SCHEMA.sql if needed.</div>';
+  }
+}
+
+async function removeChapterAdminFromBtn(btn) {
+  const enc = btn.getAttribute('data-admin-email') || '';
+  const email = decodeURIComponent(enc);
+  if (!email) return;
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Session expired.', 'error');
+    return;
+  }
+  if (!confirm('Remove dashboard admin access for ' + email + '?')) return;
+  try {
+    await sbDeleteByFilter('chapter_admins', 'email=eq.' + encodeURIComponent(email), token);
+    showToast('Administrator removed.', 'success');
+    await loadChapterAdminPanel();
+  } catch (err) {
+    showToast(err.message || 'Could not remove (you cannot remove the last admin or yourself if policy blocks it).', 'error');
+  }
+}
+
+async function grantChapterAdminAccess() {
+  const emailEl = document.getElementById('grantAdminEmail');
+  const passEl = document.getElementById('grantAdminPassword');
+  const email = (emailEl && emailEl.value || '').trim().toLowerCase();
+  const password = (passEl && passEl.value) || '';
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Session expired.', 'error');
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Enter a valid email.', 'error');
+    return;
+  }
+  if (password.length < 8) {
+    showToast('Password must be at least 8 characters.', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(GRANT_CHAPTER_ADMIN_FN, {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(token), { Accept: 'application/json' }),
+      body: JSON.stringify({ email: email, password: password })
+    });
+    const data = await res.json().catch(function() {
+      return {};
+    });
+    if (!res.ok) {
+      showToast(data.error || data.message || ('Request failed (' + res.status + ')'), 'error');
+      return;
+    }
+    showToast(data.message || 'Access granted.', 'success');
+    if (emailEl) emailEl.value = '';
+    if (passEl) passEl.value = '';
+    await loadChapterAdminPanel();
+  } catch (err) {
+    showToast(err.message || 'Network error', 'error');
+  }
 }
 
 // ── Toast ──
@@ -4469,6 +4631,7 @@ function loadSettings() {
     if (saved.email)        document.getElementById('setEmail').value        = saved.email;
     if (saved.memberEmail)  document.getElementById('setMemberEmail').value  = saved.memberEmail;
   }
+  void loadChapterAdminPanel();
 }
 
 function saveSettings() {
@@ -4966,17 +5129,18 @@ function escHtml(str) {
 // INIT
 // ══════════════════════════════════════════════════
 (function init() {
-  ensurePageEditorQuill();
-  loadSettings();
-  updateDashboardStats();
-  loadEventsList();
-  loadPageSection('home');
-  loadNewsletterDefaults();
-  // Restore president photo preview if URL already set
-  setTimeout(() => {
-    const presPhotoEl = document.getElementById('presPhoto');
-    if (presPhotoEl && presPhotoEl.value) updatePresPhotoPreview();
-  }, 200);
+  verifyChapterAdminAccess().then(function() {
+    ensurePageEditorQuill();
+    loadSettings();
+    updateDashboardStats();
+    loadEventsList();
+    loadPageSection('home');
+    loadNewsletterDefaults();
+    setTimeout(() => {
+      const presPhotoEl = document.getElementById('presPhoto');
+      if (presPhotoEl && presPhotoEl.value) updatePresPhotoPreview();
+    }, 200);
+  });
 })();
 </script>
 
