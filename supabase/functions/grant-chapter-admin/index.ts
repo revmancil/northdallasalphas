@@ -1,6 +1,18 @@
+/**
+ * Grant chapter admin: creates Auth user (or links existing) + chapter_admins row.
+ * Keep this file self-contained (no ../ imports) so Supabase deploy bundles reliably.
+ * CORS: https://supabase.com/docs/guides/functions/cors
+ */
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-import { corsHeaders } from "../_shared/cors.ts";
+
+const corsHeaders: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, accept, accept-profile, content-profile, prefer, x-upsert, traceparent, baggage, x-supabase-api-version",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+};
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -15,7 +27,7 @@ function trimLowerEmail(v: unknown): string {
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return new Response("ok", { status: 200, headers: corsHeaders });
   }
 
   try {
