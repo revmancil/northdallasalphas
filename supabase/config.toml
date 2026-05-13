@@ -13,4 +13,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.grant-chapter-admin]
-verify_jwt = true
+# JWT is validated inside the function (getUser). verify_jwt=true breaks browser
+# CORS preflight (OPTIONS) from GitHub Pages before the function runs.
+verify_jwt = false

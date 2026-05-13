@@ -323,10 +323,13 @@ on conflict (content_key) do nothing;
 
 -- =============================================================================
 -- Chapter administrators (admin dashboard access control)
--- 1) Run this block once.
+-- 1) Run this block once (or re-run the policy section if SELECT on chapter_admins returned 500).
 -- 2) Seed the first admin (replace email — must match an existing Supabase Auth user):
 --    insert into public.chapter_admins (email, granted_by) values ('you@chapter.org','bootstrap');
 -- 3) Deploy Edge Function grant-chapter-admin and set SUPABASE_SERVICE_ROLE_KEY secret.
+--
+-- NOTE: Policies must NOT use "EXISTS (SELECT ... FROM chapter_admins)" — that recurses
+-- through RLS and causes HTTP 500. Use the SECURITY DEFINER helpers below instead.
 -- =============================================================================
 
 create table if not exists public.chapter_admins (
@@ -336,32 +339,6 @@ create table if not exists public.chapter_admins (
 );
 
 alter table public.chapter_admins enable row level security;
-
-drop policy if exists "chapter_admins_select" on public.chapter_admins;
-create policy "chapter_admins_select"
-on public.chapter_admins for select
-to authenticated
-using (
-  exists (
-    select 1 from public.chapter_admins ca
-    where lower(trim(ca.email)) = lower(trim(auth.jwt() ->> 'email'))
-  )
-);
-
-drop policy if exists "chapter_admins_delete" on public.chapter_admins;
-create policy "chapter_admins_delete"
-on public.chapter_admins for delete
-to authenticated
-using (
-  exists (
-    select 1 from public.chapter_admins ca
-    where lower(trim(ca.email)) = lower(trim(auth.jwt() ->> 'email'))
-  )
-  and (select count(*)::int from public.chapter_admins) > 1
-  and lower(trim(chapter_admins.email)) <> lower(trim(auth.jwt() ->> 'email'))
-);
-
--- Inserts/updates only via service role (e.g. grant-chapter-admin Edge Function).
 
 create or replace function public.chapter_admin_record_count()
 returns integer
@@ -388,3 +365,21 @@ $$;
 
 grant execute on function public.chapter_admin_record_count() to authenticated;
 grant execute on function public.current_user_is_chapter_admin() to authenticated;
+
+drop policy if exists "chapter_admins_select" on public.chapter_admins;
+create policy "chapter_admins_select"
+on public.chapter_admins for select
+to authenticated
+using ( public.current_user_is_chapter_admin() );
+
+drop policy if exists "chapter_admins_delete" on public.chapter_admins;
+create policy "chapter_admins_delete"
+on public.chapter_admins for delete
+to authenticated
+using (
+  public.current_user_is_chapter_admin()
+  and public.chapter_admin_record_count() > 1
+  and lower(trim(email)) <> lower(trim(auth.jwt() ->> 'email'))
+);
+
+-- Inserts/updates only via service role (e.g. grant-chapter-admin Edge Function).
