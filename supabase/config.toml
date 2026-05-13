@@ -5,6 +5,7 @@
 #
 # Chapter admin grants: supabase functions deploy grant-chapter-admin
 # (Uses SUPABASE_SERVICE_ROLE_KEY + SUPABASE_ANON_KEY automatically in hosted env.)
+# After changing CORS or this function, redeploy so GitHub Pages preflight (OPTIONS) succeeds.
 
 [functions.stripe-checkout]
 verify_jwt = false

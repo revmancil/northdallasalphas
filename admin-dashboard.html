@@ -1895,7 +1895,6 @@
 // ── Auth Guard ──
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
-const GRANT_CHAPTER_ADMIN_FN = SUPABASE_URL + '/functions/v1/grant-chapter-admin';
 const supabaseClient = (window.supabase && typeof window.supabase.createClient === 'function')
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
@@ -2223,6 +2222,10 @@ async function grantChapterAdminAccess() {
     showToast('Session expired.', 'error');
     return;
   }
+  if (!supabaseClient) {
+    showToast('Supabase client not available. Refresh the page and try again.', 'error');
+    return;
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     showToast('Enter a valid email.', 'error');
     return;
@@ -2232,19 +2235,26 @@ async function grantChapterAdminAccess() {
     return;
   }
   try {
-    const res = await fetch(GRANT_CHAPTER_ADMIN_FN, {
-      method: 'POST',
-      headers: Object.assign({}, sbHeaders(token), { Accept: 'application/json' }),
-      body: JSON.stringify({ email: email, password: password })
-    });
-    const data = await res.json().catch(function() {
-      return {};
-    });
-    if (!res.ok) {
-      showToast(data.error || data.message || ('Request failed (' + res.status + ')'), 'error');
+    const raw = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+    const sessionPayload = { access_token: token };
+    if (raw && raw.refresh_token) sessionPayload.refresh_token = raw.refresh_token;
+    const { error: sessionErr } = await supabaseClient.auth.setSession(sessionPayload);
+    if (sessionErr) {
+      showToast(sessionErr.message || 'Could not attach session for this request.', 'error');
       return;
     }
-    showToast(data.message || 'Access granted.', 'success');
+    const { data, error } = await supabaseClient.functions.invoke('grant-chapter-admin', {
+      body: { email: email, password: password },
+    });
+    if (error) {
+      showToast(error.message || 'Request failed. Redeploy the grant-chapter-admin Edge Function if this persists.', 'error');
+      return;
+    }
+    if (data && data.error) {
+      showToast(typeof data.error === 'string' ? data.error : 'Request failed', 'error');
+      return;
+    }
+    showToast((data && data.message) || 'Access granted.', 'success');
     if (emailEl) emailEl.value = '';
     if (passEl) passEl.value = '';
     await loadChapterAdminPanel();
