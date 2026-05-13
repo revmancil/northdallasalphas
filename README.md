@@ -82,3 +82,51 @@ images/
 ## To Deploy
 
 Go to the **Publish tab** to make this website live.
+
+---
+
+## Supabase CLI: `login` not working (Windows)
+
+The **Grant admin access** button needs the Edge Function `grant-chapter-admin` deployed. That uses the [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started).
+
+### Install the CLI (pick one)
+
+- **Scoop** (recommended on Windows): [Scoop](https://scoop.sh/) then  
+  `scoop bucket add supabase https://github.com/supabase/scoop-bucket.git`  
+  `scoop install supabase`
+- **No global install:** use **Node.js 20+** and run commands with  
+  `npx supabase@latest ...`  
+  (Older Node will fail.)
+
+Do **not** use `npm install -g supabase` — it is not supported.
+
+### If `supabase login` (browser) fails
+
+Use a **personal access token** instead (no browser callback):
+
+1. Open [Supabase Dashboard → Account → Access Tokens](https://supabase.com/dashboard/account/tokens).
+2. **Generate new token**, copy it (starts with `sbp_`).
+3. In PowerShell, from your project folder:
+
+   ```powershell
+   supabase login --token YOUR_SBP_TOKEN_HERE
+   ```
+
+   Or with `npx`:
+
+   ```powershell
+   npx supabase@latest login --token YOUR_SBP_TOKEN_HERE
+   ```
+
+4. Link and deploy:
+
+   ```powershell
+   supabase link --project-ref fbjervpgxnbyntylabfr
+   supabase functions deploy grant-chapter-admin
+   ```
+
+**CI / headless:** you can skip `login` and set the env var `SUPABASE_ACCESS_TOKEN` to the same token when running deploy commands.
+
+### After deploy
+
+In the Supabase Dashboard go to **Edge Functions** and confirm **grant-chapter-admin** is listed. Then try **Grant admin access** on the admin dashboard again.
