@@ -1832,7 +1832,7 @@
                 <button type="button" class="btn-save" onclick="grantChapterAdminAccess()"><i class="fas fa-user-plus"></i> Grant admin access</button>
               </div>
             </div>
-            <p class="hint-text" style="margin:0;">Requires the <code>grant-chapter-admin</code> Edge Function and SQL in <code>SUPABASE_CONTENT_SCHEMA.sql</code>. If the account already exists, access is still granted; the password field is ignored by Supabase for existing users but must be filled here.</p>
+            <p class="hint-text" style="margin:0;">The <code>grant-chapter-admin</code> <strong>Edge Function</strong> must be deployed to your Supabase project (a 404 in the console means it is missing). From your machine, in this repo: <code>supabase login</code> then <code>supabase functions deploy grant-chapter-admin</code>. Confirm under Supabase Dashboard → Edge Functions. Also run the <code>chapter_admins</code> SQL in <code>SUPABASE_CONTENT_SCHEMA.sql</code> if you have not.</p>
           </div>
 
           <!-- Password Change -->
@@ -2248,7 +2248,22 @@ async function grantChapterAdminAccess() {
       body: { email: email, password: password },
     });
     if (error) {
-      showToast(error.message || 'Request failed. Redeploy the grant-chapter-admin Edge Function if this persists.', 'error');
+      var httpStatus = 0;
+      try {
+        if (error.context && typeof error.context.status === 'number') httpStatus = error.context.status;
+      } catch (e1) { /* ignore */ }
+      if (httpStatus === 404 || /404|not found/i.test(String(error.message || ''))) {
+        alert(
+          'Supabase returned 404: the Edge Function "grant-chapter-admin" is not deployed to this project yet.\n\n' +
+            'Fix:\n' +
+            '1. Install the Supabase CLI and run: supabase login\n' +
+            '2. In your northdallasalphas folder: supabase functions deploy grant-chapter-admin\n' +
+            '3. In Supabase Dashboard → Edge Functions, confirm "grant-chapter-admin" is listed.\n\n' +
+            'Docs: https://supabase.com/docs/guides/functions/deploy'
+        );
+        return;
+      }
+      showToast(error.message || 'Request failed.', 'error');
       return;
     }
     if (data && data.error) {
