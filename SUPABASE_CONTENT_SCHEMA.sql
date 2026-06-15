@@ -111,6 +111,11 @@ begin
 end $$;
 
 alter table if exists public.members
+  add column if not exists middle_name text,
+  add column if not exists suffix text,
+  add column if not exists birthday text,
+  add column if not exists initiation_chapter text,
+  add column if not exists initiation_date text,
   add column if not exists chapter_active_date date,
   add column if not exists imdp_certified text,
   add column if not exists risk_mgmt_certified text,

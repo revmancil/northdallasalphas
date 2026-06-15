@@ -135,6 +135,10 @@
     .member-card-info{flex:1;}
     .mc-name{font-size:0.88rem;font-weight:600;color:var(--white);}
     .mc-meta{font-size:0.73rem;color:var(--gray-400);margin-top:2px;}
+    .mc-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+    .cert-badge{font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:0.02em;}
+    .cert-badge.certified{background:var(--green-pale);color:var(--green);}
+    .cert-badge.not-certified{background:var(--red-pale);color:var(--red);}
     .member-search{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;padding:10px 14px 10px 40px;outline:none;margin-bottom:16px;}
     .member-search:focus{border-color:var(--gold);}
     .search-wrap{position:relative;}
@@ -287,7 +291,10 @@
               <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-400);margin-bottom:12px;">Personal Information</p>
               <div class="profile-grid">
                 <div class="pfield"><label>First Name</label><input type="text" id="pfFirstName" placeholder="First name" /></div>
+                <div class="pfield"><label>Middle Name</label><input type="text" id="pfMiddleName" placeholder="Middle name" /></div>
                 <div class="pfield"><label>Last Name</label><input type="text" id="pfLastName" placeholder="Last name" /></div>
+                <div class="pfield"><label>Suffix</label><input type="text" id="pfSuffix" placeholder="Jr., Sr., III" /></div>
+                <div class="pfield"><label>Birthday</label><input type="text" id="pfBirthday" placeholder="e.g. 03/15/1985" /></div>
                 <div class="pfield"><label>Phone Number</label><input type="tel" id="pfPhone" placeholder="(555) 000-0000" /></div>
                 <div class="pfield"><label>City</label><input type="text" id="pfCity" placeholder="City" /></div>
                 <div class="pfield"><label>State</label><input type="text" id="pfState" placeholder="TX" maxlength="2" /></div>
@@ -745,6 +752,19 @@ function renderDocumentsPanel() {
     .catch(function() { c.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>Could not load documents.</p></div>'; });
 }
 
+function formatMemberFullName(m) {
+  const parts = [m.first_name, m.middle_name, m.last_name].filter(Boolean);
+  let name = parts.join(' ');
+  if (m.suffix) name += (name ? ' ' : '') + m.suffix;
+  return name.trim() || m.email || 'Unknown';
+}
+
+function formatCertBadge(label, value) {
+  if (value === 'yes') return '<span class="cert-badge certified">' + escHtml(label) + '</span>';
+  if (value === 'no') return '<span class="cert-badge not-certified">' + escHtml(label) + '</span>';
+  return '';
+}
+
 function renderDirectoryPanel() {
   if (!allMembers.length) { loadDirectory(); return; }
   renderDirectoryList(allMembers);
@@ -767,16 +787,28 @@ function renderDirectoryList(members) {
   if (!members.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No members found.</p></div>'; return; }
   c.innerHTML = members.map(function(m) {
     const initials = ((m.first_name||'')[0]||'') + ((m.last_name||'')[0]||'') || '?';
-    const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email;
+    const name = formatMemberFullName(m);
     const loc  = [m.city, m.state].filter(Boolean).join(', ');
     const email = (m.email || '').trim();
     const phone = (m.phone || '').trim();
+    const alphaParts = [];
+    if (m.alpha_id) alphaParts.push('Alpha ID ' + escHtml(m.alpha_id));
+    if (m.initiation_chapter) alphaParts.push('Initiated ' + escHtml(m.initiation_chapter));
+    if (m.initiation_date) alphaParts.push(escHtml(m.initiation_date));
+    const alphaMeta = alphaParts.join(' &middot; ');
+    const certBadges = [
+      formatCertBadge('IMDP', m.imdp_certified),
+      formatCertBadge('Risk Mgmt', m.risk_mgmt_certified)
+    ].filter(Boolean).join('');
     return '<div class="member-card">' +
       '<div class="member-card-avatar">' + (m.photo ? '<img src="' + escHtml(m.photo) + '" alt="' + escHtml(name) + '" />' : escHtml(initials)) + '</div>' +
       '<div class="member-card-info"><div class="mc-name">Bro. ' + escHtml(name) + '</div>' +
       '<div class="mc-meta">' + escHtml(loc) + (m.member_since ? (loc?' &middot; ':'') + 'Since ' + escHtml(m.member_since) : '') + '</div>' +
+      (alphaMeta ? '<div class="mc-meta">' + alphaMeta + '</div>' : '') +
+      (m.birthday ? '<div class="mc-meta"><i class="fas fa-cake-candles" style="margin-right:6px;color:var(--gold);"></i>' + escHtml(m.birthday) + '</div>' : '') +
       (email ? '<div class="mc-meta"><i class="fas fa-envelope" style="margin-right:6px;color:var(--gold);"></i><a href="mailto:' + escHtml(email) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(email) + '</a></div>' : '') +
       (phone ? '<div class="mc-meta"><i class="fas fa-phone" style="margin-right:6px;color:var(--gold);"></i><a href="tel:' + escHtml(phone.replace(/\s+/g, '')) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(phone) + '</a></div>' : '') +
+      (certBadges ? '<div class="mc-badges">' + certBadges + '</div>' : '') +
       '</div>' +
       (m.linkedin ? '<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" style="color:var(--blue);font-size:1.1rem;"><i class="fab fa-linkedin"></i></a>' : '') +
       '</div>';
@@ -786,14 +818,19 @@ function renderDirectoryList(members) {
 function filterDirectory() {
   const q = document.getElementById('dirSearch').value.toLowerCase();
   renderDirectoryList(allMembers.filter(function(m) {
-    return [m.first_name, m.last_name, m.city].filter(Boolean).join(' ').toLowerCase().includes(q);
+    return [
+      m.first_name, m.middle_name, m.last_name, m.suffix, m.city, m.alpha_id, m.initiation_chapter
+    ].filter(Boolean).join(' ').toLowerCase().includes(q);
   }));
 }
 
 function loadProfileForm(member) {
   if (!member) return;
   document.getElementById('pfFirstName').value        = member.first_name        || '';
+  document.getElementById('pfMiddleName').value       = member.middle_name       || '';
   document.getElementById('pfLastName').value         = member.last_name         || '';
+  document.getElementById('pfSuffix').value           = member.suffix            || '';
+  document.getElementById('pfBirthday').value         = member.birthday          || '';
   document.getElementById('pfPhone').value            = member.phone             || '';
   document.getElementById('pfCity').value             = member.city              || '';
   document.getElementById('pfState').value            = member.state             || '';
@@ -835,8 +872,11 @@ function updateProfilePreview() {
     la.textContent = initials;
     sa.textContent = initials;
   }
-  document.getElementById('profileFullName').textContent = [firstName,lastName].filter(Boolean).join(' ') || 'Your Name';
-  document.getElementById('sidebarName').textContent = [firstName,lastName].filter(Boolean).join(' ') || (currentSession&&currentSession.user ? currentSession.user.email : 'Member');
+  const middleName = document.getElementById('pfMiddleName').value.trim();
+  const suffix = document.getElementById('pfSuffix').value.trim();
+  const fullName = [firstName, middleName, lastName].filter(Boolean).join(' ') + (suffix ? (firstName || middleName || lastName ? ' ' : '') + suffix : '');
+  document.getElementById('profileFullName').textContent = fullName.trim() || 'Your Name';
+  document.getElementById('sidebarName').textContent = fullName.trim() || (currentSession&&currentSession.user ? currentSession.user.email : 'Member');
   const since = document.getElementById('pfMemberSince').value.trim();
   document.getElementById('profileMemberSince').textContent = since ? 'Member since ' + since : 'Update your profile to add details';
 }
@@ -850,7 +890,10 @@ document.getElementById('profileForm').addEventListener('submit', async function
   try {
     const updates = {
       first_name:          document.getElementById('pfFirstName').value.trim(),
+      middle_name:         document.getElementById('pfMiddleName').value.trim(),
       last_name:           document.getElementById('pfLastName').value.trim(),
+      suffix:              document.getElementById('pfSuffix').value.trim(),
+      birthday:            document.getElementById('pfBirthday').value.trim(),
       phone:               document.getElementById('pfPhone').value.trim(),
       city:                document.getElementById('pfCity').value.trim(),
       state:               document.getElementById('pfState').value.trim(),

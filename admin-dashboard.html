@@ -1756,24 +1756,31 @@
           <span><span id="brothersDirectoryCount">0</span> records</span>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Maintain your chapter brother directory and mass upload records by CSV. This directory is for internal tracking and manual verification workflows.</p>
+          <p class="hint-text">Maintain your chapter brother directory and mass upload records by CSV. Saving syncs matched records to the <strong>member portal directory</strong> (matched by email, then Alpha ID). Brothers without an email on file stay in this list only until an email is added.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
             <button class="btn-sm edit" onclick="openBrothersDirectoryUpload()"><i class="fas fa-file-upload"></i> Mass Upload CSV</button>
             <button class="btn-sm success" onclick="addBrotherDirectoryRow()"><i class="fas fa-user-plus"></i> Add Brother</button>
             <button class="btn-sm view" onclick="loadBrothersDirectory()"><i class="fas fa-rotate-right"></i> Refresh</button>
             <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveBrothersDirectory()"><i class="fas fa-save"></i> Save Directory</button>
           </div>
-          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,last_name,email,phone,status</code> (minimum required: <code>alpha_id</code>).</p>
+          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>).</p>
           <div style="overflow-x:auto;">
             <table class="officers-table">
               <thead>
                 <tr>
-                  <th style="width:140px;">Alpha ID</th>
-                  <th style="width:150px;">First Name</th>
-                  <th style="width:150px;">Last Name</th>
-                  <th>Email</th>
-                  <th style="width:130px;">Phone</th>
-                  <th style="width:110px;">Status</th>
+                  <th style="width:120px;">Alpha ID</th>
+                  <th style="width:120px;">First Name</th>
+                  <th style="width:110px;">Middle Name</th>
+                  <th style="width:120px;">Last Name</th>
+                  <th style="width:70px;">Suffix</th>
+                  <th style="width:180px;">Email</th>
+                  <th style="width:120px;">Phone</th>
+                  <th style="width:90px;">Status</th>
+                  <th style="width:150px;">Initiation Chapter</th>
+                  <th style="width:120px;">Initiation Date</th>
+                  <th style="width:120px;">Birthday</th>
+                  <th style="width:110px;">IMDP Cert.</th>
+                  <th style="width:110px;">Risk Mgmt Cert.</th>
                   <th style="width:40px;"></th>
                 </tr>
               </thead>
@@ -2558,21 +2565,64 @@ async function updateVisitingRequestStatus(requestId, status) {
 // BROTHERS DIRECTORY
 // ══════════════════════════════════════════════════
 const BROTHERS_DIRECTORY_KEY = 'brothers_directory';
+const BROTHERS_DIRECTORY_COL_COUNT = 15;
 let brothersDirectoryData = [];
 
 function normalizeAlphaId(value) {
   return String(value || '').trim().toUpperCase();
 }
 
+function normalizeCertValue(value) {
+  const v = String(value || '').trim().toLowerCase();
+  if (v === 'yes' || v === 'y' || v === 'certified' || v === 'true') return 'yes';
+  if (v === 'no' || v === 'n' || v === 'not certified' || v === 'false') return 'no';
+  return '';
+}
+
+function emptyBrotherRecord() {
+  return {
+    alpha_id: '',
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    suffix: '',
+    email: '',
+    phone: '',
+    status: 'active',
+    initiation_chapter: '',
+    initiation_date: '',
+    birthday: '',
+    imdp_certified: '',
+    risk_mgmt_certified: ''
+  };
+}
+
 function sanitizeBrotherRecord(row) {
   return {
     alpha_id: normalizeAlphaId(row && row.alpha_id),
     first_name: String((row && row.first_name) || '').trim(),
+    middle_name: String((row && row.middle_name) || '').trim(),
     last_name: String((row && row.last_name) || '').trim(),
+    suffix: String((row && row.suffix) || '').trim(),
     email: String((row && row.email) || '').trim(),
     phone: String((row && row.phone) || '').trim(),
-    status: String((row && row.status) || 'active').trim().toLowerCase() || 'active'
+    status: String((row && row.status) || 'active').trim().toLowerCase() || 'active',
+    initiation_chapter: String((row && row.initiation_chapter) || '').trim(),
+    initiation_date: String((row && row.initiation_date) || '').trim(),
+    birthday: String((row && row.birthday) || '').trim(),
+    imdp_certified: normalizeCertValue(row && row.imdp_certified),
+    risk_mgmt_certified: normalizeCertValue(row && row.risk_mgmt_certified)
   };
+}
+
+function brotherCertSelectHtml(value, field, index) {
+  const v = normalizeCertValue(value);
+  return '' +
+    '<select onchange="brothersDirectoryData[' + index + '].' + field + '=this.value">' +
+    '<option value=""' + (v === '' ? ' selected' : '') + '>Not set</option>' +
+    '<option value="yes"' + (v === 'yes' ? ' selected' : '') + '>Yes</option>' +
+    '<option value="no"' + (v === 'no' ? ' selected' : '') + '>No</option>' +
+    '</select>';
 }
 
 function updateBrothersDirectoryCount() {
@@ -2585,7 +2635,7 @@ function renderBrothersDirectoryTable() {
   if (!body) return;
   body.innerHTML = '';
   if (!brothersDirectoryData.length) {
-    body.innerHTML = '<tr><td colspan="7" style="padding:10px;color:var(--gray-500);">No brothers in directory yet. Upload a CSV or add rows manually.</td></tr>';
+    body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--gray-500);">No brothers in directory yet. Upload a CSV or add rows manually.</td></tr>';
     updateBrothersDirectoryCount();
     return;
   }
@@ -2595,10 +2645,17 @@ function renderBrothersDirectoryTable() {
     tr.innerHTML = '' +
       '<td><input type="text" value="' + escHtml(rec.alpha_id) + '" placeholder="Alpha ID" onchange="brothersDirectoryData[' + i + '].alpha_id=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.first_name) + '" placeholder="First Name" onchange="brothersDirectoryData[' + i + '].first_name=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.middle_name) + '" placeholder="Middle" onchange="brothersDirectoryData[' + i + '].middle_name=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.last_name) + '" placeholder="Last Name" onchange="brothersDirectoryData[' + i + '].last_name=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.suffix) + '" placeholder="Jr." onchange="brothersDirectoryData[' + i + '].suffix=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.email) + '" placeholder="email@example.com" onchange="brothersDirectoryData[' + i + '].email=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.phone) + '" placeholder="(555) 555-5555" onchange="brothersDirectoryData[' + i + '].phone=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.status) + '" placeholder="active" onchange="brothersDirectoryData[' + i + '].status=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.initiation_chapter) + '" placeholder="Chapter" onchange="brothersDirectoryData[' + i + '].initiation_chapter=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.initiation_date) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].initiation_date=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.birthday) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].birthday=this.value" /></td>' +
+      '<td>' + brotherCertSelectHtml(rec.imdp_certified, 'imdp_certified', i) + '</td>' +
+      '<td>' + brotherCertSelectHtml(rec.risk_mgmt_certified, 'risk_mgmt_certified', i) + '</td>' +
       '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(' + i + ')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
   });
@@ -2610,7 +2667,7 @@ async function loadBrothersDirectory() {
   const body = document.getElementById('brothersDirectoryBody');
   if (!body) return;
   if (!token) {
-    body.innerHTML = '<tr><td colspan="7" style="padding:10px;color:var(--red);">Admin session expired. Please sign in again.</td></tr>';
+    body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--red);">Admin session expired. Please sign in again.</td></tr>';
     updateBrothersDirectoryCount();
     return;
   }
@@ -2619,13 +2676,13 @@ async function loadBrothersDirectory() {
     brothersDirectoryData = Array.isArray(rows) ? rows.map(sanitizeBrotherRecord).filter(function(r) { return !!r.alpha_id; }) : [];
     renderBrothersDirectoryTable();
   } catch (err) {
-    body.innerHTML = '<tr><td colspan="7" style="padding:10px;color:var(--red);">Could not load directory: ' + escHtml(err.message || 'unknown error') + '</td></tr>';
+    body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--red);">Could not load directory: ' + escHtml(err.message || 'unknown error') + '</td></tr>';
     updateBrothersDirectoryCount();
   }
 }
 
 function addBrotherDirectoryRow() {
-  brothersDirectoryData.push({ alpha_id: '', first_name: '', last_name: '', email: '', phone: '', status: 'active' });
+  brothersDirectoryData.push(emptyBrotherRecord());
   renderBrothersDirectoryTable();
 }
 
@@ -2677,10 +2734,17 @@ function mapHeaderIndexes(headers) {
   return {
     alpha_id: indexByKey.alphaid,
     first_name: indexByKey.firstname,
+    middle_name: indexByKey.middlename,
     last_name: indexByKey.lastname,
+    suffix: indexByKey.suffix,
     email: indexByKey.email,
     phone: indexByKey.phone || indexByKey.phonenumber,
-    status: indexByKey.status
+    status: indexByKey.status,
+    initiation_chapter: indexByKey.initiationchapter,
+    initiation_date: indexByKey.initiationdate,
+    birthday: indexByKey.birthday != null ? indexByKey.birthday : (indexByKey.dateofbirth != null ? indexByKey.dateofbirth : indexByKey.dob),
+    imdp_certified: indexByKey.imdpcertified != null ? indexByKey.imdpcertified : (indexByKey.imdp != null ? indexByKey.imdp : indexByKey.imdpcertification),
+    risk_mgmt_certified: indexByKey.riskmgmtcertified != null ? indexByKey.riskmgmtcertified : (indexByKey.riskmgmt != null ? indexByKey.riskmgmt : (indexByKey.riskmanagement != null ? indexByKey.riskmanagement : indexByKey.riskmanagementcertification))
   };
 }
 
@@ -2707,10 +2771,17 @@ function parseBrothersCsv(text) {
     records.push(sanitizeBrotherRecord({
       alpha_id: alphaId,
       first_name: csvCell(cells, mapped.first_name),
+      middle_name: csvCell(cells, mapped.middle_name),
       last_name: csvCell(cells, mapped.last_name),
+      suffix: csvCell(cells, mapped.suffix),
       email: csvCell(cells, mapped.email),
       phone: csvCell(cells, mapped.phone),
-      status: csvCell(cells, mapped.status) || 'active'
+      status: csvCell(cells, mapped.status) || 'active',
+      initiation_chapter: csvCell(cells, mapped.initiation_chapter),
+      initiation_date: csvCell(cells, mapped.initiation_date),
+      birthday: csvCell(cells, mapped.birthday),
+      imdp_certified: csvCell(cells, mapped.imdp_certified),
+      risk_mgmt_certified: csvCell(cells, mapped.risk_mgmt_certified)
     }));
   }
   return { records: records, errors: errors };
@@ -2743,6 +2814,56 @@ async function handleBrothersDirectoryUpload(event) {
   }
 }
 
+function brotherDirectoryToMemberPayload(rec) {
+  const payload = {
+    alpha_id: rec.alpha_id,
+    first_name: rec.first_name,
+    middle_name: rec.middle_name,
+    last_name: rec.last_name,
+    suffix: rec.suffix,
+    phone: rec.phone,
+    initiation_chapter: rec.initiation_chapter,
+    initiation_date: rec.initiation_date,
+    birthday: rec.birthday,
+    imdp_certified: rec.imdp_certified,
+    risk_mgmt_certified: rec.risk_mgmt_certified,
+    status: rec.status || 'active',
+    updated_at: new Date().toISOString()
+  };
+  if (rec.email) payload.email = rec.email;
+  return payload;
+}
+
+async function syncBrotherDirectoryToMembers(records) {
+  const token = getAdminToken();
+  if (!token) throw new Error('Admin session expired. Please sign in again.');
+  let synced = 0;
+  let created = 0;
+  let skipped = 0;
+  for (let i = 0; i < records.length; i++) {
+    const rec = sanitizeBrotherRecord(records[i]);
+    const payload = brotherDirectoryToMemberPayload(rec);
+    const email = (rec.email || '').trim().toLowerCase();
+    let existing = [];
+    if (email) {
+      existing = await sbGet('members', 'email=eq.' + encodeURIComponent(email) + '&limit=1', token) || [];
+    }
+    if (!existing.length && rec.alpha_id) {
+      existing = await sbGet('members', 'alpha_id=eq.' + encodeURIComponent(rec.alpha_id) + '&limit=1', token) || [];
+    }
+    if (existing.length) {
+      await sbPatch('members', 'id=eq.' + encodeURIComponent(existing[0].id), payload, token);
+      synced++;
+    } else if (email) {
+      await sbPost('members', Object.assign({}, payload, { created_at: new Date().toISOString() }), token);
+      created++;
+    } else {
+      skipped++;
+    }
+  }
+  return { synced: synced, created: created, skipped: skipped };
+}
+
 async function saveBrothersDirectory() {
   const cleaned = [];
   const seen = {};
@@ -2763,13 +2884,14 @@ async function saveBrothersDirectory() {
   }
   try {
     await saveContentJson(BROTHERS_DIRECTORY_KEY, cleaned);
+    const syncResult = await syncBrotherDirectoryToMembers(cleaned);
     brothersDirectoryData = cleaned;
     renderBrothersDirectoryTable();
-    if (missingAlphaIdCount) {
-      showToast('Directory saved. ' + missingAlphaIdCount + ' row(s) without Alpha ID were skipped.', 'info');
-    } else {
-      showToast('Brothers directory saved to Supabase.');
-    }
+    let msg = 'Directory saved. Member portal: ' + syncResult.synced + ' updated';
+    if (syncResult.created) msg += ', ' + syncResult.created + ' created';
+    if (syncResult.skipped) msg += ', ' + syncResult.skipped + ' not synced (no email match)';
+    if (missingAlphaIdCount) msg += '. ' + missingAlphaIdCount + ' row(s) without Alpha ID were skipped.';
+    showToast(msg + '.', syncResult.skipped || missingAlphaIdCount ? 'info' : 'success');
   } catch (err) {
     showToast('Could not save brothers directory: ' + (err.message || 'unknown error'), 'error');
   }
