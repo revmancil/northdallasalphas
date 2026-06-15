@@ -1763,7 +1763,7 @@
             <button class="btn-sm view" onclick="loadBrothersDirectory()"><i class="fas fa-rotate-right"></i> Refresh</button>
             <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveBrothersDirectory()"><i class="fas fa-save"></i> Save Directory</button>
           </div>
-          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>).</p>
+          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,life_member_date,life_member_number,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>).</p>
           <div style="overflow-x:auto;">
             <table class="officers-table">
               <thead>
@@ -1779,6 +1779,8 @@
                   <th style="width:150px;">Initiation Chapter</th>
                   <th style="width:120px;">Initiation Date</th>
                   <th style="width:120px;">Birthday</th>
+                  <th style="width:120px;">Life Member Date</th>
+                  <th style="width:130px;">Life Member #</th>
                   <th style="width:110px;">IMDP Cert.</th>
                   <th style="width:110px;">Risk Mgmt Cert.</th>
                   <th style="width:40px;"></th>
@@ -2565,7 +2567,7 @@ async function updateVisitingRequestStatus(requestId, status) {
 // BROTHERS DIRECTORY
 // ══════════════════════════════════════════════════
 const BROTHERS_DIRECTORY_KEY = 'brothers_directory';
-const BROTHERS_DIRECTORY_COL_COUNT = 15;
+const BROTHERS_DIRECTORY_COL_COUNT = 17;
 let brothersDirectoryData = [];
 
 function normalizeAlphaId(value) {
@@ -2592,6 +2594,8 @@ function emptyBrotherRecord() {
     initiation_chapter: '',
     initiation_date: '',
     birthday: '',
+    life_member_date: '',
+    life_member_number: '',
     imdp_certified: '',
     risk_mgmt_certified: ''
   };
@@ -2610,6 +2614,8 @@ function sanitizeBrotherRecord(row) {
     initiation_chapter: String((row && row.initiation_chapter) || '').trim(),
     initiation_date: String((row && row.initiation_date) || '').trim(),
     birthday: String((row && row.birthday) || '').trim(),
+    life_member_date: String((row && row.life_member_date) || '').trim(),
+    life_member_number: String((row && row.life_member_number) || '').trim(),
     imdp_certified: normalizeCertValue(row && row.imdp_certified),
     risk_mgmt_certified: normalizeCertValue(row && row.risk_mgmt_certified)
   };
@@ -2654,6 +2660,8 @@ function renderBrothersDirectoryTable() {
       '<td><input type="text" value="' + escHtml(rec.initiation_chapter) + '" placeholder="Chapter" onchange="brothersDirectoryData[' + i + '].initiation_chapter=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.initiation_date) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].initiation_date=this.value" /></td>' +
       '<td><input type="text" value="' + escHtml(rec.birthday) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].birthday=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.life_member_date) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].life_member_date=this.value" /></td>' +
+      '<td><input type="text" value="' + escHtml(rec.life_member_number) + '" placeholder="LM-00000" onchange="brothersDirectoryData[' + i + '].life_member_number=this.value" /></td>' +
       '<td>' + brotherCertSelectHtml(rec.imdp_certified, 'imdp_certified', i) + '</td>' +
       '<td>' + brotherCertSelectHtml(rec.risk_mgmt_certified, 'risk_mgmt_certified', i) + '</td>' +
       '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(' + i + ')" title="Remove"><i class="fas fa-trash"></i></button></td>';
@@ -2743,6 +2751,8 @@ function mapHeaderIndexes(headers) {
     initiation_chapter: indexByKey.initiationchapter,
     initiation_date: indexByKey.initiationdate,
     birthday: indexByKey.birthday != null ? indexByKey.birthday : (indexByKey.dateofbirth != null ? indexByKey.dateofbirth : indexByKey.dob),
+    life_member_date: indexByKey.lifememberdate != null ? indexByKey.lifememberdate : indexByKey.lifemembershipdate,
+    life_member_number: indexByKey.lifemembernumber != null ? indexByKey.lifemembernumber : indexByKey.lifememberno,
     imdp_certified: indexByKey.imdpcertified != null ? indexByKey.imdpcertified : (indexByKey.imdp != null ? indexByKey.imdp : indexByKey.imdpcertification),
     risk_mgmt_certified: indexByKey.riskmgmtcertified != null ? indexByKey.riskmgmtcertified : (indexByKey.riskmgmt != null ? indexByKey.riskmgmt : (indexByKey.riskmanagement != null ? indexByKey.riskmanagement : indexByKey.riskmanagementcertification))
   };
@@ -2780,6 +2790,8 @@ function parseBrothersCsv(text) {
       initiation_chapter: csvCell(cells, mapped.initiation_chapter),
       initiation_date: csvCell(cells, mapped.initiation_date),
       birthday: csvCell(cells, mapped.birthday),
+      life_member_date: csvCell(cells, mapped.life_member_date),
+      life_member_number: csvCell(cells, mapped.life_member_number),
       imdp_certified: csvCell(cells, mapped.imdp_certified),
       risk_mgmt_certified: csvCell(cells, mapped.risk_mgmt_certified)
     }));
@@ -2825,11 +2837,14 @@ function brotherDirectoryToMemberPayload(rec) {
     initiation_chapter: rec.initiation_chapter,
     initiation_date: rec.initiation_date,
     birthday: rec.birthday,
+    life_member_date: rec.life_member_date,
+    life_member_number: rec.life_member_number,
     imdp_certified: rec.imdp_certified,
     risk_mgmt_certified: rec.risk_mgmt_certified,
     status: rec.status || 'active',
     updated_at: new Date().toISOString()
   };
+  if (rec.life_member_date || rec.life_member_number) payload.life_member = 'yes';
   if (rec.email) payload.email = rec.email;
   return payload;
 }

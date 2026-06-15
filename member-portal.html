@@ -317,6 +317,7 @@
                   </select>
                 </div>
                 <div class="pfield"><label>Life Member Number</label><input type="text" id="pfLifeMemberNumber" placeholder="e.g. LM-00000" /></div>
+                <div class="pfield"><label>Life Member Date</label><input type="text" id="pfLifeMemberDate" placeholder="e.g. 06/15/2010" /></div>
                 <div class="pfield"><label>Chapter Active Date</label><input type="date" id="pfChapterActiveDate" readonly /></div>
                 <div class="pfield"><label>IMDP Certification</label>
                   <select id="pfImdp" disabled>
@@ -796,6 +797,10 @@ function renderDirectoryList(members) {
     if (m.initiation_chapter) alphaParts.push('Initiated ' + escHtml(m.initiation_chapter));
     if (m.initiation_date) alphaParts.push(escHtml(m.initiation_date));
     const alphaMeta = alphaParts.join(' &middot; ');
+    const lifeParts = [];
+    if (m.life_member_number) lifeParts.push('Life Member #' + escHtml(m.life_member_number));
+    if (m.life_member_date) lifeParts.push('Life Member ' + escHtml(m.life_member_date));
+    const lifeMeta = lifeParts.join(' &middot; ');
     const certBadges = [
       formatCertBadge('IMDP', m.imdp_certified),
       formatCertBadge('Risk Mgmt', m.risk_mgmt_certified)
@@ -805,6 +810,7 @@ function renderDirectoryList(members) {
       '<div class="member-card-info"><div class="mc-name">Bro. ' + escHtml(name) + '</div>' +
       '<div class="mc-meta">' + escHtml(loc) + (m.member_since ? (loc?' &middot; ':'') + 'Since ' + escHtml(m.member_since) : '') + '</div>' +
       (alphaMeta ? '<div class="mc-meta">' + alphaMeta + '</div>' : '') +
+      (lifeMeta ? '<div class="mc-meta">' + lifeMeta + '</div>' : '') +
       (m.birthday ? '<div class="mc-meta"><i class="fas fa-cake-candles" style="margin-right:6px;color:var(--gold);"></i>' + escHtml(m.birthday) + '</div>' : '') +
       (email ? '<div class="mc-meta"><i class="fas fa-envelope" style="margin-right:6px;color:var(--gold);"></i><a href="mailto:' + escHtml(email) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(email) + '</a></div>' : '') +
       (phone ? '<div class="mc-meta"><i class="fas fa-phone" style="margin-right:6px;color:var(--gold);"></i><a href="tel:' + escHtml(phone.replace(/\s+/g, '')) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(phone) + '</a></div>' : '') +
@@ -819,7 +825,7 @@ function filterDirectory() {
   const q = document.getElementById('dirSearch').value.toLowerCase();
   renderDirectoryList(allMembers.filter(function(m) {
     return [
-      m.first_name, m.middle_name, m.last_name, m.suffix, m.city, m.alpha_id, m.initiation_chapter
+      m.first_name, m.middle_name, m.last_name, m.suffix, m.city, m.alpha_id, m.initiation_chapter, m.life_member_number
     ].filter(Boolean).join(' ').toLowerCase().includes(q);
   }));
 }
@@ -841,6 +847,7 @@ function loadProfileForm(member) {
   document.getElementById('pfCollege').value          = member.college           || '';
   document.getElementById('pfLifeMember').value       = member.life_member       || '';
   document.getElementById('pfLifeMemberNumber').value = member.life_member_number|| '';
+  document.getElementById('pfLifeMemberDate').value   = member.life_member_date   || '';
   document.getElementById('pfChapterActiveDate').value= member.chapter_active_date|| '';
   document.getElementById('pfImdp').value             = member.imdp_certified    || '';
   document.getElementById('pfRiskMgmt').value         = member.risk_mgmt_certified|| '';
@@ -904,6 +911,7 @@ document.getElementById('profileForm').addEventListener('submit', async function
       college:             document.getElementById('pfCollege').value.trim(),
       life_member:         document.getElementById('pfLifeMember').value,
       life_member_number:  document.getElementById('pfLifeMemberNumber').value.trim(),
+      life_member_date:    document.getElementById('pfLifeMemberDate').value.trim(),
       renewal_date:        document.getElementById('pfRenewalDate').value.trim(),
       bio:                 document.getElementById('pfBio').value.trim(),
       linkedin:            document.getElementById('pfLinkedin').value.trim(),
