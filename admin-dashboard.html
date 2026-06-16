@@ -688,6 +688,67 @@
     }
     .event-row .btn-del:hover { background: rgba(231,76,60,0.2); }
 
+    .news-header-row,
+    .news-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr auto auto auto auto auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .news-header-row {
+      padding: 0 0 8px;
+      border-bottom: 1px solid var(--gray-200);
+      margin-bottom: 4px;
+    }
+    .news-header-row span {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+    }
+    .news-row {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .news-row:last-child { border-bottom: none; }
+    .news-row input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 5px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.84rem;
+    }
+    .news-row input:focus { outline: none; border-color: var(--gold); }
+    .news-row .btn-sidebar {
+      width: 34px; height: 34px; border-radius: 6px; border: 1.5px solid var(--gray-200);
+      background: var(--white); color: var(--gray-500); cursor: pointer; font-size: 0.82rem;
+    }
+    .news-row .btn-sidebar.active {
+      border-color: var(--gold); background: rgba(201,168,76,0.15); color: var(--gold);
+    }
+    .news-row .btn-sidebar:hover { border-color: var(--gold); }
+    .news-image-row,
+    .news-body-row {
+      display: none;
+      gap: 16px;
+      padding: 14px 0 18px 0;
+      border-bottom: 1px solid var(--gray-200);
+      margin-bottom: 4px;
+    }
+    .news-image-row.visible,
+    .news-body-row.visible { display: flex; }
+    .news-body-row textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.84rem;
+      resize: vertical;
+    }
+
     /* Flyer preview inside row */
     .event-flyer-row {
       grid-column: span 8;
@@ -1048,6 +1109,9 @@
     <button class="sidebar-link" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
+    <button class="sidebar-link" onclick="showPanel('news-manager')">
+      <i class="fas fa-newspaper"></i> News Manager
+    </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -1174,6 +1238,10 @@
               <i class="fas fa-calendar-plus"></i>
               <span>Add / Edit Events</span>
             </button>
+            <button class="action-btn" onclick="showPanel('news-manager')">
+              <i class="fas fa-newspaper"></i>
+              <span>Add / Edit News</span>
+            </button>
             <button class="action-btn" onclick="showPanel('members')">
               <i class="fas fa-user-check"></i>
               <span>Review Member Requests</span>
@@ -1283,7 +1351,8 @@
               </div>
               <div class="page-actions">
                 <a href="news.html" target="_blank" class="btn-sm view"><i class="fas fa-eye"></i> View</a>
-                <button class="btn-sm edit" onclick="showPanel('pages'); loadPageSection('news')"><i class="fas fa-edit"></i> Edit</button>
+                <button class="btn-sm edit" onclick="showPanel('news-manager')"><i class="fas fa-newspaper"></i> Articles</button>
+                <button class="btn-sm edit" onclick="showPanel('pages'); loadPageSection('news')" title="Page intro &amp; layout"><i class="fas fa-file-alt"></i> Page</button>
               </div>
             </div>
             <div class="page-item">
@@ -1443,6 +1512,46 @@
 
           <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
             <button class="btn-save" onclick="saveEvents()"><i class="fas fa-save"></i> Save All Events</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         NEWS MANAGER PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-news-manager">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-newspaper" style="color:var(--gold);margin-right:8px;"></i>News Manager</h3>
+          <span id="newsCountLabel">Loading…</span>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">
+            Add, edit, or remove chapter news articles shown on <strong>news.html</strong> and the homepage <strong>Chapter Impact</strong> section.
+            Click the <strong><i class="fas fa-star" style="color:var(--gold);"></i> star</strong> to feature an article on the homepage.
+            Click the <strong><i class="fas fa-list" style="color:var(--gold);"></i> list</strong> icon to move an article to the sidebar on the News page.
+          </p>
+
+          <div class="news-header-row">
+            <span>Headline</span>
+            <span>Tag</span>
+            <span>Date</span>
+            <span style="text-align:center;"><i class="fas fa-star" title="Homepage"></i></span>
+            <span style="text-align:center;"><i class="fas fa-list" title="Sidebar"></i></span>
+            <span style="text-align:center;"><i class="fas fa-image" title="Image"></i></span>
+            <span style="text-align:center;"><i class="fas fa-align-left" title="Story"></i></span>
+            <span></span>
+          </div>
+
+          <div id="newsArticlesList"></div>
+
+          <button class="btn-sm success" onclick="addNewsArticle()" style="margin-top:14px;">
+            <i class="fas fa-plus-circle"></i> Add News Article
+          </button>
+
+          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
+            <button class="btn-save" onclick="saveNewsArticles()"><i class="fas fa-save"></i> Save All News</button>
           </div>
         </div>
       </div>
@@ -1912,6 +2021,7 @@
 <input type="file" id="presidentPhotoInput" accept="image/*" style="display:none;" onchange="handlePresidentPhotoUpload(event)" />
 <input type="file" id="eventGalleryPhotoInput" accept="image/*" style="display:none;" onchange="handleEventGalleryPhotoUpload(event)" />
 <input type="file" id="pageEditorImageInput" accept="image/*" style="display:none;" onchange="handlePageEditorImageUpload(event)" />
+<input type="file" id="newsPhotoInput" accept="image/*" style="display:none;" onchange="handleNewsPhotoUpload(event)" />
 <input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1944,6 +2054,7 @@ const PANEL_META = {
   pages:         ['Page Content Editor','Edit text for each page section'],
   members:       ['Member Requests',    'Approve and manage member portal access'],
   events:        ['Events Manager',     'Add, edit, remove & feature events'],
+  'news-manager':['News Manager',       'Add, edit, remove & feature news articles'],
   officers:      ['Officers Manager',   'Manage current chapter officers (15 slots)'],
   presidents:    ['Past Presidents',    'Update past chapter president records'],
   announcements: ['Announcement Bar',   'Edit the top announcement banner'],
@@ -1973,6 +2084,7 @@ function showPanel(id) {
 
   // Load panel data
   if (id === 'events')        loadEventsList();
+  if (id === 'news-manager')  loadNewsArticlesPanel();
   if (id === 'members')       loadMemberRequests();
   if (id === 'officers')      loadOfficersPanel();
   if (id === 'presidents')    loadPresidentsPanel();
@@ -2010,16 +2122,34 @@ function parseSupabaseClientError(errText) {
   try {
     const data = JSON.parse(raw);
     const msg = String(data.message || data.error || data.hint || raw);
+    if (/chapter_registration_enabled|registration_fee_cents/i.test(msg + raw)) {
+      return 'Database is missing event registration columns. Run the events ALTER block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then save again.';
+    }
     if (/column.*does not exist|PGRST204/i.test(msg + raw)) {
+      if (/events/i.test(msg + raw)) {
+        return 'Database is missing events columns. Run SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then save again.';
+      }
       return 'Database is missing members columns. Run the members ALTER block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then save again.';
     }
     if (/duplicate key|23505/i.test(msg + raw)) {
       return 'A member with this email already exists.';
     }
+    if (/row-level security|42501|JWT|401|403/i.test(msg + raw)) {
+      return 'Permission denied. Sign out and sign back in to the admin dashboard, then try again.';
+    }
     return msg;
   } catch (e) {
+    if (/chapter_registration_enabled|registration_fee_cents/i.test(raw)) {
+      return 'Database is missing event registration columns. Run the events ALTER block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then save again.';
+    }
     if (/column.*does not exist|PGRST204/i.test(raw)) {
+      if (/events/i.test(raw)) {
+        return 'Database is missing events columns. Run SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then save again.';
+      }
       return 'Database is missing members columns. Run the members ALTER block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then save again.';
+    }
+    if (/row-level security|42501|JWT|401|403/i.test(raw)) {
+      return 'Permission denied. Sign out and sign back in to the admin dashboard, then try again.';
     }
     return raw.length > 200 ? raw.slice(0, 200) + '...' : raw;
   }
@@ -3460,6 +3590,31 @@ function removeEvent(i) {
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
 }
 
+function buildEventsPayload(includeRegistrationFields) {
+  return eventsData.map(function(ev, idx) {
+    const row = {
+      name: ev.name || '',
+      location: ev.location || '',
+      datetime: ev.datetime || '',
+      featured: !!ev.featured,
+      flyer: ev.flyer || '',
+      description: ev.description || '',
+      reg_url: ev.registrationUrl || '',
+      sort_order: idx + 1
+    };
+    if (includeRegistrationFields) {
+      row.chapter_registration_enabled = !!ev.chapterRegistrationEnabled;
+      row.registration_fee_cents = Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0);
+    }
+    return row;
+  });
+}
+
+async function persistEventsToSupabase(payload, token) {
+  await sbDeleteByFilter('events', 'id=not.is.null', token);
+  if (payload.length) await sbPost('events', payload, token);
+}
+
 async function saveEvents() {
   const token = getAdminToken();
   if (!token) {
@@ -3512,26 +3667,341 @@ async function saveEvents() {
         return;
       }
     }
-    const payload = eventsData.map(function(ev, idx) {
-      return {
-        name: ev.name || '',
-        location: ev.location || '',
-        datetime: ev.datetime || '',
-        featured: !!ev.featured,
-        flyer: ev.flyer || '',
-        description: ev.description || '',
-        reg_url: ev.registrationUrl || '',
-        chapter_registration_enabled: !!ev.chapterRegistrationEnabled,
-        registration_fee_cents: Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0),
-        sort_order: idx + 1
-      };
-    });
-    await sbDeleteByFilter('events', 'id=not.is.null', token);
-    if (payload.length) await sbPost('events', payload, token);
+    const payload = buildEventsPayload(true);
+    try {
+      await persistEventsToSupabase(payload, token);
+    } catch (err) {
+      if (!isMissingColumnError(err.message)) throw err;
+      const legacyPayload = buildEventsPayload(false);
+      await persistEventsToSupabase(legacyPayload, token);
+      await loadEventsList();
+      showToast('Events saved without chapter registration settings. Run the events ALTER block in SUPABASE_CONTENT_SCHEMA.sql to enable on-site registration fees.', 'info');
+      return;
+    }
     await loadEventsList();
     showToast('Events saved to Supabase successfully.');
   } catch (err) {
-    showToast('Could not save events to Supabase: ' + (err.message || 'unknown error'), 'error');
+    showToast('Could not save events to Supabase: ' + parseSupabaseClientError(err.message), 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════
+// NEWS MANAGER
+// ══════════════════════════════════════════════════
+const NEWS_ARTICLES_KEY = 'news_articles';
+
+const DEFAULT_NEWS_ARTICLES = [
+  {
+    title: 'Xi Tau Lambda Prepares to Celebrate 40 Years of Service',
+    tag: 'Milestone',
+    date: 'December 2023',
+    image: 'images/chapter-event.jpg',
+    excerpt: 'From pioneering the Sankofa Project to the Alpha Legacy Scholarship Gala, Xi Tau Lambda continues to shape North Dallas through leadership and service.',
+    body: 'We have provided scholarships to young men entering college as well as resources for responsible choices through Project Alpha. In our community, we have brought valuable partnerships to our city through our commitment to arts education for youth, civic participation, and mentoring of young men who are seeking guidance and direction.\n\nFrom the Sankofa Project to the Alpha Legacy Scholarship Gala, four decades of Xi Tau Lambda represent a legacy of purpose-driven leadership that continues to shape North Dallas County.',
+    placement: 'main',
+    featured: true,
+    published: true
+  },
+  {
+    title: 'North Dallas Alphas Recognized in Frisco City Council',
+    tag: 'Recognition',
+    date: '2023',
+    image: 'images/service.jpg?v=2',
+    excerpt: 'The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was formally recognized by the Frisco City Council for their outstanding contributions to the Frisco community.',
+    body: 'The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was formally recognized by the Frisco City Council for their outstanding contributions to the Frisco community through service, mentoring, and scholarship.',
+    placement: 'main',
+    featured: true,
+    published: true
+  },
+  {
+    title: 'MISD Impact Statement',
+    tag: 'Community',
+    date: 'December 2023',
+    image: '',
+    excerpt: 'Since 2019, the Xi Tau Lambda Chapter has been an avid supporter of MISD schools, students, and families.',
+    body: 'Since 2019, the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. has been an avid supporter of MISD schools, students, and families. Their commitment to the district began on the campus of Scott Johnson Middle School (SJMS) and has since then grown in complexity and size.',
+    placement: 'main',
+    featured: true,
+    published: true
+  },
+  {
+    title: 'Alpha Legacy Scholarship Gala Funds Next Generation',
+    tag: 'Scholarship',
+    date: '2023',
+    image: 'images/scholarship.jpg?v=2',
+    excerpt: 'Proceeds from the annual gala support scholarships and mentoring across North Dallas County.',
+    body: 'Proceeds from the annual Alpha Legacy Scholarship Gala support scholarships and mentoring programs that open doors for the next generation of scholars and leaders across North Dallas County.',
+    placement: 'sidebar',
+    featured: false,
+    published: true
+  },
+  {
+    title: '50 Years of Brotherhood Celebrated Nationwide',
+    tag: 'Brotherhood',
+    date: '2023',
+    image: 'images/brotherhood.jpg?v=2',
+    excerpt: 'Brothers across the nation marked a milestone of fellowship and service.',
+    body: 'Brothers across the nation marked a milestone of fellowship and service, reflecting the enduring bonds of Alpha Phi Alpha.',
+    placement: 'sidebar',
+    featured: false,
+    published: true
+  },
+  {
+    title: 'Mentoring Program Expanded to Collin County Detention Center',
+    tag: 'Service',
+    date: '2023',
+    image: 'images/service.jpg?v=2',
+    excerpt: 'Xi Tau Lambda extended its Alpha Legacy mentoring program to reach young men at the John R. Roach Detention Center.',
+    body: 'McKinney ISD invited the Xi Tau Lambda Chapter to deepen its commitment by extending its mentoring program to the young men of Collin County\'s John R. Roach Detention Center.',
+    placement: 'sidebar',
+    featured: false,
+    published: true
+  }
+];
+
+let newsArticlesData = [];
+let activeNewsImageIndex = -1;
+
+function getDefaultNewsArticles() {
+  return DEFAULT_NEWS_ARTICLES.map(function(a) { return Object.assign({}, a); });
+}
+
+function sanitizeNewsArticle(article) {
+  if (!article || typeof article !== 'object') return null;
+  return {
+    title: String(article.title || '').trim(),
+    tag: String(article.tag || '').trim(),
+    date: String(article.date || '').trim(),
+    image: String(article.image || '').trim(),
+    excerpt: String(article.excerpt || '').trim(),
+    body: String(article.body || '').trim(),
+    placement: article.placement === 'sidebar' ? 'sidebar' : 'main',
+    featured: !!article.featured,
+    published: article.published !== false
+  };
+}
+
+async function loadNewsArticlesPanel() {
+  const raw = await getContentJson(NEWS_ARTICLES_KEY, getDefaultNewsArticles());
+  newsArticlesData = Array.isArray(raw)
+    ? raw.map(sanitizeNewsArticle).filter(function(a) { return a && a.title; })
+    : getDefaultNewsArticles();
+  if (!newsArticlesData.length) newsArticlesData = getDefaultNewsArticles();
+  renderNewsArticlesList();
+}
+
+function renderNewsArticlesList() {
+  const container = document.getElementById('newsArticlesList');
+  if (!container) return;
+  container.innerHTML = '';
+
+  newsArticlesData.forEach(function(article, i) {
+    const row = document.createElement('div');
+    row.className = 'news-row';
+    row.id = 'news-row-' + i;
+    row.innerHTML =
+      '<input type="text" placeholder="Headline" value="' + escHtml(article.title) + '" oninput="newsArticlesData[' + i + '].title=this.value" />' +
+      '<input type="text" placeholder="Tag" value="' + escHtml(article.tag) + '" oninput="newsArticlesData[' + i + '].tag=this.value" />' +
+      '<input type="text" placeholder="Date" value="' + escHtml(article.date) + '" oninput="newsArticlesData[' + i + '].date=this.value" />' +
+      '<button class="featured-star' + (article.featured ? ' active' : '') + '" title="' + (article.featured ? 'Featured on homepage' : 'Feature on homepage') + '" onclick="toggleNewsFeatured(' + i + ')"><i class="fas fa-star"></i></button>' +
+      '<button class="btn-sidebar' + (article.placement === 'sidebar' ? ' active' : '') + '" title="' + (article.placement === 'sidebar' ? 'Sidebar story' : 'Main story') + '" onclick="toggleNewsPlacement(' + i + ')"><i class="fas fa-list"></i></button>' +
+      '<button class="btn-flyer' + (article.image ? ' has-flyer' : '') + '" title="Article image" onclick="toggleNewsImageRow(' + i + ')"><i class="fas fa-image"></i></button>' +
+      '<button class="btn-desc' + ((article.excerpt || article.body) ? ' has-desc' : '') + '" title="Story text" onclick="toggleNewsBodyRow(' + i + ')"><i class="fas fa-align-left"></i></button>' +
+      '<button class="btn-del" onclick="removeNewsArticle(' + i + ')" title="Remove article"><i class="fas fa-trash"></i></button>';
+    container.appendChild(row);
+
+    const imageRow = document.createElement('div');
+    imageRow.className = 'news-image-row event-flyer-row';
+    imageRow.id = 'news-image-row-' + i;
+    const previewSrc = article.image || '';
+    imageRow.innerHTML =
+      '<div class="flyer-preview-wrap" id="news-preview-' + i + '">' +
+        (previewSrc
+          ? '<img src="' + escHtml(previewSrc) + '" alt="News image" onerror="if(this.parentElement){this.parentElement.innerHTML=\'<div class=\\\'no-flyer\\\'><i class=\\\'fas fa-image\\\'></i></div>\'}" />'
+          : '<div class="no-flyer"><i class="fas fa-image"></i></div>') +
+      '</div>' +
+      '<div class="flyer-input-area">' +
+        '<label>Article Image</label>' +
+        '<input type="text" placeholder="Paste image URL" value="' + escHtml(article.image || '') + '" id="news-image-url-' + i + '" oninput="updateNewsImagePreview(' + i + ')" />' +
+        '<div class="flyer-or">— or —</div>' +
+        '<button type="button" class="flyer-upload-btn" onclick="openNewsPhotoUpload(' + i + ')"><i class="fas fa-upload"></i> Upload from Computer</button>' +
+        '<p style="font-size:0.72rem;color:var(--gray-400);margin-top:6px;">Leave blank to use the chapter logo placeholder on the public site.</p>' +
+      '</div>';
+    container.appendChild(imageRow);
+
+    const bodyRow = document.createElement('div');
+    bodyRow.className = 'news-body-row event-desc-row';
+    bodyRow.id = 'news-body-row-' + i;
+    bodyRow.innerHTML =
+      '<div class="desc-input-area" style="width:100%;">' +
+        '<label><i class="fas fa-align-left" style="color:var(--gold);margin-right:6px;"></i>Short Summary</label>' +
+        '<textarea id="news-excerpt-' + i + '" rows="3" placeholder="Short summary for homepage cards and sidebar items." oninput="newsArticlesData[' + i + '].excerpt=this.value">' + escHtml(article.excerpt || '') + '</textarea>' +
+        '<label style="margin-top:14px;display:block;">Full Story</label>' +
+        '<textarea id="news-body-' + i + '" rows="6" placeholder="Full article text. Use blank lines between paragraphs." oninput="newsArticlesData[' + i + '].body=this.value">' + escHtml(article.body || '') + '</textarea>' +
+        '<label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:0.82rem;color:var(--gray-600);">' +
+          '<input type="checkbox" id="news-published-' + i + '" ' + (article.published !== false ? 'checked' : '') + ' onchange="newsArticlesData[' + i + '].published=this.checked" />' +
+          'Published (visible on website)' +
+        '</label>' +
+      '</div>';
+    container.appendChild(bodyRow);
+  });
+
+  const label = document.getElementById('newsCountLabel');
+  if (label) {
+    label.textContent = newsArticlesData.length + ' article' + (newsArticlesData.length !== 1 ? 's' : '');
+  }
+}
+
+function toggleNewsFeatured(i) {
+  const wasFeatured = newsArticlesData[i].featured;
+  newsArticlesData.forEach(function(a) { a.featured = false; });
+  if (!wasFeatured) newsArticlesData[i].featured = true;
+  renderNewsArticlesList();
+  showToast(newsArticlesData[i].featured ? '"' + newsArticlesData[i].title + '" is now the lead homepage story.' : 'Homepage lead story cleared.', 'info');
+}
+
+function toggleNewsPlacement(i) {
+  newsArticlesData[i].placement = newsArticlesData[i].placement === 'sidebar' ? 'main' : 'sidebar';
+  renderNewsArticlesList();
+  showToast(newsArticlesData[i].placement === 'sidebar' ? 'Moved to sidebar layout.' : 'Moved to main news layout.', 'info');
+}
+
+function toggleNewsImageRow(i) {
+  document.querySelectorAll('.news-image-row').forEach(function(r) { r.classList.remove('visible'); });
+  document.querySelectorAll('.news-body-row').forEach(function(r) { r.classList.remove('visible'); });
+  const row = document.getElementById('news-image-row-' + i);
+  if (row) row.classList.toggle('visible');
+}
+
+function toggleNewsBodyRow(i) {
+  document.querySelectorAll('.news-image-row').forEach(function(r) { r.classList.remove('visible'); });
+  document.querySelectorAll('.news-body-row').forEach(function(r) { r.classList.remove('visible'); });
+  const row = document.getElementById('news-body-row-' + i);
+  if (row) row.classList.toggle('visible');
+}
+
+function updateNewsImagePreview(i) {
+  const input = document.getElementById('news-image-url-' + i);
+  const url = input ? input.value.trim() : '';
+  if (newsArticlesData[i]) newsArticlesData[i].image = url;
+  const wrap = document.getElementById('news-preview-' + i);
+  if (!wrap) return;
+  wrap.innerHTML = url
+    ? '<img src="' + escHtml(url) + '" alt="News image" onerror="if(this.parentElement){this.parentElement.innerHTML=\'<div class=\\\'no-flyer\\\'><i class=\\\'fas fa-image\\\'></i></div>\'}" />'
+    : '<div class="no-flyer"><i class="fas fa-image"></i></div>';
+  const btn = document.querySelector('#news-row-' + i + ' .btn-flyer');
+  if (btn) btn.classList.toggle('has-flyer', !!url);
+}
+
+function openNewsPhotoUpload(i) {
+  activeNewsImageIndex = i;
+  document.getElementById('newsPhotoInput').click();
+}
+
+function handleNewsPhotoUpload(e) {
+  const file = e.target.files[0];
+  const idx = activeNewsImageIndex;
+  if (!file || idx < 0) {
+    e.target.value = '';
+    return;
+  }
+  (async function() {
+    try {
+      showToast('Uploading news image…', 'info');
+      const uploaded = await uploadNewsImageToStorage(file);
+      if (newsArticlesData[idx]) newsArticlesData[idx].image = uploaded.url;
+      const input = document.getElementById('news-image-url-' + idx);
+      if (input) input.value = uploaded.url;
+      updateNewsImagePreview(idx);
+      showToast('Image uploaded. Click "Save All News" to publish.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Could not upload news image.', 'error');
+    }
+  })();
+  e.target.value = '';
+  activeNewsImageIndex = -1;
+}
+
+function addNewsArticle() {
+  newsArticlesData.push({
+    title: 'New Article',
+    tag: 'News',
+    date: '',
+    image: '',
+    excerpt: '',
+    body: '',
+    placement: 'main',
+    featured: false,
+    published: true
+  });
+  renderNewsArticlesList();
+  showToast('New article added. Fill in the details and save.');
+}
+
+function removeNewsArticle(i) {
+  if (!confirm('Remove "' + newsArticlesData[i].title + '"?')) return;
+  newsArticlesData.splice(i, 1);
+  renderNewsArticlesList();
+  showToast('Article removed. Click "Save All News" to confirm.', 'error');
+}
+
+function syncNewsArticlesFromDom() {
+  newsArticlesData.forEach(function(article, i) {
+    const row = document.getElementById('news-row-' + i);
+    if (row) {
+      const inputs = row.querySelectorAll('input[type="text"]');
+      if (inputs[0]) article.title = inputs[0].value.trim();
+      if (inputs[1]) article.tag = inputs[1].value.trim();
+      if (inputs[2]) article.date = inputs[2].value.trim();
+    }
+    const imageInput = document.getElementById('news-image-url-' + i);
+    const excerptInput = document.getElementById('news-excerpt-' + i);
+    const bodyInput = document.getElementById('news-body-' + i);
+    const publishedInput = document.getElementById('news-published-' + i);
+    if (imageInput) article.image = imageInput.value.trim();
+    if (excerptInput) article.excerpt = excerptInput.value.trim();
+    if (bodyInput) article.body = bodyInput.value.trim();
+    if (publishedInput) article.published = publishedInput.checked;
+  });
+}
+
+async function uploadNewsImageToStorage(file) {
+  return uploadImageToSupabaseBucket(file, EVENT_GALLERY_IMAGE_BUCKET, {
+    prefixA: 'news/',
+    prefixB: 'news-'
+  });
+}
+
+async function saveNewsArticles() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  syncNewsArticlesFromDom();
+  const cleaned = newsArticlesData
+    .map(sanitizeNewsArticle)
+    .filter(function(a) { return a && a.title; });
+  if (!cleaned.length) {
+    showToast('Add at least one article with a headline before saving.', 'error');
+    return;
+  }
+  try {
+    for (let i = 0; i < cleaned.length; i++) {
+      const imageVal = String(cleaned[i].image || '').trim();
+      if (!imageVal.startsWith('data:image/')) continue;
+      showToast('Moving inline images to Supabase storage…', 'info');
+      const imgFile = dataUrlToImageFile(imageVal, 'news');
+      const uploaded = await uploadNewsImageToStorage(imgFile);
+      cleaned[i].image = uploaded.url;
+      if (newsArticlesData[i]) newsArticlesData[i].image = uploaded.url;
+    }
+    await saveContentJson(NEWS_ARTICLES_KEY, cleaned);
+    newsArticlesData = cleaned;
+    renderNewsArticlesList();
+    showToast('News articles saved to Supabase.');
+  } catch (err) {
+    showToast('Could not save news articles: ' + parseSupabaseClientError(err.message), 'error');
   }
 }
 
@@ -3869,8 +4339,7 @@ const PAGE_SECTIONS = {
     sections: {
       'full_shell':  { label: 'Full Page + Nav/Footer (Advanced)', default: '<p><strong>Advanced mode:</strong> Paste full shell HTML for News (navigation + mobile menu + page body + footer).</p>' },
       'full_page':   { label: 'Full Page (Advanced)',    default: '<p><strong>Advanced mode:</strong> Paste the full HTML for the News page content area (everything between navigation and footer).</p>' },
-      'news-hero':   { label: 'Page Header',            default: '<p><strong>Title:</strong> Chapter News & Updates</p><p><strong>Subtitle:</strong> The latest from Xi Tau Lambda Chapter.</p>' },
-      'news-body':   { label: 'Featured News Text',     default: '<p>Stay connected with the North Dallas Alphas for the latest on chapter events, scholarship recipients, and community initiatives.</p>' }
+      'news-hero':   { label: 'Page Header',            default: '<p><strong>Title:</strong> Chapter News & Updates</p><p><strong>Subtitle:</strong> The latest from Xi Tau Lambda Chapter.</p>' }
     }
   },
   contact: {

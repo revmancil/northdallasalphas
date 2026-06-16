@@ -289,41 +289,7 @@
       </div>
       <a href="news.html" class="btn btn-outline">All News <i class="fas fa-arrow-right"></i></a>
     </div>
-    <div class="news-grid">
-      <div class="news-card featured fade-up">
-        <div class="news-card-img">
-          <img src="images/chapter-event.jpg" alt="Alpha Phi Alpha Xi Tau Lambda Chapter Event" />
-        </div>
-        <div class="news-body">
-          <span class="news-tag">Milestone</span>
-          <h3>Xi Tau Lambda Prepares to Celebrate 40 Years of Service</h3>
-          <p>From pioneering the Sankofa Project to the Alpha Legacy Scholarship Gala, Xi Tau Lambda continues to shape North Dallas through leadership and service.</p>
-          <span class="news-meta">December 2023</span>
-        </div>
-      </div>
-      <div class="news-card fade-up">
-        <div class="news-card-img">
-          <img src="images/service.jpg?v=2" alt="North Dallas Alphas community service" />
-        </div>
-        <div class="news-body">
-          <span class="news-tag">Community</span>
-          <h3>North Dallas Alphas Recognized in Frisco City Council</h3>
-          <p>Xi Tau Lambda Chapter was officially recognized for their outstanding contributions to the Frisco community.</p>
-          <span class="news-meta">2023</span>
-        </div>
-      </div>
-      <div class="news-card fade-up">
-        <div class="news-card-img" style="background: var(--black); display: flex; align-items: center; justify-content: center;">
-          <img src="images/xtl-logo.png" alt="Xi Tau Lambda Chapter Logo" style="height: 110px; width: 110px; object-fit: contain; opacity: 0.8;" />
-        </div>
-        <div class="news-body">
-          <span class="news-tag">Mentoring</span>
-          <h3>MISD Impact: Three Years of Mentoring Young Men Across McKinney ISD</h3>
-          <p>From Scott Johnson Middle School to Boyd High School, our chapter's Alpha Legacy curriculum continues to transform lives.</p>
-          <span class="news-meta">December 2023</span>
-        </div>
-      </div>
-    </div>
+    <div class="news-grid" id="homeNewsGrid"></div>
   </div>
 </section>
 
@@ -412,6 +378,7 @@
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+<script src="js/news-articles.js"></script>
 <script>
 /* ============================================================
    HOME PAGE — Dynamic Events Section from localStorage
@@ -734,6 +701,12 @@ async function applyPageSectionContent() {
   const events = await homeGetEvents();
   renderHomeFeatured(events);
   renderHomeEventsList(events);
+  try {
+    const articles = await fetchNewsArticles();
+    renderHomeNewsGrid(document.getElementById('homeNewsGrid'), articles);
+  } catch (err) {
+    renderHomeNewsGrid(document.getElementById('homeNewsGrid'), DEFAULT_NEWS_ARTICLES);
+  }
 })();
 </script>
 </body>

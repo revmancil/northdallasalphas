@@ -85,65 +85,12 @@
 <section class="news-page">
   <div class="container">
     <div class="news-page-grid">
-      <div>
-        <div class="news-featured-card fade-up">
-          <img src="images/chapter-event.jpg" alt="Xi Tau Lambda 40 Years of Service" />
-          <div class="body">
-            <span class="news-tag">Milestone</span>
-            <h2>Xi Tau Lambda Prepares to Celebrate 40 Years of Service</h2>
-            <p>We have provided scholarships to young men entering college as well as resources for responsible choices through Project Alpha. In our community, we have brought valuable partnerships to our city through our commitment to arts education for youth, civic participation, and mentoring of young men who are seeking guidance and direction.</p>
-            <p style="margin-top:14px;">From the Sankofa Project to the Alpha Legacy Scholarship Gala, four decades of Xi Tau Lambda represent a legacy of purpose-driven leadership that continues to shape North Dallas County.</p>
-            <div style="margin-top: 20px; font-size: 0.82rem; color: var(--gray-400);">December 2023</div>
-          </div>
-        </div>
-
-        <div class="news-featured-card fade-up">
-          <img src="images/service.jpg?v=2" alt="North Dallas Alphas Recognized in Frisco City Council" />
-          <div class="body">
-            <span class="news-tag">Recognition</span>
-            <h2>North Dallas Alphas Recognized in Frisco City Council</h2>
-            <p>The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was formally recognized by the Frisco City Council for their outstanding contributions to the Frisco community through service, mentoring, and scholarship.</p>
-            <div style="margin-top: 20px; font-size: 0.82rem; color: var(--gray-400);">2023</div>
-          </div>
-        </div>
-
-        <div class="news-featured-card fade-up">
-          <div style="background: var(--black); height: 280px; display:flex; align-items:center; justify-content:center;">
-            <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" style="height: 140px; width: 140px; object-fit: contain; opacity: 0.7;" />
-          </div>
-          <div class="body">
-            <span class="news-tag">Community</span>
-            <h2>MISD Impact Statement</h2>
-            <p>Since 2019, the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. has been an avid supporter of MISD schools, students, and families. Their commitment to the district began on the campus of Scott Johnson Middle School (SJMS) and has since then grown in complexity and size.</p>
-            <div style="margin-top: 20px; font-size: 0.82rem; color: var(--gray-400);">December 2023</div>
-          </div>
-        </div>
-      </div>
+      <div id="newsMainList"></div>
 
       <!-- Sidebar -->
       <div class="fade-up">
         <h3>More Stories</h3>
-        <div class="sidebar-item">
-          <img src="images/scholarship.jpg?v=2" alt="Sankofa Foundation scholarship recipients at Alpha Legacy Gala" />
-          <div class="info">
-            <div class="tag">Scholarship</div>
-            <h4>Alpha Legacy Scholarship Gala Funds Next Generation</h4>
-          </div>
-        </div>
-        <div class="sidebar-item">
-          <img src="images/brotherhood.jpg?v=2" alt="Xi Tau Lambda brothers group photo" />
-          <div class="info">
-            <div class="tag">Brotherhood</div>
-            <h4>50 Years of Brotherhood Celebrated Nationwide</h4>
-          </div>
-        </div>
-        <div class="sidebar-item">
-          <img src="images/service.jpg?v=2" alt="Xi Tau Lambda brothers at community outreach table" />
-          <div class="info">
-            <div class="tag">Service</div>
-            <h4>Mentoring Program Expanded to Collin County Detention Center</h4>
-          </div>
-        </div>
+        <div id="newsSidebarList"></div>
         <div style="margin-top: 32px; background: var(--black); border-radius: 8px; padding: 28px; text-align: center;">
           <div style="font-size:0.72rem; font-weight:700; letter-spacing:0.15em; color:var(--gold); text-transform:uppercase; margin-bottom:12px;">Stay Connected</div>
           <p style="font-size:0.87rem; color:rgba(255,255,255,0.55); margin-bottom:16px;">Get updates about chapter events, scholarship opportunities, and community impact.</p>
@@ -209,6 +156,7 @@
 </footer>
 </div>
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="js/main.js"></script>
+<script src="js/news-articles.js"></script>
 <script>
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
@@ -250,7 +198,7 @@ function rebindSiteShellInteractions() {
       }
     }
     const secRes = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.news&select=section_key,content_html', { headers: sbHeaders() });
-    if (!secRes.ok) return;
+    if (secRes.ok) {
     const sections = await secRes.json();
     const byKey = {};
     sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
@@ -279,17 +227,20 @@ function rebindSiteShellInteractions() {
         target.innerHTML = pNode ? pNode.innerHTML : byKey['news-hero'];
       }
     }
-    if (byKey['news-body']) {
-      const target = document.querySelector('.news-featured-card .body p');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey['news-body'];
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey['news-body'];
-      }
     }
+    const articles = await fetchNewsArticles();
+    renderNewsPageLists(
+      document.getElementById('newsMainList'),
+      document.getElementById('newsSidebarList'),
+      articles
+    );
   } catch (err) {
-    // Keep static defaults on failure.
+    const articles = await fetchNewsArticles();
+    renderNewsPageLists(
+      document.getElementById('newsMainList'),
+      document.getElementById('newsSidebarList'),
+      articles
+    );
   }
 })();
 </script>
