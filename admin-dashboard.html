@@ -448,6 +448,40 @@
       color: var(--gray-800);
     }
     .officers-table input:focus { outline: none; border-color: var(--gold); }
+    .officers-table th.sortable-th {
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .officers-table th.sortable-th:hover { color: var(--gray-600); }
+    .officers-table th.sortable-th .sort-icon {
+      margin-left: 4px;
+      font-size: 0.62rem;
+      color: var(--gray-400);
+    }
+    .officers-table th.sortable-th.active { color: var(--gray-800); }
+    .officers-table th.sortable-th.active .sort-icon { color: var(--gold); }
+    .brothers-dir-search {
+      width: 100%;
+      max-width: 420px;
+      padding: 9px 12px 9px 36px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.86rem;
+      margin-bottom: 12px;
+    }
+    .brothers-dir-search:focus { outline: none; border-color: var(--gold); }
+    .brothers-dir-search-wrap { position: relative; max-width: 420px; margin-bottom: 4px; }
+    .brothers-dir-search-wrap i {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gray-400);
+      font-size: 0.82rem;
+      pointer-events: none;
+    }
     .officer-num {
       width: 28px; height: 28px;
       background: var(--black);
@@ -1763,28 +1797,16 @@
             <button class="btn-sm view" onclick="loadBrothersDirectory()"><i class="fas fa-rotate-right"></i> Refresh</button>
             <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveBrothersDirectory()"><i class="fas fa-save"></i> Save Directory</button>
           </div>
-          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,life_member_date,life_member_number,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>). Certification columns are dates (e.g. <code>06/15/2024</code>). Leave cells empty when unknown.</p>
+          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,life_member_date,life_member_number,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>). Re-uploading merges by <strong>Alpha ID</strong> — filled CSV cells update existing rows; empty cells keep current values (no duplicates).</p>
+          <div class="brothers-dir-search-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="brothers-dir-search" id="brothersDirectorySearch" placeholder="Search brothers directory..." oninput="filterBrothersDirectoryTable()" />
+          </div>
+          <p class="hint-text" id="brothersDirectoryFilterHint" style="margin-top:0;margin-bottom:12px;display:none;"></p>
           <div style="overflow-x:auto;">
-            <table class="officers-table">
+            <table class="officers-table" id="brothersDirectoryTable">
               <thead>
-                <tr>
-                  <th style="width:120px;">Alpha ID</th>
-                  <th style="width:120px;">First Name</th>
-                  <th style="width:110px;">Middle Name</th>
-                  <th style="width:120px;">Last Name</th>
-                  <th style="width:70px;">Suffix</th>
-                  <th style="width:180px;">Email</th>
-                  <th style="width:120px;">Phone</th>
-                  <th style="width:90px;">Status</th>
-                  <th style="width:150px;">Initiation Chapter</th>
-                  <th style="width:120px;">Initiation Date</th>
-                  <th style="width:120px;">Birthday</th>
-                  <th style="width:120px;">Life Member Date</th>
-                  <th style="width:130px;">Life Member #</th>
-                  <th style="width:120px;">IMDP Cert. Date</th>
-                  <th style="width:120px;">Risk Mgmt Date</th>
-                  <th style="width:40px;"></th>
-                </tr>
+                <tr id="brothersDirectoryHeadRow"></tr>
               </thead>
               <tbody id="brothersDirectoryBody"></tbody>
             </table>
@@ -2583,7 +2605,27 @@ async function updateVisitingRequestStatus(requestId, status) {
 // ══════════════════════════════════════════════════
 const BROTHERS_DIRECTORY_KEY = 'brothers_directory';
 const BROTHERS_DIRECTORY_COL_COUNT = 17;
+const BROTHERS_DIRECTORY_FIELDS = [
+  { key: 'alpha_id', label: 'Alpha ID', width: '120px' },
+  { key: 'first_name', label: 'First Name', width: '120px' },
+  { key: 'middle_name', label: 'Middle Name', width: '110px' },
+  { key: 'last_name', label: 'Last Name', width: '120px' },
+  { key: 'suffix', label: 'Suffix', width: '70px' },
+  { key: 'email', label: 'Email', width: '180px' },
+  { key: 'phone', label: 'Phone', width: '120px' },
+  { key: 'status', label: 'Status', width: '90px' },
+  { key: 'initiation_chapter', label: 'Initiation Chapter', width: '150px' },
+  { key: 'initiation_date', label: 'Initiation Date', width: '120px' },
+  { key: 'birthday', label: 'Birthday', width: '120px' },
+  { key: 'life_member_date', label: 'Life Member Date', width: '120px' },
+  { key: 'life_member_number', label: 'Life Member #', width: '130px' },
+  { key: 'imdp_certified', label: 'IMDP Cert. Date', width: '120px' },
+  { key: 'risk_mgmt_certified', label: 'Risk Mgmt Date', width: '120px' }
+];
 let brothersDirectoryData = [];
+let brothersDirectorySearch = '';
+let brothersDirectorySortKey = 'last_name';
+let brothersDirectorySortDir = 'asc';
 
 function normalizeAlphaId(value) {
   return String(value || '').trim().toUpperCase();
@@ -2637,44 +2679,156 @@ function sanitizeBrotherRecord(row) {
   };
 }
 
-function brotherDirectoryInput(value, field, index) {
-  return '<input type="text" value="' + escHtml(value || '') + '" onchange="brothersDirectoryData[' + index + '].' + field + '=this.value" />';
+function mergeBrotherRecords(existing, incoming) {
+  const base = sanitizeBrotherRecord(existing);
+  const inc = sanitizeBrotherRecord(incoming);
+  const merged = Object.assign({}, base, { alpha_id: inc.alpha_id || base.alpha_id });
+  BROTHERS_DIRECTORY_FIELDS.forEach(function(col) {
+    if (col.key === 'alpha_id') return;
+    if (inc[col.key]) merged[col.key] = inc[col.key];
+  });
+  return sanitizeBrotherRecord(merged);
+}
+
+function brotherDirectoryRowSearchText(rec) {
+  return BROTHERS_DIRECTORY_FIELDS.map(function(col) { return rec[col.key]; }).join(' ').toLowerCase();
+}
+
+function compareBrotherDirectoryRows(a, b, key, dir) {
+  const av = String((a && a[key]) || '').toLowerCase();
+  const bv = String((b && b[key]) || '').toLowerCase();
+  let cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+  if (cmp === 0) {
+    cmp = String(a.last_name || '').localeCompare(String(b.last_name || ''), undefined, { numeric: true, sensitivity: 'base' });
+  }
+  if (cmp === 0) {
+    cmp = String(a.first_name || '').localeCompare(String(b.first_name || ''), undefined, { numeric: true, sensitivity: 'base' });
+  }
+  if (cmp === 0) {
+    cmp = String(a.alpha_id || '').localeCompare(String(b.alpha_id || ''), undefined, { numeric: true, sensitivity: 'base' });
+  }
+  return dir === 'desc' ? -cmp : cmp;
+}
+
+function getBrothersDirectoryViewRows() {
+  const q = (brothersDirectorySearch || '').trim().toLowerCase();
+  let rows = brothersDirectoryData.map(function(row) { return sanitizeBrotherRecord(row); });
+  if (q) {
+    rows = rows.filter(function(rec) { return brotherDirectoryRowSearchText(rec).includes(q); });
+  }
+  const key = brothersDirectorySortKey || 'alpha_id';
+  const dir = brothersDirectorySortDir === 'desc' ? 'desc' : 'asc';
+  rows.sort(function(a, b) { return compareBrotherDirectoryRows(a, b, key, dir); });
+  return rows;
+}
+
+function findBrotherDirectoryIndex(alphaId) {
+  const id = normalizeAlphaId(alphaId);
+  if (!id) return -1;
+  for (let i = 0; i < brothersDirectoryData.length; i++) {
+    if (normalizeAlphaId(brothersDirectoryData[i].alpha_id) === id) return i;
+  }
+  return -1;
+}
+
+function setBrotherDirectoryField(alphaId, field, value) {
+  const idx = findBrotherDirectoryIndex(alphaId);
+  if (idx < 0) return;
+  brothersDirectoryData[idx][field] = value;
+  if (field === 'alpha_id') {
+    brothersDirectoryData[idx] = sanitizeBrotherRecord(brothersDirectoryData[idx]);
+  }
+}
+
+function brotherDirectoryInput(value, field, alphaId) {
+  const id = escHtml(alphaId || '');
+  return '<input type="text" value="' + escHtml(value || '') + '" onchange="setBrotherDirectoryField(\'' + id + '\',\'' + field + '\',this.value)" />';
+}
+
+function renderBrothersDirectoryHead() {
+  const head = document.getElementById('brothersDirectoryHeadRow');
+  if (!head) return;
+  head.innerHTML = BROTHERS_DIRECTORY_FIELDS.map(function(col) {
+    const active = brothersDirectorySortKey === col.key;
+    const icon = !active ? '<i class="fas fa-sort sort-icon"></i>' : (
+      brothersDirectorySortDir === 'desc'
+        ? '<i class="fas fa-sort-down sort-icon"></i>'
+        : '<i class="fas fa-sort-up sort-icon"></i>'
+    );
+    return '<th class="sortable-th' + (active ? ' active' : '') + '" style="width:' + col.width + ';" onclick="sortBrothersDirectory(\'' + col.key + '\')">' +
+      escHtml(col.label) + icon + '</th>';
+  }).join('') + '<th style="width:40px;"></th>';
+}
+
+function sortBrothersDirectory(field) {
+  if (brothersDirectorySortKey === field) {
+    brothersDirectorySortDir = brothersDirectorySortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    brothersDirectorySortKey = field;
+    brothersDirectorySortDir = 'asc';
+  }
+  renderBrothersDirectoryTable();
+}
+
+function filterBrothersDirectoryTable() {
+  const input = document.getElementById('brothersDirectorySearch');
+  brothersDirectorySearch = input ? input.value : '';
+  renderBrothersDirectoryTable();
 }
 
 function updateBrothersDirectoryCount() {
   const countEl = document.getElementById('brothersDirectoryCount');
-  if (countEl) countEl.textContent = String(brothersDirectoryData.length);
+  const hintEl = document.getElementById('brothersDirectoryFilterHint');
+  const total = brothersDirectoryData.length;
+  const visible = getBrothersDirectoryViewRows().length;
+  if (countEl) countEl.textContent = String(total);
+  if (hintEl) {
+    if (brothersDirectorySearch.trim() && visible !== total) {
+      hintEl.style.display = 'block';
+      hintEl.textContent = 'Showing ' + visible + ' of ' + total + ' brothers matching your search.';
+    } else {
+      hintEl.style.display = 'none';
+      hintEl.textContent = '';
+    }
+  }
 }
 
 function renderBrothersDirectoryTable() {
   const body = document.getElementById('brothersDirectoryBody');
   if (!body) return;
+  renderBrothersDirectoryHead();
   body.innerHTML = '';
   if (!brothersDirectoryData.length) {
     body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--gray-500);">No brothers in directory yet. Upload a CSV or add rows manually.</td></tr>';
     updateBrothersDirectoryCount();
     return;
   }
-  brothersDirectoryData.forEach(function(row, i) {
-    const rec = sanitizeBrotherRecord(row);
+  const viewRows = getBrothersDirectoryViewRows();
+  if (!viewRows.length) {
+    body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--gray-500);">No brothers match your search.</td></tr>';
+    updateBrothersDirectoryCount();
+    return;
+  }
+  viewRows.forEach(function(rec) {
+    const rowId = rec.alpha_id || '';
     const tr = document.createElement('tr');
     tr.innerHTML = '' +
-      '<td>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.first_name, 'first_name', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.middle_name, 'middle_name', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.last_name, 'last_name', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.suffix, 'suffix', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.email, 'email', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.phone, 'phone', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.status, 'status', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.initiation_chapter, 'initiation_chapter', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.initiation_date, 'initiation_date', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.birthday, 'birthday', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.life_member_date, 'life_member_date', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.life_member_number, 'life_member_number', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.imdp_certified, 'imdp_certified', i) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.risk_mgmt_certified, 'risk_mgmt_certified', i) + '</td>' +
-      '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(' + i + ')" title="Remove"><i class="fas fa-trash"></i></button></td>';
+      '<td>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.first_name, 'first_name', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.middle_name, 'middle_name', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.last_name, 'last_name', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.suffix, 'suffix', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.email, 'email', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.phone, 'phone', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.status, 'status', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.initiation_chapter, 'initiation_chapter', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.initiation_date, 'initiation_date', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.birthday, 'birthday', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.life_member_date, 'life_member_date', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.life_member_number, 'life_member_number', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.imdp_certified, 'imdp_certified', rowId) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.risk_mgmt_certified, 'risk_mgmt_certified', rowId) + '</td>' +
+      '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(\'' + escHtml(rowId) + '\')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
   });
   updateBrothersDirectoryCount();
@@ -2704,9 +2858,10 @@ function addBrotherDirectoryRow() {
   renderBrothersDirectoryTable();
 }
 
-function removeBrotherDirectoryRow(index) {
-  if (index < 0 || index >= brothersDirectoryData.length) return;
-  brothersDirectoryData.splice(index, 1);
+function removeBrotherDirectoryRow(alphaId) {
+  const idx = findBrotherDirectoryIndex(alphaId);
+  if (idx < 0) return;
+  brothersDirectoryData.splice(idx, 1);
   renderBrothersDirectoryTable();
 }
 
@@ -2824,11 +2979,14 @@ async function handleBrothersDirectoryUpload(event) {
       const rec = sanitizeBrotherRecord(row);
       if (rec.alpha_id) byId[rec.alpha_id] = rec;
     });
-    parsed.records.forEach(function(rec) { byId[rec.alpha_id] = rec; });
+    parsed.records.forEach(function(rec) {
+      if (byId[rec.alpha_id]) byId[rec.alpha_id] = mergeBrotherRecords(byId[rec.alpha_id], rec);
+      else byId[rec.alpha_id] = rec;
+    });
     brothersDirectoryData = Object.keys(byId).sort().map(function(key) { return byId[key]; });
     renderBrothersDirectoryTable();
     const warn = parsed.errors.length ? (' (' + parsed.errors.length + ' row(s) skipped)') : '';
-    showToast('Imported ' + parsed.records.length + ' brother record(s).' + warn, parsed.errors.length ? 'info' : 'success');
+    showToast('Merged ' + parsed.records.length + ' row(s) by Alpha ID.' + warn, parsed.errors.length ? 'info' : 'success');
   } catch (err) {
     showToast('Could not read CSV file: ' + (err.message || 'unknown error'), 'error');
   } finally {
@@ -2855,7 +3013,7 @@ function brotherDirectoryToMemberPayload(rec, includeExtendedFields) {
     payload.birthday = rec.birthday;
     payload.life_member_date = rec.life_member_date;
   }
-  if (rec.status) payload.status = rec.status;
+  payload.status = rec.status || 'active';
   if (rec.life_member_date || rec.life_member_number) payload.life_member = 'yes';
   if (rec.email) payload.email = rec.email;
   return payload;
