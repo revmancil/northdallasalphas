@@ -370,6 +370,22 @@ h1, h2, h3, h4, h5 {
   margin: 0 auto;
   padding: 80px 24px;
 }
+.hero-fraternity {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.15rem, 2.4vw, 1.55rem);
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.hero-chapter {
+  font-size: clamp(0.82rem, 1.6vw, 0.95rem);
+  font-weight: 600;
+  color: rgba(255,255,255,0.72);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
 .hero-badge {
   display: inline-flex;
   align-items: center;
