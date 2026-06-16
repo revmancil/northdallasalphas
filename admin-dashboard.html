@@ -3543,7 +3543,7 @@ const DEFAULT_PRESIDENT_DATA = {
   title: '20th Chapter President',
   badge: 'Xi Tau Lambda · Chapter #607',
   bio: 'Brother Cedric Washington proudly serves as the 20th Chapter President of Xi Tau Lambda, one of the premier alumni chapters of Alpha Phi Alpha Fraternity, Inc. Under his leadership, the chapter continues its legacy of scholarship, service, and brotherhood across North Dallas County.',
-  photo: '',
+  photo: 'images/chapter-president.jpg',
   adminYear: '2024–2025 Administration'
 };
 
@@ -3583,7 +3583,7 @@ async function loadOfficersPanel() {
   document.getElementById('presTitle').value = p.title || '';
   document.getElementById('presBadge').value = p.badge || '';
   document.getElementById('presYear').value  = p.adminYear || '';
-  document.getElementById('presPhoto').value = normalizeLeadershipPhotoUrl(p.photo || '');
+  document.getElementById('presPhoto').value = resolvePresidentPhoto(p.photo || '');
   document.getElementById('presBio').value   = p.bio   || '';
   // Restore president photo preview
   updatePresPhotoPreview();
@@ -3656,7 +3656,7 @@ async function savePresident() {
     title:     document.getElementById('presTitle').value.trim(),
     badge:     document.getElementById('presBadge').value.trim(),
     adminYear: document.getElementById('presYear').value.trim(),
-    photo:     normalizeLeadershipPhotoUrl(document.getElementById('presPhoto').value.trim()),
+    photo:     resolvePresidentPhoto(document.getElementById('presPhoto').value.trim()),
     bio:       document.getElementById('presBio').value.trim()
   };
   try {
@@ -3708,13 +3708,20 @@ const DEFAULT_PAST_PRESIDENTS = Array.from({length: 19}, (_, i) => ({
   photo: ''
 }));
 
+const CHAPTER_PRESIDENT_PHOTO = 'images/chapter-president.jpg';
+
 function normalizeLeadershipPhotoUrl(url) {
   const u = String(url || '').trim();
   if (!u) return '';
   if (u.startsWith('data:image/')) return u;
+  if (/WBP_8935\.jpg/i.test(u) || /chapter-president\.jpg$/i.test(u)) return CHAPTER_PRESIDENT_PHOTO;
   if (/resources\/Pictures\//i.test(u)) return '';
   if (/northdallasalphas\.org\/resources\//i.test(u)) return '';
   return u;
+}
+
+function resolvePresidentPhoto(url) {
+  return normalizeLeadershipPhotoUrl(url) || CHAPTER_PRESIDENT_PHOTO;
 }
 
 let presidentsData = [];
