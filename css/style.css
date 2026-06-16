@@ -892,18 +892,25 @@ h1, h2, h3, h4, h5 {
   box-shadow: 0 12px 30px rgba(0,0,0,0.12);
 }
 .news-card-img {
-  height: 200px;
+  min-height: 200px;
+  height: auto;
   background: var(--black);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .news-card-img img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 360px;
+  object-fit: contain;
+  object-position: center;
   transition: transform 0.5s ease;
 }
-.news-card:hover .news-card-img img { transform: scale(1.05); }
-.news-card.featured .news-card-img { height: 280px; }
+.news-card:hover .news-card-img img { transform: scale(1.02); }
+.news-card.featured .news-card-img { min-height: 280px; }
+.news-card.featured .news-card-img img { max-height: 420px; }
 .news-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
 .news-tag {
   display: inline-block;
