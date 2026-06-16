@@ -529,15 +529,15 @@ const DEFAULT_PRESIDENT = {
   title: '20th Chapter President',
   badge: 'Xi Tau Lambda · Chapter #607',
   bio: 'Brother Cedric Washington proudly serves as the 20th Chapter President of Xi Tau Lambda, one of the premier alumni chapters of Alpha Phi Alpha Fraternity, Inc. Under his leadership, the chapter continues its legacy of scholarship, service, and brotherhood across North Dallas County.',
-  photo: 'https://northdallasalphas.org/resources/Pictures/WBP_8935.jpg',
+  photo: '',
   adminYear: '2024–2025 Administration'
 };
 
 // ── Default 14 Officer Slots (positions 2–15) ──
 const DEFAULT_OFFICERS = [
-  { title: 'Vice President',         name: 'Bro. [Name]', photo: 'https://northdallasalphas.org/resources/Pictures/VP.jpg' },
-  { title: 'Recording Secretary',    name: 'Bro. [Name]', photo: 'https://northdallasalphas.org/resources/Pictures/Secretary.jpg' },
-  { title: 'Treasurer',              name: 'Bro. [Name]', photo: 'https://northdallasalphas.org/resources/Pictures/Treasurer.jpg' },
+  { title: 'Vice President',         name: 'Bro. [Name]', photo: '' },
+  { title: 'Recording Secretary',    name: 'Bro. [Name]', photo: '' },
+  { title: 'Treasurer',              name: 'Bro. [Name]', photo: '' },
   { title: 'Financial Secretary',    name: 'Bro. [Name]', photo: '' },
   { title: 'Chaplain',               name: 'Bro. [Name]', photo: '' },
   { title: 'Sergeant-at-Arms',       name: 'Bro. [Name]', photo: '' },
@@ -553,7 +553,7 @@ const DEFAULT_OFFICERS = [
 
 // ── Default Past Presidents (19 slots) ──
 const DEFAULT_PRESIDENTS = [
-  { num: '1st',  name: 'Bro. [Name]', years: '1984 – [Year]', photo: 'https://northdallasalphas.org/resources/Pictures/President1.jpg' },
+  { num: '1st',  name: 'Bro. [Name]', years: '1984 – [Year]', photo: '' },
   { num: '2nd',  name: 'Bro. [Name]', years: '[Year] – [Year]', photo: '' },
   { num: '3rd',  name: 'Bro. [Name]', years: '[Year] – [Year]', photo: '' },
   { num: '4th',  name: 'Bro. [Name]', years: '[Year] – [Year]', photo: '' },
@@ -605,17 +605,52 @@ function getPresident() { return leadershipData.president; }
 function getOfficers() { return leadershipData.officers; }
 function getPastPresidents() { return leadershipData.pastPresidents; }
 
+function normalizeLeadershipPhotoUrl(url) {
+  const u = String(url || '').trim();
+  if (!u) return '';
+  if (u.startsWith('data:image/')) return u;
+  if (/resources\/Pictures\//i.test(u)) return '';
+  if (/northdallasalphas\.org\/resources\//i.test(u)) return '';
+  return u;
+}
+
+function sanitizeLeadershipRecord(record, photoKey) {
+  if (!record || typeof record !== 'object') return record;
+  const copy = Object.assign({}, record);
+  copy[photoKey || 'photo'] = normalizeLeadershipPhotoUrl(copy[photoKey || 'photo']);
+  return copy;
+}
+
+function placeholderHtml(kind) {
+  if (kind === 'president') {
+    return '<div class="img-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div>';
+  }
+  return '<div class="photo-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div>';
+}
+
+function mountLeadershipPhoto(container, photoUrl, altText, placeholderKind) {
+  if (!container) return;
+  container.innerHTML = '';
+  const url = normalizeLeadershipPhotoUrl(photoUrl);
+  if (!url) {
+    container.innerHTML = placeholderHtml(placeholderKind);
+    return;
+  }
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = altText || '';
+  img.onerror = function() {
+    container.innerHTML = placeholderHtml(placeholderKind);
+  };
+  container.appendChild(img);
+}
+
 // ── Render President Feature Card ──
 function renderPresident() {
   const p = getPresident();
   const card = document.getElementById('presidentFeatureCard');
-  const photoHtml = p.photo
-    ? `<img src="${p.photo}" alt="${p.name}" onerror="this.parentElement.innerHTML='<div class=\\'img-placeholder\\'><i class=\\'fas fa-user\\'></i><span>Photo Coming Soon</span></div>'" />`
-    : `<div class="img-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div>`;
-
   card.innerHTML = `
     <div class="president-feature-img">
-      ${photoHtml}
       <span class="president-feature-badge">Chapter President</span>
     </div>
     <div class="president-feature-content">
@@ -625,6 +660,16 @@ function renderPresident() {
       <p>${p.bio || ''}</p>
     </div>
   `;
+  mountLeadershipPhoto(
+    card.querySelector('.president-feature-img'),
+    p.photo,
+    p.name || 'Chapter President',
+    'president'
+  );
+  const badge = document.createElement('span');
+  badge.className = 'president-feature-badge';
+  badge.textContent = 'Chapter President';
+  card.querySelector('.president-feature-img').appendChild(badge);
 
   // Update admin year label
   if (p.adminYear) {
@@ -638,22 +683,22 @@ function renderOfficers() {
   const grid = document.getElementById('officersGrid');
   grid.innerHTML = '';
 
-  officers.forEach(officer => {
-    const photoHtml = officer.photo
-      ? `<img src="${officer.photo}" alt="${officer.title}" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'><i class=\\'fas fa-user\\'></i><span>Photo Coming Soon</span></div>'" />`
-      : `<div class="photo-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div>`;
-
+  officers.forEach(function(officer) {
     const card = document.createElement('div');
-    // Cards are rendered after initial animation observer setup on some devices.
-    // Mark as visible immediately to avoid hidden grids on mobile/tablet.
     card.className = 'officer-card fade-in visible';
     card.innerHTML = `
-      <div class="officer-card-photo">${photoHtml}</div>
+      <div class="officer-card-photo"></div>
       <div class="officer-card-body">
         <span class="title-tag">${officer.title}</span>
         <h3>${officer.name}</h3>
       </div>
     `;
+    mountLeadershipPhoto(
+      card.querySelector('.officer-card-photo'),
+      officer.photo,
+      officer.title,
+      'officer'
+    );
     grid.appendChild(card);
   });
 }
@@ -664,22 +709,25 @@ function renderPastPresidents() {
   const grid = document.getElementById('presidentsGrid');
   grid.innerHTML = '';
 
-  presidents.forEach(p => {
-    const photoHtml = p.photo
-      ? `<img src="${p.photo}" alt="${p.num} Chapter President" onerror="this.parentElement.innerHTML='<span class=\\'president-num-badge\\'>${p.num}</span><div class=\\'photo-placeholder\\'><i class=\\'fas fa-user\\'></i><span>Photo Coming Soon</span></div>'" /><span class="president-num-badge">${p.num}</span>`
-      : `<div class="photo-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div><span class="president-num-badge">${p.num}</span>`;
-
+  presidents.forEach(function(p) {
     const card = document.createElement('div');
-    // Keep animation class for styling consistency, but force visible state.
     card.className = 'president-card fade-in visible';
     card.innerHTML = `
-      <div class="president-card-photo">${photoHtml}</div>
+      <div class="president-card-photo">
+        <span class="president-num-badge">${p.num}</span>
+      </div>
       <div class="president-card-body">
         <h3>${p.name}</h3>
         <div class="years">${p.years}</div>
-        ${p.extra ? `<div class="extra">${p.extra}</div>` : ''}
+        ${p.extra ? '<div class="extra">' + p.extra + '</div>' : ''}
       </div>
     `;
+    const photoWrap = card.querySelector('.president-card-photo');
+    mountLeadershipPhoto(photoWrap, p.photo, p.num + ' Chapter President', 'president-card');
+    const badge = document.createElement('span');
+    badge.className = 'president-num-badge';
+    badge.textContent = p.num;
+    photoWrap.appendChild(badge);
     grid.appendChild(card);
   });
 }
@@ -711,9 +759,13 @@ async function loadAnnouncement() {
       getSiteContent('officers'),
       getSiteContent('past_presidents')
     ]);
-    if (president) leadershipData.president = Object.assign({}, DEFAULT_PRESIDENT, president);
-    if (Array.isArray(officers) && officers.length) leadershipData.officers = officers;
-    if (Array.isArray(pastPresidents) && pastPresidents.length) leadershipData.pastPresidents = pastPresidents;
+    if (president) leadershipData.president = sanitizeLeadershipRecord(Object.assign({}, DEFAULT_PRESIDENT, president), 'photo');
+    if (Array.isArray(officers) && officers.length) {
+      leadershipData.officers = officers.map(function(o) { return sanitizeLeadershipRecord(o, 'photo'); });
+    }
+    if (Array.isArray(pastPresidents) && pastPresidents.length) {
+      leadershipData.pastPresidents = pastPresidents.map(function(p) { return sanitizeLeadershipRecord(p, 'photo'); });
+    }
   } catch (err) {
     // Use defaults when Supabase content is unavailable.
   }
