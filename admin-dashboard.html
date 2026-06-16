@@ -1763,7 +1763,7 @@
             <button class="btn-sm view" onclick="loadBrothersDirectory()"><i class="fas fa-rotate-right"></i> Refresh</button>
             <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveBrothersDirectory()"><i class="fas fa-save"></i> Save Directory</button>
           </div>
-          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,life_member_date,life_member_number,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>).</p>
+          <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,life_member_date,life_member_number,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>). Certification columns are dates (e.g. <code>06/15/2024</code>). Leave cells empty when unknown.</p>
           <div style="overflow-x:auto;">
             <table class="officers-table">
               <thead>
@@ -1781,8 +1781,8 @@
                   <th style="width:120px;">Birthday</th>
                   <th style="width:120px;">Life Member Date</th>
                   <th style="width:130px;">Life Member #</th>
-                  <th style="width:110px;">IMDP Cert.</th>
-                  <th style="width:110px;">Risk Mgmt Cert.</th>
+                  <th style="width:120px;">IMDP Cert. Date</th>
+                  <th style="width:120px;">Risk Mgmt Date</th>
                   <th style="width:40px;"></th>
                 </tr>
               </thead>
@@ -2376,31 +2376,21 @@ function renderMemberComplianceList(members) {
     const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
     const id = String(m.id || '');
     const activeDate = m.chapter_active_date || '';
-    const imdp = m.imdp_certified || '';
-    const risk = m.risk_mgmt_certified || '';
+    const imdp = normalizeOptionalDateValue(m.imdp_certified);
+    const risk = normalizeOptionalDateValue(m.risk_mgmt_certified);
     return '' +
       '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">' +
       '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">' +
       '<div>' +
       '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
-      '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:2px;">' + escHtml(m.email || 'No email provided') + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:2px;">' + (m.email ? escHtml(m.email) : '') + '</div>' +
       '</div>' +
       '<button class="btn-sm success" onclick="saveMemberCompliance(\'' + escHtml(id) + '\')"><i class="fas fa-save"></i> Save</button>' +
       '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;">' +
       '<div class="field-group" style="margin:0;"><label>Chapter Active Date</label><input type="date" id="member-active-date-' + escHtml(id) + '" value="' + escHtml(activeDate) + '" /></div>' +
-      '<div class="field-group" style="margin:0;"><label>IMDP Certification</label>' +
-      '<select id="member-imdp-' + escHtml(id) + '">' +
-      '<option value=""' + (imdp === '' ? ' selected' : '') + '>Not set</option>' +
-      '<option value="yes"' + (imdp === 'yes' ? ' selected' : '') + '>Certified</option>' +
-      '<option value="no"' + (imdp === 'no' ? ' selected' : '') + '>Not Certified</option>' +
-      '</select></div>' +
-      '<div class="field-group" style="margin:0;"><label>Risk Management Certification</label>' +
-      '<select id="member-risk-' + escHtml(id) + '">' +
-      '<option value=""' + (risk === '' ? ' selected' : '') + '>Not set</option>' +
-      '<option value="yes"' + (risk === 'yes' ? ' selected' : '') + '>Certified</option>' +
-      '<option value="no"' + (risk === 'no' ? ' selected' : '') + '>Not Certified</option>' +
-      '</select></div>' +
+      '<div class="field-group" style="margin:0;"><label>IMDP Certification Date</label><input type="text" id="member-imdp-' + escHtml(id) + '" value="' + escHtml(imdp) + '" /></div>' +
+      '<div class="field-group" style="margin:0;"><label>Risk Management Certification Date</label><input type="text" id="member-risk-' + escHtml(id) + '" value="' + escHtml(risk) + '" /></div>' +
       '</div>' +
       '</div>';
   }).join('');
@@ -2574,11 +2564,12 @@ function normalizeAlphaId(value) {
   return String(value || '').trim().toUpperCase();
 }
 
-function normalizeCertValue(value) {
-  const v = String(value || '').trim().toLowerCase();
-  if (v === 'yes' || v === 'y' || v === 'certified' || v === 'true') return 'yes';
-  if (v === 'no' || v === 'n' || v === 'not certified' || v === 'false') return 'no';
-  return '';
+function normalizeOptionalDateValue(value) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  const lower = v.toLowerCase();
+  if (['yes', 'no', 'y', 'n', 'certified', 'not certified', 'true', 'false', 'not set'].indexOf(lower) >= 0) return '';
+  return v;
 }
 
 function emptyBrotherRecord() {
@@ -2590,7 +2581,7 @@ function emptyBrotherRecord() {
     suffix: '',
     email: '',
     phone: '',
-    status: 'active',
+    status: '',
     initiation_chapter: '',
     initiation_date: '',
     birthday: '',
@@ -2610,25 +2601,19 @@ function sanitizeBrotherRecord(row) {
     suffix: String((row && row.suffix) || '').trim(),
     email: String((row && row.email) || '').trim(),
     phone: String((row && row.phone) || '').trim(),
-    status: String((row && row.status) || 'active').trim().toLowerCase() || 'active',
+    status: String((row && row.status) || '').trim().toLowerCase(),
     initiation_chapter: String((row && row.initiation_chapter) || '').trim(),
-    initiation_date: String((row && row.initiation_date) || '').trim(),
-    birthday: String((row && row.birthday) || '').trim(),
-    life_member_date: String((row && row.life_member_date) || '').trim(),
+    initiation_date: normalizeOptionalDateValue(row && row.initiation_date),
+    birthday: normalizeOptionalDateValue(row && row.birthday),
+    life_member_date: normalizeOptionalDateValue(row && row.life_member_date),
     life_member_number: String((row && row.life_member_number) || '').trim(),
-    imdp_certified: normalizeCertValue(row && row.imdp_certified),
-    risk_mgmt_certified: normalizeCertValue(row && row.risk_mgmt_certified)
+    imdp_certified: normalizeOptionalDateValue(row && row.imdp_certified),
+    risk_mgmt_certified: normalizeOptionalDateValue(row && row.risk_mgmt_certified)
   };
 }
 
-function brotherCertSelectHtml(value, field, index) {
-  const v = normalizeCertValue(value);
-  return '' +
-    '<select onchange="brothersDirectoryData[' + index + '].' + field + '=this.value">' +
-    '<option value=""' + (v === '' ? ' selected' : '') + '>Not set</option>' +
-    '<option value="yes"' + (v === 'yes' ? ' selected' : '') + '>Yes</option>' +
-    '<option value="no"' + (v === 'no' ? ' selected' : '') + '>No</option>' +
-    '</select>';
+function brotherDirectoryInput(value, field, index) {
+  return '<input type="text" value="' + escHtml(value || '') + '" onchange="brothersDirectoryData[' + index + '].' + field + '=this.value" />';
 }
 
 function updateBrothersDirectoryCount() {
@@ -2649,21 +2634,21 @@ function renderBrothersDirectoryTable() {
     const rec = sanitizeBrotherRecord(row);
     const tr = document.createElement('tr');
     tr.innerHTML = '' +
-      '<td><input type="text" value="' + escHtml(rec.alpha_id) + '" placeholder="Alpha ID" onchange="brothersDirectoryData[' + i + '].alpha_id=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.first_name) + '" placeholder="First Name" onchange="brothersDirectoryData[' + i + '].first_name=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.middle_name) + '" placeholder="Middle" onchange="brothersDirectoryData[' + i + '].middle_name=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.last_name) + '" placeholder="Last Name" onchange="brothersDirectoryData[' + i + '].last_name=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.suffix) + '" placeholder="Jr." onchange="brothersDirectoryData[' + i + '].suffix=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.email) + '" placeholder="email@example.com" onchange="brothersDirectoryData[' + i + '].email=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.phone) + '" placeholder="(555) 555-5555" onchange="brothersDirectoryData[' + i + '].phone=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.status) + '" placeholder="active" onchange="brothersDirectoryData[' + i + '].status=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.initiation_chapter) + '" placeholder="Chapter" onchange="brothersDirectoryData[' + i + '].initiation_chapter=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.initiation_date) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].initiation_date=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.birthday) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].birthday=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.life_member_date) + '" placeholder="MM/DD/YYYY" onchange="brothersDirectoryData[' + i + '].life_member_date=this.value" /></td>' +
-      '<td><input type="text" value="' + escHtml(rec.life_member_number) + '" placeholder="LM-00000" onchange="brothersDirectoryData[' + i + '].life_member_number=this.value" /></td>' +
-      '<td>' + brotherCertSelectHtml(rec.imdp_certified, 'imdp_certified', i) + '</td>' +
-      '<td>' + brotherCertSelectHtml(rec.risk_mgmt_certified, 'risk_mgmt_certified', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.first_name, 'first_name', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.middle_name, 'middle_name', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.last_name, 'last_name', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.suffix, 'suffix', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.email, 'email', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.phone, 'phone', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.status, 'status', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.initiation_chapter, 'initiation_chapter', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.initiation_date, 'initiation_date', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.birthday, 'birthday', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.life_member_date, 'life_member_date', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.life_member_number, 'life_member_number', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.imdp_certified, 'imdp_certified', i) + '</td>' +
+      '<td>' + brotherDirectoryInput(rec.risk_mgmt_certified, 'risk_mgmt_certified', i) + '</td>' +
       '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(' + i + ')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
   });
@@ -2786,7 +2771,7 @@ function parseBrothersCsv(text) {
       suffix: csvCell(cells, mapped.suffix),
       email: csvCell(cells, mapped.email),
       phone: csvCell(cells, mapped.phone),
-      status: csvCell(cells, mapped.status) || 'active',
+      status: csvCell(cells, mapped.status),
       initiation_chapter: csvCell(cells, mapped.initiation_chapter),
       initiation_date: csvCell(cells, mapped.initiation_date),
       birthday: csvCell(cells, mapped.birthday),
@@ -2841,9 +2826,9 @@ function brotherDirectoryToMemberPayload(rec) {
     life_member_number: rec.life_member_number,
     imdp_certified: rec.imdp_certified,
     risk_mgmt_certified: rec.risk_mgmt_certified,
-    status: rec.status || 'active',
     updated_at: new Date().toISOString()
   };
+  if (rec.status) payload.status = rec.status;
   if (rec.life_member_date || rec.life_member_number) payload.life_member = 'yes';
   if (rec.email) payload.email = rec.email;
   return payload;
@@ -2870,7 +2855,7 @@ async function syncBrotherDirectoryToMembers(records) {
       await sbPatch('members', 'id=eq.' + encodeURIComponent(existing[0].id), payload, token);
       synced++;
     } else if (email) {
-      await sbPost('members', Object.assign({}, payload, { created_at: new Date().toISOString() }), token);
+      await sbPost('members', Object.assign({}, payload, { status: rec.status || 'active', created_at: new Date().toISOString() }), token);
       created++;
     } else {
       skipped++;

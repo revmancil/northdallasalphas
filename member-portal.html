@@ -135,10 +135,6 @@
     .member-card-info{flex:1;}
     .mc-name{font-size:0.88rem;font-weight:600;color:var(--white);}
     .mc-meta{font-size:0.73rem;color:var(--gray-400);margin-top:2px;}
-    .mc-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-    .cert-badge{font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:0.02em;}
-    .cert-badge.certified{background:var(--green-pale);color:var(--green);}
-    .cert-badge.not-certified{background:var(--red-pale);color:var(--red);}
     .member-search{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;padding:10px 14px 10px 40px;outline:none;margin-bottom:16px;}
     .member-search:focus{border-color:var(--gold);}
     .search-wrap{position:relative;}
@@ -319,20 +315,8 @@
                 <div class="pfield"><label>Life Member Number</label><input type="text" id="pfLifeMemberNumber" placeholder="e.g. LM-00000" /></div>
                 <div class="pfield"><label>Life Member Date</label><input type="text" id="pfLifeMemberDate" placeholder="e.g. 06/15/2010" /></div>
                 <div class="pfield"><label>Chapter Active Date</label><input type="date" id="pfChapterActiveDate" readonly /></div>
-                <div class="pfield"><label>IMDP Certification</label>
-                  <select id="pfImdp" disabled>
-                    <option value="">-- Select --</option>
-                    <option value="yes">Certified</option>
-                    <option value="no">Not Certified</option>
-                  </select>
-                </div>
-                <div class="pfield"><label>Risk Management Certification</label>
-                  <select id="pfRiskMgmt" disabled>
-                    <option value="">-- Select --</option>
-                    <option value="yes">Certified</option>
-                    <option value="no">Not Certified</option>
-                  </select>
-                </div>
+                <div class="pfield"><label>IMDP Certification Date</label><input type="text" id="pfImdp" readonly /></div>
+                <div class="pfield"><label>Risk Management Certification Date</label><input type="text" id="pfRiskMgmt" readonly /></div>
                 <div class="pfield"><label>Chapter Renewal Date</label><input type="text" id="pfRenewalDate" placeholder="e.g. 06/30/2025" /></div>
               </div>
             </div>
@@ -757,13 +741,15 @@ function formatMemberFullName(m) {
   const parts = [m.first_name, m.middle_name, m.last_name].filter(Boolean);
   let name = parts.join(' ');
   if (m.suffix) name += (name ? ' ' : '') + m.suffix;
-  return name.trim() || m.email || 'Unknown';
+  return name.trim();
 }
 
-function formatCertBadge(label, value) {
-  if (value === 'yes') return '<span class="cert-badge certified">' + escHtml(label) + '</span>';
-  if (value === 'no') return '<span class="cert-badge not-certified">' + escHtml(label) + '</span>';
-  return '';
+function displayOptionalDate(value) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  const lower = v.toLowerCase();
+  if (['yes', 'no', 'y', 'n', 'certified', 'not certified', 'true', 'false', 'not set'].indexOf(lower) >= 0) return '';
+  return v;
 }
 
 function renderDirectoryPanel() {
@@ -788,33 +774,42 @@ function renderDirectoryList(members) {
   if (!members.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No members found.</p></div>'; return; }
   c.innerHTML = members.map(function(m) {
     const initials = ((m.first_name||'')[0]||'') + ((m.last_name||'')[0]||'') || '?';
-    const name = formatMemberFullName(m);
+    const name = formatMemberFullName(m) || (m.email || '').trim();
     const loc  = [m.city, m.state].filter(Boolean).join(', ');
     const email = (m.email || '').trim();
     const phone = (m.phone || '').trim();
     const alphaParts = [];
     if (m.alpha_id) alphaParts.push('Alpha ID ' + escHtml(m.alpha_id));
     if (m.initiation_chapter) alphaParts.push('Initiated ' + escHtml(m.initiation_chapter));
-    if (m.initiation_date) alphaParts.push(escHtml(m.initiation_date));
+    const initiationDate = displayOptionalDate(m.initiation_date);
+    if (initiationDate) alphaParts.push(escHtml(initiationDate));
     const alphaMeta = alphaParts.join(' &middot; ');
     const lifeParts = [];
     if (m.life_member_number) lifeParts.push('Life Member #' + escHtml(m.life_member_number));
-    if (m.life_member_date) lifeParts.push('Life Member ' + escHtml(m.life_member_date));
+    const lifeMemberDate = displayOptionalDate(m.life_member_date);
+    if (lifeMemberDate) lifeParts.push('Life Member ' + escHtml(lifeMemberDate));
     const lifeMeta = lifeParts.join(' &middot; ');
-    const certBadges = [
-      formatCertBadge('IMDP', m.imdp_certified),
-      formatCertBadge('Risk Mgmt', m.risk_mgmt_certified)
-    ].filter(Boolean).join('');
+    const sinceParts = [];
+    if (loc) sinceParts.push(escHtml(loc));
+    if (m.member_since) sinceParts.push('Since ' + escHtml(m.member_since));
+    const sinceMeta = sinceParts.join(' &middot; ');
+    const certParts = [];
+    const imdpDate = displayOptionalDate(m.imdp_certified);
+    const riskDate = displayOptionalDate(m.risk_mgmt_certified);
+    if (imdpDate) certParts.push('IMDP ' + escHtml(imdpDate));
+    if (riskDate) certParts.push('Risk Mgmt ' + escHtml(riskDate));
+    const certMeta = certParts.join(' &middot; ');
+    const birthday = displayOptionalDate(m.birthday);
     return '<div class="member-card">' +
       '<div class="member-card-avatar">' + (m.photo ? '<img src="' + escHtml(m.photo) + '" alt="' + escHtml(name) + '" />' : escHtml(initials)) + '</div>' +
       '<div class="member-card-info"><div class="mc-name">Bro. ' + escHtml(name) + '</div>' +
-      '<div class="mc-meta">' + escHtml(loc) + (m.member_since ? (loc?' &middot; ':'') + 'Since ' + escHtml(m.member_since) : '') + '</div>' +
+      (sinceMeta ? '<div class="mc-meta">' + sinceMeta + '</div>' : '') +
       (alphaMeta ? '<div class="mc-meta">' + alphaMeta + '</div>' : '') +
       (lifeMeta ? '<div class="mc-meta">' + lifeMeta + '</div>' : '') +
-      (m.birthday ? '<div class="mc-meta"><i class="fas fa-cake-candles" style="margin-right:6px;color:var(--gold);"></i>' + escHtml(m.birthday) + '</div>' : '') +
+      (birthday ? '<div class="mc-meta"><i class="fas fa-cake-candles" style="margin-right:6px;color:var(--gold);"></i>' + escHtml(birthday) + '</div>' : '') +
+      (certMeta ? '<div class="mc-meta">' + certMeta + '</div>' : '') +
       (email ? '<div class="mc-meta"><i class="fas fa-envelope" style="margin-right:6px;color:var(--gold);"></i><a href="mailto:' + escHtml(email) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(email) + '</a></div>' : '') +
       (phone ? '<div class="mc-meta"><i class="fas fa-phone" style="margin-right:6px;color:var(--gold);"></i><a href="tel:' + escHtml(phone.replace(/\s+/g, '')) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(phone) + '</a></div>' : '') +
-      (certBadges ? '<div class="mc-badges">' + certBadges + '</div>' : '') +
       '</div>' +
       (m.linkedin ? '<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" style="color:var(--blue);font-size:1.1rem;"><i class="fab fa-linkedin"></i></a>' : '') +
       '</div>';
@@ -836,21 +831,21 @@ function loadProfileForm(member) {
   document.getElementById('pfMiddleName').value       = member.middle_name       || '';
   document.getElementById('pfLastName').value         = member.last_name         || '';
   document.getElementById('pfSuffix').value           = member.suffix            || '';
-  document.getElementById('pfBirthday').value         = member.birthday          || '';
+  document.getElementById('pfBirthday').value         = displayOptionalDate(member.birthday);
   document.getElementById('pfPhone').value            = member.phone             || '';
   document.getElementById('pfCity').value             = member.city              || '';
   document.getElementById('pfState').value            = member.state             || '';
   document.getElementById('pfMemberSince').value      = member.member_since      || '';
   document.getElementById('pfAlphaId').value          = member.alpha_id          || '';
-  document.getElementById('pfInitiationDate').value   = member.initiation_date   || '';
+  document.getElementById('pfInitiationDate').value   = displayOptionalDate(member.initiation_date);
   document.getElementById('pfInitiationChapter').value= member.initiation_chapter|| '';
   document.getElementById('pfCollege').value          = member.college           || '';
   document.getElementById('pfLifeMember').value       = member.life_member       || '';
   document.getElementById('pfLifeMemberNumber').value = member.life_member_number|| '';
-  document.getElementById('pfLifeMemberDate').value   = member.life_member_date   || '';
+  document.getElementById('pfLifeMemberDate').value   = displayOptionalDate(member.life_member_date);
   document.getElementById('pfChapterActiveDate').value= member.chapter_active_date|| '';
-  document.getElementById('pfImdp').value             = member.imdp_certified    || '';
-  document.getElementById('pfRiskMgmt').value         = member.risk_mgmt_certified|| '';
+  document.getElementById('pfImdp').value             = displayOptionalDate(member.imdp_certified);
+  document.getElementById('pfRiskMgmt').value         = displayOptionalDate(member.risk_mgmt_certified);
   document.getElementById('pfRenewalDate').value      = member.renewal_date      || '';
   document.getElementById('pfBio').value              = member.bio               || '';
   document.getElementById('pfLinkedin').value         = member.linkedin          || '';
