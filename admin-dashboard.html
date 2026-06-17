@@ -3750,6 +3750,7 @@ function removeEvent(i) {
 function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
   return eventsData.map(function(ev, idx) {
     const row = {
+      ...(ev.id ? { id: ev.id } : {}),
       name: ev.name || '',
       location: ev.location || '',
       datetime: ev.datetime || '',
@@ -3782,8 +3783,15 @@ function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
 }
 
 async function persistEventsToSupabase(payload, token) {
-  await sbDeleteByFilter('events', 'id=not.is.null', token);
-  if (payload.length) await sbPost('events', payload, token);
+  if (!payload.length) return;
+  // Upsert preserves existing UUIDs so event registrations stay valid.
+  // Events without an id get a new UUID from Postgres default.
+  await sbUpsert('events', payload, 'id', token);
+  // Delete any events that were removed (not in current payload).
+  const keptIds = payload.map(function(r) { return r.id; }).filter(Boolean);
+  if (keptIds.length) {
+    await sbDeleteByFilter('events', 'id=not.in.(' + keptIds.join(',') + ')', token);
+  }
 }
 
 async function saveEvents() {
