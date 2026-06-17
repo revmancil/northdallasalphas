@@ -623,14 +623,14 @@
     .desc-input-area label {
       font-size: 0.78rem;
       font-weight: 700;
-      color: var(--gray-200);
+      color: var(--gray-700);
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
     .desc-input-area textarea {
-      background: var(--gray-50);
+      background: var(--white);
       border: 1px solid var(--gray-200);
-      color: var(--white);
+      color: var(--gray-800);
       border-radius: 5px;
       padding: 8px 10px;
       font-size: 0.85rem;
@@ -747,6 +747,11 @@
       font-family: 'Inter', sans-serif;
       font-size: 0.84rem;
       resize: vertical;
+      background: var(--white);
+      color: var(--gray-800);
+    }
+    .news-body-row .desc-input-area label {
+      color: var(--gray-700);
     }
 
     /* Flyer preview inside row */
@@ -3972,6 +3977,25 @@ async function uploadNewsImageToStorage(file) {
   });
 }
 
+async function uploadLeadershipPhotoToStorage(file) {
+  return uploadImageToSupabaseBucket(file, EVENT_GALLERY_IMAGE_BUCKET, {
+    prefixA: 'leadership/',
+    prefixB: 'leader-'
+  });
+}
+
+async function migrateLeadershipPhotoForSave(photoUrl) {
+  const normalized = normalizeLeadershipPhotoUrl(photoUrl);
+  if (!normalized || !String(normalized).startsWith('data:image/')) return normalized;
+  const compressed = await ensureInlinePhotoFits(normalized);
+  try {
+    const uploaded = await uploadLeadershipPhotoToStorage(dataUrlToImageFile(compressed, 'leader'));
+    return uploaded.url;
+  } catch (err) {
+    return compressed;
+  }
+}
+
 async function saveNewsArticles() {
   const token = getAdminToken();
   if (!token) {
@@ -4130,6 +4154,12 @@ async function savePresident() {
     bio:       document.getElementById('presBio').value.trim()
   };
   try {
+    if (p.photo && String(p.photo).startsWith('data:image/')) {
+      showToast('Uploading president photo to storage…', 'info');
+      p.photo = await migrateLeadershipPhotoForSave(p.photo);
+      document.getElementById('presPhoto').value = p.photo;
+      updatePresPhotoPreview();
+    }
     await saveContentJson('president', p);
     showToast('Chapter President info saved to Supabase.');
   } catch (err) {
@@ -4149,8 +4179,8 @@ async function saveOfficers() {
   });
   for (let i = 0; i < officersData.length; i++) {
     officersData[i].photo = normalizeLeadershipPhotoUrl(officersData[i].photo);
-    if (officersData[i].photo && String(officersData[i].photo).startsWith('data:image')) {
-      officersData[i].photo = await ensureInlinePhotoFits(officersData[i].photo);
+    if (officersData[i].photo && String(officersData[i].photo).startsWith('data:image/')) {
+      officersData[i].photo = await migrateLeadershipPhotoForSave(officersData[i].photo);
       const photoEl = document.getElementById('officer-photo-url-' + i);
       if (photoEl) photoEl.value = officersData[i].photo;
     }
@@ -4279,8 +4309,8 @@ async function savePresidents() {
   });
   for (let i = 0; i < presidentsData.length; i++) {
     presidentsData[i].photo = normalizeLeadershipPhotoUrl(presidentsData[i].photo);
-    if (presidentsData[i].photo && String(presidentsData[i].photo).startsWith('data:image')) {
-      presidentsData[i].photo = await ensureInlinePhotoFits(presidentsData[i].photo);
+    if (presidentsData[i].photo && String(presidentsData[i].photo).startsWith('data:image/')) {
+      presidentsData[i].photo = await migrateLeadershipPhotoForSave(presidentsData[i].photo);
       const photoEl = document.getElementById('pres-photo-url-' + i);
       if (photoEl) photoEl.value = presidentsData[i].photo;
     }
@@ -5860,13 +5890,17 @@ function updatePresPhotoPreview() {
 function handlePresPhotoUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    document.getElementById('presPhoto').value = ev.target.result;
-    updatePresPhotoPreview();
-    showToast('President photo uploaded. Click "Save President Info" to keep it.', 'info');
-  };
-  reader.readAsDataURL(file);
+  (async function() {
+    try {
+      showToast('Uploading president photo…', 'info');
+      const uploaded = await uploadLeadershipPhotoToStorage(file);
+      document.getElementById('presPhoto').value = uploaded.url;
+      updatePresPhotoPreview();
+      showToast('President photo uploaded. Click "Save President Info" to keep it.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Could not upload president photo.', 'error');
+    }
+  })();
   e.target.value = '';
 }
 
@@ -5895,20 +5929,20 @@ function handleOfficerPhotoUpload(e) {
   const file = e.target.files[0];
   if (!file || activeOfficerPhotoIndex < 0) return;
   const i = activeOfficerPhotoIndex;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    (async function() {
-      var dataUrl = ev.target.result;
-      dataUrl = await ensureInlinePhotoFits(dataUrl);
-      if (officersData[i]) officersData[i].photo = dataUrl;
+  (async function() {
+    try {
+      showToast('Uploading officer photo…', 'info');
+      const uploaded = await uploadLeadershipPhotoToStorage(file);
+      if (officersData[i]) officersData[i].photo = uploaded.url;
       const urlEl = document.getElementById('officer-photo-url-' + i);
-      if (urlEl) urlEl.value = dataUrl;
+      if (urlEl) urlEl.value = uploaded.url;
       const wrap = document.getElementById('officer-photo-preview-' + i);
-      if (wrap) wrap.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;" />`;
+      if (wrap) wrap.innerHTML = `<img src="${escHtml(uploaded.url)}" style="width:100%;height:100%;object-fit:cover;" />`;
       showToast('Officer photo uploaded. Click "Save All Officers" to keep it.', 'info');
-    })();
-  };
-  reader.readAsDataURL(file);
+    } catch (err) {
+      showToast(err.message || 'Could not upload officer photo.', 'error');
+    }
+  })();
   e.target.value = '';
 }
 
@@ -5987,20 +6021,20 @@ function handlePresidentPhotoUpload(e) {
   const file = e.target.files[0];
   if (!file || activePresidentPhotoIndex < 0) return;
   const i = activePresidentPhotoIndex;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    (async function() {
-      var dataUrl = ev.target.result;
-      dataUrl = await ensureInlinePhotoFits(dataUrl);
-      if (presidentsData[i]) presidentsData[i].photo = dataUrl;
+  (async function() {
+    try {
+      showToast('Uploading president photo…', 'info');
+      const uploaded = await uploadLeadershipPhotoToStorage(file);
+      if (presidentsData[i]) presidentsData[i].photo = uploaded.url;
       const urlEl = document.getElementById('pres-photo-url-' + i);
-      if (urlEl) urlEl.value = dataUrl;
+      if (urlEl) urlEl.value = uploaded.url;
       const wrap = document.getElementById('pres-photo-preview-' + i);
-      if (wrap) wrap.innerHTML = `<img src="${dataUrl}" style="width:100%;height:100%;object-fit:cover;" />`;
+      if (wrap) wrap.innerHTML = `<img src="${escHtml(uploaded.url)}" style="width:100%;height:100%;object-fit:cover;" />`;
       showToast('President photo uploaded. Click "Save All Presidents" to keep it.', 'info');
-    })();
-  };
-  reader.readAsDataURL(file);
+    } catch (err) {
+      showToast(err.message || 'Could not upload president photo.', 'error');
+    }
+  })();
   e.target.value = '';
 }
 

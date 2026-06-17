@@ -7,6 +7,7 @@
   <meta name="description" content="Meet the current officers and past chapter presidents of the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. — North Dallas Alphas." />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="preload" as="image" href="images/chapter-president.jpg" fetchpriority="high" />
   <style>
 
     /* ── Officers Section ── */
@@ -641,7 +642,7 @@ function placeholderHtml(kind) {
   return '<div class="photo-placeholder"><i class="fas fa-user"></i><span>Photo Coming Soon</span></div>';
 }
 
-function mountLeadershipPhoto(container, photoUrl, altText, placeholderKind) {
+function mountLeadershipPhoto(container, photoUrl, altText, placeholderKind, options) {
   if (!container) return;
   container.innerHTML = '';
   const url = normalizeLeadershipPhotoUrl(photoUrl);
@@ -649,9 +650,15 @@ function mountLeadershipPhoto(container, photoUrl, altText, placeholderKind) {
     container.innerHTML = placeholderHtml(placeholderKind);
     return;
   }
+  const opts = options || {};
   const img = document.createElement('img');
   img.src = url;
   img.alt = altText || '';
+  img.decoding = 'async';
+  img.loading = opts.priority ? 'eager' : 'lazy';
+  if (opts.priority && 'fetchPriority' in img) img.fetchPriority = 'high';
+  if (opts.width) img.width = opts.width;
+  if (opts.height) img.height = opts.height;
   img.onerror = function() {
     container.innerHTML = placeholderHtml(placeholderKind);
   };
@@ -677,7 +684,8 @@ function renderPresident() {
     card.querySelector('.president-feature-img'),
     resolvePresidentPhoto(p.photo),
     p.name || 'Chapter President',
-    'president'
+    'president',
+    { priority: true, width: 1000, height: 1000 }
   );
   const badge = document.createElement('span');
   badge.className = 'president-feature-badge';
@@ -764,6 +772,10 @@ async function loadAnnouncement() {
 }
 
 // ── Init ──
+renderPresident();
+renderOfficers();
+renderPastPresidents();
+
 (async function() {
   await loadAnnouncement();
   try {
@@ -783,7 +795,7 @@ async function loadAnnouncement() {
       leadershipData.pastPresidents = pastPresidents.map(function(p) { return sanitizeLeadershipRecord(p, 'photo'); });
     }
   } catch (err) {
-    // Use defaults when Supabase content is unavailable.
+    // Keep defaults when Supabase content is unavailable.
   }
   renderPresident();
   renderOfficers();
