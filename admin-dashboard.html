@@ -498,7 +498,7 @@
     ═══════════════════════════════════════ */
     .events-header-row {
       display: grid;
-      grid-template-columns: 2fr 2fr 1.2fr 1fr auto auto auto auto;
+      grid-template-columns: 2fr 2fr 1.2fr 1fr auto auto auto auto auto;
       gap: 10px;
       padding: 0 0 8px;
       border-bottom: 1px solid var(--gray-200);
@@ -513,7 +513,7 @@
     }
     .event-row {
       display: grid;
-      grid-template-columns: 2fr 2fr 1.2fr 1fr auto auto auto auto;
+      grid-template-columns: 2fr 2fr 1.2fr 1fr auto auto auto auto auto;
       gap: 10px;
       align-items: center;
       padding: 10px 0;
@@ -583,6 +583,23 @@
       border-color: #27ae60;
     }
     .event-row .btn-reg:hover { border-color: #27ae60; background: rgba(39,174,96,0.12); }
+    .event-row .btn-sponsor {
+      width: 34px; height: 34px;
+      border-radius: 5px;
+      border: 1.5px solid var(--gray-200);
+      background: var(--gray-100);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem;
+      color: #d4a017;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .event-row .btn-sponsor.has-sponsor {
+      background: rgba(201,168,76,0.15);
+      border-color: var(--gold);
+    }
+    .event-row .btn-sponsor:hover { border-color: var(--gold); background: rgba(201,168,76,0.12); }
     /* Description button */
     .event-row .btn-desc {
       width: 34px; height: 34px;
@@ -641,7 +658,7 @@
     }
     /* Registration URL sub-row */
     .event-reg-row {
-      grid-column: span 8;
+      grid-column: span 9;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -652,6 +669,41 @@
       border-left: 3px solid #27ae60;
     }
     .event-reg-row.visible { display: flex; }
+    .event-sponsor-row {
+      grid-column: span 9;
+      display: none;
+      gap: 14px;
+      align-items: flex-start;
+      background: var(--gray-100);
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 6px;
+      border-left: 3px solid var(--gold);
+    }
+    .event-sponsor-row.visible { display: flex; }
+    .sponsor-input-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sponsor-input-area label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--gray-700);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .sponsor-input-area input[type="url"],
+    .sponsor-input-area input[type="text"] {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      color: var(--gray-800);
+      border-radius: 5px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      width: 100%;
+    }
     .reg-input-area {
       flex: 1;
       display: flex;
@@ -661,14 +713,15 @@
     .reg-input-area label {
       font-size: 0.78rem;
       font-weight: 700;
-      color: var(--gray-200);
+      color: var(--gray-700);
       text-transform: uppercase;
       letter-spacing: 0.06em;
     }
-    .reg-input-area input[type="url"] {
-      background: var(--gray-50);
+    .reg-input-area input[type="url"],
+    .reg-input-area input[type="number"] {
+      background: var(--white);
       border: 1px solid var(--gray-200);
-      color: var(--white);
+      color: var(--gray-800);
       border-radius: 5px;
       padding: 8px 10px;
       font-size: 0.85rem;
@@ -1057,6 +1110,7 @@
       .event-row input:nth-child(3) { display: none; }
       .event-flyer-row,
       .event-reg-row,
+      .event-sponsor-row,
       .event-desc-row { grid-column: span 6; }
     }
     @media (max-width: 768px) {
@@ -1075,6 +1129,7 @@
       .event-row input:nth-child(3) { display: none; }
       .event-flyer-row,
       .event-reg-row,
+      .event-sponsor-row,
       .event-desc-row { grid-column: span 5; }
     }
   </style>
@@ -1494,8 +1549,11 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">
-            Add, edit, or remove events. Click the <strong><i class="fas fa-star" style="color:var(--gold);"></i> star</strong> to mark an event as <em>Featured</em> (shown prominently on the Events page).
-            Click the <strong><i class="fas fa-image" style="color:var(--blue);"></i> image</strong> icon to attach a flyer or promotional image URL.
+            Click the <strong><i class="fas fa-star" style="color:var(--gold);"></i> star</strong> to mark a featured event,
+            the <strong><i class="fas fa-image" style="color:var(--blue);"></i> image</strong> icon for a flyer,
+            and the <strong><i class="fas fa-align-left" style="color:#9b59b6;"></i> text</strong> icon for a description.
+            Use the <strong><i class="fas fa-link" style="color:#27ae60;"></i> link</strong> icon to set free and/or paid registration (choice modal on the Events page).
+            Use the <strong><i class="fas fa-handshake" style="color:var(--gold);"></i> handshake</strong> icon to show a sponsor button on specific events only.
           </p>
 
           <div class="events-header-row">
@@ -1505,7 +1563,8 @@
             <span style="text-align:center;"><i class="fas fa-star" title="Featured"></i></span>
             <span style="text-align:center;"><i class="fas fa-image" title="Flyer"></i></span>
             <span style="text-align:center;"><i class="fas fa-align-left" title="Description"></i></span>
-            <span style="text-align:center;"><i class="fas fa-link" title="Registration Link"></i></span>
+            <span style="text-align:center;"><i class="fas fa-link" title="Registration"></i></span>
+            <span style="text-align:center;"><i class="fas fa-handshake" title="Sponsorship"></i></span>
             <span></span>
           </div>
 
@@ -3292,14 +3351,62 @@ const DEFAULT_EVENTS = [
 let eventsData = [];
 let activeFlyerIndex = -1;
 
+function normalizeAdminEventRecord(ev) {
+  const fee = Math.max(0, parseInt(String(ev.registration_fee_cents ?? ev.registrationFeeCents ?? 0), 10) || 0);
+  const regUrl = String(ev.registrationUrl || ev.reg_url || '').trim();
+  const freeUrl = String(ev.free_registration_url || ev.freeRegistrationUrl || '').trim();
+  const chapterOn = !!(ev.chapter_registration_enabled || ev.chapterRegistrationEnabled);
+  let freeEnabled = ev.free_registration_enabled != null ? !!ev.free_registration_enabled : !!ev.freeRegistrationEnabled;
+  let paidEnabled = ev.paid_registration_enabled != null ? !!ev.paid_registration_enabled : !!ev.paidRegistrationEnabled;
+  if (chapterOn && !freeEnabled && !paidEnabled) {
+    if (regUrl) {
+      paidEnabled = true;
+    } else if (fee > 0) {
+      paidEnabled = true;
+    } else {
+      freeEnabled = true;
+    }
+  }
+  if (freeUrl) freeEnabled = true;
+  if (regUrl) paidEnabled = true;
+  return {
+    id: ev.id,
+    name: ev.name || '',
+    location: ev.location || '',
+    datetime: ev.datetime || '',
+    featured: !!ev.featured,
+    flyer: ev.flyer || '',
+    description: ev.description || '',
+    registrationUrl: regUrl,
+    freeRegistrationEnabled: freeEnabled,
+    freeRegistrationUrl: freeUrl,
+    paidRegistrationEnabled: paidEnabled,
+    registrationFeeCents: fee,
+    sponsorEnabled: !!(ev.sponsor_enabled ?? ev.sponsorEnabled),
+    sponsorUrl: String(ev.sponsor_url || ev.sponsorUrl || '').trim(),
+    sponsorLabel: String(ev.sponsor_label || ev.sponsorLabel || 'Become a Sponsor').trim() || 'Become a Sponsor'
+  };
+}
+
+function eventHasRegistrationOptions(ev) {
+  if (!ev) return false;
+  if ((ev.freeRegistrationUrl || '').trim()) return true;
+  if ((ev.registrationUrl || '').trim()) return true;
+  if (ev.freeRegistrationEnabled) return true;
+  if (ev.paidRegistrationEnabled && ((ev.registrationFeeCents || 0) > 0 || (ev.registrationUrl || '').trim())) return true;
+  return false;
+}
+
 function getEvents() {
-  return DEFAULT_EVENTS.map(e => ({
-    ...e,
-    chapterRegistrationEnabled: false,
-    registrationFeeCents: 0,
-    registrationUrl: e.registrationUrl || '',
-    description: e.description || ''
-  }));
+  return DEFAULT_EVENTS.map(function(e) {
+    return normalizeAdminEventRecord({
+      ...e,
+      chapterRegistrationEnabled: false,
+      registrationFeeCents: 0,
+      registrationUrl: e.registrationUrl || '',
+      description: e.description || ''
+    });
+  });
 }
 
 async function loadEventsList() {
@@ -3312,20 +3419,7 @@ async function loadEventsList() {
   try {
     const rows = await sbGet('events', 'order=sort_order.asc', token);
     eventsData = (rows && rows.length)
-      ? rows.map(function(ev) {
-          return {
-            id: ev.id,
-            name: ev.name || '',
-            location: ev.location || '',
-            datetime: ev.datetime || '',
-            featured: !!ev.featured,
-            flyer: ev.flyer || '',
-            description: ev.description || '',
-            registrationUrl: ev.registrationUrl || ev.reg_url || '',
-            chapterRegistrationEnabled: !!ev.chapter_registration_enabled,
-            registrationFeeCents: Math.max(0, parseInt(String(ev.registration_fee_cents ?? 0), 10) || 0)
-          };
-        })
+      ? rows.map(function(ev) { return normalizeAdminEventRecord(ev); })
       : getEvents();
   } catch (err) {
     eventsData = getEvents();
@@ -3356,8 +3450,11 @@ function renderEventsList() {
       <button class="btn-desc${ev.description ? ' has-desc' : ''}" title="${ev.description ? 'Description set — click to edit' : 'Add event description'}" onclick="toggleDescRow(${i})">
         <i class="fas fa-align-left"></i>
       </button>
-      <button class="btn-reg${ev.registrationUrl ? ' has-reg' : ''}" title="${ev.registrationUrl ? 'Registration link set — click to edit' : 'Add registration link'}" onclick="toggleRegRow(${i})">
+      <button class="btn-reg${eventHasRegistrationOptions(ev) ? ' has-reg' : ''}" title="${eventHasRegistrationOptions(ev) ? 'Registration options set — click to edit' : 'Add registration options'}" onclick="toggleRegRow(${i})">
         <i class="fas fa-link"></i>
+      </button>
+      <button class="btn-sponsor${ev.sponsorEnabled ? ' has-sponsor' : ''}" title="${ev.sponsorEnabled ? 'Sponsor button enabled — click to edit' : 'Add sponsor button'}" onclick="toggleSponsorRow(${i})">
+        <i class="fas fa-handshake"></i>
       </button>
       <button class="btn-del" onclick="removeEvent(${i})" title="Remove event">
         <i class="fas fa-trash"></i>
@@ -3416,29 +3513,53 @@ function renderEventsList() {
     regRow.id = 'reg-row-' + i;
     regRow.innerHTML = `
       <div class="reg-input-area">
-        <label><i class="fas fa-link" style="color:var(--gold);margin-right:6px;"></i>Event Registration Link</label>
-        <input type="url" placeholder="Paste WildApricot or external registration URL (e.g. https://northdallasalphas.org/event/...)" value="${escHtml(ev.registrationUrl || '')}" id="reg-url-${i}" oninput="eventsData[${i}].registrationUrl=this.value.trim()" />
-        <p style="font-size:0.72rem;color:var(--gray-400);margin-top:6px;">
-          When filled in, a <strong style="color:var(--gold);">Register Now</strong> button will appear on the Events page and the home page for this event.
+        <label><i class="fas fa-link" style="color:var(--gold);margin-right:6px;"></i>Registration Options</label>
+        <p style="font-size:0.76rem;color:var(--gray-500);margin:0 0 12px;line-height:1.45;">
+          Choose one or both registration paths. If both are enabled, visitors see a modal to pick <strong>free</strong> or <strong>paid</strong> registration.
         </p>
-        <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
-          <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveRegUrl(${i})"><i class="fas fa-check"></i> Apply Link</button>
-          <button class="btn-secondary" style="padding:6px 14px;font-size:0.8rem;background:transparent;border:1px solid var(--gray-600);color:var(--gray-300);border-radius:6px;cursor:pointer;" onclick="clearRegUrl(${i})"><i class="fas fa-times"></i> Clear</button>
-        </div>
-        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);">
-          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-300);line-height:1.45;">
-            <input type="checkbox" id="chapter-reg-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.chapterRegistrationEnabled ? 'checked' : ''} onchange="eventsData[${i}].chapterRegistrationEnabled=this.checked" />
-            <span><strong style="color:var(--gold);">Chapter website registration</strong> — modal on the public Events page (name, phone, email). Use fee <strong>0</strong> for free, or enter an amount for Stripe checkout. If an external registration link is filled above, that link is shown instead of this flow.</span>
+        <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);margin-bottom:12px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;margin-bottom:10px;">
+            <input type="checkbox" id="free-reg-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.freeRegistrationEnabled ? 'checked' : ''} onchange="eventsData[${i}].freeRegistrationEnabled=this.checked" />
+            <span><strong style="color:var(--gold);">Free registration</strong> — on-site form (name, phone, email) or external link below.</span>
           </label>
+          <input type="url" placeholder="Optional free registration link (leave blank to use on-site form)" value="${escHtml(ev.freeRegistrationUrl || '')}" id="free-reg-url-${i}" oninput="eventsData[${i}].freeRegistrationUrl=this.value.trim()" />
+        </div>
+        <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;margin-bottom:10px;">
+            <input type="checkbox" id="paid-reg-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.paidRegistrationEnabled ? 'checked' : ''} onchange="eventsData[${i}].paidRegistrationEnabled=this.checked" />
+            <span><strong style="color:var(--gold);">Paid registration</strong> — Stripe checkout on this site, or external ticket link below.</span>
+          </label>
+          <input type="url" placeholder="Optional paid ticket link (e.g. Zeffy, WildApricot)" value="${escHtml(ev.registrationUrl || '')}" id="reg-url-${i}" oninput="eventsData[${i}].registrationUrl=this.value.trim()" />
           <div style="margin-top:12px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-            <label style="font-size:0.78rem;color:var(--gray-400);">Registration fee (USD)</label>
-            <input type="number" id="reg-fee-${i}" min="0" step="0.01" style="width:110px;padding:7px 10px;border-radius:6px;border:1px solid var(--gray-600);background:var(--dark);color:var(--white);" value="${((ev.registrationFeeCents || 0) / 100).toFixed(2)}" oninput="eventsData[${i}].registrationFeeCents=Math.round((parseFloat(this.value)||0)*100)" />
-            <span style="font-size:0.72rem;color:var(--gray-500);">0.00 = free</span>
+            <label style="font-size:0.78rem;color:var(--gray-500);">On-site registration fee (USD)</label>
+            <input type="number" id="reg-fee-${i}" min="0" step="0.01" style="width:110px;padding:7px 10px;border-radius:6px;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-800);" value="${((ev.registrationFeeCents || 0) / 100).toFixed(2)}" oninput="eventsData[${i}].registrationFeeCents=Math.round((parseFloat(this.value)||0)*100)" />
+            <span style="font-size:0.72rem;color:var(--gray-500);">Used when no paid link is set. 0.00 = free on-site only.</span>
           </div>
         </div>
       </div>
     `;
     container.appendChild(regRow);
+
+    const sponsorRow = document.createElement('div');
+    sponsorRow.className = 'event-sponsor-row';
+    sponsorRow.id = 'sponsor-row-' + i;
+    sponsorRow.innerHTML = `
+      <div class="sponsor-input-area">
+        <label><i class="fas fa-handshake" style="color:var(--gold);margin-right:6px;"></i>Sponsor Button</label>
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;margin:8px 0 12px;">
+          <input type="checkbox" id="sponsor-enabled-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.sponsorEnabled ? 'checked' : ''} onchange="eventsData[${i}].sponsorEnabled=this.checked" />
+          <span>Show a <strong style="color:var(--gold);">sponsor button</strong> on the public Events page for this event only.</span>
+        </label>
+        <label style="font-size:0.72rem;color:var(--gray-500);margin-bottom:4px;display:block;">Button label</label>
+        <input type="text" placeholder="Become a Sponsor" value="${escHtml(ev.sponsorLabel || 'Become a Sponsor')}" id="sponsor-label-${i}" oninput="eventsData[${i}].sponsorLabel=this.value" />
+        <label style="font-size:0.72rem;color:var(--gray-500);margin:10px 0 4px;display:block;">Sponsor link (PDF or webpage)</label>
+        <input type="url" placeholder="https://northdallasalphas.com/assets/Sponsorship/2026-gala-sponsorship-letter.pdf" value="${escHtml(ev.sponsorUrl || '')}" id="sponsor-url-${i}" oninput="eventsData[${i}].sponsorUrl=this.value.trim()" />
+        <p style="font-size:0.72rem;color:var(--gray-500);margin-top:8px;line-height:1.45;">
+          Leave disabled for most events. Enable only when you want a sponsor call-to-action on that event.
+        </p>
+      </div>
+    `;
+    container.appendChild(sponsorRow);
   });
 
   document.getElementById('eventsCountLabel').textContent = eventsData.length + ' event' + (eventsData.length !== 1 ? 's' : '');
@@ -3459,6 +3580,7 @@ function toggleFlyerRow(i) {
   const isVisible = row.classList.contains('visible');
   document.querySelectorAll('.event-flyer-row').forEach(r => r.classList.remove('visible'));
   document.querySelectorAll('.event-reg-row').forEach(r => r.classList.remove('visible'));
+  document.querySelectorAll('.event-sponsor-row').forEach(r => r.classList.remove('visible'));
   document.querySelectorAll('.event-desc-row').forEach(r => r.classList.remove('visible'));
   if (!isVisible) {
     row.classList.add('visible');
@@ -3473,6 +3595,20 @@ function toggleRegRow(i) {
   const isVisible = row.classList.contains('visible');
   document.querySelectorAll('.event-flyer-row').forEach(r => r.classList.remove('visible'));
   document.querySelectorAll('.event-reg-row').forEach(r => r.classList.remove('visible'));
+  document.querySelectorAll('.event-sponsor-row').forEach(r => r.classList.remove('visible'));
+  document.querySelectorAll('.event-desc-row').forEach(r => r.classList.remove('visible'));
+  if (!isVisible) {
+    row.classList.add('visible');
+    activeFlyerIndex = -1;
+  }
+}
+
+function toggleSponsorRow(i) {
+  const row = document.getElementById('sponsor-row-' + i);
+  const isVisible = row.classList.contains('visible');
+  document.querySelectorAll('.event-flyer-row').forEach(r => r.classList.remove('visible'));
+  document.querySelectorAll('.event-reg-row').forEach(r => r.classList.remove('visible'));
+  document.querySelectorAll('.event-sponsor-row').forEach(r => r.classList.remove('visible'));
   document.querySelectorAll('.event-desc-row').forEach(r => r.classList.remove('visible'));
   if (!isVisible) {
     row.classList.add('visible');
@@ -3485,6 +3621,7 @@ function toggleDescRow(i) {
   const isVisible = row.classList.contains('visible');
   document.querySelectorAll('.event-flyer-row').forEach(r => r.classList.remove('visible'));
   document.querySelectorAll('.event-reg-row').forEach(r => r.classList.remove('visible'));
+  document.querySelectorAll('.event-sponsor-row').forEach(r => r.classList.remove('visible'));
   document.querySelectorAll('.event-desc-row').forEach(r => r.classList.remove('visible'));
   if (!isVisible) {
     row.classList.add('visible');
@@ -3583,7 +3720,17 @@ function handleFlyerFile(e) {
 }
 
 function addEvent() {
-  eventsData.push({ name: 'New Event', location: 'Location TBD', datetime: 'Date TBD', featured: false, flyer: '', chapterRegistrationEnabled: false, registrationFeeCents: 0, registrationUrl: '', description: '' });
+  eventsData.push(normalizeAdminEventRecord({
+    name: 'New Event',
+    location: 'Location TBD',
+    datetime: 'Date TBD',
+    featured: false,
+    flyer: '',
+    chapterRegistrationEnabled: false,
+    registrationFeeCents: 0,
+    registrationUrl: '',
+    description: ''
+  }));
   renderEventsList();
   showToast('New event row added. Fill in the details and save.');
 }
@@ -3595,7 +3742,7 @@ function removeEvent(i) {
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
 }
 
-function buildEventsPayload(includeRegistrationFields) {
+function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
   return eventsData.map(function(ev, idx) {
     const row = {
       name: ev.name || '',
@@ -3608,8 +3755,22 @@ function buildEventsPayload(includeRegistrationFields) {
       sort_order: idx + 1
     };
     if (includeRegistrationFields) {
-      row.chapter_registration_enabled = !!ev.chapterRegistrationEnabled;
-      row.registration_fee_cents = Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0);
+      const freeUrl = String(ev.freeRegistrationUrl || '').trim();
+      const paidUrl = String(ev.registrationUrl || '').trim();
+      const freeOnSite = !!ev.freeRegistrationEnabled && !freeUrl;
+      const paidOnSite = !!ev.paidRegistrationEnabled && !paidUrl;
+      row.free_registration_enabled = !!ev.freeRegistrationEnabled;
+      row.free_registration_url = freeUrl;
+      row.paid_registration_enabled = !!ev.paidRegistrationEnabled;
+      row.chapter_registration_enabled = freeOnSite || paidOnSite;
+      row.registration_fee_cents = paidOnSite
+        ? Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0)
+        : 0;
+    }
+    if (includeSponsorFields) {
+      row.sponsor_enabled = !!ev.sponsorEnabled;
+      row.sponsor_url = String(ev.sponsorUrl || '').trim();
+      row.sponsor_label = String(ev.sponsorLabel || 'Become a Sponsor').trim() || 'Become a Sponsor';
     }
     return row;
   });
@@ -3634,14 +3795,24 @@ async function saveEvents() {
       eventsData[i].location = inputs[1] ? inputs[1].value : eventsData[i].location;
       eventsData[i].datetime = inputs[2] ? inputs[2].value : eventsData[i].datetime;
     }
-    const ch = document.getElementById('chapter-reg-' + i);
+    const freeReg = document.getElementById('free-reg-' + i);
+    const paidReg = document.getElementById('paid-reg-' + i);
+    const freeRegUrl = document.getElementById('free-reg-url-' + i);
     const feeEl = document.getElementById('reg-fee-' + i);
+    const sponsorEnabled = document.getElementById('sponsor-enabled-' + i);
+    const sponsorUrl = document.getElementById('sponsor-url-' + i);
+    const sponsorLabel = document.getElementById('sponsor-label-' + i);
     if (eventsData[i]) {
-      if (ch) eventsData[i].chapterRegistrationEnabled = ch.checked;
+      if (freeReg) eventsData[i].freeRegistrationEnabled = freeReg.checked;
+      if (paidReg) eventsData[i].paidRegistrationEnabled = paidReg.checked;
+      if (freeRegUrl) eventsData[i].freeRegistrationUrl = freeRegUrl.value.trim();
       if (feeEl) eventsData[i].registrationFeeCents = Math.round((parseFloat(feeEl.value) || 0) * 100);
+      if (sponsorEnabled) eventsData[i].sponsorEnabled = sponsorEnabled.checked;
+      if (sponsorUrl) eventsData[i].sponsorUrl = sponsorUrl.value.trim();
+      if (sponsorLabel) eventsData[i].sponsorLabel = sponsorLabel.value.trim() || 'Become a Sponsor';
     }
   });
-  // Also persist any registration URLs and descriptions typed but not yet applied
+  // Also persist registration URLs and descriptions typed but not yet applied
   eventsData.forEach((ev, i) => {
     const regInput  = document.getElementById('reg-url-' + i);
     const descInput = document.getElementById('desc-text-' + i);
@@ -3672,15 +3843,24 @@ async function saveEvents() {
         return;
       }
     }
-    const payload = buildEventsPayload(true);
+    const payload = buildEventsPayload(true, true);
     try {
       await persistEventsToSupabase(payload, token);
     } catch (err) {
       if (!isMissingColumnError(err.message)) throw err;
-      const legacyPayload = buildEventsPayload(false);
+      try {
+        const regOnlyPayload = buildEventsPayload(true, false);
+        await persistEventsToSupabase(regOnlyPayload, token);
+        await loadEventsList();
+        showToast('Events saved without sponsor settings. Run the events ALTER block in SUPABASE_CONTENT_SCHEMA.sql for sponsor controls.', 'info');
+        return;
+      } catch (err2) {
+        if (!isMissingColumnError(err2.message)) throw err2;
+      }
+      const legacyPayload = buildEventsPayload(false, false);
       await persistEventsToSupabase(legacyPayload, token);
       await loadEventsList();
-      showToast('Events saved without chapter registration settings. Run the events ALTER block in SUPABASE_CONTENT_SCHEMA.sql to enable on-site registration fees.', 'info');
+      showToast('Events saved without registration/sponsor settings. Run the events ALTER block in SUPABASE_CONTENT_SCHEMA.sql.', 'info');
       return;
     }
     await loadEventsList();

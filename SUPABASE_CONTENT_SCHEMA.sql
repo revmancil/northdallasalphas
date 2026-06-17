@@ -61,7 +61,13 @@ alter table if exists public.events
   add column if not exists featured boolean default false,
   add column if not exists created_at timestamptz default now(),
   add column if not exists event_date date,
-  add column if not exists updated_at timestamptz default now();
+  add column if not exists updated_at timestamptz default now(),
+  add column if not exists sponsor_enabled boolean not null default false,
+  add column if not exists sponsor_url text,
+  add column if not exists sponsor_label text default 'Become a Sponsor',
+  add column if not exists free_registration_enabled boolean not null default false,
+  add column if not exists free_registration_url text,
+  add column if not exists paid_registration_enabled boolean not null default false;
 
 alter table if exists public.announcements
   add column if not exists link_text text,
@@ -295,7 +301,13 @@ using (bucket_id = 'event-flyer-uploads');
 
 alter table if exists public.events
   add column if not exists chapter_registration_enabled boolean not null default false,
-  add column if not exists registration_fee_cents integer not null default 0;
+  add column if not exists registration_fee_cents integer not null default 0,
+  add column if not exists sponsor_enabled boolean not null default false,
+  add column if not exists sponsor_url text,
+  add column if not exists sponsor_label text default 'Become a Sponsor',
+  add column if not exists free_registration_enabled boolean not null default false,
+  add column if not exists free_registration_url text,
+  add column if not exists paid_registration_enabled boolean not null default false;
 
 create table if not exists public.event_registrations (
   id bigserial primary key,

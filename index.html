@@ -407,6 +407,19 @@ function homeLocalTodayIso() {
 }
 
 function homeMapEventRow(ev) {
+  const fee = Math.max(0, parseInt(String(ev.registration_fee_cents ?? 0), 10) || 0);
+  const regUrl = String(ev.registrationUrl || ev.reg_url || '').trim();
+  const freeUrl = String(ev.free_registration_url || '').trim();
+  const chapterOn = !!ev.chapter_registration_enabled;
+  let freeEnabled = ev.free_registration_enabled != null ? !!ev.free_registration_enabled : false;
+  let paidEnabled = ev.paid_registration_enabled != null ? !!ev.paid_registration_enabled : false;
+  if (chapterOn && !freeEnabled && !paidEnabled) {
+    if (regUrl) paidEnabled = true;
+    else if (fee > 0) paidEnabled = true;
+    else freeEnabled = true;
+  }
+  if (freeUrl) freeEnabled = true;
+  if (regUrl) paidEnabled = true;
   const dtRaw = ev.datetime ? String(ev.datetime).trim() : '';
   const datePart = dtRaw.split(' ')[0] || '';
   const segs = datePart.split('/');
@@ -416,6 +429,7 @@ function homeMapEventRow(ev) {
       : '';
   const normalizedDate = (ev.event_date ? String(ev.event_date) : '').trim() || fallbackDate;
   return {
+    id: ev.id,
     name: ev.name || '',
     location: ev.location || '',
     datetime: ev.datetime || '',
@@ -423,8 +437,39 @@ function homeMapEventRow(ev) {
     featured: !!ev.featured,
     flyer: ev.flyer || ev.flyer_url || ev.flyerUrl || '',
     description: ev.description || '',
-    registrationUrl: ev.registrationUrl || ev.reg_url || ''
+    registrationUrl: regUrl,
+    freeRegistrationEnabled: freeEnabled,
+    freeRegistrationUrl: freeUrl,
+    paidRegistrationEnabled: paidEnabled,
+    registrationFeeCents: fee,
+    sponsorEnabled: !!ev.sponsor_enabled,
+    sponsorUrl: String(ev.sponsor_url || '').trim(),
+    sponsorLabel: String(ev.sponsor_label || 'Become a Sponsor').trim() || 'Become a Sponsor'
   };
+}
+
+function homeFeaturedActionButtons(featured) {
+  if (!featured) return '';
+  let html = '';
+  const freeUrl = (featured.freeRegistrationUrl || '').trim();
+  const paidUrl = (featured.registrationUrl || '').trim();
+  const hasId = featured.id != null && featured.id !== '';
+  let optionCount = 0;
+  if (freeUrl || (featured.freeRegistrationEnabled && hasId)) optionCount++;
+  if (paidUrl || (featured.paidRegistrationEnabled && hasId && (featured.registrationFeeCents || 0) > 0)) optionCount++;
+
+  if (optionCount === 1 && paidUrl) {
+    html += '<a href="' + homeEsc(paidUrl) + '" target="_blank" class="btn btn-gold"><i class="fas fa-ticket-alt"></i> Register Now</a>';
+  } else if (optionCount === 1 && freeUrl) {
+    html += '<a href="' + homeEsc(freeUrl) + '" target="_blank" class="btn btn-gold"><i class="fas fa-ticket-alt"></i> Register Free</a>';
+  } else if (optionCount > 0 && hasId) {
+    html += '<a href="events.html?register=' + encodeURIComponent(featured.id) + '" class="btn btn-gold"><i class="fas fa-ticket-alt"></i> Register</a>';
+  }
+
+  if (featured.sponsorEnabled && featured.sponsorUrl) {
+    html += '<a href="' + homeEsc(featured.sponsorUrl) + '" target="_blank" class="btn btn-outline">' + homeEsc(featured.sponsorLabel || 'Become a Sponsor') + '</a>';
+  }
+  return html;
 }
 
 function homeToEventDateValue(ev) {
@@ -565,10 +610,7 @@ function renderHomeFeatured(events) {
     ${parsed.time   ? `<div class="event-detail"><i class="fas fa-clock"></i> Doors open at ${homeEsc(parsed.time)}</div>` : ''}
     ${featured.location ? `<div class="event-detail"><i class="fas fa-map-marker-alt"></i> ${homeEsc(featured.location)}</div>` : ''}
     <div style="margin-top:28px; display:flex; gap:12px; flex-wrap:wrap;">
-      ${featured.registrationUrl
-        ? `<a href="${featured.registrationUrl}" target="_blank" class="btn btn-gold"><i class="fas fa-ticket-alt"></i> Register Now</a>`
-        : ''}
-      <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline">Sponsor the Gala</a>
+      ${homeFeaturedActionButtons(featured)}
     </div>
   `;
 }

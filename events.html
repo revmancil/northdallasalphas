@@ -458,6 +458,23 @@
       line-height: 1.4;
     }
     .reg-modal-error.show { display: block; }
+    .reg-choice-options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .reg-choice-options .btn {
+      width: 100%;
+      justify-content: center;
+      text-align: center;
+    }
+    .reg-choice-hint {
+      font-size: 0.84rem;
+      color: var(--gray-600);
+      line-height: 1.5;
+      margin-bottom: 4px;
+    }
     .reg-flash {
       position: fixed;
       top: 0;
@@ -649,15 +666,150 @@ var STRIPE_CHECKOUT_URL = SUPABASE_URL.replace(/\/?$/, '') + '/functions/v1/stri
 // Global store for modal lookups
 let allEventsStore = [];
 
-function usesChapterRegistration(ev) {
-  if (!ev || ev.id == null || ev.id === '') return false;
-  if (String(ev.registrationUrl || '').trim()) return false;
-  return !!ev.chapterRegistrationEnabled;
+function normalizeEventRecord(r) {
+  const fee = Math.max(0, parseInt(String(r.registration_fee_cents ?? 0), 10) || 0);
+  const regUrl = String(r.reg_url || r.registrationUrl || '').trim();
+  const freeUrl = String(r.free_registration_url || '').trim();
+  const chapterOn = !!r.chapter_registration_enabled;
+  let freeEnabled = r.free_registration_enabled != null ? !!r.free_registration_enabled : false;
+  let paidEnabled = r.paid_registration_enabled != null ? !!r.paid_registration_enabled : false;
+  if (chapterOn && !freeEnabled && !paidEnabled) {
+    if (regUrl) paidEnabled = true;
+    else if (fee > 0) paidEnabled = true;
+    else freeEnabled = true;
+  }
+  if (freeUrl) freeEnabled = true;
+  if (regUrl) paidEnabled = true;
+  const dtRaw = r.datetime ? String(r.datetime).trim() : '';
+  const datePart = dtRaw.split(' ')[0] || '';
+  const segs = datePart.split('/');
+  const fallbackDate =
+    segs.length === 3 && /^\d{4}$/.test(String(segs[2] || ''))
+      ? String(segs[2]) + '-' + String(segs[0] || '').padStart(2, '0') + '-' + String(segs[1] || '').padStart(2, '0')
+      : '';
+  const normalizedDate = (r.event_date ? String(r.event_date) : '').trim() || fallbackDate;
+  return {
+    id: r.id,
+    name: r.name || '',
+    location: r.location || '',
+    datetime: r.datetime || '',
+    eventDate: normalizedDate,
+    featured: !!r.featured,
+    flyer: r.flyer || r.flyer_url || r.flyerUrl || '',
+    description: r.description || '',
+    registrationUrl: regUrl,
+    freeRegistrationEnabled: freeEnabled,
+    freeRegistrationUrl: freeUrl,
+    paidRegistrationEnabled: paidEnabled,
+    registrationFeeCents: fee,
+    sponsorEnabled: !!r.sponsor_enabled,
+    sponsorUrl: String(r.sponsor_url || '').trim(),
+    sponsorLabel: String(r.sponsor_label || 'Become a Sponsor').trim() || 'Become a Sponsor'
+  };
+}
+
+function getRegistrationOptions(ev) {
+  if (!ev) return [];
+  const opts = [];
+  const freeUrl = (ev.freeRegistrationUrl || '').trim();
+  const paidUrl = (ev.registrationUrl || '').trim();
+  const hasId = ev.id != null && ev.id !== '';
+
+  if (freeUrl) {
+    opts.push({ kind: 'link', label: 'Free Registration', url: freeUrl, feeCents: 0 });
+  } else if (ev.freeRegistrationEnabled && hasId) {
+    opts.push({ kind: 'chapter', label: 'Free Registration', feeCents: 0 });
+  }
+
+  if (paidUrl) {
+    opts.push({ kind: 'link', label: 'Purchase Tickets', url: paidUrl });
+  } else if (ev.paidRegistrationEnabled && hasId && (ev.registrationFeeCents || 0) > 0) {
+    opts.push({
+      kind: 'chapter',
+      label: 'Paid Registration — $' + ((ev.registrationFeeCents || 0) / 100).toFixed(2),
+      feeCents: ev.registrationFeeCents
+    });
+  }
+
+  return opts;
+}
+
+function eventHasSponsor(ev) {
+  return !!(ev && ev.sponsorEnabled && (ev.sponsorUrl || '').trim());
+}
+
+function renderSponsorButtonHtml(ev, className) {
+  if (!eventHasSponsor(ev)) return '';
+  return '<a href="' + escHtml(ev.sponsorUrl) + '" target="_blank" class="' + className + '">' + escHtml(ev.sponsorLabel || 'Become a Sponsor') + '</a>';
+}
+
+function buildRegisterButtonHtml(ev, extraStyle, stopPropagation) {
+  const opts = getRegistrationOptions(ev);
+  if (!opts.length) return '';
+  const styleAttr = extraStyle ? ' style="' + extraStyle + '"' : '';
+  if (opts.length === 1 && opts[0].kind === 'link') {
+    const stop = stopPropagation ? ' onclick="event.stopPropagation();"' : '';
+    return '<a href="' + escHtml(opts[0].url) + '" target="_blank" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</a>';
+  }
+  if (!ev.id && ev.id !== 0) return '';
+  const stop = stopPropagation
+    ? ' onclick="event.stopPropagation(); openRegistrationChoiceFromStore(' + Number(ev.id) + ')"'
+    : ' onclick="openRegistrationChoiceFromStore(' + Number(ev.id) + ')"';
+  return '<button type="button" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</button>';
+}
+
+function openRegistrationChoiceFromStore(eventId) {
+  const ev = allEventsStore.find(function(x) { return Number(x.id) === Number(eventId); });
+  if (!ev) return;
+  const opts = getRegistrationOptions(ev);
+  if (!opts.length) return;
+  if (opts.length === 1) {
+    handleRegistrationOption(ev, opts[0]);
+    return;
+  }
+  const list = document.getElementById('regChoiceOptions');
+  const title = document.getElementById('regChoiceTitle');
+  if (!list || !title) return;
+  title.textContent = ev.name || 'Register';
+  list.innerHTML = '';
+  opts.forEach(function(opt) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn ' + ((opt.feeCents || 0) > 0 ? 'btn-gold' : 'btn-outline');
+    const icon = opt.kind === 'link'
+      ? 'fa-external-link-alt'
+      : ((opt.feeCents || 0) > 0 ? 'fa-lock' : 'fa-check');
+    btn.innerHTML = '<i class="fas ' + icon + '"></i> ' + escHtml(opt.label);
+    btn.onclick = function() {
+      closeRegistrationChoiceModal();
+      handleRegistrationOption(ev, opt);
+    };
+    list.appendChild(btn);
+  });
+  document.getElementById('regChoiceModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRegistrationChoiceModal() {
+  const overlay = document.getElementById('regChoiceModalOverlay');
+  if (overlay) overlay.classList.remove('open');
+  if (!document.getElementById('eventModalOverlay').classList.contains('open') &&
+      !document.getElementById('regModalOverlay').classList.contains('open')) {
+    document.body.style.overflow = '';
+  }
+}
+
+function handleRegistrationOption(ev, opt) {
+  if (!ev || !opt) return;
+  if (opt.kind === 'link') {
+    window.open(opt.url, '_blank', 'noopener');
+    return;
+  }
+  openChapterRegModal(ev, opt.feeCents || 0);
 }
 
 function openChapterRegModalFromStore(eventId) {
-  const ev = allEventsStore.find(function(x) { return Number(x.id) === Number(eventId); });
-  if (ev) openChapterRegModal(ev);
+  openRegistrationChoiceFromStore(eventId);
 }
 
 // ── Default events (fallback when no admin data saved) ──
@@ -762,21 +914,13 @@ function renderFeaturedEvent(events) {
         ${featured.location ? `<div class="gala-detail"><i class="fas fa-map-marker-alt"></i> ${escHtml(featured.location)}</div>` : ''}
       </div>
       <div style="display:flex; flex-wrap:wrap; gap:12px;">
-        ${featured.registrationUrl
-          ? `<a href="${featured.registrationUrl}" target="_blank" class="btn btn-gold">
-              <i class="fas fa-ticket-alt"></i> Register Now
-             </a>`
-          : usesChapterRegistration(featured)
-          ? `<button type="button" class="btn btn-gold" onclick="openChapterRegModal(allEventsStore.find(e=>e.featured)||allEventsStore[allEventsStore.length-1])">
-              <i class="fas fa-clipboard-check"></i> Register
-             </button>`
-          : ''}
+        ${buildRegisterButtonHtml(featured, '', false)}
         ${(featured.flyer || featured.description)
           ? `<button type="button" class="btn btn-outline" onclick="openEventModal(allEventsStore.find(e=>e.featured)||allEventsStore[allEventsStore.length-1])">
                <i class="fas fa-expand-alt"></i> View Full Details
              </button>`
           : ''}
-        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline">Become a Sponsor</a>
+        ${renderSponsorButtonHtml(featured, 'btn btn-outline')}
       </div>
     </div>
   `;
@@ -825,27 +969,8 @@ function renderAllEvents(events, opts) {
       ? `<div class="view-detail-hint"><i class="fas fa-expand-alt"></i> Click to view details</div>`
       : '';
 
-    // Right-side action: external link, chapter registration modal, or Zeffy fallback for featured
-    let actionBtn = '';
-    if (ev.registrationUrl) {
-      actionBtn = `<a href="${escHtml(ev.registrationUrl)}" target="_blank"
-          class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;"
-          onclick="event.stopPropagation()">
-          <i class="fas fa-ticket-alt"></i> Register
-        </a>`;
-    } else if (usesChapterRegistration(ev)) {
-      actionBtn = `<button type="button"
-          class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;"
-          onclick="event.stopPropagation(); openChapterRegModalFromStore(${Number(ev.id)})">
-          <i class="fas fa-clipboard-check"></i> Register
-        </button>`;
-    } else if (ev.featured) {
-      actionBtn = `<a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank"
-          class="btn btn-gold" style="white-space:nowrap;flex-shrink:0;"
-          onclick="event.stopPropagation()">
-          Get Tickets
-        </a>`;
-    }
+    // Right-side action: registration modal / links
+    const actionBtn = buildRegisterButtonHtml(ev, 'white-space:nowrap;flex-shrink:0;', true);
 
     card.innerHTML = `
       <div class="event-full-date">
@@ -903,29 +1028,7 @@ function loadAnnouncement() {
 
 function normalizeEvents(rows) {
   if (!rows || !rows.length) return null;
-  return rows.map(function(r) {
-    const dtRaw = r.datetime ? String(r.datetime).trim() : '';
-    const datePart = dtRaw.split(' ')[0] || '';
-    const segs = datePart.split('/');
-    const fallbackDate =
-      segs.length === 3 && /^\d{4}$/.test(String(segs[2] || ''))
-        ? String(segs[2]) + '-' + String(segs[0] || '').padStart(2, '0') + '-' + String(segs[1] || '').padStart(2, '0')
-        : '';
-    const normalizedDate = (r.event_date ? String(r.event_date) : '').trim() || fallbackDate;
-    return {
-      id: r.id,
-      name: r.name || '',
-      location: r.location || '',
-      datetime: r.datetime || '',
-      eventDate: normalizedDate,
-      featured: !!r.featured,
-      flyer: r.flyer || r.flyer_url || r.flyerUrl || '',
-      description: r.description || '',
-      registrationUrl: r.reg_url || r.registrationUrl || '',
-      chapterRegistrationEnabled: !!r.chapter_registration_enabled,
-      registrationFeeCents: Math.max(0, parseInt(String(r.registration_fee_cents ?? 0), 10) || 0)
-    };
-  });
+  return rows.map(normalizeEventRecord);
 }
 
 function toEventDateValue(ev) {
@@ -1003,6 +1106,11 @@ function isEventArchived(ev, todayIso) {
   } else if (pastSection) {
     pastSection.style.display = 'none';
   }
+  const registerId = new URLSearchParams(window.location.search).get('register');
+  if (registerId) {
+    openRegistrationChoiceFromStore(registerId);
+    history.replaceState({}, '', 'events.html');
+  }
   // Force show all animated elements after async load
   setTimeout(() => {
     document.querySelectorAll(".fade-up, .fade-in").forEach(el => {
@@ -1054,11 +1162,9 @@ function openEventModal(ev) {
     ? `<div class="event-modal-desc">${escHtml(ev.description)}</div>` : '';
 
   // Action buttons
-  let actions = '';
-  if (ev.registrationUrl) {
-    actions += `<a href="${escHtml(ev.registrationUrl)}" target="_blank" class="btn btn-gold"><i class="fas fa-ticket-alt"></i> Register Now</a>`;
-  } else if (usesChapterRegistration(ev)) {
-    actions += `<button type="button" class="btn btn-gold" onclick="openChapterRegModalFromStore(${Number(ev.id)}); closeEventModal();"><i class="fas fa-clipboard-check"></i> Register</button>`;
+  let actions = buildRegisterButtonHtml(ev, '', false);
+  if (eventHasSponsor(ev)) {
+    actions += renderSponsorButtonHtml(ev, 'btn btn-outline');
   }
   actions += `<button type="button" class="btn btn-outline" onclick="closeEventModal()">Close</button>`;
 
@@ -1083,10 +1189,11 @@ function closeEventModal() {
   document.body.style.overflow = '';
 }
 
-function openChapterRegModal(ev) {
-  if (!ev || !usesChapterRegistration(ev)) return;
+function openChapterRegModal(ev, feeOverride) {
+  if (!ev || ev.id == null || ev.id === '') return;
+  const feeCents = feeOverride != null ? feeOverride : (ev.registrationFeeCents || 0);
   window.__chapterRegEvent = ev;
-  var feeCents = ev.registrationFeeCents || 0;
+  window.__chapterRegFeeCents = feeCents;
   document.getElementById('chapterRegTitle').textContent = ev.name || 'Event registration';
   var feeEl = document.getElementById('chapterRegFeeLine');
   if (feeCents <= 0) {
@@ -1113,6 +1220,7 @@ function closeChapterRegModal() {
     document.body.style.overflow = '';
   }
   window.__chapterRegEvent = null;
+  window.__chapterRegFeeCents = null;
 }
 
 function showRegFlash(kind, msg) {
@@ -1148,7 +1256,7 @@ async function submitChapterRegistration(ev) {
   var btn = document.getElementById('chapterRegSubmit');
   btn.disabled = true;
   try {
-    var fee = ev.registrationFeeCents || 0;
+    var fee = window.__chapterRegFeeCents != null ? window.__chapterRegFeeCents : (ev.registrationFeeCents || 0);
     if (fee <= 0) {
       await sb.insert('event_registrations', {
         event_id: ev.id,
@@ -1204,15 +1312,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   var regOverlay = document.getElementById('regModalOverlay');
+  var choiceOverlay = document.getElementById('regChoiceModalOverlay');
   if (regOverlay) {
     regOverlay.addEventListener('click', function(e) {
       if (e.target === regOverlay) closeChapterRegModal();
+    });
+  }
+  if (choiceOverlay) {
+    choiceOverlay.addEventListener('click', function(e) {
+      if (e.target === choiceOverlay) closeRegistrationChoiceModal();
     });
   }
   document.addEventListener('keydown', function(e) {
     if (e.key !== 'Escape') return;
     if (regOverlay && regOverlay.classList.contains('open')) {
       closeChapterRegModal();
+      return;
+    }
+    if (choiceOverlay && choiceOverlay.classList.contains('open')) {
+      closeRegistrationChoiceModal();
       return;
     }
     closeEventModal();
@@ -1231,6 +1349,21 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 
 </script>
+
+<!-- Registration choice modal -->
+<div class="reg-modal-overlay" id="regChoiceModalOverlay" role="dialog" aria-modal="true" aria-labelledby="regChoiceTitle">
+  <div class="reg-modal" onclick="event.stopPropagation();">
+    <button type="button" class="reg-modal-close" onclick="closeRegistrationChoiceModal()" aria-label="Close">&times;</button>
+    <div class="reg-modal-body">
+      <h3 id="regChoiceTitle">Register</h3>
+      <p class="reg-choice-hint">Choose how you would like to register for this event.</p>
+      <div class="reg-choice-options" id="regChoiceOptions"></div>
+      <div class="reg-modal-actions" style="margin-top:18px;">
+        <button type="button" class="btn btn-outline" onclick="closeRegistrationChoiceModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Chapter registration modal -->
 <div class="reg-modal-overlay" id="regModalOverlay" role="dialog" aria-modal="true" aria-labelledby="chapterRegTitle">
