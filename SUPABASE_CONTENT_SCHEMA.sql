@@ -220,6 +220,40 @@ using (true)
 with check (true);
 
 -- =============================================================================
+-- Storage: chapter-media bucket (event gallery, news images, leadership photos)
+-- Run this block if News Manager or Event Photo Gallery uploads return 400.
+-- =============================================================================
+
+insert into storage.buckets (id, name, public)
+values ('chapter-media', 'chapter-media', true)
+on conflict (id) do update set public = excluded.public;
+
+drop policy if exists "chapter_media_select_anon" on storage.objects;
+create policy "chapter_media_select_anon"
+on storage.objects for select
+to anon, authenticated
+using (bucket_id = 'chapter-media');
+
+drop policy if exists "chapter_media_insert_auth" on storage.objects;
+create policy "chapter_media_insert_auth"
+on storage.objects for insert
+to authenticated
+with check (bucket_id = 'chapter-media');
+
+drop policy if exists "chapter_media_update_auth" on storage.objects;
+create policy "chapter_media_update_auth"
+on storage.objects for update
+to authenticated
+using (bucket_id = 'chapter-media')
+with check (bucket_id = 'chapter-media');
+
+drop policy if exists "chapter_media_delete_auth" on storage.objects;
+create policy "chapter_media_delete_auth"
+on storage.objects for delete
+to authenticated
+using (bucket_id = 'chapter-media');
+
+-- =============================================================================
 -- Storage: dedicated bucket for Events Manager flyers (NOT the event gallery)
 -- Gallery + site listing use bucket "chapter-media". Event flyer uploads from
 -- admin-dashboard use bucket "event-flyer-uploads" only. Run this block in the

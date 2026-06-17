@@ -5607,10 +5607,13 @@ let activeEventGalleryPhotoIndex = -1;
 function getStoragePathFromGalleryUrl(url) {
   var value = String(url || '').trim();
   if (!value) return '';
-  var marker = '/storage/v1/object/public/' + EVENT_GALLERY_IMAGE_BUCKET + '/';
-  var idx = value.indexOf(marker);
-  if (idx === -1) return '';
-  return decodeURIComponent(value.slice(idx + marker.length));
+  for (var b = 0; b < [EVENT_GALLERY_IMAGE_BUCKET, EVENT_FLYER_STORAGE_BUCKET].length; b++) {
+    var bucketId = [EVENT_GALLERY_IMAGE_BUCKET, EVENT_FLYER_STORAGE_BUCKET][b];
+    var marker = '/storage/v1/object/public/' + bucketId + '/';
+    var idx = value.indexOf(marker);
+    if (idx !== -1) return decodeURIComponent(value.slice(idx + marker.length));
+  }
+  return '';
 }
 
 async function loadEventGalleryPanel() {
@@ -5769,40 +5772,53 @@ async function uploadImageToSupabaseBucket(file, bucketId, folderOpts) {
     prefixA + fileStamp + '.' + safeExt,
     prefixB + fileStamp + '.' + safeExt
   ];
+  const bucketsToTry = bucketId === EVENT_FLYER_STORAGE_BUCKET
+    ? [bucketId]
+    : [bucketId, EVENT_FLYER_STORAGE_BUCKET];
   let lastDetails = '';
   let path = '';
   let uploaded = false;
-  for (var idx = 0; idx < pathCandidates.length; idx++) {
-    path = pathCandidates[idx];
-    const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
-    const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + bucketId + '/' + encodedPath;
-    const res = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + token,
-        'x-upsert': 'true',
-        'Content-Type': uploadFile.type || file.type || 'application/octet-stream'
-      },
-      body: uploadFile
-    });
-    if (res.ok) {
-      uploaded = true;
-      break;
+  let usedBucket = bucketId;
+  for (var b = 0; b < bucketsToTry.length && !uploaded; b++) {
+    const tryBucket = bucketsToTry[b];
+    for (var idx = 0; idx < pathCandidates.length; idx++) {
+      path = pathCandidates[idx];
+      const encodedPath = encodeURIComponent(path).replace(/%2F/g, '/');
+      const uploadUrl = SUPABASE_URL + '/storage/v1/object/' + tryBucket + '/' + encodedPath;
+      const res = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + token,
+          'x-upsert': 'true',
+          'Content-Type': uploadFile.type || file.type || 'application/octet-stream'
+        },
+        body: uploadFile
+      });
+      if (res.ok) {
+        uploaded = true;
+        usedBucket = tryBucket;
+        break;
+      }
+      try { lastDetails = await res.text(); } catch (e) { lastDetails = ''; }
+      const policyBlocked = /row-level security|unauthorized|403/i.test(String(lastDetails || ''));
+      if (res.status !== 400 || !policyBlocked) break;
     }
-    try { lastDetails = await res.text(); } catch (e) { lastDetails = ''; }
-    if (res.status !== 400) break;
   }
   if (!uploaded) {
     const detailLower = String(lastDetails || '').toLowerCase();
     if (detailLower.indexOf('bucket') !== -1 && detailLower.indexOf('not found') !== -1) {
-      throw new Error('Storage upload failed: bucket "' + bucketId + '" was not found. Run SUPABASE_CONTENT_SCHEMA.sql (storage section) or create the bucket in the Supabase Dashboard, then retry.');
+      throw new Error('Storage upload failed: bucket "' + bucketId + '" was not found. Run the storage section in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then retry.');
     }
-    throw new Error('Storage upload failed for bucket "' + bucketId + '". Ensure the bucket exists, is public for reads, and allows authenticated uploads. ' + (lastDetails || ''));
+    if (/row-level security|unauthorized|403/i.test(String(lastDetails || ''))) {
+      throw new Error('Storage upload blocked by permissions. Sign out and back in to the admin dashboard. If it still fails, run the chapter-media storage block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then retry.');
+    }
+    throw new Error('Storage upload failed for bucket "' + bucketId + '". ' + (lastDetails || ''));
   }
   return {
-    url: SUPABASE_URL + '/storage/v1/object/public/' + bucketId + '/' + encodeURIComponent(path).replace(/%2F/g, '/'),
-    path: path
+    url: SUPABASE_URL + '/storage/v1/object/public/' + usedBucket + '/' + encodeURIComponent(path).replace(/%2F/g, '/'),
+    path: path,
+    bucket: usedBucket
   };
 }
 
