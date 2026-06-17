@@ -406,10 +406,16 @@ function homeLocalTodayIso() {
   return n.getFullYear() + '-' + String(n.getMonth() + 1).padStart(2, '0') + '-' + String(n.getDate()).padStart(2, '0');
 }
 
+function homeIsAbsoluteHttpUrl(url) {
+  return /^https?:\/\//i.test(String(url || '').trim());
+}
+
 function homeMapEventRow(ev) {
   const fee = Math.max(0, parseInt(String(ev.registration_fee_cents ?? 0), 10) || 0);
-  const regUrl = String(ev.registrationUrl || ev.reg_url || '').trim();
-  const freeUrl = String(ev.free_registration_url || '').trim();
+  const regUrlRaw = String(ev.registrationUrl || ev.reg_url || '').trim();
+  const regUrl = homeIsAbsoluteHttpUrl(regUrlRaw) ? regUrlRaw : '';
+  const freeUrlRaw = String(ev.free_registration_url || '').trim();
+  const freeUrl = homeIsAbsoluteHttpUrl(freeUrlRaw) ? freeUrlRaw : '';
   const chapterOn = !!ev.chapter_registration_enabled;
   let freeEnabled = ev.free_registration_enabled != null ? !!ev.free_registration_enabled : false;
   let paidEnabled = ev.paid_registration_enabled != null ? !!ev.paid_registration_enabled : false;
@@ -451,9 +457,9 @@ function homeMapEventRow(ev) {
 function homeFeaturedActionButtons(featured) {
   if (!featured) return '';
   let html = '';
-  const freeUrl = (featured.freeRegistrationUrl || '').trim();
-  const paidUrl = (featured.registrationUrl || '').trim();
-  const hasId = featured.id != null && featured.id !== '';
+  const freeUrl = homeIsAbsoluteHttpUrl(featured.freeRegistrationUrl) ? featured.freeRegistrationUrl.trim() : '';
+  const paidUrl = homeIsAbsoluteHttpUrl(featured.registrationUrl) ? featured.registrationUrl.trim() : '';
+  const hasId = featured.id != null && String(featured.id) !== '';
   let optionCount = 0;
   if (freeUrl || (featured.freeRegistrationEnabled && hasId)) optionCount++;
   if (paidUrl || (featured.paidRegistrationEnabled && hasId && (featured.registrationFeeCents || 0) > 0)) optionCount++;

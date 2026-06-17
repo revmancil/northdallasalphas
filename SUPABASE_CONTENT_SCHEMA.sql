@@ -311,7 +311,7 @@ alter table if exists public.events
 
 create table if not exists public.event_registrations (
   id bigserial primary key,
-  event_id bigint references public.events(id) on delete set null,
+  event_id uuid references public.events(id) on delete set null,
   full_name text not null default '',
   phone text not null default '',
   email text not null default '',
@@ -320,6 +320,17 @@ create table if not exists public.event_registrations (
   stripe_checkout_session_id text,
   created_at timestamptz not null default now()
 );
+
+-- Existing projects may already have event_registrations without newer columns.
+alter table if exists public.event_registrations
+  add column if not exists event_id uuid,
+  add column if not exists full_name text not null default '',
+  add column if not exists phone text not null default '',
+  add column if not exists email text not null default '',
+  add column if not exists payment_status text not null default 'free',
+  add column if not exists amount_cents integer not null default 0,
+  add column if not exists stripe_checkout_session_id text,
+  add column if not exists created_at timestamptz not null default now();
 
 create unique index if not exists event_registrations_stripe_session_uidx
   on public.event_registrations (stripe_checkout_session_id)
@@ -336,6 +347,16 @@ create table if not exists public.dues_payments (
   stripe_checkout_session_id text,
   created_at timestamptz not null default now()
 );
+
+alter table if exists public.dues_payments
+  add column if not exists member_id bigint,
+  add column if not exists full_name text not null default '',
+  add column if not exists phone text not null default '',
+  add column if not exists email text not null default '',
+  add column if not exists amount_cents integer not null default 0,
+  add column if not exists payment_status text not null default 'paid',
+  add column if not exists stripe_checkout_session_id text,
+  add column if not exists created_at timestamptz not null default now();
 
 create unique index if not exists dues_payments_stripe_session_uidx
   on public.dues_payments (stripe_checkout_session_id)

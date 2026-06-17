@@ -666,10 +666,20 @@ var STRIPE_CHECKOUT_URL = SUPABASE_URL.replace(/\/?$/, '') + '/functions/v1/stri
 // Global store for modal lookups
 let allEventsStore = [];
 
+function isAbsoluteHttpUrl(url) {
+  return /^https?:\/\//i.test(String(url || '').trim());
+}
+
+function eventIdsMatch(a, b) {
+  return String(a ?? '') === String(b ?? '');
+}
+
 function normalizeEventRecord(r) {
   const fee = Math.max(0, parseInt(String(r.registration_fee_cents ?? 0), 10) || 0);
-  const regUrl = String(r.reg_url || r.registrationUrl || '').trim();
-  const freeUrl = String(r.free_registration_url || '').trim();
+  const regUrlRaw = String(r.reg_url || r.registrationUrl || '').trim();
+  const regUrl = isAbsoluteHttpUrl(regUrlRaw) ? regUrlRaw : '';
+  const freeUrlRaw = String(r.free_registration_url || '').trim();
+  const freeUrl = isAbsoluteHttpUrl(freeUrlRaw) ? freeUrlRaw : '';
   const chapterOn = !!r.chapter_registration_enabled;
   let freeEnabled = r.free_registration_enabled != null ? !!r.free_registration_enabled : false;
   let paidEnabled = r.paid_registration_enabled != null ? !!r.paid_registration_enabled : false;
@@ -711,9 +721,9 @@ function normalizeEventRecord(r) {
 function getRegistrationOptions(ev) {
   if (!ev) return [];
   const opts = [];
-  const freeUrl = (ev.freeRegistrationUrl || '').trim();
-  const paidUrl = (ev.registrationUrl || '').trim();
-  const hasId = ev.id != null && ev.id !== '';
+  const freeUrl = isAbsoluteHttpUrl(ev.freeRegistrationUrl) ? ev.freeRegistrationUrl.trim() : '';
+  const paidUrl = isAbsoluteHttpUrl(ev.registrationUrl) ? ev.registrationUrl.trim() : '';
+  const hasId = ev.id != null && String(ev.id) !== '';
 
   if (freeUrl) {
     opts.push({ kind: 'link', label: 'Free Registration', url: freeUrl, feeCents: 0 });
@@ -749,17 +759,19 @@ function buildRegisterButtonHtml(ev, extraStyle, stopPropagation) {
   const styleAttr = extraStyle ? ' style="' + extraStyle + '"' : '';
   if (opts.length === 1 && opts[0].kind === 'link') {
     const stop = stopPropagation ? ' onclick="event.stopPropagation();"' : '';
-    return '<a href="' + escHtml(opts[0].url) + '" target="_blank" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</a>';
+    return '<a href="' + escHtml(opts[0].url) + '" target="_blank" rel="noopener" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</a>';
   }
-  if (!ev.id && ev.id !== 0) return '';
+  if (ev.id == null || String(ev.id) === '') return '';
+  const idArg = JSON.stringify(String(ev.id));
   const stop = stopPropagation
-    ? ' onclick="event.stopPropagation(); openRegistrationChoiceFromStore(' + Number(ev.id) + ')"'
-    : ' onclick="openRegistrationChoiceFromStore(' + Number(ev.id) + ')"';
+    ? ' onclick="event.stopPropagation(); openRegistrationChoiceFromStore(' + idArg + ')"'
+    : ' onclick="openRegistrationChoiceFromStore(' + idArg + ')"';
   return '<button type="button" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</button>';
 }
 
 function openRegistrationChoiceFromStore(eventId) {
-  const ev = allEventsStore.find(function(x) { return Number(x.id) === Number(eventId); });
+  const idStr = String(eventId ?? '');
+  const ev = allEventsStore.find(function(x) { return eventIdsMatch(x.id, idStr); });
   if (!ev) return;
   const opts = getRegistrationOptions(ev);
   if (!opts.length) return;

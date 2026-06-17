@@ -68,8 +68,8 @@ serve(async (req) => {
   const admin = createClient(supabaseUrl, serviceKey);
 
   if (mode === "event") {
-    const eventId = Number(payload.eventId);
-    if (!Number.isFinite(eventId) || eventId <= 0) {
+    const eventId = trimStr(payload.eventId, 64);
+    if (!eventId) {
       return json({ error: "Invalid event." }, 400);
     }
 
