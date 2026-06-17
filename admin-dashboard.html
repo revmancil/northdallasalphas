@@ -1169,6 +1169,9 @@
     <button class="sidebar-link" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
+    <button class="sidebar-link" onclick="showPanel('registrations')">
+      <i class="fas fa-clipboard-list"></i> Event Registrations
+    </button>
     <button class="sidebar-link" onclick="showPanel('news-manager')">
       <i class="fas fa-newspaper"></i> News Manager
     </button>
@@ -1835,6 +1838,40 @@
     </div>
 
     <!-- ══════════════════════════════════
+         EVENT REGISTRATIONS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-registrations">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h2><i class="fas fa-clipboard-list"></i> Event Registrations</h2>
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <select id="regEventFilter" onchange="filterRegistrations()" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;min-width:220px;">
+            <option value="">— All Events —</option>
+          </select>
+          <span id="regCount" style="color:var(--gray-500);font-size:0.85rem;"></span>
+        </div>
+        <div id="registrationsTableWrap" style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.88rem;">
+            <thead>
+              <tr style="background:var(--gray-100);text-align:left;">
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Name</th>
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Email</th>
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Phone</th>
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Event</th>
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Status</th>
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Date</th>
+              </tr>
+            </thead>
+            <tbody id="registrationsTableBody">
+              <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
          NEWSLETTER GENERATOR PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-newsletter">
@@ -2152,8 +2189,9 @@ function showPanel(id) {
   });
 
   // Load panel data
-  if (id === 'events')        loadEventsList();
-  if (id === 'news-manager')  loadNewsArticlesPanel();
+  if (id === 'events')         loadEventsList();
+  if (id === 'registrations')  loadRegistrationsPanel();
+  if (id === 'news-manager')   loadNewsArticlesPanel();
   if (id === 'members')       loadMemberRequests();
   if (id === 'officers')      loadOfficersPanel();
   if (id === 'presidents')    loadPresidentsPanel();
@@ -3412,6 +3450,66 @@ function getEvents() {
       description: e.description || ''
     });
   });
+}
+
+// ── Event Registrations Panel ──
+let allRegistrations = [];
+let allRegistrationEvents = {};
+
+async function loadRegistrationsPanel() {
+  const token = getAdminToken();
+  if (!token) { showToast('Admin session expired.', 'error'); return; }
+  const tbody = document.getElementById('registrationsTableBody');
+  tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">Loading…</td></tr>';
+  try {
+    const [regs, events] = await Promise.all([
+      sbGet('event_registrations', 'order=created_at.desc', token),
+      sbGet('events', 'select=id,name', token)
+    ]);
+    allRegistrationEvents = {};
+    (events || []).forEach(function(e) { allRegistrationEvents[e.id] = e.name; });
+    allRegistrations = regs || [];
+    // Populate filter dropdown
+    const sel = document.getElementById('regEventFilter');
+    sel.innerHTML = '<option value="">— All Events —</option>';
+    Object.entries(allRegistrationEvents).forEach(function([id, name]) {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    renderRegistrationsTable(allRegistrations);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--red);">Failed to load registrations.</td></tr>';
+  }
+}
+
+function filterRegistrations() {
+  const eventId = document.getElementById('regEventFilter').value;
+  const filtered = eventId ? allRegistrations.filter(function(r) { return r.event_id === eventId; }) : allRegistrations;
+  renderRegistrationsTable(filtered);
+}
+
+function renderRegistrationsTable(rows) {
+  const tbody = document.getElementById('registrationsTableBody');
+  document.getElementById('regCount').textContent = rows.length + ' registration' + (rows.length !== 1 ? 's' : '');
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">No registrations found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(function(r) {
+    const eventName = allRegistrationEvents[r.event_id] || '—';
+    const date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const statusColor = r.payment_status === 'paid' ? 'var(--green)' : 'var(--blue)';
+    return '<tr style="border-bottom:1px solid var(--gray-100);">' +
+      '<td style="padding:10px 12px;">' + escHtml(r.full_name || '—') + '</td>' +
+      '<td style="padding:10px 12px;">' + escHtml(r.email || '—') + '</td>' +
+      '<td style="padding:10px 12px;">' + escHtml(r.phone || '—') + '</td>' +
+      '<td style="padding:10px 12px;">' + escHtml(eventName) + '</td>' +
+      '<td style="padding:10px 12px;"><span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize;">' + escHtml(r.payment_status || 'free') + '</span></td>' +
+      '<td style="padding:10px 12px;">' + date + '</td>' +
+      '</tr>';
+  }).join('');
 }
 
 async function loadEventsList() {

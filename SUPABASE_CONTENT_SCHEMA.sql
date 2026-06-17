@@ -396,13 +396,13 @@ create or replace function public.register_for_event_free(
   phone text,
   email text
 )
-returns bigint
+returns uuid
 language plpgsql
 security definer
 set search_path = public
 as $$
 declare
-  new_id bigint;
+  new_id uuid;
 begin
   if event_id is null then
     raise exception 'Event is required';
@@ -446,6 +446,7 @@ $$;
 
 revoke all on function public.register_for_event_free(uuid, text, text, text) from public;
 grant execute on function public.register_for_event_free(uuid, text, text, text) to anon, authenticated;
+
 
 drop policy if exists "dues_payments_read_auth" on public.dues_payments;
 create policy "dues_payments_read_auth"
