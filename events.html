@@ -762,10 +762,10 @@ function buildRegisterButtonHtml(ev, extraStyle, stopPropagation) {
     return '<a href="' + escHtml(opts[0].url) + '" target="_blank" rel="noopener" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</a>';
   }
   if (ev.id == null || String(ev.id) === '') return '';
-  const idArg = JSON.stringify(String(ev.id));
+  const safeId = escHtml(String(ev.id));
   const stop = stopPropagation
-    ? ' onclick="event.stopPropagation(); openRegistrationChoiceFromStore(' + idArg + ')"'
-    : ' onclick="openRegistrationChoiceFromStore(' + idArg + ')"';
+    ? ' onclick="event.stopPropagation(); openRegistrationChoiceFromStore(\'' + safeId + '\')"'
+    : ' onclick="openRegistrationChoiceFromStore(\'' + safeId + '\')"';
   return '<button type="button" class="btn btn-gold"' + styleAttr + stop + '><i class="fas fa-ticket-alt"></i> Register</button>';
 }
 
@@ -1245,6 +1245,24 @@ function showRegFlash(kind, msg) {
   setTimeout(function() { el.remove(); }, 7000);
 }
 
+async function registerForEventFree(eventId, fullName, phone, email) {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/register_for_event_free', {
+    method: 'POST',
+    headers: sb.headers(),
+    body: JSON.stringify({
+      event_id: eventId,
+      full_name: fullName,
+      phone: phone,
+      email: email
+    })
+  });
+  if (!res.ok) {
+    var detail = await res.text();
+    throw new Error(detail || 'Registration could not be saved.');
+  }
+  return res.json();
+}
+
 async function submitChapterRegistration(ev) {
   var errEl = document.getElementById('chapterRegError');
   errEl.classList.remove('show');
@@ -1272,15 +1290,7 @@ async function submitChapterRegistration(ev) {
   try {
     var fee = window.__chapterRegFeeCents != null ? window.__chapterRegFeeCents : (ev.registrationFeeCents || 0);
     if (fee <= 0) {
-      await sb.insert('event_registrations', {
-        event_id: ev.id,
-        full_name: fullName,
-        phone: phone,
-        email: email,
-        payment_status: 'free',
-        amount_cents: 0,
-        stripe_checkout_session_id: null
-      });
+      await registerForEventFree(ev.id, fullName, phone, email);
       closeChapterRegModal();
       showRegFlash('success', 'You are registered. We look forward to seeing you!');
     } else {
@@ -1313,7 +1323,10 @@ async function submitChapterRegistration(ev) {
   } catch (e) {
     var msg = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
     if (/row-level security|42501/i.test(msg)) {
-      msg = 'Registration could not be saved. The database needs the event_registrations security policy — run section 3 in SUPABASE_CONTENT_SCHEMA.sql (or ask your admin).';
+      msg = 'Registration could not be saved. Run the register_for_event_free SQL block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then try again.';
+    }
+    if (/register_for_event_free|PGRST202|42883/i.test(msg)) {
+      msg = 'Registration service is not set up yet. Run the register_for_event_free SQL block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor.';
     }
     errEl.textContent = msg;
     errEl.classList.add('show');

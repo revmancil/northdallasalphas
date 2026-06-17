@@ -389,6 +389,64 @@ grant select, insert on public.event_registrations to anon, authenticated;
 grant select, insert, update, delete on public.event_registrations to authenticated;
 grant usage, select on all sequences in schema public to anon, authenticated;
 
+-- Public free registration (bypasses RLS safely via SECURITY DEFINER)
+create or replace function public.register_for_event_free(
+  event_id uuid,
+  full_name text,
+  phone text,
+  email text
+)
+returns bigint
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  new_id bigint;
+begin
+  if event_id is null then
+    raise exception 'Event is required';
+  end if;
+  if not exists (select 1 from public.events e where e.id = event_id) then
+    raise exception 'Event not found';
+  end if;
+  if length(trim(coalesce(full_name, ''))) < 2 then
+    raise exception 'Please enter your name';
+  end if;
+  if length(trim(coalesce(phone, ''))) < 7 then
+    raise exception 'Please enter a valid phone number';
+  end if;
+  if position('@' in coalesce(email, '')) <= 1 then
+    raise exception 'Please enter a valid email address';
+  end if;
+
+  insert into public.event_registrations (
+    event_id,
+    full_name,
+    phone,
+    email,
+    payment_status,
+    amount_cents,
+    stripe_checkout_session_id
+  )
+  values (
+    event_id,
+    trim(full_name),
+    trim(phone),
+    trim(lower(email)),
+    'free',
+    0,
+    null
+  )
+  returning id into new_id;
+
+  return new_id;
+end;
+$$;
+
+revoke all on function public.register_for_event_free(uuid, text, text, text) from public;
+grant execute on function public.register_for_event_free(uuid, text, text, text) to anon, authenticated;
+
 drop policy if exists "dues_payments_read_auth" on public.dues_payments;
 create policy "dues_payments_read_auth"
 on public.dues_payments for select
