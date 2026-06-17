@@ -224,6 +224,7 @@
     .content { flex: 1; padding: 24px 28px; }
     .panel { display: none; }
     .panel.active { display: block; }
+    #panel-newsletter.active { display: flex; flex-direction: column; height: calc(100vh - 60px); }
 
     /* ── Cards / Shared UI ── */
     .section-card {
@@ -1875,84 +1876,76 @@
          NEWSLETTER GENERATOR PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-newsletter">
-      <div class="section-card">
-        <div class="section-card-header">
-          <h3><i class="fas fa-envelope-open-text" style="color:var(--gold);margin-right:8px;"></i>Newsletter Generator</h3>
-          <span>Drag-and-drop style block builder</span>
-        </div>
-        <div class="section-card-body">
-          <p class="hint-text">Build responsive campaigns with reusable content blocks. Add Text, Image, Button/CTA, and Social Links blocks, then preview desktop/mobile output before export.</p>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div class="field-group">
-              <label>Campaign Name</label>
-              <input type="text" id="nlCampaignName" placeholder="April 2026 Chapter Update" />
-            </div>
-            <div class="field-group">
-              <label>Email Subject</label>
-              <input type="text" id="nlSubject" placeholder="North Dallas Alphas - Chapter Update" />
-            </div>
-            <div class="field-group" style="grid-column:span 2;">
-              <label>Preheader Text</label>
-              <input type="text" id="nlPreheader" placeholder="Upcoming events, chapter highlights, and ways to engage." />
-            </div>
-            <div class="field-group">
-              <label>Template Name</label>
-              <input type="text" id="nlTemplateName" placeholder="Monthly Standard Template" />
-            </div>
-            <div class="field-group">
-              <label>Saved Templates</label>
-              <select id="nlTemplateSelect">
-                <option value="">Select template...</option>
-              </select>
-            </div>
-            <div class="field-group" style="grid-column:span 2;">
-              <label>Block Library</label>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                <button type="button" class="btn-sm edit" onclick="addNewsletterBlock('text')"><i class="fas fa-align-left"></i> Text Block</button>
-                <button type="button" class="btn-sm view" onclick="addNewsletterBlock('image')"><i class="fas fa-image"></i> Image Block</button>
-                <button type="button" class="btn-sm success" onclick="addNewsletterBlock('cta')"><i class="fas fa-link"></i> Button / CTA</button>
-                <button type="button" class="btn-sm view" onclick="addNewsletterBlock('social')"><i class="fas fa-share-alt"></i> Social Links</button>
-              </div>
-              <div id="nlSectionsEditor" style="display:flex;flex-direction:column;gap:10px;"></div>
-              <div id="nlBuilderValidation" class="hint-text" style="margin-top:10px;margin-bottom:0;color:var(--red);display:none;"></div>
-            </div>
-            <div class="field-group" style="grid-column:span 2;">
-              <label>Send Test Email (Mail Client)</label>
-              <div style="display:grid;grid-template-columns:1fr auto;gap:8px;">
-                <input type="email" id="nlTestEmail" placeholder="name@example.com" />
-                <button type="button" class="btn-sm success" onclick="sendNewsletterTest()"><i class="fas fa-paper-plane"></i> Send Test</button>
-              </div>
-              <div class="hint-text" style="margin-top:6px;margin-bottom:0;">Uses your default mail app via <code>mailto:</code> with compiled HTML guidance. You can copy/download HTML for direct provider sending.</div>
-            </div>
-          </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-top:16px;">
-            <button class="btn-sm view" onclick="loadNewsletterDefaults()"><i class="fas fa-rotate-right"></i> Reset Defaults</button>
-            <button class="btn-sm success" onclick="saveNewsletterTemplate()"><i class="fas fa-floppy-disk"></i> Save Template</button>
-            <button class="btn-sm view" onclick="loadSelectedNewsletterTemplate()"><i class="fas fa-folder-open"></i> Load Template</button>
-            <button class="btn-sm edit" onclick="loadNewsletterTemplateOptions()"><i class="fas fa-arrows-rotate"></i> Refresh Templates</button>
-            <button class="btn-sm success" onclick="generateNewsletterPreview()"><i class="fas fa-wand-magic-sparkles"></i> Generate Preview</button>
-            <button class="btn-sm edit" onclick="copyNewsletterHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
-            <button class="btn-sm view" onclick="downloadNewsletterHtml()"><i class="fas fa-download"></i> Download HTML</button>
-          </div>
+      <!-- Hidden image input -->
+      <input type="file" id="nlImageInput" accept="image/*" style="display:none;" onchange="nlHandleImageFile(event)" />
+
+      <!-- Top bar -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0;">
+        <h2 style="margin:0;font-size:1rem;font-weight:700;"><i class="fas fa-envelope-open-text" style="color:var(--gold);margin-right:8px;"></i>Newsletter Builder</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="nlTemplateSelect" onchange="nlLoadSelectedTemplate()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;max-width:180px;">
+            <option value="">Load template…</option>
+          </select>
+          <button class="btn-sm success" onclick="nlSaveTemplate()"><i class="fas fa-floppy-disk"></i> Save Template</button>
+          <button class="btn-sm edit" onclick="copyNewsletterHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
+          <button class="btn-sm view" onclick="downloadNewsletterHtml()"><i class="fas fa-download"></i> Download</button>
         </div>
       </div>
-      <div class="section-card">
-        <div class="section-card-header">
-          <h3><i class="fas fa-eye" style="color:var(--gold);margin-right:8px;"></i>Email Preview</h3>
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <span id="nlPreviewMeta">Generate a campaign to preview it here</span>
-            <div class="section-tabs" style="margin:0;">
-              <button type="button" class="section-tab active" id="nlPreviewDesktopBtn" onclick="setNewsletterPreviewMode('desktop')">Desktop</button>
-              <button type="button" class="section-tab" id="nlPreviewMobileBtn" onclick="setNewsletterPreviewMode('mobile')">Mobile</button>
+
+      <!-- Two-pane body -->
+      <div style="display:flex;flex:1;overflow:hidden;">
+
+        <!-- LEFT: Builder -->
+        <div style="width:400px;flex-shrink:0;overflow-y:auto;border-right:1px solid var(--gray-200);padding:18px;display:flex;flex-direction:column;gap:14px;background:#fafafa;">
+
+          <!-- Meta fields -->
+          <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+            <div class="field-group" style="margin:0;">
+              <label style="font-size:0.75rem;">Campaign / Email Name</label>
+              <input type="text" id="nlCampaignName" placeholder="June 2026 Chapter Update" oninput="nlSchedulePreview()" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label style="font-size:0.75rem;">Subject Line</label>
+              <input type="text" id="nlSubject" placeholder="North Dallas Alphas — Chapter Update" oninput="nlSchedulePreview()" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label style="font-size:0.75rem;">Preheader <span style="font-weight:400;color:var(--gray-400);">(preview text in inbox)</span></label>
+              <input type="text" id="nlPreheader" placeholder="Upcoming events and chapter highlights." oninput="nlSchedulePreview()" />
+            </div>
+          </div>
+
+          <!-- Block list -->
+          <div id="nlBlocksContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+          <!-- Block picker -->
+          <div style="background:var(--white);border:2px dashed var(--gray-300);border-radius:8px;padding:12px;">
+            <div style="font-size:0.72rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Add Block</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button type="button" class="btn-sm edit" onclick="nlAddBlock('text')"><i class="fas fa-align-left"></i> Text</button>
+              <button type="button" class="btn-sm view" onclick="nlAddBlock('image')"><i class="fas fa-image"></i> Image</button>
+              <button type="button" class="btn-sm success" onclick="nlAddBlock('cta')"><i class="fas fa-arrow-pointer"></i> Button</button>
+              <button type="button" class="btn-sm view" onclick="nlAddBlock('social')"><i class="fas fa-share-alt"></i> Social</button>
+              <button type="button" class="btn-sm view" onclick="nlAddBlock('divider')"><i class="fas fa-minus"></i> Divider</button>
             </div>
           </div>
         </div>
-        <div class="section-card-body">
-          <div id="newsletterPreviewShell" style="width:100%;transition:all .2s ease;max-width:100%;">
-            <iframe id="newsletterPreviewFrame" title="Newsletter Preview" style="width:100%;min-height:540px;border:1px solid var(--gray-200);border-radius:8px;background:#fff;"></iframe>
+
+        <!-- RIGHT: Live preview -->
+        <div style="flex:1;display:flex;flex-direction:column;background:#e8e8e8;overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--white);border-bottom:1px solid var(--gray-200);flex-shrink:0;">
+            <span id="nlPreviewStatus" style="font-size:0.78rem;color:var(--gray-400);font-style:italic;">Add blocks to see a preview</span>
+            <div class="section-tabs" style="margin:0;">
+              <button type="button" class="section-tab active" id="nlDesktopBtn" onclick="nlSetPreviewMode('desktop')">Desktop</button>
+              <button type="button" class="section-tab" id="nlMobileBtn" onclick="nlSetPreviewMode('mobile')">Mobile</button>
+            </div>
           </div>
-          <div id="nlCompileWarnings" class="hint-text" style="margin-top:8px;margin-bottom:0;display:none;"></div>
+          <div style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:24px;">
+            <div id="nlPreviewShell" style="width:640px;transition:width 0.25s;box-shadow:0 4px 24px rgba(0,0,0,0.15);border-radius:4px;overflow:hidden;">
+              <iframe id="nlPreviewFrame" title="Email Preview" style="width:100%;min-height:560px;border:none;display:block;background:#fff;"></iframe>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
 
@@ -2196,7 +2189,7 @@ function showPanel(id) {
   if (id === 'officers')      loadOfficersPanel();
   if (id === 'presidents')    loadPresidentsPanel();
   if (id === 'announcements') loadAnnouncement();
-  if (id === 'newsletter')    loadNewsletterDefaults();
+  if (id === 'newsletter')    nlInitPanel();
   if (id === 'gallery')       loadEventGalleryPanel();
   if (id === 'pages')         setPageEditorStorageNotice('', '');
   if (id === 'settings')      loadSettings();
@@ -5231,613 +5224,336 @@ async function saveAnnouncement() {
 // ══════════════════════════════════════════════════
 // NEWSLETTER GENERATOR
 // ══════════════════════════════════════════════════
-let latestNewsletterHtml = '';
-let newsletterBlocks = [];
-let newsletterBlockCounter = 0;
-let newsletterPreviewMode = 'desktop';
-let newsletterCompileWarnings = [];
-let newsletterTemplatesCapabilityChecked = false;
-let newsletterTemplatesAvailable = true;
-let newsletterDragBlockId = null;
 const NEWSLETTER_RENDER_FUNCTION = SUPABASE_URL + '/functions/v1/newsletter-render';
-const NEWSLETTER_SOCIAL_NETWORKS = ['Instagram', 'Facebook', 'X', 'LinkedIn', 'YouTube', 'Website'];
+let latestNewsletterHtml = '';
+let nlBlocks = [];
+let nlPreviewTimer = null;
+let nlActiveImageBlockId = null;
+let nlTemplatesChecked = false;
+let nlTemplatesAvailable = true;
 
-function newsletterEsc(str) {
-  return escHtml(str || '');
+function nlGenId() {
+  return 'nlb_' + Math.random().toString(36).slice(2, 9);
 }
 
-function isInvalidImageUrl(url) {
-  const val = String(url || '').trim();
-  if (!val) return true;
-  // Guard against accidentally saved JS/template fragments being treated as URLs.
-  if (val.includes('newsletterEsc(') || val.includes('${') || val.includes(' + ')) return true;
-  return false;
+// ── Block management ──
+function nlAddBlock(type) {
+  const block = { id: nlGenId(), type };
+  if (type === 'text')    { block.heading = ''; block.body = ''; }
+  if (type === 'image')   { block.imageUrl = ''; block.alt = ''; block.caption = ''; }
+  if (type === 'cta')     { block.text = ''; block.url = ''; }
+  if (type === 'social')  { block.heading = 'Connect With Us'; block.links = [{ network: 'Instagram', url: '' }]; }
+  nlBlocks.push(block);
+  nlRenderBlocks();
+  nlSchedulePreview();
 }
 
-function createNewsletterBlock(type) {
-  newsletterBlockCounter += 1;
-  const id = 'nlblk_' + newsletterBlockCounter;
-  if (type === 'text') {
-    return { id: id, type: 'text', heading: 'Section Heading', body: '<p>Add your section details here.</p>' };
-  }
-  if (type === 'image') {
-    return { id: id, type: 'image', imageUrl: '', alt: 'Newsletter image', caption: '' };
-  }
-  if (type === 'cta') {
-    return { id: id, type: 'cta', text: 'Learn More', url: 'https://northdallasalphas.org' };
-  }
-  return {
-    id: id,
-    type: 'social',
-    heading: 'Connect With Us',
-    links: [
-      { network: 'Instagram', url: 'https://www.instagram.com' },
-      { network: 'Facebook', url: 'https://www.facebook.com' }
-    ]
-  };
+function nlRemoveBlock(id) {
+  nlBlocks = nlBlocks.filter(function(b) { return b.id !== id; });
+  nlRenderBlocks();
+  nlSchedulePreview();
 }
 
-function addNewsletterBlock(type) {
-  newsletterBlocks.push(createNewsletterBlock(type));
-  renderNewsletterSectionsEditor();
-  updateNewsletterValidationStatus();
+function nlMoveBlock(id, dir) {
+  const i = nlBlocks.findIndex(function(b) { return b.id === id; });
+  const j = i + dir;
+  if (j < 0 || j >= nlBlocks.length) return;
+  const tmp = nlBlocks[i]; nlBlocks[i] = nlBlocks[j]; nlBlocks[j] = tmp;
+  nlRenderBlocks();
+  nlSchedulePreview();
 }
 
-function removeNewsletterSection(sectionId) {
-  newsletterBlocks = newsletterBlocks.filter(function(s) { return s.id !== sectionId; });
-  renderNewsletterSectionsEditor();
-  updateNewsletterValidationStatus();
+function nlSetField(id, field, value) {
+  const b = nlBlocks.find(function(b) { return b.id === id; });
+  if (b) b[field] = value;
+  nlSchedulePreview();
 }
 
-function moveNewsletterSection(sectionId, direction) {
-  const idx = newsletterBlocks.findIndex(function(s) { return s.id === sectionId; });
-  if (idx < 0) return;
-  const next = idx + direction;
-  if (next < 0 || next >= newsletterBlocks.length) return;
-  const tmp = newsletterBlocks[idx];
-  newsletterBlocks[idx] = newsletterBlocks[next];
-  newsletterBlocks[next] = tmp;
-  renderNewsletterSectionsEditor();
+function nlAddSocialLink(id) {
+  const b = nlBlocks.find(function(b) { return b.id === id; });
+  if (!b) return;
+  if (!b.links) b.links = [];
+  b.links.push({ network: 'Website', url: '' });
+  nlRenderBlocks();
 }
 
-function setNewsletterSectionField(sectionId, field, value) {
-  const section = newsletterBlocks.find(function(s) { return s.id === sectionId; });
-  if (!section) return;
-  section[field] = value;
-  updateNewsletterValidationStatus();
+function nlRemoveSocialLink(id, idx) {
+  const b = nlBlocks.find(function(b) { return b.id === id; });
+  if (b && b.links) { b.links.splice(idx, 1); nlRenderBlocks(); nlSchedulePreview(); }
 }
 
-function sectionTypeLabel(type) {
-  const labels = {
-    text: 'Text Block',
-    image: 'Image Block',
-    cta: 'Button CTA',
-    social: 'Social Links'
-  };
-  return labels[type] || type;
+function nlSetSocialLink(id, idx, field, value) {
+  const b = nlBlocks.find(function(b) { return b.id === id; });
+  if (b && b.links && b.links[idx]) { b.links[idx][field] = value; nlSchedulePreview(); }
 }
 
-function cloneNewsletterSection(sectionId) {
-  const section = newsletterBlocks.find(function(s) { return s.id === sectionId; });
-  if (!section) return;
-  newsletterBlockCounter += 1;
-  const copy = JSON.parse(JSON.stringify(section));
-  copy.id = 'nlblk_' + newsletterBlockCounter;
-  newsletterBlocks.push(copy);
-  renderNewsletterSectionsEditor();
-}
-
-function addSocialLinkRow(sectionId) {
-  const section = newsletterBlocks.find(function(s) { return s.id === sectionId; });
-  if (!section || section.type !== 'social') return;
-  if (!Array.isArray(section.links)) section.links = [];
-  section.links.push({ network: 'Website', url: 'https://northdallasalphas.org' });
-  renderNewsletterSectionsEditor();
-}
-
-function removeSocialLinkRow(sectionId, idx) {
-  const section = newsletterBlocks.find(function(s) { return s.id === sectionId; });
-  if (!section || section.type !== 'social' || !Array.isArray(section.links)) return;
-  section.links.splice(idx, 1);
-  renderNewsletterSectionsEditor();
-}
-
-function setSocialLinkField(sectionId, idx, field, value) {
-  const section = newsletterBlocks.find(function(s) { return s.id === sectionId; });
-  if (!section || section.type !== 'social') return;
-  if (!Array.isArray(section.links) || !section.links[idx]) return;
-  section.links[idx][field] = value;
-  updateNewsletterValidationStatus();
-}
-
-function handleNewsletterCardDragStart(e) {
-  newsletterDragBlockId = e.currentTarget.getAttribute('data-block-id');
-  e.dataTransfer.effectAllowed = 'move';
-}
-
-function handleNewsletterCardDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-}
-
-function handleNewsletterCardDrop(e) {
-  e.preventDefault();
-  const targetId = e.currentTarget.getAttribute('data-block-id');
-  if (!newsletterDragBlockId || !targetId || newsletterDragBlockId === targetId) return;
-  const srcIdx = newsletterBlocks.findIndex(function(b) { return b.id === newsletterDragBlockId; });
-  const dstIdx = newsletterBlocks.findIndex(function(b) { return b.id === targetId; });
-  if (srcIdx < 0 || dstIdx < 0) return;
-  const moved = newsletterBlocks.splice(srcIdx, 1)[0];
-  newsletterBlocks.splice(dstIdx, 0, moved);
-  newsletterDragBlockId = null;
-  renderNewsletterSectionsEditor();
-}
-
-function renderNewsletterSectionsEditor() {
-  const wrap = document.getElementById('nlSectionsEditor');
+// ── Render block cards ──
+function nlRenderBlocks() {
+  const wrap = document.getElementById('nlBlocksContainer');
   if (!wrap) return;
-  if (!newsletterBlocks.length) {
-    wrap.innerHTML = '<div style="border:1px dashed var(--gray-300);border-radius:8px;padding:14px;color:var(--gray-500);font-size:0.82rem;">No blocks yet. Use the block library buttons above to add your first block.</div>';
-    updateNewsletterValidationStatus();
+  if (!nlBlocks.length) {
+    wrap.innerHTML = '<p style="text-align:center;color:var(--gray-400);font-size:0.83rem;padding:16px 0;">No blocks yet. Add one below.</p>';
     return;
   }
-  wrap.innerHTML = newsletterBlocks.map(function(section, index) {
-    const controls = '' +
-      '<div style="display:flex;gap:6px;">' +
-      '<button type="button" class="btn-sm view" style="padding:4px 8px;" onclick="cloneNewsletterSection(\'' + section.id + '\')" title="Duplicate"><i class="fas fa-clone"></i></button>' +
-      '<button type="button" class="btn-sm view" style="padding:4px 8px;" onclick="moveNewsletterSection(\'' + section.id + '\',-1)" ' + (index === 0 ? 'disabled' : '') + '><i class="fas fa-arrow-up"></i></button>' +
-      '<button type="button" class="btn-sm view" style="padding:4px 8px;" onclick="moveNewsletterSection(\'' + section.id + '\',1)" ' + (index === newsletterBlocks.length - 1 ? 'disabled' : '') + '><i class="fas fa-arrow-down"></i></button>' +
-      '<button type="button" class="btn-sm danger" style="padding:4px 8px;" onclick="removeNewsletterSection(\'' + section.id + '\')"><i class="fas fa-trash"></i></button>' +
-      '</div>';
-    let body = '';
-    if (section.type === 'text') {
-      body = '' +
-        '<div style="display:grid;grid-template-columns:1fr;gap:8px;">' +
-        '<input type="text" value="' + newsletterEsc(section.heading || '') + '" placeholder="Section heading" oninput="setNewsletterSectionField(\'' + section.id + '\',\'heading\',this.value)" />' +
-        '<textarea rows="5" placeholder="Body HTML or plain text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'body\',this.value)">' + newsletterEsc(section.body || '') + '</textarea>' +
-        '<div style="font-size:0.72rem;color:var(--gray-500);">Allowed HTML: &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;a&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;.</div>' +
-        '</div>';
-    } else if (section.type === 'image') {
-      body = '' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-        '<input type="text" value="' + newsletterEsc(section.imageUrl || '') + '" placeholder="Image URL (https://...)" oninput="setNewsletterSectionField(\'' + section.id + '\',\'imageUrl\',this.value)" />' +
-        '<input type="text" value="' + newsletterEsc(section.alt || '') + '" placeholder="Alt text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'alt\',this.value)" />' +
-        '<input type="text" style="grid-column:span 2;" value="' + newsletterEsc(section.caption || '') + '" placeholder="Image caption (optional)" oninput="setNewsletterSectionField(\'' + section.id + '\',\'caption\',this.value)" />' +
-        '</div>';
-    } else if (section.type === 'cta') {
-      body = '' +
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
-        '<input type="text" value="' + newsletterEsc(section.text || '') + '" placeholder="Button text" oninput="setNewsletterSectionField(\'' + section.id + '\',\'text\',this.value)" />' +
-        '<input type="text" value="' + newsletterEsc(section.url || '') + '" placeholder="Button URL (https://...)" oninput="setNewsletterSectionField(\'' + section.id + '\',\'url\',this.value)" />' +
-        '</div>';
-    } else {
-      const links = Array.isArray(section.links) ? section.links : [];
-      body = '' +
-        '<input type="text" value="' + newsletterEsc(section.heading || '') + '" placeholder="Social heading" oninput="setNewsletterSectionField(\'' + section.id + '\',\'heading\',this.value)" style="margin-bottom:8px;" />' +
-        '<div style="display:flex;flex-direction:column;gap:8px;">' +
-        links.map(function(link, idx) {
-          return '' +
-            '<div style="display:grid;grid-template-columns:140px 1fr auto;gap:8px;align-items:center;">' +
-            '<select onchange="setSocialLinkField(\'' + section.id + '\',' + idx + ',\'network\',this.value)">' +
-            NEWSLETTER_SOCIAL_NETWORKS.map(function(net) {
-              return '<option value="' + newsletterEsc(net) + '"' + (String(link.network || '') === net ? ' selected' : '') + '>' + newsletterEsc(net) + '</option>';
-            }).join('') +
-            '</select>' +
-            '<input type="text" value="' + newsletterEsc(link.url || '') + '" placeholder="https://..." oninput="setSocialLinkField(\'' + section.id + '\',' + idx + ',\'url\',this.value)" />' +
-            '<button type="button" class="btn-sm danger" style="padding:5px 8px;" onclick="removeSocialLinkRow(\'' + section.id + '\',' + idx + ')"><i class="fas fa-times"></i></button>' +
-            '</div>';
-        }).join('') +
-        '</div>' +
-        '<button type="button" class="btn-sm view" style="margin-top:8px;" onclick="addSocialLinkRow(\'' + section.id + '\')"><i class="fas fa-plus"></i> Add Social Link</button>';
-    }
-    return '' +
-      '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:10px;background:#fff;" draggable="true" data-block-id="' + section.id + '">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
-      '<div style="font-size:0.78rem;font-weight:700;color:var(--gray-700);letter-spacing:.06em;text-transform:uppercase;"><i class="fas fa-grip-vertical" style="margin-right:6px;color:var(--gray-400);"></i>' + newsletterEsc(sectionTypeLabel(section.type)) + '</div>' +
-      controls +
-      '</div>' +
-      body +
-      '</div>';
-  }).join('');
-  wrap.querySelectorAll('[data-block-id]').forEach(function(card) {
-    card.addEventListener('dragstart', handleNewsletterCardDragStart);
-    card.addEventListener('dragover', handleNewsletterCardDragOver);
-    card.addEventListener('drop', handleNewsletterCardDrop);
-  });
-  updateNewsletterValidationStatus();
+  wrap.innerHTML = nlBlocks.map(function(b, i) { return nlBlockCard(b, i); }).join('');
 }
 
-async function ensureNewsletterTemplatesAvailable(token) {
-  if (newsletterTemplatesCapabilityChecked) return newsletterTemplatesAvailable;
-  newsletterTemplatesCapabilityChecked = true;
-  try {
-    await sbGet('newsletter_templates', 'select=id&limit=1', token);
-    newsletterTemplatesAvailable = true;
-  } catch (err) {
-    newsletterTemplatesAvailable = false;
+function nlBlockCard(b, idx) {
+  const first = idx === 0, last = idx === nlBlocks.length - 1;
+  const icons = { text: 'fa-align-left', image: 'fa-image', cta: 'fa-arrow-pointer', social: 'fa-share-alt', divider: 'fa-minus' };
+  const labels = { text: 'Text', image: 'Image', cta: 'Button / CTA', social: 'Social Links', divider: 'Divider' };
+  const header = `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);">
+    <span style="font-size:0.75rem;font-weight:600;color:var(--gray-600);display:flex;align-items:center;gap:6px;"><i class="fas ${icons[b.type]||'fa-cube'}"></i>${labels[b.type]||b.type}</span>
+    <div style="display:flex;gap:2px;">
+      <button type="button" onclick="nlMoveBlock('${b.id}',-1)" ${first?'disabled':''} style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:3px 6px;font-size:0.85rem;" title="Move up">↑</button>
+      <button type="button" onclick="nlMoveBlock('${b.id}',1)" ${last?'disabled':''} style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:3px 6px;font-size:0.85rem;" title="Move down">↓</button>
+      <button type="button" onclick="nlRemoveBlock('${b.id}')" style="background:none;border:none;cursor:pointer;color:var(--red);padding:3px 6px;font-size:0.85rem;" title="Remove">✕</button>
+    </div>
+  </div>`;
+
+  let body = '';
+  if (b.type === 'text') {
+    body = `<div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Heading <em style="color:var(--gray-400);font-style:normal;">(optional)</em></label>
+      <input type="text" value="${escHtml(b.heading||'')}" oninput="nlSetField('${b.id}','heading',this.value)" placeholder="Section heading…" style="font-size:0.84rem;" /></div>
+    <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Body</label>
+      <textarea rows="5" oninput="nlSetField('${b.id}','body',this.value)" placeholder="Write your content here. Basic HTML like &lt;b&gt;, &lt;a href=…&gt;, &lt;br&gt; is supported." style="font-size:0.84rem;resize:vertical;">${escHtml(b.body||'')}</textarea></div>`;
+  } else if (b.type === 'image') {
+    const hasImg = /^https?:\/\//.test(String(b.imageUrl||'').trim());
+    body = `<div style="margin-bottom:10px;">
+      <div onclick="nlTriggerImageUpload('${b.id}')" style="border:2px dashed var(--gray-300);border-radius:8px;padding:${hasImg?'8px':'28px'};text-align:center;cursor:pointer;background:var(--gray-50);">
+        ${hasImg
+          ? `<img src="${escHtml(b.imageUrl)}" style="max-width:100%;max-height:150px;border-radius:4px;display:block;margin:0 auto;" /><div style="font-size:0.73rem;color:var(--gray-400);margin-top:6px;">Click to replace</div>`
+          : `<i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:var(--gray-300);"></i><div style="color:var(--gray-500);font-size:0.82rem;margin-top:8px;">Click to upload image</div>`}
+      </div></div>
+    <div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Alt text</label>
+      <input type="text" value="${escHtml(b.alt||'')}" oninput="nlSetField('${b.id}','alt',this.value)" placeholder="Describe the image…" style="font-size:0.84rem;" /></div>
+    <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Caption <em style="color:var(--gray-400);font-style:normal;">(optional)</em></label>
+      <input type="text" value="${escHtml(b.caption||'')}" oninput="nlSetField('${b.id}','caption',this.value)" placeholder="Image caption…" style="font-size:0.84rem;" /></div>`;
+  } else if (b.type === 'cta') {
+    body = `<div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Button Label</label>
+      <input type="text" value="${escHtml(b.text||'')}" oninput="nlSetField('${b.id}','text',this.value)" placeholder="Register Now" style="font-size:0.84rem;" /></div>
+    <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Link URL</label>
+      <input type="url" value="${escHtml(b.url||'')}" oninput="nlSetField('${b.id}','url',this.value)" placeholder="https://…" style="font-size:0.84rem;" /></div>`;
+  } else if (b.type === 'social') {
+    const nets = ['Instagram','Facebook','X','LinkedIn','YouTube','Website'];
+    const linkRows = (b.links||[]).map(function(lnk, li) {
+      return `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
+        <select onchange="nlSetSocialLink('${b.id}',${li},'network',this.value)" style="padding:4px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:0.78rem;flex-shrink:0;">
+          ${nets.map(function(n){ return `<option${lnk.network===n?' selected':''}>${n}</option>`; }).join('')}
+        </select>
+        <input type="url" value="${escHtml(lnk.url||'')}" oninput="nlSetSocialLink('${b.id}',${li},'url',this.value)" placeholder="https://…" style="font-size:0.8rem;flex:1;" />
+        <button type="button" onclick="nlRemoveSocialLink('${b.id}',${li})" style="background:none;border:none;color:var(--red);cursor:pointer;padding:2px 5px;font-size:0.85rem;">✕</button>
+      </div>`;
+    }).join('');
+    body = `<div class="field-group" style="margin:0 0 10px;"><label style="font-size:0.73rem;">Heading</label>
+      <input type="text" value="${escHtml(b.heading||'Connect With Us')}" oninput="nlSetField('${b.id}','heading',this.value)" style="font-size:0.84rem;" /></div>
+    ${linkRows}
+    <button type="button" class="btn-sm view" onclick="nlAddSocialLink('${b.id}')" style="margin-top:4px;"><i class="fas fa-plus"></i> Add link</button>`;
+  } else if (b.type === 'divider') {
+    body = `<div style="border-top:2px solid var(--gray-200);margin:6px 0;"></div><span style="font-size:0.73rem;color:var(--gray-400);">Horizontal divider between sections</span>`;
   }
-  return newsletterTemplatesAvailable;
+
+  return `<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+    ${header}<div style="padding:12px;">${body}</div></div>`;
 }
 
-function setNewsletterTemplateSelect(rows) {
-  const select = document.getElementById('nlTemplateSelect');
-  if (!select) return;
-  const options = ['<option value="">Select template...</option>'];
-  (rows || []).forEach(function(row) {
-    const label = (row.template_name || 'Untitled Template').trim();
-    options.push('<option value="' + newsletterEsc(String(row.id)) + '">' + newsletterEsc(label) + '</option>');
+// ── Image upload ──
+function nlTriggerImageUpload(blockId) {
+  nlActiveImageBlockId = blockId;
+  const inp = document.getElementById('nlImageInput');
+  if (inp) inp.click();
+}
+
+async function nlHandleImageFile(e) {
+  const file = e.target.files[0];
+  if (!file || !nlActiveImageBlockId) return;
+  const blockId = nlActiveImageBlockId;
+  e.target.value = '';
+  try {
+    showToast('Uploading image…', 'info');
+    const uploaded = await uploadImageToSupabaseBucket(file, EVENT_GALLERY_IMAGE_BUCKET, { prefixA: 'newsletter/', prefixB: 'nl-' });
+    const b = nlBlocks.find(function(x) { return x.id === blockId; });
+    if (b) { b.imageUrl = uploaded.url; nlRenderBlocks(); nlSchedulePreview(); }
+    showToast('Image uploaded.', 'success');
+  } catch (err) {
+    showToast('Upload failed: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
+// ── Live preview ──
+function nlSchedulePreview() {
+  clearTimeout(nlPreviewTimer);
+  const status = document.getElementById('nlPreviewStatus');
+  if (status) status.textContent = 'Updating…';
+  nlPreviewTimer = setTimeout(nlRunPreview, 900);
+}
+
+async function nlRunPreview() {
+  try {
+    const html = await nlCompileHtml(nlBuildPayload());
+    latestNewsletterHtml = html;
+    const frame = document.getElementById('nlPreviewFrame');
+    if (frame) frame.srcdoc = html;
+    const status = document.getElementById('nlPreviewStatus');
+    if (status) status.textContent = 'Preview up to date';
+  } catch (err) {
+    const status = document.getElementById('nlPreviewStatus');
+    if (status) status.textContent = 'Preview error — check console';
+    console.warn('Newsletter preview error:', err);
+  }
+}
+
+function nlBuildPayload() {
+  return {
+    campaignName: (document.getElementById('nlCampaignName')||{}).value || '',
+    subject:      (document.getElementById('nlSubject')||{}).value || '',
+    preheader:    (document.getElementById('nlPreheader')||{}).value || '',
+    blocks: nlBlocks.map(function(b) {
+      const copy = Object.assign({}, b);
+      delete copy.id;
+      return copy;
+    })
+  };
+}
+
+async function nlCompileHtml(payload) {
+  const res = await fetch(NEWSLETTER_RENDER_FUNCTION, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+    body: JSON.stringify(payload)
   });
-  select.innerHTML = options.join('');
+  if (!res.ok) throw new Error('Render failed (' + res.status + ')');
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+  return data.html || '';
 }
 
-async function loadNewsletterTemplateOptions() {
+function nlSetPreviewMode(mode) {
+  const shell = document.getElementById('nlPreviewShell');
+  const dBtn = document.getElementById('nlDesktopBtn');
+  const mBtn = document.getElementById('nlMobileBtn');
+  if (mode === 'mobile') {
+    if (shell) shell.style.width = '375px';
+    if (dBtn) dBtn.classList.remove('active');
+    if (mBtn) mBtn.classList.add('active');
+  } else {
+    if (shell) shell.style.width = '640px';
+    if (dBtn) dBtn.classList.add('active');
+    if (mBtn) mBtn.classList.remove('active');
+  }
+}
+
+// ── Template save / load ──
+async function nlEnsureTemplates(token) {
+  if (nlTemplatesChecked) return nlTemplatesAvailable;
+  nlTemplatesChecked = true;
+  try { await sbGet('newsletter_templates', 'select=id&limit=1', token); nlTemplatesAvailable = true; }
+  catch (e) { nlTemplatesAvailable = false; }
+  return nlTemplatesAvailable;
+}
+
+async function nlLoadTemplateOptions() {
   const token = getAdminToken();
   if (!token) return;
-  const isAvailable = await ensureNewsletterTemplatesAvailable(token);
-  if (!isAvailable) {
-    setNewsletterTemplateSelect([]);
-    return;
-  }
+  if (!await nlEnsureTemplates(token)) return;
   try {
     const rows = await sbGet('newsletter_templates', 'select=id,template_name,updated_at&order=updated_at.desc', token);
-    setNewsletterTemplateSelect(rows);
-  } catch (err) {
-    showToast('Could not load templates: ' + (err.message || 'unknown error'), 'error');
-  }
+    const sel = document.getElementById('nlTemplateSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Load template…</option>' +
+      (rows||[]).map(function(r) {
+        return '<option value="' + escHtml(String(r.id)) + '">' + escHtml(r.template_name||'Untitled') + '</option>';
+      }).join('');
+  } catch (e) { /* silent */ }
 }
 
-async function saveNewsletterTemplate() {
+async function nlSaveTemplate() {
   const token = getAdminToken();
-  if (!token) {
-    showToast('Admin session expired. Please sign in again.', 'error');
-    return;
-  }
-  const isAvailable = await ensureNewsletterTemplatesAvailable(token);
-  if (!isAvailable) {
-    showToast('newsletter_templates table is missing. Run the SQL schema script first.', 'error');
-    return;
-  }
-  const templateName = (document.getElementById('nlTemplateName').value || document.getElementById('nlCampaignName').value || '').trim();
-  const subject = (document.getElementById('nlSubject').value || '').trim();
-  const preheader = (document.getElementById('nlPreheader').value || '').trim();
-  if (!templateName) {
-    showToast('Please provide a template name.', 'error');
-    return;
-  }
-  if (!newsletterBlocks.length) {
-    showToast('Add at least one newsletter block before saving.', 'error');
-    return;
-  }
-  const issues = validateNewsletterBlocks(newsletterBlocks);
-  if (issues.length) {
-    updateNewsletterValidationStatus();
-    showToast('Fix validation issues before saving template.', 'error');
-    return;
-  }
+  if (!token) { showToast('Sign in required.', 'error'); return; }
+  if (!await nlEnsureTemplates(token)) { showToast('newsletter_templates table missing — run schema SQL first.', 'error'); return; }
+  if (!nlBlocks.length) { showToast('Add at least one block before saving.', 'error'); return; }
+  const name = prompt('Template name:', (document.getElementById('nlCampaignName')||{}).value || 'My Template');
+  if (!name) return;
   const payload = {
-    template_name: templateName,
-    subject: subject,
-    preheader: preheader,
-    sections_json: newsletterBlocks,
-    updated_at: new Date().toISOString()
+    template_name: name.trim(),
+    subject:       (document.getElementById('nlSubject')||{}).value || '',
+    preheader:     (document.getElementById('nlPreheader')||{}).value || '',
+    sections_json: nlBlocks,
+    updated_at:    new Date().toISOString()
   };
   try {
-    const existing = await sbGet('newsletter_templates', 'select=id&template_name=eq.' + encodeURIComponent(templateName) + '&limit=1', token);
+    const existing = await sbGet('newsletter_templates', 'select=id&template_name=eq.' + encodeURIComponent(name.trim()) + '&limit=1', token);
     if (Array.isArray(existing) && existing.length) {
       await sbPatch('newsletter_templates', 'id=eq.' + encodeURIComponent(existing[0].id), payload, token);
     } else {
       payload.created_at = new Date().toISOString();
       await sbPost('newsletter_templates', payload, token);
     }
-    await loadNewsletterTemplateOptions();
-    showToast('Newsletter template saved.');
-  } catch (err) {
-    showToast('Could not save template: ' + (err.message || 'unknown error'), 'error');
-  }
+    await nlLoadTemplateOptions();
+    showToast('Template saved: ' + name.trim());
+  } catch (err) { showToast('Save failed: ' + (err.message||'unknown'), 'error'); }
 }
 
-async function loadSelectedNewsletterTemplate() {
+async function nlLoadSelectedTemplate() {
   const token = getAdminToken();
-  if (!token) {
-    showToast('Admin session expired. Please sign in again.', 'error');
-    return;
-  }
-  const isAvailable = await ensureNewsletterTemplatesAvailable(token);
-  if (!isAvailable) {
-    showToast('newsletter_templates table is missing. Run the SQL schema script first.', 'error');
-    return;
-  }
-  const select = document.getElementById('nlTemplateSelect');
-  if (!select || !select.value) {
-    showToast('Select a template first.', 'error');
-    return;
-  }
+  if (!token) { showToast('Sign in required.', 'error'); return; }
+  const sel = document.getElementById('nlTemplateSelect');
+  if (!sel || !sel.value) return;
   try {
-    const rows = await sbGet('newsletter_templates', 'id=eq.' + encodeURIComponent(select.value) + '&limit=1', token);
-    if (!rows || !rows.length) {
-      showToast('Template not found.', 'error');
-      return;
-    }
+    const rows = await sbGet('newsletter_templates', 'id=eq.' + encodeURIComponent(sel.value) + '&limit=1', token);
+    if (!rows || !rows.length) { showToast('Template not found.', 'error'); return; }
     const row = rows[0];
-    document.getElementById('nlTemplateName').value = row.template_name || '';
-    document.getElementById('nlCampaignName').value = row.template_name || '';
-    document.getElementById('nlSubject').value = row.subject || '';
-    document.getElementById('nlPreheader').value = row.preheader || '';
-    if (Array.isArray(row.sections_json) && row.sections_json.length) {
-      newsletterBlocks = row.sections_json.map(function(section) {
-        const copy = Object.assign({}, section || {});
-        newsletterBlockCounter += 1;
-        copy.id = 'nlblk_' + newsletterBlockCounter;
-        if (copy.type === 'social' && !Array.isArray(copy.links)) copy.links = [];
-        return copy;
-      });
-    } else {
-      newsletterBlocks = [];
-    }
-    renderNewsletterSectionsEditor();
-    document.getElementById('nlPreviewMeta').textContent = 'Template loaded: ' + (row.template_name || 'Template');
-    showToast('Template loaded successfully.');
-  } catch (err) {
-    showToast('Could not load template: ' + (err.message || 'unknown error'), 'error');
-  }
+    const setV = function(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    setV('nlCampaignName', row.template_name);
+    setV('nlSubject', row.subject);
+    setV('nlPreheader', row.preheader);
+    nlBlocks = (Array.isArray(row.sections_json) ? row.sections_json : []).map(function(s) {
+      return Object.assign({ id: nlGenId() }, s || {});
+    });
+    nlRenderBlocks();
+    nlSchedulePreview();
+    showToast('Template loaded.');
+  } catch (err) { showToast('Load failed: ' + (err.message||'unknown'), 'error'); }
 }
 
-function loadNewsletterDefaults() {
+// ── Init panel ──
+function nlInitPanel() {
   const now = new Date();
   const month = now.toLocaleString('en-US', { month: 'long' });
-  const year = now.getFullYear();
-  const defaults = {
-    campaignName: month + ' ' + year + ' Chapter Update',
-    subject: 'North Dallas Alphas - ' + month + ' Chapter Update',
-    preheader: 'Upcoming events, chapter highlights, and ways to stay engaged with Xi Tau Lambda.'
-  };
-  const setVal = function(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.value = val;
-  };
-  setVal('nlCampaignName', defaults.campaignName);
-  setVal('nlTemplateName', defaults.campaignName + ' Template');
-  setVal('nlSubject', defaults.subject);
-  setVal('nlPreheader', defaults.preheader);
-  newsletterBlocks = [
-    Object.assign(createNewsletterBlock('text'), {
-      heading: 'Message from Xi Tau Lambda',
-      body: '<p>Brothers and supporters, thank you for your continued support of Xi Tau Lambda Chapter. Below are highlights and ways to stay engaged with scholarship, service, and brotherhood.</p>'
-    }),
-    Object.assign(createNewsletterBlock('image'), {
-      imageUrl: 'https://northdallasalphas.org/images/chapter-event.jpg',
-      alt: 'North Dallas Alphas chapter event',
-      caption: 'Serving North Dallas through leadership and service.'
-    }),
-    Object.assign(createNewsletterBlock('cta'), {
-      text: 'View Chapter Events',
-      url: 'https://northdallasalphas.org/events.html'
-    }),
-    {
-      id: 'nlblk_' + (++newsletterBlockCounter),
-      type: 'social',
-      heading: 'Connect With Us',
-      links: [
-        { network: 'Instagram', url: 'https://www.instagram.com/northdallasalphas' },
-        { network: 'Website', url: 'https://northdallasalphas.org' }
-      ]
-    }
-  ];
-  renderNewsletterSectionsEditor();
-  setNewsletterPreviewMode('desktop');
-  loadNewsletterTemplateOptions();
-  if (!latestNewsletterHtml) {
-    document.getElementById('nlPreviewMeta').textContent = 'Defaults loaded. Click Generate Preview.';
-  }
+  const year  = now.getFullYear();
+  const cn = document.getElementById('nlCampaignName');
+  if (cn && !cn.value) cn.value = month + ' ' + year + ' Chapter Update';
+  const subj = document.getElementById('nlSubject');
+  if (subj && !subj.value) subj.value = 'North Dallas Alphas — ' + month + ' Chapter Update';
+  if (!nlBlocks.length) nlRenderBlocks();
+  nlLoadTemplateOptions();
+  if (nlBlocks.length) nlSchedulePreview();
 }
 
-function setNewsletterPreviewMode(mode) {
-  newsletterPreviewMode = mode === 'mobile' ? 'mobile' : 'desktop';
-  const shell = document.getElementById('newsletterPreviewShell');
-  const desktopBtn = document.getElementById('nlPreviewDesktopBtn');
-  const mobileBtn = document.getElementById('nlPreviewMobileBtn');
-  if (shell) {
-    if (newsletterPreviewMode === 'mobile') {
-      shell.style.maxWidth = '390px';
-      shell.style.margin = '0 auto';
-    } else {
-      shell.style.maxWidth = '100%';
-      shell.style.margin = '0';
-    }
-  }
-  if (desktopBtn) desktopBtn.classList.toggle('active', newsletterPreviewMode === 'desktop');
-  if (mobileBtn) mobileBtn.classList.toggle('active', newsletterPreviewMode === 'mobile');
-}
-
-function validateNewsletterBlocks(blocks) {
-  const issues = [];
-  if (!Array.isArray(blocks) || !blocks.length) {
-    issues.push('Add at least one block.');
-    return issues;
-  }
-  blocks.forEach(function(block, idx) {
-    const n = idx + 1;
-    if (block.type === 'text') {
-      if (!String(block.heading || '').trim() && !String(block.body || '').trim()) issues.push('Text block #' + n + ' needs heading or body.');
-    } else if (block.type === 'image') {
-      if (isInvalidImageUrl(block.imageUrl)) issues.push('Image block #' + n + ' needs a valid image URL.');
-    } else if (block.type === 'cta') {
-      if (!String(block.text || '').trim()) issues.push('CTA block #' + n + ' needs button text.');
-      if (!/^https?:\/\//i.test(String(block.url || '').trim())) issues.push('CTA block #' + n + ' needs a valid http/https URL.');
-    } else if (block.type === 'social') {
-      const links = Array.isArray(block.links) ? block.links : [];
-      if (!links.length) {
-        issues.push('Social block #' + n + ' needs at least one social link.');
-      } else {
-        links.forEach(function(link, linkIdx) {
-          if (!/^https?:\/\//i.test(String(link.url || '').trim())) {
-            issues.push('Social block #' + n + ', link #' + (linkIdx + 1) + ' needs a valid http/https URL.');
-          }
-        });
-      }
-    } else {
-      issues.push('Unsupported block type in block #' + n + '.');
-    }
-  });
-  return issues;
-}
-
-function updateNewsletterValidationStatus() {
-  const box = document.getElementById('nlBuilderValidation');
-  if (!box) return;
-  const issues = validateNewsletterBlocks(newsletterBlocks);
-  if (!issues.length) {
-    box.style.display = 'none';
-    box.innerHTML = '';
-    return;
-  }
-  box.style.display = 'block';
-  box.innerHTML = issues.map(function(i) { return '• ' + newsletterEsc(i); }).join('<br/>');
-}
-
-function buildNewsletterMjmlPayload(config) {
-  return {
-    campaignName: config.campaignName || '',
-    subject: config.subject || '',
-    preheader: config.preheader || '',
-    blocks: newsletterBlocks.map(function(block) { return JSON.parse(JSON.stringify(block)); }),
-    brand: {
-      chapterName: 'North Dallas Alphas',
-      primaryColor: '#C9A84C',
-      darkColor: '#0f0f0f',
-      textColor: '#2a2a2a'
-    }
-  };
-}
-
-async function compileNewsletterHtml(config) {
-  const token = getAdminToken();
-  const res = await fetch(NEWSLETTER_RENDER_FUNCTION, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY)
-    },
-    body: JSON.stringify(buildNewsletterMjmlPayload(config))
-  });
-  if (!res.ok) {
-    const details = await res.text().catch(function() { return ''; });
-    throw new Error(details || ('Render failed (HTTP ' + res.status + ')'));
-  }
-  const payload = await res.json();
-  latestNewsletterHtml = payload && payload.html ? payload.html : '';
-  newsletterCompileWarnings = Array.isArray(payload && payload.warnings) ? payload.warnings : [];
-  return latestNewsletterHtml;
-}
-
-function renderNewsletterWarnings() {
-  const wrap = document.getElementById('nlCompileWarnings');
-  if (!wrap) return;
-  if (!newsletterCompileWarnings.length) {
-    wrap.style.display = 'none';
-    wrap.innerHTML = '';
-    return;
-  }
-  wrap.style.display = 'block';
-  wrap.style.color = 'var(--gray-600)';
-  wrap.innerHTML = '<strong>Compile notes:</strong><br/>' + newsletterCompileWarnings.map(function(w) { return '• ' + newsletterEsc(w); }).join('<br/>');
-}
-
-async function generateNewsletterPreview() {
-  const token = getAdminToken();
-  if (!token) {
-    showToast('Admin session expired. Please sign in again.', 'error');
-    return;
-  }
-  const config = {
-    campaignName: (document.getElementById('nlCampaignName').value || '').trim(),
-    subject: (document.getElementById('nlSubject').value || '').trim(),
-    preheader: (document.getElementById('nlPreheader').value || '').trim()
-  };
-  if (!config.subject) {
-    showToast('Please provide an email subject.', 'error');
-    return;
-  }
-  const issues = validateNewsletterBlocks(newsletterBlocks);
-  if (issues.length) {
-    updateNewsletterValidationStatus();
-    showToast('Fix validation issues before preview.', 'error');
-    return;
-  }
-  try {
-    latestNewsletterHtml = await compileNewsletterHtml(config);
-    const frame = document.getElementById('newsletterPreviewFrame');
-    frame.srcdoc = latestNewsletterHtml;
-    document.getElementById('nlPreviewMeta').textContent = (config.campaignName || 'Campaign') + ' | ' + new Date().toLocaleString();
-    renderNewsletterWarnings();
-    setNewsletterPreviewMode(newsletterPreviewMode);
-    showToast('Newsletter preview generated successfully.');
-  } catch (err) {
-    showToast('Could not generate newsletter: ' + (err.message || 'unknown error'), 'error');
-  }
-}
-
+// ── Export helpers ──
 async function copyNewsletterHtml() {
   if (!latestNewsletterHtml) {
-    showToast('Generate a newsletter preview first.', 'error');
-    return;
+    if (!nlBlocks.length) { showToast('Add blocks first.', 'error'); return; }
+    try { latestNewsletterHtml = await nlCompileHtml(nlBuildPayload()); } catch (e) { showToast('Could not compile HTML.', 'error'); return; }
   }
-  try {
-    await navigator.clipboard.writeText(latestNewsletterHtml);
-    showToast('Newsletter HTML copied to clipboard.');
-  } catch (err) {
-    showToast('Clipboard copy failed. Try Download HTML instead.', 'error');
-  }
+  try { await navigator.clipboard.writeText(latestNewsletterHtml); showToast('HTML copied to clipboard.'); }
+  catch (e) { showToast('Copy failed — try Download instead.', 'error'); }
 }
 
 function downloadNewsletterHtml() {
-  if (!latestNewsletterHtml) {
-    showToast('Generate a newsletter preview first.', 'error');
-    return;
-  }
-  const fileSafeName = (document.getElementById('nlCampaignName').value || 'newsletter')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'newsletter';
-  const blob = new Blob([latestNewsletterHtml], { type: 'text/html;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
+  if (!latestNewsletterHtml) { showToast('Generate a preview first, then download.', 'error'); return; }
+  const name = ((document.getElementById('nlCampaignName')||{}).value || 'newsletter').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+  const blob = new Blob([latestNewsletterHtml], { type: 'text/html' });
   const a = document.createElement('a');
-  a.href = url;
-  a.download = fileSafeName + '.html';
-  document.body.appendChild(a);
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.html';
   a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-  showToast('Newsletter HTML downloaded.');
+  URL.revokeObjectURL(a.href);
 }
 
-function sendNewsletterTest() {
-  const to = (document.getElementById('nlTestEmail').value || '').trim();
-  if (!to) {
-    showToast('Enter a test recipient email address.', 'error');
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
-    showToast('Enter a valid test recipient email address.', 'error');
-    return;
-  }
-  if (!latestNewsletterHtml) {
-    showToast('Generate preview first, then use Send Test.', 'error');
-    return;
-  }
-  const subject = (document.getElementById('nlSubject').value || 'North Dallas Alphas Test Newsletter').trim();
-  const bodyText =
-    'Test newsletter for review.\n\n' +
-    '1) Attach or paste HTML from the admin \"Copy HTML\" button.\n' +
-    '2) Verify desktop and mobile rendering before chapter send.\n\n' +
-    'Campaign: ' + (document.getElementById('nlCampaignName').value || 'Untitled');
-  window.location.href =
-    'mailto:' + encodeURIComponent(to) +
-    '?subject=' + encodeURIComponent('[TEST] ' + subject) +
-    '&body=' + encodeURIComponent(bodyText);
-  showToast('Opened your mail client for test send.');
-}
+function newsletterEsc(str) { return escHtml(str || ''); } // legacy alias
+
+
 
 // ══════════════════════════════════════════════════
 // SETTINGS
@@ -6374,7 +6090,6 @@ function escHtml(str) {
     updateDashboardStats();
     loadEventsList();
     loadPageSection('home');
-    loadNewsletterDefaults();
     setTimeout(() => {
       const presPhotoEl = document.getElementById('presPhoto');
       if (presPhotoEl && presPhotoEl.value) updatePresPhotoPreview();
