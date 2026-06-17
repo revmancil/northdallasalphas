@@ -1728,7 +1728,7 @@
           <span>Officers 2–15 displayed on Leadership page</span>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Edit officer titles, names, and photo URLs below. Click <i class="fas fa-upload" style="color:var(--blue);"></i> <strong>Upload</strong> to attach a photo from your computer, or paste a URL directly. Click <i class="fas fa-trash" style="color:var(--red);"></i> to remove a slot.</p>
+          <p class="hint-text">Fourteen executive officer positions are pre-filled below (same as the Leadership page). Enter each brother's name and upload or paste a photo URL. Empty photos show a <strong>Photo Coming Soon</strong> placeholder on the public site.</p>
 
           <div style="overflow-x:auto;">
             <table class="officers-table" id="officersTable">
@@ -1747,9 +1747,14 @@
           </div>
 
           <div style="display:flex; align-items:center; justify-content:space-between; margin-top:16px; flex-wrap:wrap; gap:10px;">
-            <button class="btn-sm success" onclick="addOfficer()">
-              <i class="fas fa-plus-circle"></i> Add Officer Slot
-            </button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn-sm success" onclick="addOfficer()">
+                <i class="fas fa-plus-circle"></i> Add Officer Slot
+              </button>
+              <button type="button" class="btn-sm" onclick="restoreOfficerDefaults()" style="background:var(--gray-100);border:1px solid var(--gray-200);color:var(--gray-700);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;">
+                <i class="fas fa-undo"></i> Restore Default Positions
+              </button>
+            </div>
             <button class="btn-save" onclick="saveOfficers()"><i class="fas fa-save"></i> Save All Officers</button>
           </div>
         </div>
@@ -2119,7 +2124,7 @@ const PANEL_META = {
   members:       ['Member Requests',    'Approve and manage member portal access'],
   events:        ['Events Manager',     'Add, edit, remove & feature events'],
   'news-manager':['News Manager',       'Add, edit, remove & feature news articles'],
-  officers:      ['Officers Manager',   'Manage current chapter officers (15 slots)'],
+  officers:      ['Officers Manager',   'Manage chapter president and 14 executive officers'],
   presidents:    ['Past Presidents',    'Update past chapter president records'],
   announcements: ['Announcement Bar',   'Edit the top announcement banner'],
   newsletter:    ['Newsletter Generator','Build and export chapter email campaigns'],
@@ -4222,20 +4227,20 @@ const DEFAULT_PRESIDENT_DATA = {
 };
 
 const DEFAULT_OFFICERS = [
-  { title: 'Vice President',         name: 'Bro. [Name]', photo: '' },
-  { title: 'Recording Secretary',    name: 'Bro. [Name]', photo: '' },
-  { title: 'Treasurer',              name: 'Bro. [Name]', photo: '' },
-  { title: 'Financial Secretary',    name: 'Bro. [Name]', photo: '' },
-  { title: 'Chaplain',               name: 'Bro. [Name]', photo: '' },
-  { title: 'Sergeant-at-Arms',       name: 'Bro. [Name]', photo: '' },
-  { title: 'Membership Chair',       name: 'Bro. [Name]', photo: '' },
-  { title: 'Historian',              name: 'Bro. [Name]', photo: '' },
-  { title: 'Director of Education',  name: 'Bro. [Name]', photo: '' },
-  { title: 'Director of Programs',   name: 'Bro. [Name]', photo: '' },
-  { title: 'Public Relations Chair', name: 'Bro. [Name]', photo: '' },
-  { title: 'Scholarship Chair',      name: 'Bro. [Name]', photo: '' },
-  { title: 'Community Action Chair', name: 'Bro. [Name]', photo: '' },
-  { title: 'Political Action Chair', name: 'Bro. [Name]', photo: '' }
+  { title: 'Vice-President',                  name: 'Bro. [Name]', photo: '' },
+  { title: 'Recording Secretary',             name: 'Bro. [Name]', photo: '' },
+  { title: 'Treasurer',                       name: 'Bro. [Name]', photo: '' },
+  { title: 'Correspondence Secretary',        name: 'Bro. [Name]', photo: '' },
+  { title: 'Financial Secretary',             name: 'Bro. [Name]', photo: '' },
+  { title: 'Dean of Membership Intake',       name: 'Bro. [Name]', photo: '' },
+  { title: 'Chaplain',                        name: 'Bro. [Name]', photo: '' },
+  { title: 'Director of Educational Activities', name: 'Bro. [Name]', photo: '' },
+  { title: 'Historian',                       name: 'Bro. [Name]', photo: '' },
+  { title: 'Parliamentarian',                 name: 'Bro. [Name]', photo: '' },
+  { title: 'Assoc. Editor of the Sphinx',     name: 'Bro. [Name]', photo: '' },
+  { title: 'Sergeant-At-Arms',                name: 'Bro. [Name]', photo: '' },
+  { title: 'Immediate Past President',        name: 'Bro. [Name]', photo: '' },
+  { title: 'Chairman, Sankofa Foundation',    name: 'Bro. [Name]', photo: '' }
 ];
 
 let officersData = [];
@@ -4315,6 +4320,13 @@ function addOfficer() {
   officersData.push({ title: 'New Position', name: 'Bro. [Name]', photo: '' });
   renderOfficersTable();
   showToast('New officer slot added.', 'info');
+}
+
+function restoreOfficerDefaults() {
+  if (!confirm('Replace all officer rows with the 14 default chapter positions? Names and photos you entered will be cleared from this table until you save.')) return;
+  officersData = getOfficerData();
+  renderOfficersTable();
+  showToast('Default officer positions restored. Click "Save All Officers" to publish.', 'info');
 }
 
 function removeOfficer(i) {

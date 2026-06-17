@@ -1278,7 +1278,8 @@ async function submitChapterRegistration(ev) {
         phone: phone,
         email: email,
         payment_status: 'free',
-        amount_cents: 0
+        amount_cents: 0,
+        stripe_checkout_session_id: null
       });
       closeChapterRegModal();
       showRegFlash('success', 'You are registered. We look forward to seeing you!');
@@ -1310,7 +1311,11 @@ async function submitChapterRegistration(ev) {
       throw new Error((payload && payload.error) ? payload.error : 'Checkout unavailable.');
     }
   } catch (e) {
-    errEl.textContent = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
+    var msg = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
+    if (/row-level security|42501/i.test(msg)) {
+      msg = 'Registration could not be saved. The database needs the event_registrations security policy — run section 3 in SUPABASE_CONTENT_SCHEMA.sql (or ask your admin).';
+    }
+    errEl.textContent = msg;
     errEl.classList.add('show');
   } finally {
     btn.disabled = false;

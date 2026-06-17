@@ -384,6 +384,11 @@ using (true);
 
 drop policy if exists "event_registrations_write_auth" on public.event_registrations;
 
+grant usage on schema public to anon, authenticated;
+grant select, insert on public.event_registrations to anon, authenticated;
+grant select, insert, update, delete on public.event_registrations to authenticated;
+grant usage, select on all sequences in schema public to anon, authenticated;
+
 drop policy if exists "dues_payments_read_auth" on public.dues_payments;
 create policy "dues_payments_read_auth"
 on public.dues_payments for select
