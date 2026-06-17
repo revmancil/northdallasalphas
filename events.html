@@ -772,7 +772,10 @@ function buildRegisterButtonHtml(ev, extraStyle, stopPropagation) {
 function openRegistrationChoiceFromStore(eventId) {
   const idStr = String(eventId ?? '');
   const ev = allEventsStore.find(function(x) { return eventIdsMatch(x.id, idStr); });
-  if (!ev) return;
+  if (!ev) {
+    console.warn('Registration event not found:', idStr);
+    return;
+  }
   const opts = getRegistrationOptions(ev);
   if (!opts.length) return;
   if (opts.length === 1) {
@@ -954,8 +957,6 @@ function renderAllEvents(events, opts) {
     return;
   }
 
-  allEventsStore = Array.isArray(events) ? events.slice() : [];
-
   events.forEach((ev) => {
     const parsed = parseEventDate(ev.datetime);
 
@@ -1103,6 +1104,7 @@ function isEventArchived(ev, todayIso) {
     pastEvents = sortByEventDate(raw.filter(function(ev) { return isEventArchived(ev, todayIso); }), 'desc');
   }
   await loadAnnouncement();
+  allEventsStore = (upcomingEvents || []).concat(pastEvents || []);
   renderFeaturedEvent(upcomingEvents);
   renderAllEvents(upcomingEvents, {
     containerId: 'allEventsList',
