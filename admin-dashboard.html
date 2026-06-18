@@ -1465,7 +1465,7 @@
           <span>Select a page section to edit</span>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Use <strong>Visual Page Editor (Recommended)</strong> to click directly on page content and edit it like a document. HTML source controls are hidden unless you choose to open them.</p>
+          <p class="hint-text">Select a page above, then choose a section to edit using the rich-text editor. Use <strong>Advanced (Full Page Override)</strong> only if you need to replace an entire page with custom HTML.</p>
           <div id="pageEditorStorageNotice" style="display:none;margin:0 0 14px;padding:10px 12px;border-radius:7px;font-size:0.8rem;line-height:1.45;"></div>
 
           <!-- Page Tabs -->
@@ -4986,19 +4986,51 @@ function loadPageSection(pageId) {
     if (t.textContent.includes(page.label)) t.classList.add('active');
   });
 
-  // Render section tabs
+  // Render section tabs — skip full_shell/full_page (advanced), put them in a collapsible
   const sectTabs = document.getElementById('sectionTabs');
   sectTabs.innerHTML = '';
-  Object.entries(page.sections).forEach(([key, sec], i) => {
+  const normalKeys = Object.keys(page.sections).filter(k => k !== 'full_shell' && k !== 'full_page');
+  const advancedKeys = Object.keys(page.sections).filter(k => k === 'full_shell' || k === 'full_page');
+
+  normalKeys.forEach((key) => {
+    const sec = page.sections[key];
     const btn = document.createElement('button');
-    btn.className = 'section-tab' + (i === 0 ? ' active' : '');
+    btn.className = 'section-tab';
     btn.textContent = sec.label;
     btn.onclick = () => loadSectionContent(pageId, key);
     sectTabs.appendChild(btn);
   });
 
-  // Load first section
-  const firstKey = Object.keys(page.sections)[0];
+  if (advancedKeys.length) {
+    const advWrap = document.createElement('div');
+    advWrap.style.cssText = 'margin-top:6px;width:100%;';
+    const advToggle = document.createElement('button');
+    advToggle.className = 'section-tab';
+    advToggle.style.cssText = 'font-size:0.72rem;color:var(--gray-500);border-style:dashed;';
+    advToggle.innerHTML = '<i class="fas fa-code" style="margin-right:4px;font-size:0.65rem;"></i> Advanced (Full Page Override)';
+    advToggle.onclick = () => {
+      const hidden = advInner.style.display === 'none';
+      advInner.style.display = hidden ? 'flex' : 'none';
+      advToggle.classList.toggle('active', hidden);
+    };
+    const advInner = document.createElement('div');
+    advInner.style.cssText = 'display:none;gap:6px;flex-wrap:wrap;margin-top:4px;';
+    advancedKeys.forEach(key => {
+      const sec = page.sections[key];
+      const btn = document.createElement('button');
+      btn.className = 'section-tab';
+      btn.style.cssText = 'font-size:0.72rem;background:var(--gray-100);color:var(--gray-600);';
+      btn.textContent = sec.label;
+      btn.onclick = () => loadSectionContent(pageId, key);
+      advInner.appendChild(btn);
+    });
+    advWrap.appendChild(advToggle);
+    advWrap.appendChild(advInner);
+    sectTabs.appendChild(advWrap);
+  }
+
+  // Load first normal section (not full_shell/full_page)
+  const firstKey = normalKeys[0] || Object.keys(page.sections)[0];
   loadSectionContent(pageId, firstKey);
 }
 
@@ -5009,9 +5041,10 @@ async function loadSectionContent(pageId, sectionKey) {
 
   // Update section tab highlights
   const sectTabs = document.getElementById('sectionTabs');
-  sectTabs.querySelectorAll('.section-tab').forEach((t, i) => {
-    const sec = PAGE_SECTIONS[pageId].sections[sectionKey];
-    t.classList.toggle('active', t.textContent === (sec ? sec.label : ''));
+  const activeSec = PAGE_SECTIONS[pageId] && PAGE_SECTIONS[pageId].sections[sectionKey];
+  const activeLabel = activeSec ? activeSec.label : '';
+  sectTabs.querySelectorAll('.section-tab').forEach((t) => {
+    t.classList.toggle('active', t.textContent.trim() === activeLabel.trim());
   });
 
   const page = PAGE_SECTIONS[pageId];
