@@ -789,7 +789,14 @@ renderPastPresidents();
       leadershipData.president.photo = resolvePresidentPhoto(leadershipData.president.photo);
     }
     if (Array.isArray(officers) && officers.length) {
-      leadershipData.officers = officers.map(function(o) { return sanitizeLeadershipRecord(o, 'photo'); });
+      // Merge stored data into the default 14-slot template by matching title.
+      // This ensures all officer positions always display even if only some were saved.
+      const byTitle = {};
+      officers.forEach(function(o) { if (o && o.title) byTitle[o.title] = o; });
+      leadershipData.officers = DEFAULT_OFFICERS.map(function(def) {
+        const stored = byTitle[def.title];
+        return sanitizeLeadershipRecord(Object.assign({}, def, stored || {}), 'photo');
+      });
     }
     if (Array.isArray(pastPresidents) && pastPresidents.length) {
       leadershipData.pastPresidents = pastPresidents.map(function(p) { return sanitizeLeadershipRecord(p, 'photo'); });
