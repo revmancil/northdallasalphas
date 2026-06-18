@@ -111,7 +111,7 @@
   <div class="container">
     <span class="section-label">Our Story</span>
     <h1>Chapter History</h1>
-    <p>The legacy of Xi Tau Lambda Chapter — 40+ years of leadership, service, and brotherhood in North Dallas.</p>
+    <div id="edit-about-hero"><p>The legacy of Xi Tau Lambda Chapter — 40+ years of leadership, service, and brotherhood in North Dallas.</p></div>
   </div>
 </section>
 
@@ -147,8 +147,8 @@
         <span class="section-label">Founding</span>
         <h2 class="section-title">Born From a Growing Community</h2>
         <div class="gold-bar left"></div>
-        <p>The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was chartered on March 3, 1984, in North Dallas County (Texas), and assigned chapter key #607. North Dallas and the surrounding suburbs were experiencing explosive growth during the early 1980's, driven by rapid business expansion, followed by an influx of young professionals and college graduates.</p>
-        <p>Needless to say, numerous Alpha men were among the ranks of those fueling the population growth of North Dallas, and with that came opportunities to bring Alpha's dynamic leadership and service to the North Dallas community.</p>
+        <div id="edit-about-story"><p>The Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. was chartered on March 3, 1984, in North Dallas County (Texas), and assigned chapter key #607. North Dallas and the surrounding suburbs were experiencing explosive growth during the early 1980's, driven by rapid business expansion, followed by an influx of young professionals and college graduates.</p>
+        <p>Needless to say, numerous Alpha men were among the ranks of those fueling the population growth of North Dallas, and with that came opportunities to bring Alpha's dynamic leadership and service to the North Dallas community.</p></div>
 
         <span class="section-label" style="margin-top: 32px;">Programs & Service</span>
         <h3 style="font-family:'Playfair Display',serif; font-size:1.5rem; color:var(--gray-800); margin-bottom:16px;">A Legacy of Community Impact</h3>
@@ -389,22 +389,12 @@ function rebindSiteShellInteractions() {
       }
     }
     if (byKey['about-hero']) {
-      const target = document.querySelector('.page-header p');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey['about-hero'];
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey['about-hero'];
-      }
+      const target = document.getElementById('edit-about-hero');
+      if (target) target.innerHTML = byKey['about-hero'];
     }
     if (byKey['about-story']) {
-      const target = document.querySelector('.history-text p');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey['about-story'];
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey['about-story'];
-      }
+      const target = document.getElementById('edit-about-story');
+      if (target) target.innerHTML = byKey['about-story'];
     }
   } catch (err) {
     // Keep static defaults on failure.

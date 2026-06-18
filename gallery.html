@@ -228,7 +228,7 @@
   <div class="container">
     <span class="section-label">Xi Tau Lambda Chapter</span>
     <h1>Event Photo Gallery</h1>
-    <p id="galleryHeroText">A visual record of our programs, service, and brotherhood across North Dallas County.</p>
+    <div id="edit-gallery-hero"><p>A visual record of our programs, service, and brotherhood across North Dallas County.</p></div>
   </div>
 </section>
 
@@ -647,13 +647,8 @@ async function initGalleryPage() {
         }
       }
       if (byKey['gallery-hero']) {
-        const target = document.getElementById('galleryHeroText');
-        if (target) {
-          const tmp = document.createElement('div');
-          tmp.innerHTML = byKey['gallery-hero'];
-          const pNode = tmp.querySelector('p');
-          target.innerHTML = pNode ? pNode.innerHTML : byKey['gallery-hero'];
-        }
+        const target = document.getElementById('edit-gallery-hero');
+        if (target) target.innerHTML = byKey['gallery-hero'];
       }
     }
 

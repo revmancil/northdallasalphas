@@ -86,7 +86,7 @@
   <div class="container">
     <span class="section-label">Reach Out</span>
     <h1>Contact Us</h1>
-    <p>Questions about membership, events, sponsorship, or general inquiries — we're here to help.</p>
+    <div id="edit-contact-hero"><p>Questions about membership, events, sponsorship, or general inquiries — we're here to help.</p></div>
   </div>
 </section>
 
@@ -98,7 +98,7 @@
         <span class="section-label">Get In Touch</span>
         <h2 class="section-title" style="font-size: 2rem;">We'd Love to Hear From You</h2>
         <div class="gold-bar left"></div>
-        <p style="color:var(--gray-600); margin-bottom:28px;">Whether you're curious about membership, planning to attend an event, interested in sponsoring the gala, or simply want to connect — reach out and a brother will be in touch.</p>
+        <div id="edit-contact-info"><p style="color:var(--gray-600); margin-bottom:28px;">Whether you're curious about membership, planning to attend an event, interested in sponsoring the gala, or simply want to connect — reach out and a brother will be in touch.</p></div>
 
         <div class="contact-cards">
           <div class="contact-card">
@@ -275,22 +275,12 @@
         // Intentionally ignore full_shell / full_page for contact: those keys replace the entire
         // page with CMS HTML and hide edits made in contact.html (emails, Sankofa block, form).
         if (byKey['contact-hero']) {
-          const target = document.querySelector('.page-header p');
-          if (target) {
-            const tmp = document.createElement('div');
-            tmp.innerHTML = byKey['contact-hero'];
-            const pNode = tmp.querySelector('p');
-            target.innerHTML = pNode ? pNode.innerHTML : byKey['contact-hero'];
-          }
+          const target = document.getElementById('edit-contact-hero');
+          if (target) target.innerHTML = byKey['contact-hero'];
         }
         if (byKey['contact-info']) {
-          const target = document.querySelector('.contact-layout .fade-up p');
-          if (target) {
-            const tmp = document.createElement('div');
-            tmp.innerHTML = byKey['contact-info'];
-            const pNode = tmp.querySelector('p');
-            target.innerHTML = pNode ? pNode.innerHTML : byKey['contact-info'];
-          }
+          const target = document.getElementById('edit-contact-info');
+          if (target) target.innerHTML = byKey['contact-info'];
         }
       }
     } catch (err) {

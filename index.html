@@ -77,7 +77,7 @@
       Key # 607 · North Dallas County · Est. 1984
     </div>
     <h1>First of All,<br /><em>Servants of All</em>,<br />We Shall Transcend All</h1>
-    <p class="hero-sub">Serving North Dallas County through scholarship, leadership, and community impact since 1984.</p>
+    <div id="edit-hero"><p class="hero-sub">Serving North Dallas County through scholarship, leadership, and community impact since 1984.</p></div>
     <div class="hero-actions">
       <a href="events.html" class="btn btn-gold"><i class="fas fa-calendar-alt"></i> Upcoming Events</a>
       <a href="visiting-brothers.html" class="btn btn-outline">Visiting Brothers</a>
@@ -135,7 +135,7 @@
       <span class="section-label">Our Foundation</span>
       <h2 class="section-title">What We Stand For</h2>
       <div class="gold-bar"></div>
-      <p class="section-sub">Three pillars define the character and mission of every North Dallas Alpha — guiding our service to community, our investment in the next generation, and our bonds with one another.</p>
+      <div id="edit-pillars"><p class="section-sub">Three pillars define the character and mission of every North Dallas Alpha — guiding our service to community, our investment in the next generation, and our bonds with one another.</p></div>
     </div>
   </div>
 
@@ -264,14 +264,14 @@
         <span class="section-label">A Message From Our President</span>
         <h2 class="section-title" style="font-size: 2.2rem;">Welcome to the House of Alpha</h2>
         <div class="gold-bar left"></div>
-        <blockquote>"GOODWILL is the monarch of this house. Men, unacquainted, enter, shake hands, exchange greetings, and depart friends. Cordiality exists among all who abide within."</blockquote>
+        <div id="edit-president"><blockquote>"GOODWILL is the monarch of this house. Men, unacquainted, enter, shake hands, exchange greetings, and depart friends. Cordiality exists among all who abide within."</blockquote>
         <p>Welcome to Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter, seated in North Dallas County. I am Brother Cedric Washington, and I have the honor of serving as the 20th Chapter President of this great chapter.</p>
         <p>Xi Tau Lambda was chartered March 3, 1984 as the 607th seat in the House of Alpha. For over four decades, our brothers have led with character, served with purpose, and invested in the communities we call home.</p>
         <p>Thank you for visiting our page and learning more about the North Dallas Alphas!</p>
         <div class="president-sig">
           <strong>Bro. Cedric Washington</strong>
           <span>20th Chapter President, Xi Tau Lambda</span>
-        </div>
+        </div></div>
       </div>
     </div>
   </div>
@@ -300,7 +300,7 @@
   <div class="membership-cta-inner">
     <span class="section-label">Join Our Ranks</span>
     <h2>Are You Ready to Answer<br /><span>The Alpha Call?</span></h2>
-    <p>Alpha Phi Alpha seeks men of purpose, principle, and community dedication. If you hold an earned baccalaureate degree and believe in service above self, we invite you to learn more.</p>
+    <div id="edit-cta-home"><p>Alpha Phi Alpha seeks men of purpose, principle, and community dedication. If you hold an earned baccalaureate degree and believe in service above self, we invite you to learn more.</p></div>
     <div class="cta-actions">
       <a href="membership.html" class="btn btn-gold"><i class="fas fa-user-plus"></i> Learn About Membership</a>
       <a href="contact.html" class="btn btn-outline">Contact Us</a>
@@ -703,40 +703,20 @@ async function applyPageSectionContent() {
     }
 
     if (byKey.hero) {
-      const h1 = document.querySelector('#hero h1');
-      const p = document.querySelector('#hero .hero-sub');
-      const tmp = document.createElement('div');
-      tmp.innerHTML = byKey.hero;
-      const ps = tmp.querySelectorAll('p');
-      if (ps[0]) h1.innerHTML = ps[0].innerHTML.replace(/^<strong>Headline:<\/strong>\s*/i, '');
-      if (ps[1]) p.innerHTML = ps[1].innerHTML.replace(/^<strong>Subheading:<\/strong>\s*/i, '');
+      const target = document.getElementById('edit-hero');
+      if (target) target.innerHTML = byKey.hero;
     }
     if (byKey.president) {
-      const target = document.querySelector('.president-text p');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey.president;
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey.president;
-      }
+      const target = document.getElementById('edit-president');
+      if (target) target.innerHTML = byKey.president;
     }
     if (byKey.pillars) {
-      const target = document.querySelector('.pillars-header .section-sub');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey.pillars;
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey.pillars;
-      }
+      const target = document.getElementById('edit-pillars');
+      if (target) target.innerHTML = byKey.pillars;
     }
     if (byKey['cta-home']) {
-      const target = document.querySelector('.membership-cta p');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey['cta-home'];
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey['cta-home'];
-      }
+      const target = document.getElementById('edit-cta-home');
+      if (target) target.innerHTML = byKey['cta-home'];
     }
   } catch (err) {
     // Keep page defaults on failure.

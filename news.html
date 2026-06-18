@@ -77,7 +77,7 @@
   <div class="container">
     <span class="section-label">Stay Informed</span>
     <h1>Chapter News</h1>
-    <p>Stories of impact, recognition, and brotherhood from the North Dallas Alphas.</p>
+    <div id="edit-news-hero"><p>Stories of impact, recognition, and brotherhood from the North Dallas Alphas.</p></div>
   </div>
 </section>
 
@@ -219,13 +219,8 @@ function rebindSiteShellInteractions() {
       }
     }
     if (byKey['news-hero']) {
-      const target = document.querySelector('.page-header p');
-      if (target) {
-        const tmp = document.createElement('div');
-        tmp.innerHTML = byKey['news-hero'];
-        const pNode = tmp.querySelector('p');
-        target.innerHTML = pNode ? pNode.innerHTML : byKey['news-hero'];
-      }
+      const target = document.getElementById('edit-news-hero');
+      if (target) target.innerHTML = byKey['news-hero'];
     }
     }
     const articles = await fetchNewsArticles();
