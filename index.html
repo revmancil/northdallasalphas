@@ -553,6 +553,19 @@ async function homeGetEvents() {
     const mapped = rows.map(homeMapEventRow);
     const upcoming = filterUpcoming(mapped);
     if (!upcoming.length) return filterUpcoming(HOME_DEFAULT_EVENTS.map(homeMapEventRow));
+    // Sort ascending by event date (soonest first)
+    upcoming.sort(function(a, b) {
+      const da = (a.date || '').split(' ')[0] || '';
+      const db = (b.date || '').split(' ')[0] || '';
+      function toIso(d) {
+        const s = d.split('/');
+        if (s.length < 3) return '';
+        return s[2] + '-' + s[0].padStart(2,'0') + '-' + s[1].padStart(2,'0');
+      }
+      const ia = toIso(da) || '9999-99-99';
+      const ib = toIso(db) || '9999-99-99';
+      return ia < ib ? -1 : ia > ib ? 1 : 0;
+    });
     return upcoming;
   } catch (err) {
     return filterUpcoming(HOME_DEFAULT_EVENTS.map(homeMapEventRow));

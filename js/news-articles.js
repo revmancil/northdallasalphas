@@ -127,6 +127,29 @@ function getPublishedNewsArticles(articles) {
   return (articles || []).filter(function(a) { return a && a.published !== false && a.title; });
 }
 
+// Parse a freeform date string like "June 2025", "December 2023", "2023" into a sortable value.
+function newsDateSortKey(dateStr) {
+  const MONTHS = { january:0,february:1,march:2,april:3,may:4,june:5,july:6,august:7,september:8,october:9,november:10,december:11 };
+  const s = String(dateStr || '').trim().toLowerCase();
+  if (!s) return 0;
+  // "Month YYYY"
+  const mY = s.match(/^([a-z]+)\s+(\d{4})$/);
+  if (mY && MONTHS[mY[1]] !== undefined) return parseInt(mY[2], 10) * 100 + MONTHS[mY[1]];
+  // "YYYY"
+  const yOnly = s.match(/^(\d{4})$/);
+  if (yOnly) return parseInt(yOnly[1], 10) * 100;
+  // "MM/DD/YYYY"
+  const mdy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdy) return parseInt(mdy[3], 10) * 100 + parseInt(mdy[1], 10) - 1;
+  return 0;
+}
+
+function sortNewsNewestFirst(articles) {
+  return articles.slice().sort(function(a, b) {
+    return newsDateSortKey(b.date) - newsDateSortKey(a.date);
+  });
+}
+
 function renderNewsBodyParagraphs(body, extraStyle) {
   const text = String(body || '').trim();
   if (!text) return '';
@@ -169,7 +192,7 @@ function pickHomeNewsArticles(articles) {
 
 function renderHomeNewsGrid(container, articles) {
   if (!container) return;
-  const picks = pickHomeNewsArticles(articles);
+  const picks = pickHomeNewsArticles(sortNewsNewestFirst(articles));
   container.innerHTML = '';
   picks.forEach(function(article, idx) {
     const card = document.createElement('div');
@@ -194,7 +217,7 @@ function renderHomeNewsGrid(container, articles) {
 }
 
 function renderNewsPageLists(mainEl, sidebarEl, articles) {
-  const published = getPublishedNewsArticles(articles);
+  const published = sortNewsNewestFirst(getPublishedNewsArticles(articles));
   const mainArticles = published.filter(function(a) { return a.placement !== 'sidebar'; });
   const sidebarArticles = published.filter(function(a) { return a.placement === 'sidebar'; });
 
