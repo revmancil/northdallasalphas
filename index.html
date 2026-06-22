@@ -546,7 +546,7 @@ async function homeGetEvents() {
     return list.filter(function(ev) { return !homeIsEventArchived(ev, todayIso); });
   }
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/events?order=sort_order.asc', { headers: sbHeaders() });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/events?order=event_date.asc,sort_order.asc', { headers: sbHeaders() });
     if (!res.ok) throw new Error('events failed');
     const rows = await res.json();
     if (!rows || !rows.length) return filterUpcoming(HOME_DEFAULT_EVENTS.map(homeMapEventRow));

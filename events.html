@@ -1088,7 +1088,7 @@ function isEventArchived(ev, todayIso) {
   let pastEvents = null;
   try {
     const todayIso = localTodayIso();
-    const allRows = await sb.getAll('events', 'order=sort_order.asc');
+    const allRows = await sb.getAll('events', 'order=event_date.asc,sort_order.asc');
     const normalized = normalizeEvents(allRows) || [];
     const upcomingRaw = normalized.filter(function(ev) { return !isEventArchived(ev, todayIso); });
     const pastRaw = normalized.filter(function(ev) { return isEventArchived(ev, todayIso); });

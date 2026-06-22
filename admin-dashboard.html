@@ -3841,6 +3841,16 @@ function removeEvent(i) {
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
 }
 
+function datetimeToIsoDate(dtStr) {
+  // Parse MM/DD/YYYY or M/D/YYYY (with optional time) → "YYYY-MM-DD"
+  const s = String(dtStr || '').trim().split(' ')[0];
+  const segs = s.split('/');
+  if (segs.length === 3 && /^\d{4}$/.test(segs[2])) {
+    return segs[2] + '-' + segs[0].padStart(2, '0') + '-' + segs[1].padStart(2, '0');
+  }
+  return '';
+}
+
 function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
   return eventsData.map(function(ev, idx) {
     const row = {
@@ -3848,6 +3858,7 @@ function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
       name: ev.name || '',
       location: ev.location || '',
       datetime: ev.datetime || '',
+      event_date: datetimeToIsoDate(ev.datetime),
       featured: !!ev.featured,
       flyer: ev.flyer || '',
       description: ev.description || '',
