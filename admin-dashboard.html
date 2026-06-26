@@ -4460,6 +4460,15 @@ function getOfficerData() {
   return DEFAULT_OFFICERS.map(o => ({ ...o }));
 }
 
+function resolveOfficersData(data) {
+  if (!Array.isArray(data) || !data.length) return getOfficerData();
+  return data.map(function(o) {
+    const copy = { ...o };
+    copy.photo = normalizeLeadershipPhotoUrl(copy.photo);
+    return copy;
+  });
+}
+
 function getPresidentData() {
   return { ...DEFAULT_PRESIDENT_DATA };
 }
@@ -4478,18 +4487,20 @@ async function loadOfficersPanel() {
   // Restore president photo preview
   updatePresPhotoPreview();
 
-  // Officers table
-  officersData = Array.isArray(officers) ? officers.map(o => {
-    const copy = { ...o };
-    copy.photo = normalizeLeadershipPhotoUrl(copy.photo);
-    return copy;
-  }) : getOfficerData();
+  officersData = resolveOfficersData(officers);
   renderOfficersTable();
 }
 
 function renderOfficersTable() {
   const tbody = document.getElementById('officersTableBody');
+  if (!tbody) return;
   tbody.innerHTML = '';
+  if (!officersData.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-500);">No executive officers loaded. Click <strong>Restore Default Positions</strong> below, or add a row manually.</td></tr>';
+    document.getElementById('officerCountBadge').textContent = '0';
+    document.getElementById('statOfficerCount').textContent = '1';
+    return;
+  }
   officersData.forEach((o, i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -5784,7 +5795,7 @@ async function updateDashboardStats() {
   const officers  = await getContentJson('officers', DEFAULT_OFFICERS);
   const presidents = await getContentJson('past_presidents', DEFAULT_PAST_PRESIDENTS);
   document.getElementById('statEventCount').textContent     = eventRows.length || 0;
-  document.getElementById('statOfficerCount').textContent   = (Array.isArray(officers) ? officers.length : DEFAULT_OFFICERS.length) + 1;
+  document.getElementById('statOfficerCount').textContent   = ((Array.isArray(officers) && officers.length) ? officers.length : DEFAULT_OFFICERS.length) + 1;
   document.getElementById('statPresidentCount').textContent = (Array.isArray(presidents) && presidents.length) ? presidents.length : DEFAULT_PAST_PRESIDENTS.length;
 }
 
