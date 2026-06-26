@@ -817,6 +817,7 @@ function renderPastPresidents() {
     const photoWrap = card.querySelector('.president-card-photo');
     const numLabel = p.num;
     mountLeadershipPhoto(photoWrap, p.photo, numLabel + ' Chapter President', 'president-card', {
+      priority: true,
       afterLoad: function(wrap) {
         const badge = document.createElement('span');
         badge.className = 'president-num-badge';
