@@ -1986,6 +1986,10 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">Set chapter active date, IMDP certification, and Risk Management certification. These values are read-only in the member portal.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center;">
+            <button class="btn-sm edit" onclick="document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
+            <span class="hint-text" style="margin:0;">Export from AlphaMX and upload to bulk-update IMDP, Risk Management, and active date for matched members.</span>
+          </div>
           <div id="memberComplianceList">
             <div class="hint-text" style="margin:0;">Loading compliance records...</div>
           </div>
@@ -2133,6 +2137,7 @@
 <input type="file" id="pageEditorImageInput" accept="image/*" style="display:none;" onchange="handlePageEditorImageUpload(event)" />
 <input type="file" id="newsPhotoInput" accept="image/*" style="display:none;" onchange="handleNewsPhotoUpload(event)" />
 <input type="file" id="brothersDirectoryCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleBrothersDirectoryUpload(event)" />
+<input type="file" id="alphaMxCsvInput" accept=".csv,text/csv" style="display:none;" onchange="handleAlphaMxCsvUpload(event)" />
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
@@ -3055,7 +3060,7 @@ function renderBrothersDirectoryTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = '' +
       '<td>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.first_name, 'first_name', rowId) + '</td>' +
+      '<td style="white-space:nowrap;">' + brotherDirectoryInput(rec.first_name, 'first_name', rowId) + (rec.life_member_date ? ' <span title="Life Member" style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;vertical-align:middle;margin-left:3px;"><i class="fas fa-credit-card"></i> LIFE</span>' : '') + '</td>' +
       '<td>' + brotherDirectoryInput(rec.middle_name, 'middle_name', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.last_name, 'last_name', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.suffix, 'suffix', rowId) + '</td>' +
@@ -3230,6 +3235,82 @@ async function handleBrothersDirectoryUpload(event) {
     showToast('Merged ' + parsed.records.length + ' row(s) by Alpha ID.' + warn, parsed.errors.length ? 'info' : 'success');
   } catch (err) {
     showToast('Could not read CSV file: ' + (err.message || 'unknown error'), 'error');
+  } finally {
+    if (event && event.target) event.target.value = '';
+  }
+}
+
+// ── AlphaMX Compliance CSV Upload ──
+function mapAlphaMxHeaders(headers) {
+  const idx = {};
+  headers.forEach(function(h, i) {
+    const k = normalizeHeaderName(h);
+    if (k) idx[k] = i;
+  });
+  return {
+    alpha_id:          idx.alphaid         != null ? idx.alphaid         : (idx.memberid != null ? idx.memberid : idx.membernumber),
+    first_name:        idx.firstname       != null ? idx.firstname       : idx.first,
+    last_name:         idx.lastname        != null ? idx.lastname        : idx.last,
+    email:             idx.email,
+    chapter_active_date: idx.chapteractivedate != null ? idx.chapteractivedate : (idx.activedate != null ? idx.activedate : idx.chapteractive),
+    imdp_certified:    idx.imdpcertified   != null ? idx.imdpcertified   : (idx.imdp != null ? idx.imdp : (idx.imdpcertification != null ? idx.imdpcertification : idx.imdpdate)),
+    risk_mgmt_certified: idx.riskmgmtcertified != null ? idx.riskmgmtcertified : (idx.riskmgmt != null ? idx.riskmgmt : (idx.riskmanagement != null ? idx.riskmanagement : idx.riskmanagementcertification))
+  };
+}
+
+async function handleAlphaMxCsvUpload(event) {
+  const file = event && event.target && event.target.files ? event.target.files[0] : null;
+  if (!file) return;
+  const token = getAdminToken();
+  if (!token) { showToast('Admin session expired. Please sign in again.', 'error'); return; }
+  try {
+    const text = await file.text();
+    const lines = text.replace(/\r/g, '').split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+    if (lines.length < 2) { showToast('CSV must have a header row and at least one data row.', 'error'); return; }
+    const mapped = mapAlphaMxHeaders(parseCsvLine(lines[0]));
+    if (mapped.alpha_id == null && mapped.email == null) {
+      showToast('AlphaMX CSV must include an Alpha ID or email column to match members.', 'error');
+      return;
+    }
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cells = parseCsvLine(lines[i]);
+      rows.push({
+        alpha_id:            csvCell(cells, mapped.alpha_id).toUpperCase(),
+        email:               csvCell(cells, mapped.email).toLowerCase(),
+        chapter_active_date: csvCell(cells, mapped.chapter_active_date),
+        imdp_certified:      csvCell(cells, mapped.imdp_certified),
+        risk_mgmt_certified: csvCell(cells, mapped.risk_mgmt_certified)
+      });
+    }
+    // Fetch current active members to match against
+    const members = await sbGet('members', 'status=eq.active', token);
+    if (!members || !members.length) { showToast('No active members found to update.', 'info'); return; }
+    // Build lookup maps
+    const byAlphaId = {};
+    const byEmail = {};
+    members.forEach(function(m) {
+      if (m.alpha_id) byAlphaId[String(m.alpha_id).toUpperCase()] = m;
+      if (m.email) byEmail[String(m.email).toLowerCase()] = m;
+    });
+    let matched = 0, skipped = 0;
+    showToast('Importing AlphaMX data…', 'info');
+    for (const row of rows) {
+      const member = byAlphaId[row.alpha_id] || byEmail[row.email];
+      if (!member) { skipped++; continue; }
+      const payload = { updated_at: new Date().toISOString() };
+      if (row.chapter_active_date) payload.chapter_active_date = row.chapter_active_date;
+      if (row.imdp_certified)      payload.imdp_certified = row.imdp_certified;
+      if (row.risk_mgmt_certified) payload.risk_mgmt_certified = row.risk_mgmt_certified;
+      if (Object.keys(payload).length === 1) { skipped++; continue; }
+      await sbPatch('members', 'id=eq.' + encodeURIComponent(String(member.id)), payload, token);
+      matched++;
+    }
+    const skipNote = skipped ? ' (' + skipped + ' row(s) not matched)' : '';
+    showToast('Updated ' + matched + ' member(s) from AlphaMX.' + skipNote, matched ? 'success' : 'info');
+    await loadMemberRequests();
+  } catch (err) {
+    showToast('Could not process AlphaMX CSV: ' + (err.message || 'unknown error'), 'error');
   } finally {
     if (event && event.target) event.target.value = '';
   }
