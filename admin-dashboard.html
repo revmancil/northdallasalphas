@@ -1761,6 +1761,9 @@
               <button type="button" class="btn-sm" onclick="restoreOfficerDefaults()" style="background:var(--gray-100);border:1px solid var(--gray-200);color:var(--gray-700);padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;">
                 <i class="fas fa-undo"></i> Restore Default Positions
               </button>
+              <button type="button" class="btn-sm" onclick="optimizeOfficerPhotos()" style="background:#eef5ff;border:1px solid #d9e9ff;color:#1f4e79;padding:8px 14px;border-radius:6px;cursor:pointer;font-size:0.82rem;">
+                <i class="fas fa-compress-alt"></i> Optimize Photo Sizes
+              </button>
             </div>
             <button class="btn-save" onclick="saveOfficers()"><i class="fas fa-save"></i> Save All Officers</button>
           </div>
@@ -4275,22 +4278,112 @@ async function uploadNewsImageToStorage(file) {
   });
 }
 
+const LEADERSHIP_PHOTO_MAX_SIDE = 480;
+const LEADERSHIP_PHOTO_MAX_BYTES = 120000;
+
 async function uploadLeadershipPhotoToStorage(file) {
   return uploadImageToSupabaseBucket(file, EVENT_GALLERY_IMAGE_BUCKET, {
     prefixA: 'leadership/',
-    prefixB: 'leader-'
+    prefixB: 'leader-',
+    maxWidthOrHeight: LEADERSHIP_PHOTO_MAX_SIDE,
+    initialQuality: 0.82,
+    forceJpeg: true
   });
+}
+
+async function leadershipPhotoNeedsOptimization(url) {
+  const normalized = normalizeLeadershipPhotoUrl(url);
+  if (!normalized || normalized.startsWith('data:image/')) return !!normalized;
+  if (normalized.indexOf('images/') === 0 || normalized.indexOf('/images/') !== -1) return false;
+  if (/\.png(\?|$)/i.test(normalized)) return true;
+  if (!/supabase\.co\/storage\//i.test(normalized)) return false;
+  try {
+    const res = await fetch(normalized, { method: 'HEAD' });
+    if (!res.ok) return /\.png(\?|$)/i.test(normalized);
+    const len = parseInt(res.headers.get('content-length') || '0', 10);
+    return len > LEADERSHIP_PHOTO_MAX_BYTES;
+  } catch (err) {
+    return /\.png(\?|$)/i.test(normalized);
+  }
+}
+
+async function recompressRemoteLeadershipPhoto(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('Could not download photo for optimization.');
+  const blob = await res.blob();
+  let uploadFile = new File([blob], 'leader.jpg', { type: blob.type || 'image/jpeg' });
+  if (typeof imageCompression === 'function') {
+    uploadFile = await imageCompression(uploadFile, {
+      maxWidthOrHeight: LEADERSHIP_PHOTO_MAX_SIDE,
+      initialQuality: 0.82,
+      useWebWorker: true,
+      fileType: 'image/jpeg'
+    });
+  } else {
+    const dataUrl = await new Promise(function(resolve, reject) {
+      const reader = new FileReader();
+      reader.onload = function() { resolve(String(reader.result || '')); };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const compressed = await compressDataUrlToJpeg(dataUrl, LEADERSHIP_PHOTO_MAX_SIDE, 0.82);
+    uploadFile = dataUrlToImageFile(compressed, 'leader');
+  }
+  const uploaded = await uploadLeadershipPhotoToStorage(uploadFile);
+  return uploaded.url;
 }
 
 async function migrateLeadershipPhotoForSave(photoUrl) {
   const normalized = normalizeLeadershipPhotoUrl(photoUrl);
-  if (!normalized || !String(normalized).startsWith('data:image/')) return normalized;
-  const compressed = await ensureInlinePhotoFits(normalized);
+  if (!normalized) return normalized;
+  if (String(normalized).startsWith('data:image/')) {
+    const compressed = await ensureInlinePhotoFits(normalized);
+    try {
+      const uploaded = await uploadLeadershipPhotoToStorage(dataUrlToImageFile(compressed, 'leader'));
+      return uploaded.url;
+    } catch (err) {
+      return compressed;
+    }
+  }
+  if (!(await leadershipPhotoNeedsOptimization(normalized))) return normalized;
   try {
-    const uploaded = await uploadLeadershipPhotoToStorage(dataUrlToImageFile(compressed, 'leader'));
-    return uploaded.url;
+    return await recompressRemoteLeadershipPhoto(normalized);
   } catch (err) {
-    return compressed;
+    return normalized;
+  }
+}
+
+async function optimizeOfficerPhotos() {
+  const token = getAdminToken();
+  if (!token) {
+    showToast('Admin session expired. Please sign in again.', 'error');
+    return;
+  }
+  officersData.forEach(function(o, i) {
+    const photoEl = document.getElementById('officer-photo-url-' + i);
+    if (photoEl) o.photo = normalizeLeadershipPhotoUrl(photoEl.value.trim());
+  });
+  let optimized = 0;
+  showToast('Optimizing officer photos for faster page loads…', 'info');
+  for (let i = 0; i < officersData.length; i++) {
+    const before = officersData[i].photo || '';
+    if (!before) continue;
+    const after = await migrateLeadershipPhotoForSave(before);
+    if (after && after !== before) {
+      optimized++;
+      officersData[i].photo = after;
+      const photoEl = document.getElementById('officer-photo-url-' + i);
+      if (photoEl) photoEl.value = after;
+    }
+  }
+  try {
+    await saveContentJson('officers', officersData);
+    renderOfficersTable();
+    showToast(optimized
+      ? 'Optimized ' + optimized + ' officer photo(s) and saved to Supabase.'
+      : 'Officer photos are already optimized.');
+  } catch (err) {
+    showToast('Could not save optimized photos: ' + (err.message || 'unknown error'), 'error');
   }
 }
 
@@ -4484,10 +4577,12 @@ async function saveOfficers() {
   });
   for (let i = 0; i < officersData.length; i++) {
     officersData[i].photo = normalizeLeadershipPhotoUrl(officersData[i].photo);
-    if (officersData[i].photo && String(officersData[i].photo).startsWith('data:image/')) {
-      officersData[i].photo = await migrateLeadershipPhotoForSave(officersData[i].photo);
+    if (!officersData[i].photo) continue;
+    const nextPhoto = await migrateLeadershipPhotoForSave(officersData[i].photo);
+    if (nextPhoto !== officersData[i].photo) {
+      officersData[i].photo = nextPhoto;
       const photoEl = document.getElementById('officer-photo-url-' + i);
-      if (photoEl) photoEl.value = officersData[i].photo;
+      if (photoEl) photoEl.value = nextPhoto;
     }
   }
   try {
@@ -5830,18 +5925,22 @@ async function uploadImageToSupabaseBucket(file, bucketId, folderOpts) {
   const prefixA = opts.prefixA != null ? opts.prefixA : 'event-gallery/';
   const prefixB = opts.prefixB != null ? opts.prefixB : 'event-gallery-';
   var uploadFile = file;
+  const maxSide = opts.maxWidthOrHeight != null ? opts.maxWidthOrHeight : 1200;
+  const quality = opts.initialQuality != null ? opts.initialQuality : 0.8;
   if (typeof imageCompression === 'function') {
     try {
       uploadFile = await imageCompression(file, {
-        maxWidthOrHeight: 1200,
-        initialQuality: 0.8,
-        useWebWorker: true
+        maxWidthOrHeight: maxSide,
+        initialQuality: quality,
+        useWebWorker: true,
+        fileType: opts.forceJpeg ? 'image/jpeg' : undefined
       });
     } catch (compressionErr) {
       uploadFile = file;
     }
   }
-  const ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
+  let ext = (file.name && file.name.split('.').pop()) ? file.name.split('.').pop().toLowerCase() : 'jpg';
+  if (opts.forceJpeg) ext = 'jpg';
   const safeExt = ext.replace(/[^a-z0-9]/g, '') || 'jpg';
   const fileStamp = Date.now() + '-' + Math.random().toString(36).slice(2, 9);
   const pathCandidates = [

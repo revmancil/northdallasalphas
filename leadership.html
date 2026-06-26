@@ -7,6 +7,8 @@
   <meta name="description" content="Meet the current officers and past chapter presidents of the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. — North Dallas Alphas." />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fbjervpgxnbyntylabfr.supabase.co" crossorigin />
+  <link rel="dns-prefetch" href="https://fbjervpgxnbyntylabfr.supabase.co" />
   <link rel="preload" as="image" href="images/chapter-president.jpg" fetchpriority="high" />
   <style>
 
@@ -165,6 +167,14 @@
       height: 100%;
       object-fit: contain;
       object-position: center center;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .officer-card-photo img.is-loaded {
+      opacity: 1;
+    }
+    .officer-card-photo.is-loading .photo-placeholder {
+      opacity: 0.55;
     }
     .officer-card-photo .photo-placeholder {
       width: 100%;
@@ -602,6 +612,43 @@ async function getSiteContent(contentKey) {
   return rows && rows.length ? rows[0].content_json : null;
 }
 
+async function getLeadershipContentBatch() {
+  const res = await fetch(
+    SUPABASE_URL + '/rest/v1/site_content?content_key=in.(president,officers,past_presidents)&select=content_key,content_json',
+    { headers: sbHeaders() }
+  );
+  if (!res.ok) throw new Error(await res.text());
+  const rows = await res.json();
+  const out = {};
+  (rows || []).forEach(function(row) {
+    if (row && row.content_key) out[row.content_key] = row.content_json;
+  });
+  return out;
+}
+
+var leadershipImageActive = 0;
+var leadershipImageWaiters = [];
+var LEADERSHIP_IMAGE_CONCURRENCY = 4;
+
+function acquireLeadershipImageSlot() {
+  if (leadershipImageActive < LEADERSHIP_IMAGE_CONCURRENCY) {
+    leadershipImageActive++;
+    return Promise.resolve();
+  }
+  return new Promise(function(resolve) {
+    leadershipImageWaiters.push(resolve);
+  });
+}
+
+function releaseLeadershipImageSlot() {
+  leadershipImageActive--;
+  var next = leadershipImageWaiters.shift();
+  if (next) {
+    leadershipImageActive++;
+    next();
+  }
+}
+
 const leadershipData = {
   president: { ...DEFAULT_PRESIDENT },
   officers: DEFAULT_OFFICERS.map(function(o) { return { ...o }; }),
@@ -644,25 +691,44 @@ function placeholderHtml(kind) {
 
 function mountLeadershipPhoto(container, photoUrl, altText, placeholderKind, options) {
   if (!container) return;
-  container.innerHTML = '';
   const url = normalizeLeadershipPhotoUrl(photoUrl);
   if (!url) {
+    container.classList.remove('is-loading');
     container.innerHTML = placeholderHtml(placeholderKind);
     return;
   }
   const opts = options || {};
-  const img = document.createElement('img');
-  img.src = url;
-  img.alt = altText || '';
-  img.decoding = 'async';
-  img.loading = opts.priority ? 'eager' : 'lazy';
-  if (opts.priority && 'fetchPriority' in img) img.fetchPriority = 'high';
-  if (opts.width) img.width = opts.width;
-  if (opts.height) img.height = opts.height;
-  img.onerror = function() {
-    container.innerHTML = placeholderHtml(placeholderKind);
-  };
-  container.appendChild(img);
+  const placeholder = placeholderHtml(placeholderKind);
+  container.classList.add('is-loading');
+  container.innerHTML = placeholder;
+
+  (async function() {
+    if (!opts.priority) await acquireLeadershipImageSlot();
+    const img = document.createElement('img');
+    img.alt = altText || '';
+    img.decoding = 'async';
+    img.loading = opts.priority ? 'eager' : 'lazy';
+    if (opts.priority && 'fetchPriority' in img) img.fetchPriority = 'high';
+    if (opts.width) img.width = opts.width;
+    if (opts.height) img.height = opts.height;
+    const finish = function() {
+      if (!opts.priority) releaseLeadershipImageSlot();
+    };
+    img.onload = function() {
+      container.classList.remove('is-loading');
+      container.innerHTML = '';
+      img.classList.add('is-loaded');
+      container.appendChild(img);
+      if (typeof opts.afterLoad === 'function') opts.afterLoad(container);
+      finish();
+    };
+    img.onerror = function() {
+      container.classList.remove('is-loading');
+      container.innerHTML = placeholderHtml(placeholderKind);
+      finish();
+    };
+    img.src = url;
+  })();
 }
 
 // ── Render President Feature Card ──
@@ -671,7 +737,6 @@ function renderPresident() {
   const card = document.getElementById('presidentFeatureCard');
   card.innerHTML = `
     <div class="president-feature-img">
-      <span class="president-feature-badge">Chapter President</span>
     </div>
     <div class="president-feature-content">
       <div class="role-label">${p.title || '20th Chapter President'}</div>
@@ -685,12 +750,18 @@ function renderPresident() {
     resolvePresidentPhoto(p.photo),
     p.name || 'Chapter President',
     'president',
-    { priority: true, width: 1000, height: 1000 }
+    {
+      priority: true,
+      width: 1000,
+      height: 1000,
+      afterLoad: function(wrap) {
+        const badge = document.createElement('span');
+        badge.className = 'president-feature-badge';
+        badge.textContent = 'Chapter President';
+        wrap.appendChild(badge);
+      }
+    }
   );
-  const badge = document.createElement('span');
-  badge.className = 'president-feature-badge';
-  badge.textContent = 'Chapter President';
-  card.querySelector('.president-feature-img').appendChild(badge);
 
   // Update admin year label
   if (p.adminYear) {
@@ -735,7 +806,6 @@ function renderPastPresidents() {
     card.className = 'president-card fade-in visible';
     card.innerHTML = `
       <div class="president-card-photo">
-        <span class="president-num-badge">${p.num}</span>
       </div>
       <div class="president-card-body">
         <h3>${p.name}</h3>
@@ -744,11 +814,15 @@ function renderPastPresidents() {
       </div>
     `;
     const photoWrap = card.querySelector('.president-card-photo');
-    mountLeadershipPhoto(photoWrap, p.photo, p.num + ' Chapter President', 'president-card');
-    const badge = document.createElement('span');
-    badge.className = 'president-num-badge';
-    badge.textContent = p.num;
-    photoWrap.appendChild(badge);
+    const numLabel = p.num;
+    mountLeadershipPhoto(photoWrap, p.photo, numLabel + ' Chapter President', 'president-card', {
+      afterLoad: function(wrap) {
+        const badge = document.createElement('span');
+        badge.className = 'president-num-badge';
+        badge.textContent = numLabel;
+        wrap.appendChild(badge);
+      }
+    });
     grid.appendChild(card);
   });
 }
@@ -776,14 +850,15 @@ renderPresident();
 renderOfficers();
 renderPastPresidents();
 
+var leadershipContentPromise = getLeadershipContentBatch().catch(function() { return null; });
+
 (async function() {
-  await loadAnnouncement();
+  await Promise.all([loadAnnouncement(), leadershipContentPromise]);
   try {
-    const [president, officers, pastPresidents] = await Promise.all([
-      getSiteContent('president'),
-      getSiteContent('officers'),
-      getSiteContent('past_presidents')
-    ]);
+    const batch = await leadershipContentPromise;
+    const president = batch ? batch.president : null;
+    const officers = batch ? batch.officers : null;
+    const pastPresidents = batch ? batch.past_presidents : null;
     if (president) {
       leadershipData.president = sanitizeLeadershipRecord(Object.assign({}, DEFAULT_PRESIDENT, president), 'photo');
       leadershipData.president.photo = resolvePresidentPhoto(leadershipData.president.photo);
