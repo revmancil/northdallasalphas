@@ -789,7 +789,8 @@ function renderOfficers() {
       card.querySelector('.officer-card-photo'),
       officer.photo,
       officer.title,
-      'officer'
+      'officer',
+      { priority: true }
     );
     grid.appendChild(card);
   });
