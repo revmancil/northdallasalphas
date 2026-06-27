@@ -1980,19 +1980,24 @@
         </div>
       </div>
       <div class="section-card">
-        <div class="section-card-header">
+        <div class="section-card-header" onclick="toggleComplianceAccordion()" style="cursor:pointer;user-select:none;">
           <h3><i class="fas fa-id-badge" style="color:var(--gold);margin-right:8px;"></i>Member Compliance Records</h3>
-          <span><span id="memberComplianceCount">0</span> active members</span>
-        </div>
-        <div class="section-card-body">
-          <p class="hint-text">Set chapter active date, IMDP certification, and Risk Management certification. These values are read-only in the member portal.</p>
-          <div style="margin-bottom:12px;">
-            <button class="btn-sm edit" onclick="document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
-            <p class="hint-text" style="margin:8px 0 4px;">Export the member compliance report from AlphaMX and upload it here to bulk-update IMDP, Risk Management, and chapter active date for matched members. Members are matched by <strong>Alpha ID</strong> first, then <strong>email</strong> as a fallback.</p>
-            <p class="hint-text" style="margin:0;">Expected CSV columns: <code>alpha_id, first_name, last_name, email, chapter_active_date, imdp_certified, risk_mgmt_certified</code>. Column names are flexible — common AlphaMX variations (e.g. <code>Member ID</code>, <code>IMDP Certification</code>, <code>Risk Management</code>) are recognized automatically. Only columns present in the file are updated; empty cells are skipped.</p>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span><span id="memberComplianceCount">0</span> active members</span>
+            <i class="fas fa-chevron-down" id="complianceChevron" style="color:var(--gray-400);transition:transform 0.2s;"></i>
           </div>
-          <div id="memberComplianceList">
-            <div class="hint-text" style="margin:0;">Loading compliance records...</div>
+        </div>
+        <div id="complianceAccordionBody" style="display:none;">
+          <div class="section-card-body">
+            <p class="hint-text">Set chapter active date, IMDP certification, and Risk Management certification. These values are read-only in the member portal.</p>
+            <div style="margin-bottom:12px;">
+              <button class="btn-sm edit" onclick="event.stopPropagation();document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
+              <p class="hint-text" style="margin:8px 0 4px;">Export the member compliance report from AlphaMX and upload it here to bulk-update IMDP, Risk Management, and chapter active date for matched members. Members are matched by <strong>Alpha ID</strong> first, then <strong>email</strong> as a fallback.</p>
+              <p class="hint-text" style="margin:0;">Expected CSV columns: <code>alpha_id, first_name, last_name, email, chapter_active_date, imdp_certified, risk_mgmt_certified</code>. Column names are flexible — common AlphaMX variations (e.g. <code>Member ID</code>, <code>IMDP Certification</code>, <code>Risk Management</code>) are recognized automatically. Only columns present in the file are updated; empty cells are skipped.</p>
+            </div>
+            <div id="memberComplianceList">
+              <div class="hint-text" style="margin:0;">Loading compliance records...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -2596,6 +2601,15 @@ function showToast(msg, type = 'success') {
 // ══════════════════════════════════════════════════
 // MEMBER REQUESTS
 // ══════════════════════════════════════════════════
+function toggleComplianceAccordion() {
+  const body = document.getElementById('complianceAccordionBody');
+  const chevron = document.getElementById('complianceChevron');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
 async function loadMemberRequests() {
   const container = document.getElementById('memberRequestsList');
   const complianceContainer = document.getElementById('memberComplianceList');
