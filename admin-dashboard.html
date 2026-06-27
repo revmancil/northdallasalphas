@@ -1873,6 +1873,7 @@
                 <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Event</th>
                 <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Status</th>
                 <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);">Date</th>
+                <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200);width:60px;"></th>
               </tr>
             </thead>
             <tbody id="registrationsTableBody">
@@ -3585,6 +3586,21 @@ async function loadRegistrationsPanel() {
   }
 }
 
+async function deleteRegistration(id) {
+  if (!id) return;
+  if (!confirm('Delete this registration? This cannot be undone.')) return;
+  const token = getAdminToken();
+  if (!token) { showToast('Admin session expired. Please sign in again.', 'error'); return; }
+  try {
+    await sbDeleteByFilter('event_registrations', 'id=eq.' + encodeURIComponent(id), token);
+    allRegistrations = allRegistrations.filter(function(r) { return String(r.id) !== String(id); });
+    filterRegistrations();
+    showToast('Registration deleted.', 'success');
+  } catch (err) {
+    showToast('Could not delete registration: ' + (err.message || 'unknown error'), 'error');
+  }
+}
+
 function filterRegistrations() {
   const eventId = document.getElementById('regEventFilter').value;
   const filtered = eventId ? allRegistrations.filter(function(r) { return r.event_id === eventId; }) : allRegistrations;
@@ -3609,6 +3625,7 @@ function renderRegistrationsTable(rows) {
       '<td style="padding:10px 12px;">' + escHtml(eventName) + '</td>' +
       '<td style="padding:10px 12px;"><span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize;">' + escHtml(r.payment_status || 'free') + '</span></td>' +
       '<td style="padding:10px 12px;">' + date + '</td>' +
+      '<td style="padding:10px 12px;text-align:center;"><button class="btn-sm danger" onclick="deleteRegistration(\'' + escHtml(String(r.id || '')) + '\')" title="Delete registration"><i class="fas fa-trash"></i></button></td>' +
       '</tr>';
   }).join('');
 }
