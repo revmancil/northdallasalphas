@@ -1167,6 +1167,9 @@
     <button class="sidebar-link" onclick="showPanel('members')">
       <i class="fas fa-user-check"></i> Member Requests
     </button>
+    <button class="sidebar-link" onclick="showPanel('access')">
+      <i class="fas fa-user-shield"></i> Access &amp; Permissions
+    </button>
     <button class="sidebar-link" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
@@ -2047,6 +2050,78 @@
     </div>
 
     <!-- ══════════════════════════════════
+         ACCESS & PERMISSIONS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-access">
+
+      <!-- Member Portal Access -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-key" style="color:var(--gold);margin-right:8px;"></i>Member Portal Access</h3>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span id="accessGrantedCount" style="font-size:0.78rem;color:var(--gray-400);"></span>
+            <button class="btn-sm view" onclick="loadAccessPanel()" style="font-size:0.75rem;padding:4px 10px;"><i class="fas fa-rotate-right"></i> Refresh</button>
+          </div>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">View all member portal accounts by status. Grant or revoke portal access and promote members to dashboard admins.</p>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+            <button class="btn-sm" id="accessTab-all"     onclick="setAccessTab('all')"     style="background:var(--gold);color:#000;font-weight:700;">All</button>
+            <button class="btn-sm view" id="accessTab-active"  onclick="setAccessTab('active')">Active</button>
+            <button class="btn-sm" id="accessTab-pending" onclick="setAccessTab('pending')" style="background:var(--gray-200);color:var(--gray-700);">Pending</button>
+            <button class="btn-sm" id="accessTab-rejected" onclick="setAccessTab('rejected')" style="background:var(--gray-200);color:var(--gray-700);">Rejected</button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <thead>
+                <tr style="background:var(--gray-100);text-align:left;">
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Name</th>
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Email</th>
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Status</th>
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Requested</th>
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Access Granted</th>
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);width:160px;"></th>
+                </tr>
+              </thead>
+              <tbody id="accessTableBody">
+                <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Dashboard Access -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-user-shield" style="color:var(--gold);margin-right:8px;"></i>Admin Dashboard Access</h3>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Brothers listed here can sign in to this admin dashboard. To add the very first admin, run the SQL seed in <code>SUPABASE_CONTENT_SCHEMA.sql</code>.</p>
+          <div id="accessAdminsList" style="margin-bottom:20px;"><span class="hint-text">Loading…</span></div>
+          <div style="border-top:1px solid var(--gray-200);padding-top:18px;">
+            <h4 style="margin:0 0 12px;font-size:0.9rem;color:var(--gray-800);">Grant admin dashboard access</h4>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
+              <div class="field-group" style="margin:0;">
+                <label for="accessAdminEmail">Email address</label>
+                <input type="email" id="accessAdminEmail" placeholder="brother@example.com" autocomplete="off" />
+              </div>
+              <div class="field-group" style="margin:0;">
+                <label for="accessAdminPassword">Temporary password <span style="font-weight:400;color:var(--gray-400);">(min 8 chars)</span></label>
+                <input type="password" id="accessAdminPassword" placeholder="They should change after first login" autocomplete="new-password" />
+              </div>
+              <div>
+                <button type="button" class="btn-save" onclick="grantAdminFromAccessPanel()"><i class="fas fa-user-plus"></i> Grant Admin Access</button>
+              </div>
+            </div>
+            <p class="hint-text" style="margin-top:10px;margin-bottom:0;">The <code>grant-chapter-admin</code> Edge Function must be deployed: <code>supabase functions deploy grant-chapter-admin</code>.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════
          SETTINGS PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-settings">
@@ -2210,6 +2285,7 @@ function showPanel(id) {
   if (id === 'registrations')  loadRegistrationsPanel();
   if (id === 'news-manager')   loadNewsArticlesPanel();
   if (id === 'members')       loadMemberRequests();
+  if (id === 'access')        loadAccessPanel();
   if (id === 'officers')      loadOfficersPanel();
   if (id === 'presidents')    loadPresidentsPanel();
   if (id === 'announcements') loadAnnouncement();
@@ -2610,6 +2686,192 @@ function toggleComplianceAccordion() {
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
   if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+// ── Access & Permissions Panel ──
+let allAccessMembers = [];
+let accessTabFilter = 'all';
+let accessAdminEmails = new Set();
+
+async function loadAccessPanel() {
+  const token = getAdminToken();
+  const tbody = document.getElementById('accessTableBody');
+  if (!tbody) return;
+  if (!token) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;color:var(--red);">Admin session expired. Please sign in again.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">Loading…</td></tr>';
+  try {
+    const [members, admins] = await Promise.all([
+      sbGet('members', 'status=in.(pending,active,rejected)&order=created_at.desc', token),
+      sbGet('chapter_admins', 'select=email', token)
+    ]);
+    allAccessMembers = members || [];
+    accessAdminEmails = new Set((admins || []).map(function(a) { return (a.email || '').toLowerCase(); }));
+    renderAccessTable();
+    loadAccessAdminsList(token);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;color:var(--red);">Could not load members: ' + escHtml(err.message || 'error') + '</td></tr>';
+  }
+}
+
+function setAccessTab(tab) {
+  accessTabFilter = tab;
+  ['all', 'active', 'pending', 'rejected'].forEach(function(t) {
+    const btn = document.getElementById('accessTab-' + t);
+    if (!btn) return;
+    if (t === tab) {
+      btn.style.background = 'var(--gold)';
+      btn.style.color = '#000';
+      btn.style.fontWeight = '700';
+    } else {
+      btn.style.background = 'var(--gray-200)';
+      btn.style.color = 'var(--gray-700)';
+      btn.style.fontWeight = '';
+    }
+  });
+  renderAccessTable();
+}
+
+function renderAccessTable() {
+  const tbody = document.getElementById('accessTableBody');
+  const countEl = document.getElementById('accessGrantedCount');
+  if (!tbody) return;
+  const active = allAccessMembers.filter(function(m) { return (m.status || '') === 'active'; });
+  if (countEl) countEl.textContent = active.length + ' active';
+  const rows = accessTabFilter === 'all' ? allAccessMembers
+    : allAccessMembers.filter(function(m) { return (m.status || '') === accessTabFilter; });
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">No members found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = rows.map(function(m) {
+    const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || '—';
+    const status = (m.status || 'pending').toLowerCase();
+    const isAdmin = accessAdminEmails.has((m.email || '').toLowerCase());
+    const statusColor = status === 'active' ? 'var(--green)' : status === 'pending' ? 'var(--blue)' : 'var(--red)';
+    const requested = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const granted = (status === 'active' && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const adminBadge = isAdmin ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;"><i class="fas fa-user-shield"></i> ADMIN</span>' : '';
+    let actions = '';
+    if (status === 'pending') {
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'active\')"><i class="fas fa-check"></i> Approve</button> ' +
+                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>';
+    } else if (status === 'active') {
+      actions = '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'rejected\')" title="Revoke access"><i class="fas fa-ban"></i> Revoke</button>';
+      if (!isAdmin) {
+        actions += ' <button class="btn-sm edit" onclick="prefillAdminGrant(\'' + escHtml(m.email || '') + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button>';
+      }
+    } else {
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'active\')"><i class="fas fa-redo"></i> Restore</button>';
+    }
+    return '<tr style="border-bottom:1px solid var(--gray-100);">' +
+      '<td style="padding:10px 12px;font-weight:600;">' + escHtml(name) + adminBadge + '</td>' +
+      '<td style="padding:10px 12px;color:var(--gray-600);">' + escHtml(m.email || '—') + '</td>' +
+      '<td style="padding:10px 12px;"><span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize;">' + escHtml(status) + '</span></td>' +
+      '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + requested + '</td>' +
+      '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + granted + '</td>' +
+      '<td style="padding:10px 12px;white-space:nowrap;">' + actions + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+async function accessUpdateStatus(memberId, status) {
+  const token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  const label = status === 'active' ? 'approve' : status === 'rejected' ? 'revoke access for' : 'update';
+  if (!confirm('Are you sure you want to ' + label + ' this member?')) return;
+  const payload = { status: status, updated_at: new Date().toISOString() };
+  if (status === 'active') payload.chapter_active_date = new Date().toISOString().slice(0, 10);
+  try {
+    await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
+    const m = allAccessMembers.find(function(x) { return String(x.id) === String(memberId); });
+    if (m) { m.status = status; m.updated_at = payload.updated_at; if (payload.chapter_active_date) m.chapter_active_date = payload.chapter_active_date; }
+    renderAccessTable();
+    showToast(status === 'active' ? 'Access granted.' : status === 'rejected' ? 'Access revoked.' : 'Status updated.', 'success');
+  } catch (err) {
+    showToast('Could not update status: ' + (err.message || 'error'), 'error');
+  }
+}
+
+function prefillAdminGrant(email) {
+  const emailEl = document.getElementById('accessAdminEmail');
+  const passEl = document.getElementById('accessAdminPassword');
+  if (emailEl) emailEl.value = email;
+  if (passEl) { passEl.value = ''; passEl.focus(); }
+  const adminCard = document.getElementById('accessAdminsList');
+  if (adminCard) adminCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  showToast('Email pre-filled. Set a temporary password and click Grant Admin Access.', 'info');
+}
+
+async function loadAccessAdminsList(token) {
+  const el = document.getElementById('accessAdminsList');
+  if (!el) return;
+  const t = token || getAdminToken();
+  if (!t) { el.innerHTML = '<span style="color:var(--red);">Session expired.</span>'; return; }
+  try {
+    const rows = await sbGet('chapter_admins', 'select=email,granted_at,granted_by&order=email.asc', t);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<p class="hint-text" style="margin:0;">No admins on record. Seed the first admin via Supabase SQL Editor.</p>';
+      return;
+    }
+    const me = (sessionStorage.getItem('nda_admin_user') || '').trim().toLowerCase();
+    el.innerHTML = rows.map(function(a) {
+      const em = (a.email || '').trim();
+      const when = a.granted_at ? new Date(a.granted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      const by = a.granted_by ? ' · by ' + escHtml(a.granted_by) : '';
+      const isSelf = em.toLowerCase() === me;
+      const removeBtn = isSelf
+        ? '<span class="hint-text" style="margin:0;">(you)</span>'
+        : '<button class="btn-sm danger" data-admin-email="' + encodeURIComponent(em) + '" onclick="removeAccessAdmin(this)">Remove</button>';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-200);">' +
+        '<div><div style="font-weight:600;">' + escHtml(em) + '</div>' +
+        '<div style="font-size:0.75rem;color:var(--gray-500);margin-top:2px;">Added: ' + escHtml(when) + by + '</div></div>' +
+        removeBtn + '</div>';
+    }).join('');
+  } catch (err) {
+    el.innerHTML = '<span style="color:var(--red);">Could not load admins: ' + escHtml(err.message || 'error') + '</span>';
+  }
+}
+
+async function removeAccessAdmin(btn) {
+  const email = decodeURIComponent(btn.getAttribute('data-admin-email') || '');
+  if (!email) return;
+  if (!confirm('Remove dashboard admin access for ' + email + '?')) return;
+  const token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  try {
+    await sbDeleteByFilter('chapter_admins', 'email=eq.' + encodeURIComponent(email), token);
+    accessAdminEmails.delete(email.toLowerCase());
+    showToast('Admin removed.', 'success');
+    renderAccessTable();
+    loadAccessAdminsList(token);
+  } catch (err) {
+    showToast(err.message || 'Could not remove admin.', 'error');
+  }
+}
+
+async function grantAdminFromAccessPanel() {
+  const emailEl = document.getElementById('accessAdminEmail');
+  const passEl = document.getElementById('accessAdminPassword');
+  const email = ((emailEl && emailEl.value) || '').trim().toLowerCase();
+  const password = (passEl && passEl.value) || '';
+  const token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Enter a valid email.', 'error'); return; }
+  if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+  // Reuse existing grant logic by temporarily setting the settings panel inputs and calling grantChapterAdminAccess
+  const sEmail = document.getElementById('grantAdminEmail');
+  const sPass = document.getElementById('grantAdminPassword');
+  if (sEmail) sEmail.value = email;
+  if (sPass) sPass.value = password;
+  await grantChapterAdminAccess();
+  if (emailEl) emailEl.value = '';
+  if (passEl) passEl.value = '';
+  accessAdminEmails.add(email);
+  renderAccessTable();
+  loadAccessAdminsList();
 }
 
 async function loadMemberRequests() {
