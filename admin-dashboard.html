@@ -3129,7 +3129,7 @@ async function updateVisitingRequestStatus(requestId, status) {
 // BROTHERS DIRECTORY
 // ══════════════════════════════════════════════════
 const BROTHERS_DIRECTORY_KEY = 'brothers_directory';
-const BROTHERS_DIRECTORY_COL_COUNT = 18;
+const BROTHERS_DIRECTORY_COL_COUNT = 17;
 const BROTHERS_DIRECTORY_FIELDS = [
   { key: 'alpha_id', label: 'Alpha ID', width: '120px' },
   { key: 'first_name', label: 'First Name', width: '120px' },
@@ -3282,7 +3282,7 @@ function renderBrothersDirectoryHead() {
     );
     return '<th class="sortable-th' + (active ? ' active' : '') + '" style="width:' + col.width + ';" onclick="sortBrothersDirectory(\'' + col.key + '\')">' +
       escHtml(col.label) + icon + '</th>';
-  }).join('') + '<th style="width:44px;" title="Life Member"></th><th style="width:40px;"></th>';
+  }).join('') + '<th style="width:40px;"></th>';
 }
 
 function sortBrothersDirectory(field) {
@@ -3338,7 +3338,7 @@ function renderBrothersDirectoryTable() {
     const rowId = rec.alpha_id || '';
     const tr = document.createElement('tr');
     tr.innerHTML = '' +
-      '<td>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', rowId) + '</td>' +
+      '<td' + (rec.life_member_date ? ' style="background:rgba(212,175,55,0.18);" title="Life Member"' : '') + '>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.first_name, 'first_name', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.middle_name, 'middle_name', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.last_name, 'last_name', rowId) + '</td>' +
@@ -3353,7 +3353,6 @@ function renderBrothersDirectoryTable() {
       '<td>' + brotherDirectoryInput(rec.life_member_number, 'life_member_number', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.imdp_certified, 'imdp_certified', rowId) + '</td>' +
       '<td>' + brotherDirectoryInput(rec.risk_mgmt_certified, 'risk_mgmt_certified', rowId) + '</td>' +
-      '<td style="text-align:center;">' + (rec.life_member_date ? '<span title="Life Member" style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:3px 6px;border-radius:4px;"><i class="fas fa-credit-card"></i> LIFE</span>' : '') + '</td>' +
       '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(\'' + escHtml(rowId) + '\')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
   });
