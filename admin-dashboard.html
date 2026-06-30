@@ -2766,7 +2766,7 @@ async function loadAccessPanel() {
   tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">Loading…</td></tr>';
   try {
     const [members, admins] = await Promise.all([
-      sbGet('members', 'portal_access=not.is.null&order=created_at.desc', token),
+      sbGet('members', 'order=created_at.desc', token),
       sbGet('chapter_admins', 'select=email', token)
     ]);
     allAccessMembers = members || [];

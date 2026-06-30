@@ -837,16 +837,13 @@ function renderMemberCard() {
   if (nameEl) nameEl.textContent = fullName || 'Brother';
 
   var idEl = document.getElementById('cardAlphaId');
-  if (idEl) idEl.innerHTML = '<span class="alpha-card-label">Alpha ID:</span> ' + (m.alpha_id || '—');
+  if (idEl) idEl.textContent = m.alpha_id || '—';
 
   var sinceEl = document.getElementById('cardMemberSince');
   if (sinceEl) {
     var yr = m.member_since ? String(m.member_since).replace(/-.*/, '') : null;
-    sinceEl.innerHTML = '<span class="alpha-card-label">Member Since:</span> ' + (yr || '—');
+    sinceEl.textContent = yr || '—';
   }
-
-  var chapEl = document.getElementById('cardChapter');
-  if (chapEl) chapEl.innerHTML = '<span class="alpha-card-label">Chapter:</span> Xi Tau Lambda';
 
   var statusEl = document.getElementById('cardStatus');
   if (statusEl) {
