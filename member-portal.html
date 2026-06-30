@@ -128,6 +128,31 @@
     .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
     @media(max-width:900px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.sidebar-overlay.show{display:block;}.main{margin-left:0;}.hamburger{display:block;}.stats-grid{grid-template-columns:1fr 1fr;}.profile-grid{grid-template-columns:1fr;}}
     @media(max-width:480px){.content{padding:16px;}.stats-grid{grid-template-columns:1fr;}.topbar{padding:0 16px;}}
+    /* MEMBERSHIP CARD */
+    .alpha-card{width:420px;max-width:100%;background:linear-gradient(145deg,#0a0a0a 0%,#1a1a1a 60%,#111 100%);border:2px solid rgba(201,168,76,0.6);border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(201,168,76,0.2);position:relative;}
+    .alpha-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+    .alpha-card-header{display:flex;align-items:center;gap:12px;padding:16px 20px 14px;border-bottom:1px solid rgba(201,168,76,0.2);background:rgba(201,168,76,0.06);}
+    .alpha-card-logo{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(201,168,76,0.4));}
+    .alpha-card-org{flex:1;}
+    .alpha-card-fraternity{font-family:'Playfair Display',serif;font-size:0.72rem;color:var(--gold);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;line-height:1.3;}
+    .alpha-card-chapter{font-size:0.68rem;color:rgba(255,255,255,0.5);letter-spacing:0.04em;margin-top:2px;}
+    .alpha-card-body{display:flex;gap:16px;padding:20px 20px 16px;}
+    .alpha-card-photo-wrap{flex-shrink:0;}
+    .alpha-card-photo{width:72px;height:72px;border-radius:50%;border:2px solid rgba(201,168,76,0.5);background:rgba(201,168,76,0.12);display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:700;color:var(--gold);overflow:hidden;}
+    .alpha-card-photo img{width:100%;height:100%;object-fit:cover;}
+    .alpha-card-info{flex:1;min-width:0;}
+    .alpha-card-name{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--white);margin-bottom:10px;line-height:1.2;}
+    .alpha-card-detail{font-size:0.72rem;color:rgba(255,255,255,0.5);margin-bottom:4px;}
+    .alpha-card-label{color:var(--gold);font-weight:600;margin-right:4px;}
+    .alpha-card-status{display:inline-flex;align-items:center;gap:5px;margin-top:10px;font-size:0.68rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);border:1px solid rgba(201,168,76,0.4);padding:3px 10px;border-radius:20px;background:rgba(201,168,76,0.08);}
+    .alpha-card-footer{padding:10px 20px;border-top:1px solid rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.3);}
+    .alpha-card-footer-text{font-size:0.6rem;color:rgba(255,255,255,0.3);font-style:italic;letter-spacing:0.04em;}
+    .alpha-card-footer-est{font-size:0.65rem;color:rgba(201,168,76,0.5);font-weight:700;letter-spacing:0.1em;}
+    @media print{
+      body > *:not(#printCardWrap){display:none!important;}
+      #printCardWrap{display:flex!important;justify-content:center;align-items:center;min-height:100vh;}
+      .alpha-card{box-shadow:none;border-color:#c9a84c;}
+    }
     .doc-item{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.06);}
     .doc-item:last-child{border-bottom:none;}
     .doc-icon{width:44px;height:44px;border-radius:8px;background:rgba(201,168,76,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);font-size:1.15rem;}
@@ -181,6 +206,7 @@
     <div class="nav-section-label">Community</div>
     <button class="nav-item" onclick="showPanel('directory')" id="nav-directory"><i class="fas fa-users"></i> Brother Directory</button>
     <div class="nav-section-label">Account</div>
+    <button class="nav-item" onclick="showPanel('card');renderMemberCard()" id="nav-card"><i class="fas fa-id-card"></i> Membership Card</button>
     <button class="nav-item" onclick="showPanel('profile')" id="nav-profile"><i class="fas fa-user-circle"></i> My Profile</button>
   </nav>
   <div class="sidebar-footer">
@@ -266,6 +292,45 @@
         <div class="section-card-body" id="documentsList"><div class="empty-state"><i class="fas fa-file-alt"></i><p>No documents uploaded yet. Check back soon.</p></div></div>
       </div>
     </div>
+    <!-- MEMBERSHIP CARD -->
+    <div class="panel" id="panel-card">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-id-card"></i> Digital Membership Card</h3>
+          <button class="btn-outline" onclick="printMemberCard()" style="font-size:0.82rem;padding:6px 14px;"><i class="fas fa-print"></i> Print Card</button>
+        </div>
+        <div class="section-card-body" style="display:flex;flex-direction:column;align-items:center;padding:32px 20px;">
+          <!-- THE CARD -->
+          <div class="alpha-card" id="memberCardEl">
+            <div class="alpha-card-header">
+              <img src="images/xtl-logo.png" alt="Xi Tau Lambda" class="alpha-card-logo" />
+              <div class="alpha-card-org">
+                <div class="alpha-card-fraternity">Alpha Phi Alpha Fraternity, Inc.</div>
+                <div class="alpha-card-chapter">Xi Tau Lambda Chapter &middot; Key #607</div>
+              </div>
+            </div>
+            <div class="alpha-card-body">
+              <div class="alpha-card-photo-wrap">
+                <div class="alpha-card-photo" id="cardPhoto"></div>
+              </div>
+              <div class="alpha-card-info">
+                <div class="alpha-card-name" id="cardName">Brother Name</div>
+                <div class="alpha-card-detail"><span class="alpha-card-label">Alpha ID</span> <span id="cardAlphaId">—</span></div>
+                <div class="alpha-card-detail"><span class="alpha-card-label">Member Since</span> <span id="cardMemberSince">—</span></div>
+                <div class="alpha-card-detail"><span class="alpha-card-label">Chapter</span> <span>North Dallas County</span></div>
+                <div class="alpha-card-status" id="cardStatus">Active Member</div>
+              </div>
+            </div>
+            <div class="alpha-card-footer">
+              <div class="alpha-card-footer-text">First of All &bull; Servants of All &bull; We Shall Transcend All</div>
+              <div class="alpha-card-footer-est">Est. 1906</div>
+            </div>
+          </div>
+          <p style="margin-top:20px;font-size:0.8rem;color:rgba(255,255,255,0.35);text-align:center;">Screenshot or print this card to carry as proof of membership.</p>
+        </div>
+      </div>
+    </div>
+
     <!-- DIRECTORY -->
     <div class="panel" id="panel-directory">
       <div class="section-card">
@@ -456,6 +521,7 @@ const PANEL_META = {
   dues:      ['Dues',             'Your dues history'],
   documents: ['Documents',        'Chapter documents and resources'],
   directory: ['Brother Directory','Active chapter members'],
+  card:      ['Membership Card',  'Your digital Alpha ID card'],
   profile:   ['My Profile',       'Edit your member profile']
 };
 
@@ -750,6 +816,62 @@ function renderDuesPanel() {
       }).join('');
     })
     .catch(function() { c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Could not load dues records.</p></div>'; });
+}
+
+function renderMemberCard() {
+  var m = currentMember;
+  if (!m) return;
+  var fullName = [m.first_name, m.last_name, m.suffix].filter(Boolean).join(' ');
+  var initials = ((m.first_name||'')[0]||'') + ((m.last_name||'')[0]||'');
+
+  var photoEl = document.getElementById('cardPhoto');
+  if (photoEl) {
+    if (m.photo) {
+      photoEl.innerHTML = '<img src="' + m.photo + '" alt="Photo">';
+    } else {
+      photoEl.textContent = initials.toUpperCase();
+    }
+  }
+
+  var nameEl = document.getElementById('cardName');
+  if (nameEl) nameEl.textContent = fullName || 'Brother';
+
+  var idEl = document.getElementById('cardAlphaId');
+  if (idEl) idEl.innerHTML = '<span class="alpha-card-label">Alpha ID:</span> ' + (m.alpha_id || '—');
+
+  var sinceEl = document.getElementById('cardMemberSince');
+  if (sinceEl) {
+    var yr = m.member_since ? String(m.member_since).replace(/-.*/, '') : null;
+    sinceEl.innerHTML = '<span class="alpha-card-label">Member Since:</span> ' + (yr || '—');
+  }
+
+  var chapEl = document.getElementById('cardChapter');
+  if (chapEl) chapEl.innerHTML = '<span class="alpha-card-label">Chapter:</span> Xi Tau Lambda';
+
+  var statusEl = document.getElementById('cardStatus');
+  if (statusEl) {
+    var isLife = !!m.life_member_date;
+    var isVisit = m.portal_access === 'visiting';
+    statusEl.textContent = isLife ? 'Life Member' : isVisit ? 'Visiting Brother' : 'Active';
+  }
+}
+
+function printMemberCard() {
+  var card = document.querySelector('.alpha-card');
+  if (!card) return;
+  var wrap = document.getElementById('printCardWrap');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'printCardWrap';
+    wrap.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:#fff;justify-content:center;align-items:center;';
+    document.body.appendChild(wrap);
+  }
+  var clone = card.cloneNode(true);
+  wrap.innerHTML = '';
+  wrap.appendChild(clone);
+  wrap.style.display = 'flex';
+  window.print();
+  setTimeout(function(){ wrap.style.display = 'none'; }, 500);
 }
 
 function renderDocumentsPanel() {
