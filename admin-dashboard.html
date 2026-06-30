@@ -2127,7 +2127,11 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">View all member portal accounts by status. Grant or revoke portal access and promote members to dashboard admins.</p>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <div style="position:relative;flex:1;min-width:180px;max-width:300px;">
+              <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.8rem;pointer-events:none;"></i>
+              <input id="accessSearch" type="text" placeholder="Search name or email…" oninput="renderAccessTable()" style="width:100%;padding:6px 10px 6px 28px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;background:var(--white);color:var(--gray-800);" />
+            </div>
             <button class="btn-sm" id="accessTab-all"     onclick="setAccessTab('all')"     style="background:var(--gold);color:#000;font-weight:700;">All</button>
             <button class="btn-sm" id="accessTab-granted"  onclick="setAccessTab('granted')"  style="background:var(--gray-200);color:var(--gray-700);">Granted</button>
             <button class="btn-sm" id="accessTab-pending" onclick="setAccessTab('pending')" style="background:var(--gray-200);color:var(--gray-700);">Pending</button>
@@ -2137,7 +2141,7 @@
             <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
               <thead>
                 <tr style="background:var(--gray-100);text-align:left;">
-                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Name</th>
+                  <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);cursor:pointer;user-select:none;white-space:nowrap;" onclick="toggleAccessSort()">Name <span id="accessSortIcon" style="font-size:0.7rem;color:var(--gray-400);">▲</span></th>
                   <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Email</th>
                   <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Status</th>
                   <th style="padding:9px 12px;border-bottom:1px solid var(--gray-200);">Requested</th>
@@ -2753,7 +2757,15 @@ function toggleComplianceAccordion() {
 // ── Access & Permissions Panel ──
 let allAccessMembers = [];
 let accessTabFilter = 'all';
+let accessSortAsc = true;
 let accessAdminEmails = new Set();
+
+function toggleAccessSort() {
+  accessSortAsc = !accessSortAsc;
+  const icon = document.getElementById('accessSortIcon');
+  if (icon) icon.textContent = accessSortAsc ? '▲' : '▼';
+  renderAccessTable();
+}
 
 async function loadAccessPanel() {
   const token = getAdminToken();
@@ -2802,8 +2814,21 @@ function renderAccessTable() {
   if (!tbody) return;
   const grantedCount = allAccessMembers.filter(function(m) { return (m.portal_access || '') === 'granted'; }).length;
   if (countEl) countEl.textContent = grantedCount + ' granted';
-  const rows = accessTabFilter === 'all' ? allAccessMembers
-    : allAccessMembers.filter(function(m) { return (m.portal_access || '') === accessTabFilter; });
+  const searchVal = ((document.getElementById('accessSearch') || {}).value || '').trim().toLowerCase();
+  let rows = accessTabFilter === 'all' ? allAccessMembers.slice()
+    : allAccessMembers.filter(function(m) { return (m.portal_access || 'pending').toLowerCase() === accessTabFilter; });
+  if (searchVal) {
+    rows = rows.filter(function(m) {
+      const name = ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase();
+      const email = (m.email || '').toLowerCase();
+      return name.includes(searchVal) || email.includes(searchVal);
+    });
+  }
+  rows.sort(function(a, b) {
+    const na = ((a.last_name || '') + ' ' + (a.first_name || '')).toLowerCase();
+    const nb = ((b.last_name || '') + ' ' + (b.first_name || '')).toLowerCase();
+    return accessSortAsc ? na.localeCompare(nb) : nb.localeCompare(na);
+  });
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">No members found.</td></tr>';
     return;
