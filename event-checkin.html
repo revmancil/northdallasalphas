@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Check-In | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --black:#0a0a0a; --gold:#C9A84C; --gold-light:#E8C97A; --white:#ffffff; --green:#27ae60; }
+    body { font-family:'Inter',sans-serif; background:var(--black); min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:24px; }
+    body::before { content:'ΑΦΑ'; position:fixed; font-family:'Playfair Display',serif; font-size:60vw; font-weight:800; color:rgba(201,168,76,0.025); top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; line-height:1; white-space:nowrap; }
+    .wrap { position:relative; z-index:2; width:100%; max-width:480px; padding-top:16px; }
+    .brand { text-align:center; margin-bottom:24px; }
+    .brand img { height:64px; width:64px; object-fit:contain; border-radius:50%; border:2px solid rgba(201,168,76,0.5); margin-bottom:12px; }
+    .brand h1 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:800; color:var(--gold); }
+    .brand p { font-size:0.75rem; color:rgba(255,255,255,0.4); letter-spacing:0.12em; text-transform:uppercase; margin-top:4px; }
+    .card { background:#111; border:1px solid rgba(201,168,76,0.15); border-radius:10px; padding:24px; margin-bottom:16px; }
+    .event-info h2 { font-family:'Playfair Display',serif; font-size:1rem; color:var(--gold); margin-bottom:8px; }
+    .event-info p { font-size:0.82rem; color:rgba(255,255,255,0.5); line-height:1.7; }
+    .event-info p i { width:16px; }
+    .section-label { font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:10px; }
+    .search-wrap { position:relative; margin-bottom:14px; }
+    .search-wrap i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.3); font-size:0.85rem; }
+    .search-wrap input { width:100%; padding:11px 12px 11px 36px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.12); border-radius:8px; color:var(--white); font-family:'Inter',sans-serif; font-size:0.9rem; }
+    .search-wrap input:focus { outline:none; border-color:var(--gold); }
+    .search-wrap input::placeholder { color:rgba(255,255,255,0.2); }
+    .member-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .member-row:last-child { border-bottom:none; }
+    .member-avatar { width:36px; height:36px; border-radius:50%; background:rgba(201,168,76,0.12); border:1px solid rgba(201,168,76,0.2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; color:var(--gold); flex-shrink:0; }
+    .member-name { flex:1; font-size:0.88rem; color:rgba(255,255,255,0.85); font-weight:500; }
+    .member-badge { font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:6px; }
+    .badge-visiting { background:rgba(74,222,128,0.15); color:#4ade80; }
+    .checkin-btn { padding:6px 14px; background:var(--gold); color:#000; border:none; border-radius:6px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+    .checkin-btn:hover { background:var(--gold-light); }
+    .checkin-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .checkin-btn.done { background:rgba(39,174,96,0.15); color:#27ae60; border:1px solid rgba(39,174,96,0.3); cursor:default; }
+    .empty-note { font-size:0.82rem; color:rgba(255,255,255,0.3); padding:12px 0; text-align:center; }
+    .manual-form { margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); }
+    .manual-form label { display:block; font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:5px; }
+    .manual-form input { width:100%; padding:9px 12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--white); font-family:'Inter',sans-serif; font-size:0.88rem; margin-bottom:10px; }
+    .manual-form input:focus { outline:none; border-color:var(--gold); }
+    .manual-btn { width:100%; padding:10px; background:rgba(201,168,76,0.12); color:var(--gold); border:1px solid rgba(201,168,76,0.3); border-radius:6px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+    .manual-btn:hover { background:rgba(201,168,76,0.2); }
+    .err-msg { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:#e74c3c; border-radius:6px; padding:10px 14px; font-size:0.82rem; margin-bottom:10px; display:none; }
+    .success-screen { text-align:center; padding:20px 0; }
+    .success-screen .check { width:64px; height:64px; background:rgba(39,174,96,0.12); border:2px solid #27ae60; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:1.6rem; color:#27ae60; }
+    .success-screen h2 { font-family:'Playfair Display',serif; color:var(--gold); font-size:1.2rem; margin-bottom:8px; }
+    .success-screen p { color:rgba(255,255,255,0.5); font-size:0.88rem; }
+    .invalid-screen { text-align:center; padding:20px 0; }
+    .invalid-screen i { font-size:2rem; color:rgba(231,76,60,0.5); display:block; margin-bottom:12px; }
+    .invalid-screen p { color:rgba(255,255,255,0.4); font-size:0.88rem; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinner { width:24px; height:24px; border:2px solid rgba(201,168,76,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" />
+    <h1>Event Check-In</h1>
+    <p>Xi Tau Lambda · North Dallas Alphas</p>
+  </div>
+
+  <!-- Loading -->
+  <div class="card" id="loadingScreen">
+    <div style="text-align:center;padding:16px 0;">
+      <div class="spinner"></div>
+      <p style="color:rgba(255,255,255,0.4);margin-top:14px;font-size:0.85rem;">Loading event…</p>
+    </div>
+  </div>
+
+  <!-- Invalid -->
+  <div class="card" id="invalidScreen" style="display:none;">
+    <div class="invalid-screen">
+      <i class="fas fa-link-slash"></i>
+      <p>This check-in link is invalid or the event no longer exists.</p>
+    </div>
+  </div>
+
+  <!-- Main check-in UI -->
+  <div id="mainScreen" style="display:none;">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="event-info" id="eventInfo"></div>
+    </div>
+
+    <!-- Error bar -->
+    <div id="checkinErrBar" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:#e74c3c;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:12px;"></div>
+
+    <!-- Search all members -->
+    <div class="card">
+      <div class="section-label"><i class="fas fa-search"></i> Search Member Directory</div>
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="memberSearch" placeholder="Type a name to search…" oninput="filterMembers()" />
+      </div>
+      <div id="searchResults"><div class="empty-note">Type a name above to search.</div></div>
+
+      <!-- Manual add -->
+      <div class="manual-form">
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:12px;">Not finding the person? Add them manually:</div>
+        <div class="err-msg" id="manualErr"></div>
+        <label>Full Name</label>
+        <input type="text" id="manualName" placeholder="First and last name" />
+        <label>Organization / Role <span style="font-weight:400;color:rgba(255,255,255,0.25);">(optional)</span></label>
+        <input type="text" id="manualRole" placeholder="e.g. Guest, Community Partner, Alumni" />
+        <button class="manual-btn" onclick="checkInManual()"><i class="fas fa-user-plus"></i> Add &amp; Check In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="card" id="successScreen" style="display:none;">
+    <div class="success-screen">
+      <div class="check"><i class="fas fa-check"></i></div>
+      <h2>Checked In!</h2>
+      <p id="successMsg">Your attendance has been recorded.</p>
+      <p style="margin-top:12px;font-size:0.75rem;color:rgba(255,255,255,0.25);">You may close this page.</p>
+      <button onclick="resetCheckin()" style="margin-top:20px;padding:8px 20px;background:transparent;border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:6px;font-size:0.82rem;cursor:pointer;">Check In Another Person</button>
+    </div>
+  </div>
+
+</div>
+<script>
+var SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+var MEMBER_SESSION_KEY = 'nda_member_session';
+
+var eventId = null;
+var allMembers = [];
+var checkedInEmails = new Set();
+
+function getParams() {
+  var p = {}; window.location.search.replace(/^\?/,'').split('&').forEach(function(s){ var kv=s.split('='); if(kv.length===2) p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]); }); return p;
+}
+function show(id) {
+  ['loadingScreen','invalidScreen','mainScreen','successScreen'].forEach(function(s){
+    var el=document.getElementById(s); if(el) el.style.display = s===id?'block':'none';
+  });
+}
+function sbFetch(table, query) {
+  return fetch(SUPABASE_URL+'/rest/v1/'+table+'?'+query, { headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY} }).then(function(r){return r.json();});
+}
+function time24ToAmPm(t) {
+  if(!t) return ''; var p=t.split(':'); var h=parseInt(p[0],10); var m=p[1]||'00'; var ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ap;
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function initials(fn,ln) { return ((fn||'')[0]||'').toUpperCase()+((ln||'')[0]||'').toUpperCase(); }
+
+async function init() {
+  var params = getParams();
+  eventId = params['id'];
+  if (!eventId) { show('invalidScreen'); return; }
+  try {
+    var rows = await sbFetch('events', 'id=eq.'+encodeURIComponent(eventId)+'&limit=1');
+    if (!rows || !rows.length) { show('invalidScreen'); return; }
+    var ev = rows[0];
+
+    // Parse datetime field or use start_date/start_time
+    var dateStr = '';
+    var timeStr = '';
+    if (ev.start_date) {
+      dateStr = new Date(ev.start_date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+      if (ev.start_time) timeStr = time24ToAmPm(ev.start_time) + (ev.end_time ? ' – '+time24ToAmPm(ev.end_time) : '');
+    } else if (ev.datetime) {
+      var parts = String(ev.datetime).split(' – ');
+      var d = new Date(parts[0]);
+      if (!isNaN(d)) {
+        dateStr = d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+        timeStr = d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+      }
+    }
+
+    var info = '<h2>'+esc(ev.name||'Chapter Event')+'</h2>';
+    if (dateStr) info += '<p><i class="fas fa-calendar"></i> '+dateStr+'</p>';
+    if (timeStr) info += '<p><i class="fas fa-clock"></i> '+timeStr+'</p>';
+    if (ev.location) info += '<p><i class="fas fa-map-marker-alt"></i> '+esc(ev.location)+'</p>';
+    document.getElementById('eventInfo').innerHTML = info;
+
+    // Load members and existing attendance in parallel
+    var results = await Promise.all([
+      sbFetch('members', 'select=id,first_name,last_name,email,portal_access,status&order=last_name.asc'),
+      sbFetch('event_attendance', 'event_id=eq.'+encodeURIComponent(eventId)+'&select=member_email,member_name')
+    ]);
+    allMembers = results[0] || [];
+    var attended = results[1] || [];
+    attended.forEach(function(a){ if(a.member_email) checkedInEmails.add(a.member_email.toLowerCase()); });
+
+    // Pre-fill search if logged into portal
+    var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY)||'null');
+    if (session && session.user && session.user.email) {
+      var me = allMembers.find(function(x){ return x.email===session.user.email; });
+      if (me) {
+        document.getElementById('memberSearch').value = (me.first_name+' '+me.last_name).trim();
+        filterMembers();
+      }
+    }
+
+    show('mainScreen');
+  } catch(err) {
+    show('invalidScreen');
+  }
+}
+
+function memberRow(name, email, ini, alreadyIn, isVisiting) {
+  var btnId = 'ci-btn-'+(email||name).replace(/[^a-z0-9]/gi,'_');
+  var btnHtml = alreadyIn
+    ? '<button class="checkin-btn done" disabled><i class="fas fa-check"></i> Checked In</button>'
+    : '<button class="checkin-btn" id="'+esc(btnId)+'" onclick="checkIn('+JSON.stringify(name)+','+JSON.stringify(email)+','+JSON.stringify(btnId)+')"><i class="fas fa-door-open"></i> Check In</button>';
+  return '<div class="member-row">'+
+    '<div class="member-avatar">'+esc(ini)+'</div>'+
+    '<div class="member-name">'+esc(name)+
+      (isVisiting ? '<span class="member-badge badge-visiting">Visiting</span>' : '')+
+    '</div>'+
+    btnHtml+
+    '</div>';
+}
+
+function filterMembers() {
+  var q = (document.getElementById('memberSearch').value||'').trim().toLowerCase();
+  var resultsEl = document.getElementById('searchResults');
+  if (!q) { resultsEl.innerHTML = '<div class="empty-note">Type a name above to search.</div>'; return; }
+  var filtered = allMembers.filter(function(m) {
+    var full = ((m.first_name||'')+' '+(m.last_name||'')).toLowerCase();
+    return full.includes(q);
+  }).slice(0,10);
+  if (!filtered.length) {
+    resultsEl.innerHTML = '<div class="empty-note">No match found. Use the manual form below.</div>';
+    return;
+  }
+  resultsEl.innerHTML = filtered.map(function(m) {
+    var name = (m.first_name+' '+m.last_name).trim();
+    var ini = initials(m.first_name, m.last_name);
+    var alreadyIn = m.email && checkedInEmails.has((m.email||'').toLowerCase());
+    return memberRow(name, m.email||'', ini, alreadyIn, m.portal_access==='visiting');
+  }).join('');
+}
+
+async function checkIn(name, email, btnId) {
+  var btn = document.getElementById(btnId);
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; }
+  try {
+    if (email && checkedInEmails.has(email.toLowerCase())) {
+      if (btn) { btn.className='checkin-btn done'; btn.innerHTML='<i class="fas fa-check"></i> Checked In'; }
+      return;
+    }
+    var payload = { event_id:eventId, member_name:name };
+    if (email) payload.member_email = email;
+    var res = await fetch(SUPABASE_URL+'/rest/v1/event_attendance', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Prefer':'return=minimal'},
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      var ed = await res.json().catch(function(){return{};});
+      if (res.status===409||(ed.code&&ed.code==='23505')) {
+        if (btn) { btn.className='checkin-btn done'; btn.disabled=true; btn.innerHTML='<i class="fas fa-check"></i> Checked In'; }
+        if (email) checkedInEmails.add(email.toLowerCase());
+        return;
+      }
+      throw new Error(ed.message||'Check-in failed.');
+    }
+    if (email) checkedInEmails.add(email.toLowerCase());
+    document.getElementById('successMsg').textContent = 'Welcome, '+name.split(' ')[0]+'! Attendance recorded.';
+    show('successScreen');
+  } catch(err) {
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-door-open"></i> Check In'; }
+    var errBox = document.getElementById('checkinErrBar');
+    if (errBox) { errBox.textContent='Check-in failed: '+(err.message||'Please try again.'); errBox.style.display='block'; setTimeout(function(){ errBox.style.display='none'; },5000); }
+  }
+}
+
+async function checkInManual() {
+  var name = (document.getElementById('manualName').value||'').trim();
+  var role = (document.getElementById('manualRole').value||'').trim();
+  var errEl = document.getElementById('manualErr');
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent='Please enter a name.'; errEl.style.display='block'; return; }
+  var displayName = name + (role ? ' ('+role+')' : '');
+  try {
+    var res = await fetch(SUPABASE_URL+'/rest/v1/event_attendance', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Prefer':'return=minimal'},
+      body: JSON.stringify({ event_id:eventId, member_name:displayName })
+    });
+    if (!res.ok) { var ed=await res.json().catch(function(){return{};}); throw new Error(ed.message||'Failed.'); }
+    document.getElementById('manualName').value='';
+    document.getElementById('manualRole').value='';
+    document.getElementById('successMsg').textContent = name+' has been checked in.';
+    show('successScreen');
+  } catch(err) {
+    errEl.textContent='Error: '+(err.message||'Could not check in.'); errEl.style.display='block';
+  }
+}
+
+function resetCheckin() {
+  show('mainScreen');
+  document.getElementById('memberSearch').value='';
+  document.getElementById('searchResults').innerHTML='<div class="empty-note">Type a name above to search.</div>';
+  init();
+}
+
+init();
+</script>
+</body>
+</html>

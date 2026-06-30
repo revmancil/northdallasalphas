@@ -499,7 +499,7 @@
     ═══════════════════════════════════════ */
     .events-header-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto;
+      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto auto;
       gap: 10px;
       padding: 0 0 8px;
       border-bottom: 1px solid var(--gray-200);
@@ -514,7 +514,7 @@
     }
     .event-row {
       display: grid;
-      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto;
+      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto auto;
       gap: 10px;
       align-items: center;
       padding: 10px 0;
@@ -1588,6 +1588,7 @@
             <span style="text-align:center;"><i class="fas fa-align-left" title="Description"></i></span>
             <span style="text-align:center;"><i class="fas fa-link" title="Registration"></i></span>
             <span style="text-align:center;"><i class="fas fa-handshake" title="Sponsorship"></i></span>
+            <span style="text-align:center;"><i class="fas fa-qrcode" title="Check-In QR"></i></span>
             <span></span>
           </div>
 
@@ -2252,6 +2253,34 @@
           <img id="mtgQrImg" src="" alt="QR Code" style="width:200px;height:200px;border:1px solid var(--gray-200);border-radius:8px;" />
           <p style="font-size:0.75rem;color:var(--gray-400);margin:12px 0 0;">Brothers scan this at the door to check in</p>
           <button onclick="printMtgQr()" class="btn-save" style="margin-top:16px;width:100%;"><i class="fas fa-print"></i> Print QR Code</button>
+        </div>
+      </div>
+
+      <!-- Event QR Modal -->
+      <div id="evtQrModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:32px;max-width:380px;width:90%;text-align:center;position:relative;">
+          <button onclick="closeEvtQr()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
+          <h3 id="evtQrTitle" style="margin:0 0 6px;font-size:1rem;color:var(--gray-800);"></h3>
+          <p id="evtQrSub" style="font-size:0.8rem;color:var(--gray-500);margin:0 0 18px;"></p>
+          <img id="evtQrImg" src="" alt="QR Code" style="width:200px;height:200px;border:1px solid var(--gray-200);border-radius:8px;" />
+          <p style="font-size:0.75rem;color:var(--gray-400);margin:12px 0 0;">Attendees scan this at the door to check in</p>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button onclick="printEvtQr()" class="btn-save" style="flex:1;"><i class="fas fa-print"></i> Print QR Code</button>
+            <button onclick="showEvtAttendanceFromQr()" class="btn-secondary" style="flex:1;padding:10px;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer;background:transparent;border:1px solid var(--gray-300);color:var(--gray-600);"><i class="fas fa-clipboard-list"></i> View Attendance</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Event Attendance Modal -->
+      <div id="evtAttModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:28px 28px 24px;max-width:480px;width:92%;max-height:85vh;display:flex;flex-direction:column;position:relative;">
+          <button onclick="closeEvtAtt()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
+          <h3 id="evtAttTitle" style="margin:0 0 18px;font-size:1rem;color:var(--gray-800);padding-right:20px;"></h3>
+          <div style="overflow-y:auto;flex:1;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;"><i class="fas fa-check-circle"></i> Checked In</div>
+            <div id="evtAttList"></div>
+          </div>
+          <button onclick="downloadEvtAttCsv()" class="btn-save" style="margin-top:16px;width:100%;"><i class="fas fa-download"></i> Download Attendee List (CSV)</button>
         </div>
       </div>
 
@@ -3216,6 +3245,7 @@ async function deleteChapterNews(id, title) {
 // MEETINGS
 // ══════════════════════════════════════════════════
 const CHECKIN_BASE = 'https://northdallasalphas.com/meeting-checkin.html';
+const EVENT_CHECKIN_BASE = 'https://northdallasalphas.com/event-checkin.html';
 
 function time24ToAmPm(t) {
   if (!t) return '';
@@ -3389,6 +3419,83 @@ function printMtgQr() {
   w.document.close();
   w.focus();
   setTimeout(function(){ w.print(); }, 500);
+}
+
+var _currentEvtQrIndex = null;
+
+function showEvtQr(i) {
+  const ev = eventsData[i];
+  if (!ev || !ev.id) { showToast('Save events first to generate a QR code.', 'info'); return; }
+  _currentEvtQrIndex = i;
+  const qrUrl = EVENT_CHECKIN_BASE + '?id=' + encodeURIComponent(ev.id);
+  const imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
+  document.getElementById('evtQrTitle').textContent = ev.name || 'Event';
+  document.getElementById('evtQrSub').textContent = ev.start_date ? new Date(ev.start_date + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'}) : '';
+  document.getElementById('evtQrImg').src = imgUrl;
+  document.getElementById('evtQrModal').style.display = 'flex';
+}
+
+function closeEvtQr() { document.getElementById('evtQrModal').style.display = 'none'; }
+
+function printEvtQr() {
+  const title = document.getElementById('evtQrTitle').textContent;
+  const sub   = document.getElementById('evtQrSub').textContent;
+  const src   = document.getElementById('evtQrImg').src;
+  const w = window.open('', '_blank', 'width=500,height=600');
+  w.document.write('<html><head><title>Check-In QR</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:40px;}h2{margin:0 0 6px;}p{color:#666;margin:0 0 20px;}img{border:1px solid #ddd;border-radius:8px;}</style></head><body>');
+  w.document.write('<h2>' + title + '</h2><p>' + sub + '</p><img src="' + src + '" width="250" height="250"/><br><br><p style="font-size:0.85rem;">Scan to check in to this event</p>');
+  w.document.write('</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
+function showEvtAttendanceFromQr() {
+  if (_currentEvtQrIndex === null) return;
+  const ev = eventsData[_currentEvtQrIndex];
+  if (!ev || !ev.id) return;
+  closeEvtQr();
+  showEvtAttendance(ev.id, ev.name || 'Event');
+}
+
+async function showEvtAttendance(eventId, title) {
+  const token = getAdminToken();
+  try {
+    const attended = await sbGet('event_attendance', 'event_id=eq.' + encodeURIComponent(eventId) + '&order=checked_in_at.asc', token);
+    const modal = document.getElementById('evtAttModal');
+    document.getElementById('evtAttTitle').textContent = 'Attendance — ' + title;
+    const listEl = document.getElementById('evtAttList');
+    if (!attended || !attended.length) {
+      listEl.innerHTML = '<p style="color:var(--gray-400);font-size:0.82rem;padding:4px 0;">No check-ins recorded yet.</p>';
+    } else {
+      listEl.innerHTML = attended.map(function(r) {
+        const t = r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'}) : '';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-100);">' +
+          '<span style="font-size:0.85rem;color:var(--gray-700);">' + escHtml(r.member_name || r.member_email || 'Unknown') + '</span>' +
+          '<span style="font-size:0.75rem;color:var(--gray-400);">' + t + '</span></div>';
+      }).join('');
+    }
+    modal._attendData = { title: title, attended: attended || [] };
+    modal.style.display = 'flex';
+  } catch(err) {
+    showToast('Could not load event attendance.', 'error');
+  }
+}
+
+function closeEvtAtt() { document.getElementById('evtAttModal').style.display = 'none'; }
+
+function downloadEvtAttCsv() {
+  const d = document.getElementById('evtAttModal')._attendData;
+  if (!d) return;
+  const rows = [['Name', 'Email', 'Checked In At']];
+  (d.attended || []).forEach(function(r) {
+    rows.push([r.member_name || '', r.member_email || '', r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '']);
+  });
+  const csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v || '').replace(/"/g, '""') + '"'; }).join(','); }).join('\r\n');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'attendance-' + (d.title || 'event').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.csv';
+  a.click();
 }
 
 async function showMtgAttendance(meetingId, title) {
@@ -4682,6 +4789,9 @@ function renderEventsList() {
       </button>
       <button class="btn-sponsor${ev.sponsorEnabled ? ' has-sponsor' : ''}" title="${ev.sponsorEnabled ? 'Sponsor button enabled — click to edit' : 'Add sponsor button'}" onclick="toggleSponsorRow(${i})">
         <i class="fas fa-handshake"></i>
+      </button>
+      <button class="btn-sm view" onclick="showEvtQr(${i})" title="Check-In QR Code" style="padding:4px 8px;font-size:0.78rem;">
+        <i class="fas fa-qrcode"></i>
       </button>
       <button class="btn-del" onclick="removeEvent(${i})" title="Remove event">
         <i class="fas fa-trash"></i>
