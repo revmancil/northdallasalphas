@@ -9,8 +9,11 @@
   <meta property="og:description" content="Serving North Dallas through leadership, scholarship, and brotherhood since 1984." />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <!-- Facebook SDK for Page Plugin -->
+  <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v19.0"></script>
 </head>
 <body>
+<div id="fb-root"></div>
 
 <!-- Announcement Bar -->
 <div class="announce-bar">
@@ -299,14 +302,21 @@
             <span>Facebook</span>
             <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" class="social-follow-btn" style="background:#1877f2;">Follow</a>
           </div>
-          <div class="social-feed-iframe-wrap">
-            <iframe
-              src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fnorthdallasalphas&tabs=timeline&width=500&height=600&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false"
-              width="100%" height="600"
-              style="border:none;overflow:hidden;display:block;"
-              scrolling="no" frameborder="0" allowfullscreen="true"
-              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share">
-            </iframe>
+          <div class="social-feed-iframe-wrap" style="padding:8px;">
+            <div
+              class="fb-page"
+              data-href="https://www.facebook.com/northdallasalphas"
+              data-tabs="timeline"
+              data-width=""
+              data-height="600"
+              data-small-header="true"
+              data-adapt-container-width="true"
+              data-hide-cover="false"
+              data-show-facepile="false">
+              <blockquote cite="https://www.facebook.com/northdallasalphas" class="fb-xfbml-parse-ignore">
+                <a href="https://www.facebook.com/northdallasalphas">North Dallas Alphas on Facebook</a>
+              </blockquote>
+            </div>
           </div>
         </div>
 
