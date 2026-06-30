@@ -1189,6 +1189,9 @@
     <button class="sidebar-link" onclick="showPanel('meetings');loadMeetingsPanel()">
       <i class="fas fa-people-group"></i> Meetings
     </button>
+    <button class="sidebar-link" onclick="showPanel('chapter-news');loadChapterNewsPanel()">
+      <i class="fas fa-bullhorn"></i> Chapter News Feed
+    </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2255,6 +2258,59 @@
     </div>
 
     <!-- ══════════════════════════════════
+         CHAPTER NEWS FEED PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-chapter-news">
+
+      <!-- Compose Post -->
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Post an Update</h3>
+        </div>
+        <div class="section-card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="field-group" style="grid-column:span 2;margin:0;">
+              <label>Title <span style="color:var(--red);">*</span></label>
+              <input type="text" id="cnTitle" placeholder="e.g. Dues Deadline Reminder" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Category</label>
+              <select id="cnCategory" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+                <option value="General">General</option>
+                <option value="Announcement">Announcement</option>
+                <option value="Reminder">Reminder</option>
+                <option value="Event Update">Event Update</option>
+                <option value="Financial">Financial</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin:0;display:flex;align-items:center;gap:10px;padding-top:22px;">
+              <input type="checkbox" id="cnPinned" style="width:16px;height:16px;accent-color:var(--gold);" />
+              <label for="cnPinned" style="font-size:0.85rem;color:var(--gray-700);font-weight:500;cursor:pointer;">Pin to top of feed</label>
+            </div>
+            <div class="field-group" style="grid-column:span 2;margin:0;">
+              <label>Message <span style="color:var(--red);">*</span></label>
+              <textarea id="cnBody" rows="5" placeholder="Write your update or announcement here…" style="width:100%;resize:vertical;padding:10px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;font-family:inherit;"></textarea>
+            </div>
+          </div>
+          <div id="cnPostMsg" style="display:none;font-size:0.83rem;margin-bottom:10px;"></div>
+          <button class="btn-save" onclick="postChapterNews()"><i class="fas fa-paper-plane"></i> Post to Feed</button>
+        </div>
+      </div>
+
+      <!-- Feed List -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-bullhorn" style="color:var(--gold);margin-right:8px;"></i>Posted Updates</h3>
+          <button class="btn-sm view" onclick="loadChapterNewsPanel()" style="font-size:0.75rem;padding:4px 10px;"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="section-card-body" id="chapterNewsList">
+          <div class="hint-text">Loading…</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════
          SETTINGS PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-settings">
@@ -2392,7 +2448,8 @@ const PANEL_META = {
   newsletter:    ['Newsletter Generator','Build and export chapter email campaigns'],
   gallery:       ['Event Photo Gallery', 'Photos displayed on the public gallery page'],
   settings:      ['Settings',           'Admin account & chapter settings'],
-  meetings:      ['Meetings Manager',   'Schedule meetings and track RSVP & attendance']
+  meetings:      ['Meetings Manager',   'Schedule meetings and track RSVP & attendance'],
+  'chapter-news':['Chapter News Feed',  'Post private announcements and updates for brothers']
 };
 
 function showPanel(id) {
@@ -2427,6 +2484,7 @@ function showPanel(id) {
   if (id === 'gallery')       loadEventGalleryPanel();
   if (id === 'pages')         setPageEditorStorageNotice('', '');
   if (id === 'meetings')      loadMeetingsPanel();
+  if (id === 'chapter-news') loadChapterNewsPanel();
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
 }
@@ -3043,6 +3101,96 @@ async function grantAdminFromAccessPanel() {
   accessAdminEmails.add(email);
   renderAccessTable();
   loadAccessAdminsList();
+}
+
+// ══════════════════════════════════════════════════
+// CHAPTER NEWS FEED
+// ══════════════════════════════════════════════════
+const CN_CAT_COLORS = { General:'var(--blue)', Announcement:'var(--gold)', Reminder:'#f59e0b', 'Event Update':'#8b5cf6', Financial:'var(--green)' };
+
+async function loadChapterNewsPanel() {
+  const el = document.getElementById('chapterNewsList');
+  if (!el) return;
+  const token = getAdminToken();
+  el.innerHTML = '<div class="hint-text">Loading…</div>';
+  try {
+    const posts = await sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token);
+    if (!posts || !posts.length) {
+      el.innerHTML = '<div class="hint-text">No posts yet. Use the form above to post the first update.</div>';
+      return;
+    }
+    el.innerHTML = posts.map(function(p) {
+      const color = CN_CAT_COLORS[p.category] || 'var(--blue)';
+      const date  = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
+      return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">' +
+        '<div style="flex:1;">' +
+        (p.pinned ? '<span style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:4px;margin-right:7px;"><i class="fas fa-thumbtack"></i> PINNED</span>' : '') +
+        '<span style="background:' + color + '22;color:' + color + ';font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;">' + escHtml(p.category || 'General') + '</span>' +
+        '<div style="font-size:0.95rem;font-weight:700;color:var(--gray-800);margin-top:6px;">' + escHtml(p.title) + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px;">Posted ' + date + (p.created_by ? ' by ' + escHtml(p.created_by) : '') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+        '<button class="btn-sm" onclick="togglePinNews(\'' + escHtml(p.id) + '\',' + (p.pinned ? 'false' : 'true') + ')" style="background:var(--gray-200);color:var(--gray-700);" title="' + (p.pinned ? 'Unpin' : 'Pin') + '"><i class="fas fa-thumbtack"></i></button>' +
+        '<button class="btn-sm danger" onclick="deleteChapterNews(\'' + escHtml(p.id) + '\',\'' + escHtml(p.title) + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+        '</div>' +
+        '<div style="margin-top:12px;font-size:0.88rem;color:var(--gray-600);line-height:1.65;white-space:pre-wrap;">' + escHtml(p.body) + '</div>' +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div style="color:var(--red);">Could not load posts: ' + escHtml(err.message || 'error') + '</div>';
+  }
+}
+
+async function postChapterNews() {
+  const title    = (document.getElementById('cnTitle')    || {}).value?.trim();
+  const body     = (document.getElementById('cnBody')     || {}).value?.trim();
+  const category = (document.getElementById('cnCategory') || {}).value || 'General';
+  const pinned   = document.getElementById('cnPinned')?.checked || false;
+  const msgEl    = document.getElementById('cnPostMsg');
+  function msg(text, ok) {
+    if (!msgEl) return;
+    msgEl.style.display = 'block';
+    msgEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+    msgEl.textContent = text;
+  }
+  if (!title) { msg('Please enter a title.', false); return; }
+  if (!body)  { msg('Please enter a message.', false); return; }
+  const token = getAdminToken();
+  try {
+    await sbPost('chapter_news', { title, body, category, pinned, created_by: uname }, token);
+    msg('Posted!', true);
+    document.getElementById('cnTitle').value = '';
+    document.getElementById('cnBody').value  = '';
+    document.getElementById('cnPinned').checked = false;
+    loadChapterNewsPanel();
+    setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
+  } catch(err) {
+    msg('Error: ' + (err.message || 'could not post.'), false);
+  }
+}
+
+async function togglePinNews(id, pinned) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('chapter_news', 'id=eq.' + encodeURIComponent(id), { pinned }, token);
+    loadChapterNewsPanel();
+  } catch(err) {
+    showToast('Could not update pin: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function deleteChapterNews(id, title) {
+  if (!confirm('Delete "' + title + '"?')) return;
+  const token = getAdminToken();
+  try {
+    await sbDeleteByFilter('chapter_news', 'id=eq.' + encodeURIComponent(id), token);
+    showToast('Post deleted.', 'success');
+    loadChapterNewsPanel();
+  } catch(err) {
+    showToast('Could not delete: ' + (err.message || 'error'), 'error');
+  }
 }
 
 // ══════════════════════════════════════════════════

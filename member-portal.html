@@ -204,6 +204,7 @@
     <button class="nav-item" onclick="showPanel('meetings');loadMeetingsPortal()" id="nav-meetings"><i class="fas fa-people-group"></i> Meetings</button>
     <button class="nav-item" onclick="showPanel('dues')" id="nav-dues"><i class="fas fa-dollar-sign"></i> Dues</button>
     <button class="nav-item" onclick="showPanel('documents')" id="nav-documents"><i class="fas fa-file-alt"></i> Documents</button>
+    <button class="nav-item" onclick="showPanel('news-feed');loadNewsFeed()" id="nav-news-feed"><i class="fas fa-bullhorn"></i> Chapter News</button>
     <div class="nav-section-label">Community</div>
     <button class="nav-item" onclick="showPanel('directory')" id="nav-directory"><i class="fas fa-users"></i> Brother Directory</button>
     <div class="nav-section-label">Account</div>
@@ -257,6 +258,18 @@
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-calendar-alt"></i> All Chapter Events</h3><span id="eventsCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span></div>
         <div class="section-card-body" id="eventsList"><div class="empty-state"><i class="fas fa-calendar"></i><p>Loading events...</p></div></div>
+      </div>
+    </div>
+    <!-- CHAPTER NEWS FEED -->
+    <div class="panel" id="panel-news-feed">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-bullhorn"></i> Chapter News &amp; Updates</h3>
+          <button class="card-action" onclick="loadNewsFeed()"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="section-card-body" id="newsFeedList">
+          <div class="empty-state"><i class="fas fa-bullhorn"></i><p>Loading news…</p></div>
+        </div>
       </div>
     </div>
     <!-- MEETINGS -->
@@ -530,8 +543,9 @@ function showToast(msg, type) {
 
 const PANEL_META = {
   dashboard: ['Dashboard',        'Member Portal'],
-  events:    ['Events',           'Upcoming chapter events'],
-  meetings:  ['Meetings',        'Upcoming chapter meetings'],
+  events:      ['Events',         'Upcoming chapter events'],
+  meetings:    ['Meetings',       'Upcoming chapter meetings'],
+  'news-feed': ['Chapter News',   'Updates and announcements from chapter leadership'],
   dues:      ['Dues',             'Your dues history'],
   documents: ['Documents',        'Chapter documents and resources'],
   directory: ['Brother Directory','Active chapter members'],
@@ -883,6 +897,36 @@ function printMemberCard() {
   wrap.style.display = 'flex';
   window.print();
   setTimeout(function(){ wrap.style.display = 'none'; }, 500);
+}
+
+async function loadNewsFeed() {
+  var el = document.getElementById('newsFeedList');
+  if (!el) return;
+  var token = currentSession ? currentSession.access_token : null;
+  el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>Loading…</p></div>';
+  try {
+    var posts = await sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token);
+    if (!posts || !posts.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No updates posted yet. Check back soon.</p></div>';
+      return;
+    }
+    var catColors = { General:'#3b82f6', Announcement:'#C9A84C', Reminder:'#f59e0b', 'Event Update':'#8b5cf6', Financial:'#27ae60' };
+    el.innerHTML = posts.map(function(p) {
+      var color = catColors[p.category] || '#3b82f6';
+      var date  = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
+      return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px;margin-bottom:14px;background:rgba(255,255,255,0.03)' + (p.pinned ? ';border-color:rgba(201,168,76,0.35);' : '') + '">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">' +
+        (p.pinned ? '<span style="background:rgba(201,168,76,0.15);color:var(--gold);font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:4px;"><i class="fas fa-thumbtack"></i> PINNED</span>' : '') +
+        '<span style="background:' + color + '22;color:' + color + ';font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;">' + escapeHtml(p.category || 'General') + '</span>' +
+        '</div>' +
+        '<div style="font-size:0.97rem;font-weight:700;color:var(--white);margin-bottom:4px;">' + escapeHtml(p.title) + '</div>' +
+        '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-bottom:10px;">' + date + (p.created_by ? ' · ' + escapeHtml(p.created_by) : '') + '</div>' +
+        '<div style="font-size:0.88rem;color:rgba(255,255,255,0.65);line-height:1.7;white-space:pre-wrap;">' + escapeHtml(p.body) + '</div>' +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Could not load news feed.</p></div>';
+  }
 }
 
 function time24ToAmPm(t) {
@@ -1397,7 +1441,7 @@ async function init() {
   const hasAccess   = portalAccess === 'granted';
   const isVisiting  = portalAccess === 'visiting';
   // Visiting brothers only see Dashboard, Events, and Dues
-  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-meetings'];
+  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-meetings', 'nav-news-feed'];
   visitingHidden.forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = isVisiting ? 'none' : '';
