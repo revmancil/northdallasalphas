@@ -188,6 +188,19 @@
     .dir-sort-btn{padding:4px 11px;border-radius:6px;font-size:0.7rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.35);cursor:pointer;transition:all 0.2s;}
     .dir-sort-btn.active{background:rgba(201,168,76,0.12);color:var(--gold);border-color:rgba(201,168,76,0.3);}
     .member-search{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;padding:10px 14px 10px 40px;outline:none;margin-bottom:16px;}
+    .privacy-section{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:16px 18px;margin-bottom:16px;}
+    .privacy-section-label{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;}
+    .toggle-row:last-child{border-bottom:none;padding-bottom:0;}
+    .toggle-row-text{flex:1;}
+    .toggle-row-title{font-size:0.85rem;color:var(--white);font-weight:500;}
+    .toggle-row-sub{font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:2px;}
+    .toggle-wrap{position:relative;flex-shrink:0;}
+    .toggle-wrap input{opacity:0;width:0;height:0;position:absolute;}
+    .toggle-slider{display:block;width:42px;height:24px;background:rgba(255,255,255,0.12);border-radius:12px;position:relative;transition:background 0.25s;cursor:pointer;}
+    .toggle-slider::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform 0.25s;}
+    .toggle-wrap input:checked + .toggle-slider{background:var(--gold);}
+    .toggle-wrap input:checked + .toggle-slider::after{transform:translateX(18px);}
     .member-search:focus{border-color:var(--gold);}
     .search-wrap{position:relative;}
     .search-wrap i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.85rem;}
@@ -473,6 +486,30 @@
               </div>
             </div>
             <input type="file" id="pfPhotoFile" accept="image/*" style="display:none;" onchange="handleProfilePhotoUpload(event)" />
+            <!-- Privacy Settings -->
+            <div class="privacy-section">
+              <div class="privacy-section-label"><i class="fas fa-shield-halved"></i> Directory Privacy</div>
+              <label class="toggle-row">
+                <div class="toggle-row-text">
+                  <div class="toggle-row-title">Show my email address in the Brother Directory</div>
+                  <div class="toggle-row-sub">Other brothers can contact you via email</div>
+                </div>
+                <div class="toggle-wrap">
+                  <input type="checkbox" id="pfShareEmail" checked />
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+              <label class="toggle-row">
+                <div class="toggle-row-text">
+                  <div class="toggle-row-title">Show my phone number in the Brother Directory</div>
+                  <div class="toggle-row-sub">Other brothers can call or text you</div>
+                </div>
+                <div class="toggle-wrap">
+                  <input type="checkbox" id="pfSharePhone" checked />
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+            </div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
               <button type="submit" class="btn-gold" id="saveProfileBtn"><i class="fas fa-save"></i> Save Profile</button>
             </div>
@@ -1342,8 +1379,8 @@ function renderDirectoryList(members) {
       : ini;
 
     const actions = [];
-    if (email) actions.push('<a href="mailto:' + escHtml(email) + '" class="mc-btn mc-btn-email"><i class="fas fa-envelope"></i> Email</a>');
-    if (phone) actions.push('<a href="tel:' + escHtml(phone.replace(/\s+/g,'')) + '" class="mc-btn mc-btn-phone"><i class="fas fa-phone"></i> Call</a>');
+    if (email && m.share_email !== false) actions.push('<a href="mailto:' + escHtml(email) + '" class="mc-btn mc-btn-email"><i class="fas fa-envelope"></i> Email</a>');
+    if (phone && m.share_phone !== false) actions.push('<a href="tel:' + escHtml(phone.replace(/\s+/g,'')) + '" class="mc-btn mc-btn-phone"><i class="fas fa-phone"></i> Call</a>');
     if (m.linkedin) actions.push('<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" class="mc-btn mc-btn-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</a>');
 
     return '<div class="member-card">' +
@@ -1388,6 +1425,8 @@ function loadProfileForm(member) {
   document.getElementById('pfRenewalDate').value      = member.renewal_date      || '';
   document.getElementById('pfBio').value              = member.bio               || '';
   document.getElementById('pfLinkedin').value         = member.linkedin          || '';
+  document.getElementById('pfShareEmail').checked     = member.share_email !== false;
+  document.getElementById('pfSharePhone').checked     = member.share_phone !== false;
   var ph = member.photo || '';
   document.getElementById('pfPhoto').value = ph;
   var urlEl = document.getElementById('pfPhotoUrl');
@@ -1450,6 +1489,8 @@ document.getElementById('profileForm').addEventListener('submit', async function
       bio:                 document.getElementById('pfBio').value.trim(),
       linkedin:            document.getElementById('pfLinkedin').value.trim(),
       photo:               document.getElementById('pfPhoto').value.trim(),
+      share_email:         document.getElementById('pfShareEmail').checked,
+      share_phone:         document.getElementById('pfSharePhone').checked,
       updated_at:          new Date().toISOString()
     };
     if (updates.photo && updates.photo.indexOf('data:image') === 0 && updates.photo.length > 450000) {
