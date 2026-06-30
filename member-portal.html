@@ -592,15 +592,43 @@ function handleProfilePhotoUpload(e) {
 function parseDate(dtStr) {
   if (!dtStr) return { day:'?', month:'???', time:'' };
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // New format from buildDatetime: "M/D/YYYY[ - M/D/YYYY][ H:MM AM][ - H:MM PM]"
+  // Detect by presence of " - " separating two date segments
+  const rangeSep = dtStr.indexOf(' - ');
+  if (rangeSep !== -1) {
+    const firstDate = dtStr.substring(0, rangeSep);
+    const dp1 = firstDate.split('/');
+    const month1 = parseInt(dp1[0]) - 1;
+    const startDay = dp1[1] || '?';
+    // Find second date segment after " - "
+    const rest = dtStr.substring(rangeSep + 3);
+    const dp2 = rest.split('/');
+    // rest may be "M/D/YYYY H:MM AM" or just a time "H:MM AM"
+    let endDay = startDay;
+    let timeStr = '';
+    if (dp2.length >= 2) {
+      // second date present
+      const afterDate = dp2.slice(2).join('/').trim(); // "YYYY H:MM AM" or "YYYY"
+      const yAndTime = afterDate.split(' ');
+      endDay = dp2[1] || startDay;
+      timeStr = yAndTime.slice(1).join(' ');
+    } else {
+      // rest is a time, no end date
+      timeStr = rest;
+    }
+    const day = startDay === endDay ? startDay : startDay + '-' + endDay;
+    return { day, month: months[month1] || '???', time: timeStr };
+  }
+
+  // Legacy format: "MM/DD/YYYY HH:MM AM" or old range "M/DD-M/DD/YYYY"
   const parts = dtStr.split(' ');
   const dp = parts[0].split('/');
   let day = dp[1] || '?';
-  // Handle multi-day range stored as M/DD-M/DD/YYYY → dp = ["M","DD-M","DD","YYYY"]
-  // dp[1] ends up as "DD-M" so reconstruct "DD-DD" using dp[2]
   if (day.includes('-') && dp[2] && /^\d{1,2}$/.test(dp[2])) {
     day = day.split('-')[0] + '-' + dp[2];
   }
-  return { day: day, month: months[parseInt(dp[0])-1] || '???', time: parts.slice(1).join(' ') || '' };
+  return { day, month: months[parseInt(dp[0])-1] || '???', time: parts.slice(1).join(' ') || '' };
 }
 
 function renderEventItem(ev) {

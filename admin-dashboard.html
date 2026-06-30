@@ -499,7 +499,7 @@
     ═══════════════════════════════════════ */
     .events-header-row {
       display: grid;
-      grid-template-columns: 2fr 2fr 1.2fr 1fr auto auto auto auto auto;
+      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto;
       gap: 10px;
       padding: 0 0 8px;
       border-bottom: 1px solid var(--gray-200);
@@ -514,7 +514,7 @@
     }
     .event-row {
       display: grid;
-      grid-template-columns: 2fr 2fr 1.2fr 1fr auto auto auto auto auto;
+      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto;
       gap: 10px;
       align-items: center;
       padding: 10px 0;
@@ -621,7 +621,7 @@
     .event-row .btn-desc:hover { border-color: #9b59b6; background: rgba(155,89,182,0.12); }
     /* Description sub-row */
     .event-desc-row {
-      grid-column: span 8;
+      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -659,7 +659,7 @@
     }
     /* Registration URL sub-row */
     .event-reg-row {
-      grid-column: span 9;
+      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -671,7 +671,7 @@
     }
     .event-reg-row.visible { display: flex; }
     .event-sponsor-row {
-      grid-column: span 9;
+      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -810,7 +810,7 @@
 
     /* Flyer preview inside row */
     .event-flyer-row {
-      grid-column: span 8;
+      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -1106,13 +1106,11 @@
     }
     @media (max-width: 900px) {
       .events-header-row,
-      .event-row { grid-template-columns: 1fr 1fr auto auto auto auto; }
-      .events-header-row span:nth-child(3) { display: none; }
-      .event-row input:nth-child(3) { display: none; }
+      .event-row { grid-template-columns: 1fr 1fr 110px 80px 110px 80px auto auto auto auto auto auto; }
       .event-flyer-row,
       .event-reg-row,
       .event-sponsor-row,
-      .event-desc-row { grid-column: span 6; }
+      .event-desc-row { grid-column: span 12; }
     }
     @media (max-width: 768px) {
       .sidebar { transform: translateX(-100%); }
@@ -1123,15 +1121,21 @@
       .topbar { padding: 0 14px; }
       .content { padding: 14px 16px; }
       .events-header-row,
-      .event-row { grid-template-columns: 1fr auto auto auto auto; }
+      .event-row { grid-template-columns: 1fr auto auto auto auto auto auto; }
       .events-header-row span:nth-child(2),
-      .events-header-row span:nth-child(3) { display: none; }
-      .event-row input:nth-child(2),
-      .event-row input:nth-child(3) { display: none; }
+      .events-header-row span:nth-child(3),
+      .events-header-row span:nth-child(4),
+      .events-header-row span:nth-child(5),
+      .events-header-row span:nth-child(6) { display: none; }
+      .event-row input.ev-location,
+      .event-row input.ev-start-date,
+      .event-row input.ev-start-time,
+      .event-row input.ev-end-date,
+      .event-row input.ev-end-time { display: none; }
       .event-flyer-row,
       .event-reg-row,
       .event-sponsor-row,
-      .event-desc-row { grid-column: span 5; }
+      .event-desc-row { grid-column: span 7; }
     }
   </style>
 </head>
@@ -1566,7 +1570,10 @@
           <div class="events-header-row">
             <span>Event Name</span>
             <span>Location</span>
-            <span>Date / Time</span>
+            <span>Start Date <span style="color:var(--red);">*</span></span>
+            <span>Start Time <span style="color:var(--red);">*</span></span>
+            <span>End Date</span>
+            <span>End Time</span>
             <span style="text-align:center;"><i class="fas fa-star" title="Featured"></i></span>
             <span style="text-align:center;"><i class="fas fa-image" title="Flyer"></i></span>
             <span style="text-align:center;"><i class="fas fa-align-left" title="Description"></i></span>
@@ -3749,6 +3756,79 @@ const DEFAULT_EVENTS = [
 let eventsData = [];
 let activeFlyerIndex = -1;
 
+// Parse legacy datetime string into 4 separate fields
+function parseDatetimeToFields(dt) {
+  const out = { start_date: '', start_time: '', end_date: '', end_time: '' };
+  if (!dt) return out;
+  // Handle "MM/DD/YYYY - MM/DD/YYYY[ HH:MM AM]" or "M/DD/YYYY-M/DD/YYYY" range
+  const rangeSep = dt.includes(' - ') ? ' - ' : (dt.match(/(\d{1,2}\/\d{1,2}\/\d{4})-(\d{1,2}\/\d{1,2}\/\d{4})/) ? '-' : null);
+  let startPart = dt, endPart = '';
+  if (rangeSep === ' - ') {
+    const idx = dt.indexOf(' - ');
+    startPart = dt.slice(0, idx);
+    endPart = dt.slice(idx + 3);
+  } else if (rangeSep === '-') {
+    const m = dt.match(/^(\d{1,2}\/\d{1,2}\/\d{4})-(\d{1,2}\/\d{1,2}\/\d{4})(.*)/);
+    if (m) { startPart = m[1]; endPart = m[2] + (m[3] || ''); }
+  }
+  function parseOnePart(str) {
+    const parts = str.trim().split(' ');
+    const datePart = parts[0] || '';
+    const timeParts = parts.slice(1).join(' ').trim();
+    const dp = datePart.split('/');
+    let isoDate = '';
+    if (dp.length === 3) {
+      isoDate = dp[2] + '-' + (dp[0] || '').padStart(2, '0') + '-' + (dp[1] || '').padStart(2, '0');
+    }
+    let time24 = '';
+    if (timeParts) {
+      const tm = timeParts.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      if (tm) {
+        let h = parseInt(tm[1], 10);
+        const min = tm[2];
+        const ampm = (tm[3] || '').toUpperCase();
+        if (ampm === 'PM' && h < 12) h += 12;
+        if (ampm === 'AM' && h === 12) h = 0;
+        time24 = String(h).padStart(2, '0') + ':' + min;
+      }
+    }
+    return { date: isoDate, time: time24 };
+  }
+  const s = parseOnePart(startPart);
+  out.start_date = s.date;
+  out.start_time = s.time;
+  if (endPart) {
+    const e = parseOnePart(endPart);
+    out.end_date = e.date !== out.start_date ? e.date : '';
+    out.end_time = e.time;
+  }
+  return out;
+}
+
+// Build legacy datetime string from 4 fields (for public site backwards compat)
+function buildDatetime(start_date, start_time, end_date, end_time) {
+  function isoToMdy(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return (parseInt(m, 10)) + '/' + (parseInt(d, 10)) + '/' + y;
+  }
+  function time24ToAmPm(t) {
+    if (!t) return '';
+    const [hStr, min] = t.split(':');
+    let h = parseInt(hStr, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    if (h > 12) h -= 12;
+    if (h === 0) h = 12;
+    return h + ':' + min + ' ' + ampm;
+  }
+  let dt = isoToMdy(start_date);
+  if (!dt) return '';
+  if (end_date && end_date !== start_date) dt += ' - ' + isoToMdy(end_date);
+  if (start_time) dt += ' ' + time24ToAmPm(start_time);
+  if (end_time && end_time !== start_time) dt += ' - ' + time24ToAmPm(end_time);
+  return dt;
+}
+
 function normalizeAdminEventRecord(ev) {
   const fee = Math.max(0, parseInt(String(ev.registration_fee_cents ?? ev.registrationFeeCents ?? 0), 10) || 0);
   const regUrl = String(ev.registrationUrl || ev.reg_url || '').trim();
@@ -3767,10 +3847,15 @@ function normalizeAdminEventRecord(ev) {
   }
   if (freeUrl) freeEnabled = true;
   if (regUrl) paidEnabled = true;
+  const dtFields = parseDatetimeToFields(ev.datetime || '');
   return {
     id: ev.id,
     name: ev.name || '',
     location: ev.location || '',
+    start_date: ev.start_date || dtFields.start_date,
+    start_time: ev.start_time || dtFields.start_time,
+    end_date: ev.end_date || dtFields.end_date,
+    end_time: ev.end_time || dtFields.end_time,
     datetime: ev.datetime || '',
     featured: !!ev.featured,
     flyer: ev.flyer || '',
@@ -3939,9 +4024,12 @@ function renderEventsList() {
     row.className = 'event-row';
     row.id = 'event-row-' + i;
     row.innerHTML = `
-      <input type="text" placeholder="Event name" value="${escHtml(ev.name)}" onchange="eventsData[${i}].name=this.value" />
-      <input type="text" placeholder="Location" value="${escHtml(ev.location)}" onchange="eventsData[${i}].location=this.value" />
-      <input type="text" placeholder="Date / Time" value="${escHtml(ev.datetime)}" onchange="eventsData[${i}].datetime=this.value" />
+      <input type="text" class="ev-name" placeholder="Event name" value="${escHtml(ev.name)}" onchange="eventsData[${i}].name=this.value" />
+      <input type="text" class="ev-location" placeholder="Location" value="${escHtml(ev.location)}" onchange="eventsData[${i}].location=this.value" />
+      <input type="date" class="ev-start-date" id="ev-start-date-${i}" value="${escHtml(ev.start_date)}" title="Start Date (required)" onchange="eventsData[${i}].start_date=this.value;eventsData[${i}].datetime=buildDatetime(this.value,eventsData[${i}].start_time,eventsData[${i}].end_date,eventsData[${i}].end_time)" />
+      <input type="time" class="ev-start-time" id="ev-start-time-${i}" value="${escHtml(ev.start_time)}" title="Start Time (required)" onchange="eventsData[${i}].start_time=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,this.value,eventsData[${i}].end_date,eventsData[${i}].end_time)" />
+      <input type="date" class="ev-end-date" id="ev-end-date-${i}" value="${escHtml(ev.end_date)}" title="End Date (optional — leave blank if same day)" onchange="eventsData[${i}].end_date=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,eventsData[${i}].start_time,this.value,eventsData[${i}].end_time)" />
+      <input type="time" class="ev-end-time" id="ev-end-time-${i}" value="${escHtml(ev.end_time)}" title="End Time (optional)" onchange="eventsData[${i}].end_time=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,eventsData[${i}].start_time,eventsData[${i}].end_date,this.value)" />
       <button class="featured-star${ev.featured ? ' active' : ''}" title="${ev.featured ? 'Featured event — click to unfeature' : 'Click to mark as featured'}" onclick="toggleFeatured(${i})">
         <i class="fas fa-star"></i>
       </button>
@@ -4309,11 +4397,23 @@ async function saveEvents() {
   }
   // Read current input values
   document.querySelectorAll('.event-row').forEach((row, i) => {
-    const inputs = row.querySelectorAll('input[type="text"]');
     if (eventsData[i]) {
-      eventsData[i].name     = inputs[0] ? inputs[0].value : eventsData[i].name;
-      eventsData[i].location = inputs[1] ? inputs[1].value : eventsData[i].location;
-      eventsData[i].datetime = inputs[2] ? inputs[2].value : eventsData[i].datetime;
+      const nameEl      = row.querySelector('.ev-name');
+      const locationEl  = row.querySelector('.ev-location');
+      const startDateEl = document.getElementById('ev-start-date-' + i);
+      const startTimeEl = document.getElementById('ev-start-time-' + i);
+      const endDateEl   = document.getElementById('ev-end-date-' + i);
+      const endTimeEl   = document.getElementById('ev-end-time-' + i);
+      if (nameEl)      eventsData[i].name       = nameEl.value;
+      if (locationEl)  eventsData[i].location   = locationEl.value;
+      if (startDateEl) eventsData[i].start_date = startDateEl.value;
+      if (startTimeEl) eventsData[i].start_time = startTimeEl.value;
+      if (endDateEl)   eventsData[i].end_date   = endDateEl.value;
+      if (endTimeEl)   eventsData[i].end_time   = endTimeEl.value;
+      eventsData[i].datetime = buildDatetime(
+        eventsData[i].start_date, eventsData[i].start_time,
+        eventsData[i].end_date,   eventsData[i].end_time
+      );
     }
     const freeReg = document.getElementById('free-reg-' + i);
     const paidReg = document.getElementById('paid-reg-' + i);
