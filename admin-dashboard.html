@@ -2062,6 +2062,10 @@
               <p class="hint-text" style="margin:8px 0 4px;">Export the member compliance report from AlphaMX and upload it here to bulk-update IMDP, Risk Management, and chapter active date for matched members. Members are matched by <strong>Alpha ID</strong> first, then <strong>email</strong> as a fallback.</p>
               <p class="hint-text" style="margin:0;">Expected CSV columns: <code>alpha_id, first_name, last_name, email, chapter_active_date, imdp_certified, risk_mgmt_certified</code>. Column names are flexible — common AlphaMX variations (e.g. <code>Member ID</code>, <code>IMDP Certification</code>, <code>Risk Management</code>) are recognized automatically. Only columns present in the file are updated; empty cells are skipped.</p>
             </div>
+            <div style="position:relative;max-width:320px;margin-bottom:14px;">
+              <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.8rem;pointer-events:none;"></i>
+              <input id="complianceSearch" type="text" placeholder="Search by name…" oninput="filterComplianceList()" style="width:100%;padding:6px 10px 6px 28px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;background:var(--white);color:var(--gray-800);" />
+            </div>
             <div id="memberComplianceList">
               <div class="hint-text" style="margin:0;">Loading compliance records...</div>
             </div>
@@ -3037,7 +3041,26 @@ async function loadMemberRequests() {
   }
 }
 
+let allComplianceMembers = [];
+
+function filterComplianceList() {
+  const q = ((document.getElementById('complianceSearch') || {}).value || '').trim().toLowerCase();
+  const filtered = q ? allComplianceMembers.filter(function(m) {
+    return ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase().includes(q);
+  }) : allComplianceMembers;
+  renderComplianceRows(filtered);
+}
+
 function renderMemberComplianceList(members) {
+  allComplianceMembers = members || [];
+  const q = ((document.getElementById('complianceSearch') || {}).value || '').trim().toLowerCase();
+  const filtered = q ? allComplianceMembers.filter(function(m) {
+    return ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase().includes(q);
+  }) : allComplianceMembers;
+  renderComplianceRows(filtered);
+}
+
+function renderComplianceRows(members) {
   const container = document.getElementById('memberComplianceList');
   if (!container) return;
   if (!members || !members.length) {
