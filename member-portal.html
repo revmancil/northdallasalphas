@@ -161,13 +161,32 @@
     .doc-meta{font-size:0.78rem;color:rgba(255,255,255,0.4);}
     .doc-download{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:rgba(201,168,76,0.12);color:var(--gold);border-radius:6px;font-size:0.8rem;font-weight:600;text-decoration:none;white-space:nowrap;transition:background 0.2s;}
     .doc-download:hover{background:rgba(201,168,76,0.22);}
-    .member-card{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+    .member-card{display:flex;align-items:flex-start;gap:14px;padding:16px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
     .member-card:last-child{border-bottom:none;}
-    .member-card-avatar{width:44px;height:44px;border-radius:50%;background:var(--gold-pale);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;color:var(--gold);overflow:hidden;flex-shrink:0;}
-    .member-card-avatar img{width:100%;height:100%;object-fit:cover;}
-    .member-card-info{flex:1;}
-    .mc-name{font-size:0.88rem;font-weight:600;color:var(--white);}
-    .mc-meta{font-size:0.73rem;color:var(--gray-400);margin-top:2px;}
+    .member-card-avatar{width:52px;height:52px;border-radius:50%;background:rgba(201,168,76,0.1);border:2px solid rgba(201,168,76,0.3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;color:var(--gold);overflow:hidden;flex-shrink:0;letter-spacing:0.5px;}
+    .member-card-avatar img{width:100%;height:100%;object-fit:cover;object-position:center top;}
+    .member-card-info{flex:1;min-width:0;}
+    .mc-name{font-size:0.9rem;font-weight:700;color:var(--white);display:flex;align-items:center;flex-wrap:wrap;gap:6px;}
+    .mc-badge{display:inline-flex;align-items:center;font-size:0.6rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;padding:2px 7px;border-radius:100px;}
+    .mc-badge-life{background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);}
+    .mc-badge-visiting{background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);}
+    .mc-meta{font-size:0.72rem;color:var(--gray-400);margin-top:3px;line-height:1.5;}
+    .mc-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+    .mc-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:0.72rem;font-weight:600;text-decoration:none;transition:all 0.2s;white-space:nowrap;border:1px solid transparent;}
+    .mc-btn-email{background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.25);}
+    .mc-btn-email:hover{background:rgba(201,168,76,0.22);}
+    .mc-btn-phone{background:rgba(39,174,96,0.1);color:#27ae60;border-color:rgba(39,174,96,0.25);}
+    .mc-btn-phone:hover{background:rgba(39,174,96,0.2);}
+    .mc-btn-linkedin{background:rgba(52,152,219,0.1);color:#5ba3f5;border-color:rgba(52,152,219,0.25);}
+    .mc-btn-linkedin:hover{background:rgba(52,152,219,0.2);}
+    .dir-toolbar{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+    .dir-filter-bar{display:flex;gap:7px;flex-wrap:wrap;}
+    .dir-filter-btn{padding:5px 14px;border-radius:20px;font-size:0.7rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.2s;}
+    .dir-filter-btn.active{background:rgba(201,168,76,0.15);color:var(--gold);border-color:rgba(201,168,76,0.35);}
+    .dir-sort-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+    .dir-sort-label{font-size:0.68rem;color:rgba(255,255,255,0.25);text-transform:uppercase;letter-spacing:0.08em;}
+    .dir-sort-btn{padding:4px 11px;border-radius:6px;font-size:0.7rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.35);cursor:pointer;transition:all 0.2s;}
+    .dir-sort-btn.active{background:rgba(201,168,76,0.12);color:var(--gold);border-color:rgba(201,168,76,0.3);}
     .member-search{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--white);font-family:'Inter',sans-serif;font-size:0.88rem;padding:10px 14px 10px 40px;outline:none;margin-bottom:16px;}
     .member-search:focus{border-color:var(--gold);}
     .search-wrap{position:relative;}
@@ -360,9 +379,24 @@
     <!-- DIRECTORY -->
     <div class="panel" id="panel-directory">
       <div class="section-card">
-        <div class="section-card-header"><h3><i class="fas fa-users"></i> Brother Directory</h3><span id="dirCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span></div>
+        <div class="section-card-header"><h3><i class="fas fa-users" style="color:var(--gold);margin-right:8px;"></i>Brother Directory</h3><span id="dirCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span></div>
         <div class="section-card-body">
-          <div class="search-wrap"><i class="fas fa-search"></i><input type="text" class="member-search" id="dirSearch" placeholder="Search brothers by name..." oninput="filterDirectory()" /></div>
+          <div class="dir-toolbar">
+            <div class="dir-filter-bar">
+              <button class="dir-filter-btn active" id="dirFilter-all"      onclick="setDirFilter('all',this)">All Brothers</button>
+              <button class="dir-filter-btn"        id="dirFilter-life"     onclick="setDirFilter('life',this)">Life Members</button>
+              <button class="dir-filter-btn"        id="dirFilter-visiting" onclick="setDirFilter('visiting',this)">Visiting Brothers</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div class="search-wrap" style="flex:1;margin-bottom:0;"><i class="fas fa-search"></i><input type="text" class="member-search" id="dirSearch" placeholder="Search brothers by name..." oninput="filterDirectory()" /></div>
+            </div>
+            <div class="dir-sort-bar">
+              <span class="dir-sort-label">Sort:</span>
+              <button class="dir-sort-btn active" id="dirSort-az"     onclick="setDirSort('az',this)">A – Z</button>
+              <button class="dir-sort-btn"        id="dirSort-za"     onclick="setDirSort('za',this)">Z – A</button>
+              <button class="dir-sort-btn"        id="dirSort-newest" onclick="setDirSort('newest',this)">Newest Members</button>
+            </div>
+          </div>
           <div id="directoryList"><div class="empty-state"><i class="fas fa-users"></i><p>Loading member directory...</p></div></div>
         </div>
       </div>
@@ -1201,9 +1235,26 @@ function formatBirthday(value) {
   return v;
 }
 
+var dirFilter = 'all';
+var dirSort   = 'az';
+
+function setDirFilter(f, btn) {
+  dirFilter = f;
+  document.querySelectorAll('.dir-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  filterDirectory();
+}
+
+function setDirSort(s, btn) {
+  dirSort = s;
+  document.querySelectorAll('.dir-sort-btn').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  filterDirectory();
+}
+
 function renderDirectoryPanel() {
   if (!allMembers.length) { loadDirectory(); return; }
-  renderDirectoryList(allMembers);
+  filterDirectory();
 }
 
 function loadDirectory() {
@@ -1213,65 +1264,104 @@ function loadDirectory() {
       allMembers = members || [];
       document.getElementById('dirCountBadge').textContent = allMembers.length + ' members';
       document.getElementById('statMemberCount').textContent = allMembers.length;
-      renderDirectoryList(allMembers);
+      filterDirectory();
     })
     .catch(function() { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Could not load directory.</p></div>'; });
+}
+
+function filterDirectory() {
+  const q = (document.getElementById('dirSearch').value || '').toLowerCase();
+  var list = allMembers.filter(function(m) {
+    // Filter tab
+    if (dirFilter === 'life'     && !m.life_member_number) return false;
+    if (dirFilter === 'visiting' && m.portal_access !== 'visiting') return false;
+    // Search
+    if (q) {
+      return [m.first_name, m.middle_name, m.last_name, m.suffix, m.city, m.alpha_id, m.initiation_chapter, m.life_member_number]
+        .filter(Boolean).join(' ').toLowerCase().includes(q);
+    }
+    return true;
+  });
+  // Sort
+  list = list.slice().sort(function(a, b) {
+    if (dirSort === 'za') {
+      return (b.last_name||'').localeCompare(a.last_name||'') || (b.first_name||'').localeCompare(a.first_name||'');
+    }
+    if (dirSort === 'newest') {
+      var ay = parseInt(a.member_since, 10) || 0;
+      var by = parseInt(b.member_since, 10) || 0;
+      return by - ay;
+    }
+    // a-z (default)
+    return (a.last_name||'').localeCompare(b.last_name||'') || (a.first_name||'').localeCompare(b.first_name||'');
+  });
+  renderDirectoryList(list);
 }
 
 function renderDirectoryList(members) {
   const c = document.getElementById('directoryList');
   if (!members.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No members found.</p></div>'; return; }
   c.innerHTML = members.map(function(m) {
-    const initials = ((m.first_name||'')[0]||'') + ((m.last_name||'')[0]||'') || '?';
+    const ini  = (((m.first_name||'')[0]||'') + ((m.last_name||'')[0]||'')).toUpperCase() || '?';
     const name = formatMemberFullName(m) || (m.email || '').trim();
     const loc  = [m.city, m.state].filter(Boolean).join(', ');
     const email = (m.email || '').trim();
     const phone = (m.phone || '').trim();
+    const isLife     = !!m.life_member_number;
+    const isVisiting = m.portal_access === 'visiting';
+
     const alphaParts = [];
     if (m.alpha_id) alphaParts.push('Alpha ID ' + escHtml(m.alpha_id));
     if (m.initiation_chapter) alphaParts.push('Initiated ' + escHtml(m.initiation_chapter));
     const initiationDate = displayOptionalDate(m.initiation_date);
     if (initiationDate) alphaParts.push(escHtml(initiationDate));
     const alphaMeta = alphaParts.join(' &middot; ');
+
     const lifeParts = [];
     if (m.life_member_number) lifeParts.push('Life Member #' + escHtml(m.life_member_number));
     const lifeMemberDate = displayOptionalDate(m.life_member_date);
-    if (lifeMemberDate) lifeParts.push('Life Member ' + escHtml(lifeMemberDate));
+    if (lifeMemberDate) lifeParts.push(escHtml(lifeMemberDate));
     const lifeMeta = lifeParts.join(' &middot; ');
+
     const sinceParts = [];
     if (loc) sinceParts.push(escHtml(loc));
     if (m.member_since) sinceParts.push('Since ' + escHtml(m.member_since));
     const sinceMeta = sinceParts.join(' &middot; ');
+
     const certParts = [];
     const imdpDate = displayOptionalDate(m.imdp_certified);
     const riskDate = displayOptionalDate(m.risk_mgmt_certified);
     if (imdpDate) certParts.push('IMDP ' + escHtml(imdpDate));
     if (riskDate) certParts.push('Risk Mgmt ' + escHtml(riskDate));
     const certMeta = certParts.join(' &middot; ');
+
     const birthday = formatBirthday(m.birthday);
+
+    const avatarHtml = m.photo
+      ? '<img src="' + escHtml(m.photo) + '" alt="' + escHtml(name) + '" onerror="this.parentElement.textContent=\'' + ini + '\'" />'
+      : ini;
+
+    const actions = [];
+    if (email) actions.push('<a href="mailto:' + escHtml(email) + '" class="mc-btn mc-btn-email"><i class="fas fa-envelope"></i> Email</a>');
+    if (phone) actions.push('<a href="tel:' + escHtml(phone.replace(/\s+/g,'')) + '" class="mc-btn mc-btn-phone"><i class="fas fa-phone"></i> Call</a>');
+    if (m.linkedin) actions.push('<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" class="mc-btn mc-btn-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</a>');
+
     return '<div class="member-card">' +
-      '<div class="member-card-avatar">' + (m.photo ? '<img src="' + escHtml(m.photo) + '" alt="' + escHtml(name) + '" />' : escHtml(initials)) + '</div>' +
-      '<div class="member-card-info"><div class="mc-name">Bro. ' + escHtml(name) + '</div>' +
-      (sinceMeta ? '<div class="mc-meta">' + sinceMeta + '</div>' : '') +
-      (alphaMeta ? '<div class="mc-meta">' + alphaMeta + '</div>' : '') +
-      (lifeMeta ? '<div class="mc-meta">' + lifeMeta + '</div>' : '') +
-      (birthday ? '<div class="mc-meta"><i class="fas fa-cake-candles" style="margin-right:6px;color:var(--gold);"></i>' + escHtml(birthday) + '</div>' : '') +
-      (certMeta ? '<div class="mc-meta">' + certMeta + '</div>' : '') +
-      (email ? '<div class="mc-meta"><i class="fas fa-envelope" style="margin-right:6px;color:var(--gold);"></i><a href="mailto:' + escHtml(email) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(email) + '</a></div>' : '') +
-      (phone ? '<div class="mc-meta"><i class="fas fa-phone" style="margin-right:6px;color:var(--gold);"></i><a href="tel:' + escHtml(phone.replace(/\s+/g, '')) + '" style="color:var(--gray-400);text-decoration:none;">' + escHtml(phone) + '</a></div>' : '') +
+      '<div class="member-card-avatar">' + avatarHtml + '</div>' +
+      '<div class="member-card-info">' +
+        '<div class="mc-name">Bro. ' + escHtml(name) +
+          (isLife     ? '<span class="mc-badge mc-badge-life">Life</span>' : '') +
+          (isVisiting ? '<span class="mc-badge mc-badge-visiting">Visiting</span>' : '') +
+        '</div>' +
+        (sinceMeta ? '<div class="mc-meta">' + sinceMeta + '</div>' : '') +
+        (alphaMeta ? '<div class="mc-meta">' + alphaMeta + '</div>' : '') +
+        (lifeMeta  ? '<div class="mc-meta">' + lifeMeta  + '</div>' : '') +
+        (birthday  ? '<div class="mc-meta"><i class="fas fa-cake-candles" style="margin-right:5px;color:var(--gold);"></i>' + escHtml(birthday) + '</div>' : '') +
+        (certMeta  ? '<div class="mc-meta"><i class="fas fa-shield-check" style="margin-right:5px;color:var(--gold);"></i>' + certMeta + '</div>' : '') +
+        (actions.length ? '<div class="mc-actions">' + actions.join('') + '</div>' : '') +
       '</div>' +
-      (m.linkedin ? '<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" style="color:var(--blue);font-size:1.1rem;"><i class="fab fa-linkedin"></i></a>' : '') +
       '</div>';
   }).join('');
-}
-
-function filterDirectory() {
-  const q = document.getElementById('dirSearch').value.toLowerCase();
-  renderDirectoryList(allMembers.filter(function(m) {
-    return [
-      m.first_name, m.middle_name, m.last_name, m.suffix, m.city, m.alpha_id, m.initiation_chapter, m.life_member_number
-    ].filter(Boolean).join(' ').toLowerCase().includes(q);
-  }));
 }
 
 function loadProfileForm(member) {
