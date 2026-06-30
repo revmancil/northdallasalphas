@@ -87,6 +87,9 @@
       <div class="meeting-info" id="meetingInfo"></div>
     </div>
 
+    <!-- Error bar -->
+    <div id="checkinErrBar" style="display:none;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:#e74c3c;border-radius:8px;padding:10px 14px;font-size:0.82rem;margin-bottom:12px;"></div>
+
     <!-- RSVP'd Brothers -->
     <div class="card" style="margin-bottom:14px;">
       <div class="section-label"><i class="fas fa-list-check"></i> RSVP'd Brothers</div>
@@ -282,7 +285,8 @@ async function checkIn(memberId, name, email, btnId) {
     show('successScreen');
   } catch(err) {
     if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-door-open"></i> Check In'; }
-    alert('Error: '+(err.message||'Could not check in.'));
+    var errBox = document.getElementById('checkinErrBar');
+    if (errBox) { errBox.textContent = 'Check-in failed: '+(err.message||'Please try again.'); errBox.style.display='block'; setTimeout(function(){ errBox.style.display='none'; }, 5000); }
   }
 }
 
