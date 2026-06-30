@@ -1035,7 +1035,7 @@ async function init() {
   const hasAccess   = portalAccess === 'granted';
   const isVisiting  = portalAccess === 'visiting';
   // Visiting brothers only see Dashboard, Events, and Dues
-  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-profile'];
+  const visitingHidden = ['nav-documents', 'nav-directory'];
   visitingHidden.forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = isVisiting ? 'none' : '';
