@@ -2255,6 +2255,25 @@
         </div>
       </div>
 
+      <!-- Attendance Modal -->
+      <div id="mtgAttModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:28px 28px 24px;max-width:480px;width:92%;max-height:85vh;display:flex;flex-direction:column;position:relative;">
+          <button onclick="closeMtgAtt()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
+          <h3 id="mtgAttTitle" style="margin:0 0 18px;font-size:1rem;color:var(--gray-800);padding-right:20px;"></h3>
+          <div style="overflow-y:auto;flex:1;">
+            <div style="margin-bottom:18px;">
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;"><i class="fas fa-check-circle"></i> Checked In</div>
+              <div id="mtgAttCheckedIn"></div>
+            </div>
+            <div>
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px;"><i class="fas fa-clock"></i> RSVP'd — Not Checked In</div>
+              <div id="mtgAttNotChecked"></div>
+            </div>
+          </div>
+          <button onclick="downloadAttCsv()" class="btn-save" style="margin-top:16px;width:100%;"><i class="fas fa-download"></i> Download Attendee List (CSV)</button>
+        </div>
+      </div>
+
     </div>
 
     <!-- ══════════════════════════════════
@@ -3372,19 +3391,64 @@ function printMtgQr() {
   setTimeout(function(){ w.print(); }, 500);
 }
 
-async function showMtgAttendance(id, title) {
+async function showMtgAttendance(meetingId, title) {
   const token = getAdminToken();
   try {
-    const rows = await sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(id) + '&order=checked_in_at.asc', token);
-    if (!rows || !rows.length) { showToast('No check-ins recorded for this meeting yet.', 'info'); return; }
-    const list = rows.map(function(r) {
-      const t = r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : '';
-      return (r.member_name || r.member_email || 'Unknown') + (t ? '  (' + t + ')' : '');
-    }).join('\n');
-    alert('Attendance for "' + title + '" (' + rows.length + ' checked in):\n\n' + list);
+    const [attended, rsvps] = await Promise.all([
+      sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(meetingId) + '&order=checked_in_at.asc', token),
+      sbGet('meeting_rsvps', 'meeting_id=eq.' + encodeURIComponent(meetingId) + '&response=in.(yes,maybe)&select=member_id,member_name,member_email,response', token)
+    ]);
+    const checkedNames = new Set((attended||[]).map(function(r){ return String(r.member_id||''); }));
+    const checkedEmails = new Set((attended||[]).map(function(r){ return (r.member_email||'').toLowerCase(); }));
+    const notCheckedIn = (rsvps||[]).filter(function(r){
+      return !checkedNames.has(String(r.member_id||'__none__')) && !(r.member_email && checkedEmails.has(r.member_email.toLowerCase()));
+    });
+    const modal = document.getElementById('mtgAttModal');
+    document.getElementById('mtgAttTitle').textContent = 'Attendance — ' + title;
+    // Checked in
+    const ciEl = document.getElementById('mtgAttCheckedIn');
+    if (!attended || !attended.length) {
+      ciEl.innerHTML = '<p style="color:var(--gray-400);font-size:0.82rem;padding:4px 0;">No check-ins yet.</p>';
+    } else {
+      ciEl.innerHTML = (attended||[]).map(function(r){
+        const t = r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : '';
+        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--gray-100);">'+
+          '<span style="font-size:0.85rem;color:var(--gray-700);">'+(escHtml(r.member_name||r.member_email||'Unknown'))+'</span>'+
+          '<span style="font-size:0.75rem;color:var(--gray-400);">'+t+'</span></div>';
+      }).join('');
+    }
+    // RSVPd not checked in
+    const ncEl = document.getElementById('mtgAttNotChecked');
+    if (!notCheckedIn.length) {
+      ncEl.innerHTML = '<p style="color:var(--gray-400);font-size:0.82rem;padding:4px 0;">All RSVPd brothers have checked in.</p>';
+    } else {
+      ncEl.innerHTML = notCheckedIn.map(function(r){
+        return '<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.85rem;color:var(--gray-600);">'+escHtml(r.member_name||r.member_email||'Unknown')+'</div>';
+      }).join('');
+    }
+    // Store for CSV
+    modal._attendData = { title: title, attended: attended||[], notCheckedIn: notCheckedIn };
+    modal.style.display = 'flex';
   } catch(err) {
     showToast('Could not load attendance.', 'error');
   }
+}
+function closeMtgAtt() { document.getElementById('mtgAttModal').style.display = 'none'; }
+function downloadAttCsv() {
+  const d = document.getElementById('mtgAttModal')._attendData;
+  if (!d) return;
+  const rows = [['Name','Email','Status','Checked In At']];
+  (d.attended||[]).forEach(function(r){
+    rows.push([r.member_name||'', r.member_email||'', 'Checked In', r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '']);
+  });
+  (d.notCheckedIn||[]).forEach(function(r){
+    rows.push([r.member_name||'', r.member_email||'', "RSVP'd — Not Checked In", '']);
+  });
+  const csv = rows.map(function(r){ return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'attendance-' + (d.title||'meeting').replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.csv';
+  a.click();
 }
 
 function triggerMtgDocUpload(meetingId) {

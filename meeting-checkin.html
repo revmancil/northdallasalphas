@@ -10,41 +10,51 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root { --black:#0a0a0a; --gold:#C9A84C; --gold-light:#E8C97A; --white:#ffffff; --green:#27ae60; }
-    body { font-family:'Inter',sans-serif; background:var(--black); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    body { font-family:'Inter',sans-serif; background:var(--black); min-height:100vh; display:flex; align-items:flex-start; justify-content:center; padding:24px; }
     body::before { content:'ΑΦΑ'; position:fixed; font-family:'Playfair Display',serif; font-size:60vw; font-weight:800; color:rgba(201,168,76,0.025); top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; line-height:1; white-space:nowrap; }
-    .wrap { position:relative; z-index:2; width:100%; max-width:440px; }
-    .brand { text-align:center; margin-bottom:28px; }
-    .brand img { height:68px; width:68px; object-fit:contain; border-radius:50%; border:2px solid rgba(201,168,76,0.5); margin-bottom:12px; }
+    .wrap { position:relative; z-index:2; width:100%; max-width:480px; padding-top:16px; }
+    .brand { text-align:center; margin-bottom:24px; }
+    .brand img { height:64px; width:64px; object-fit:contain; border-radius:50%; border:2px solid rgba(201,168,76,0.5); margin-bottom:12px; }
     .brand h1 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:800; color:var(--gold); }
     .brand p { font-size:0.75rem; color:rgba(255,255,255,0.4); letter-spacing:0.12em; text-transform:uppercase; margin-top:4px; }
-    .card { background:#111; border:1px solid rgba(201,168,76,0.15); border-radius:10px; padding:32px 28px; }
-    .meeting-info { background:rgba(201,168,76,0.06); border:1px solid rgba(201,168,76,0.15); border-radius:8px; padding:16px; margin-bottom:24px; }
-    .meeting-info h2 { font-family:'Playfair Display',serif; font-size:1.05rem; color:var(--gold); margin-bottom:8px; }
+    .card { background:#111; border:1px solid rgba(201,168,76,0.15); border-radius:10px; padding:24px; margin-bottom:16px; }
+    .meeting-info h2 { font-family:'Playfair Display',serif; font-size:1rem; color:var(--gold); margin-bottom:8px; }
     .meeting-info p { font-size:0.82rem; color:rgba(255,255,255,0.5); line-height:1.7; }
     .meeting-info p i { width:16px; }
-    .form-group { margin-bottom:16px; }
-    .form-group label { display:block; font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:7px; }
-    .input-wrap { position:relative; }
-    .input-wrap i { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.25); font-size:0.85rem; }
-    .input-wrap input { width:100%; padding:12px 12px 12px 38px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--white); font-family:'Inter',sans-serif; font-size:0.9rem; transition:all 0.2s; }
-    .input-wrap input:focus { outline:none; border-color:var(--gold); background:rgba(201,168,76,0.05); }
-    .input-wrap input::placeholder { color:rgba(255,255,255,0.2); }
-    .msg { display:none; align-items:center; gap:8px; border-radius:6px; padding:11px 14px; font-size:0.83rem; margin-bottom:16px; }
-    .msg.show { display:flex; }
-    .msg.error { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:#e74c3c; }
-    .msg.success { background:rgba(39,174,96,0.1); border:1px solid rgba(39,174,96,0.3); color:#27ae60; }
-    .btn { width:100%; padding:13px; background:var(--gold); color:var(--black); border:none; border-radius:6px; font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; }
-    .btn:hover { background:var(--gold-light); transform:translateY(-1px); }
-    .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    .spinner { width:15px; height:15px; border:2px solid rgba(0,0,0,0.3); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; }
-    .success-screen { text-align:center; padding:10px 0; }
+    .section-label { font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.35); margin-bottom:10px; }
+    .search-wrap { position:relative; margin-bottom:14px; }
+    .search-wrap i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.3); font-size:0.85rem; }
+    .search-wrap input { width:100%; padding:11px 12px 11px 36px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.12); border-radius:8px; color:var(--white); font-family:'Inter',sans-serif; font-size:0.9rem; }
+    .search-wrap input:focus { outline:none; border-color:var(--gold); }
+    .search-wrap input::placeholder { color:rgba(255,255,255,0.2); }
+    .member-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .member-row:last-child { border-bottom:none; }
+    .member-avatar { width:36px; height:36px; border-radius:50%; background:rgba(201,168,76,0.12); border:1px solid rgba(201,168,76,0.2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; color:var(--gold); flex-shrink:0; }
+    .member-name { flex:1; font-size:0.88rem; color:rgba(255,255,255,0.85); font-weight:500; }
+    .member-badge { font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:4px; margin-left:6px; }
+    .badge-rsvp { background:rgba(39,174,96,0.15); color:#27ae60; }
+    .badge-visiting { background:rgba(74,222,128,0.15); color:#4ade80; }
+    .checkin-btn { padding:6px 14px; background:var(--gold); color:#000; border:none; border-radius:6px; font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:700; cursor:pointer; white-space:nowrap; transition:all 0.2s; }
+    .checkin-btn:hover { background:var(--gold-light); }
+    .checkin-btn:disabled { opacity:0.5; cursor:not-allowed; }
+    .checkin-btn.done { background:rgba(39,174,96,0.15); color:#27ae60; border:1px solid rgba(39,174,96,0.3); cursor:default; }
+    .empty-note { font-size:0.82rem; color:rgba(255,255,255,0.3); padding:12px 0; text-align:center; }
+    .manual-form { margin-top:14px; padding-top:14px; border-top:1px solid rgba(255,255,255,0.08); }
+    .manual-form label { display:block; font-size:0.7rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:5px; }
+    .manual-form input { width:100%; padding:9px 12px; background:rgba(255,255,255,0.06); border:1.5px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--white); font-family:'Inter',sans-serif; font-size:0.88rem; margin-bottom:10px; }
+    .manual-form input:focus { outline:none; border-color:var(--gold); }
+    .manual-btn { width:100%; padding:10px; background:rgba(201,168,76,0.12); color:var(--gold); border:1px solid rgba(201,168,76,0.3); border-radius:6px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:700; cursor:pointer; transition:all 0.2s; }
+    .manual-btn:hover { background:rgba(201,168,76,0.2); }
+    .err-msg { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:#e74c3c; border-radius:6px; padding:10px 14px; font-size:0.82rem; margin-bottom:10px; display:none; }
+    .success-screen { text-align:center; padding:20px 0; }
     .success-screen .check { width:64px; height:64px; background:rgba(39,174,96,0.12); border:2px solid #27ae60; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:1.6rem; color:#27ae60; }
     .success-screen h2 { font-family:'Playfair Display',serif; color:var(--gold); font-size:1.2rem; margin-bottom:8px; }
-    .success-screen p { color:rgba(255,255,255,0.5); font-size:0.88rem; line-height:1.6; }
-    .invalid-screen { text-align:center; padding:10px 0; }
-    .invalid-screen i { font-size:2rem; color:rgba(231,76,60,0.6); margin-bottom:12px; display:block; }
-    .invalid-screen p { color:rgba(255,255,255,0.45); font-size:0.88rem; line-height:1.6; }
+    .success-screen p { color:rgba(255,255,255,0.5); font-size:0.88rem; }
+    .invalid-screen { text-align:center; padding:20px 0; }
+    .invalid-screen i { font-size:2rem; color:rgba(231,76,60,0.5); display:block; margin-bottom:12px; }
+    .invalid-screen p { color:rgba(255,255,255,0.4); font-size:0.88rem; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinner { width:24px; height:24px; border:2px solid rgba(201,168,76,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto; }
   </style>
 </head>
 <body>
@@ -54,200 +64,258 @@
     <h1>Chapter Check-In</h1>
     <p>Xi Tau Lambda · North Dallas Alphas</p>
   </div>
-  <div class="card">
 
-    <!-- Loading -->
-    <div id="loadingScreen" style="text-align:center;padding:20px 0;">
-      <div class="spinner" style="margin:0 auto;border-top-color:var(--gold);border-color:rgba(201,168,76,0.2);width:28px;height:28px;"></div>
-      <p style="color:rgba(255,255,255,0.4);margin-top:12px;font-size:0.85rem;">Loading meeting info…</p>
+  <!-- Loading -->
+  <div class="card" id="loadingScreen">
+    <div style="text-align:center;padding:16px 0;">
+      <div class="spinner"></div>
+      <p style="color:rgba(255,255,255,0.4);margin-top:14px;font-size:0.85rem;">Loading meeting…</p>
     </div>
-
-    <!-- Invalid -->
-    <div id="invalidScreen" style="display:none;">
-      <div class="invalid-screen">
-        <i class="fas fa-link-slash"></i>
-        <p>This check-in link is invalid or the meeting no longer exists.</p>
-      </div>
-    </div>
-
-    <!-- Check-in Form -->
-    <div id="formScreen" style="display:none;">
-      <div class="meeting-info" id="meetingInfo"></div>
-      <div class="msg error" id="ciError"><i class="fas fa-exclamation-circle"></i><span id="ciErrorText">An error occurred.</span></div>
-      <form id="ciForm" novalidate>
-        <div class="form-group">
-          <label>Your Name</label>
-          <div class="input-wrap">
-            <i class="fas fa-user"></i>
-            <input type="text" id="ciName" placeholder="First and last name" required autocomplete="name" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Email Address</label>
-          <div class="input-wrap">
-            <i class="fas fa-envelope"></i>
-            <input type="email" id="ciEmail" placeholder="your@email.com" required autocomplete="email" />
-          </div>
-        </div>
-        <button type="submit" class="btn" id="ciBtn"><i class="fas fa-door-open"></i> Check In</button>
-      </form>
-    </div>
-
-    <!-- Success -->
-    <div id="successScreen" style="display:none;">
-      <div class="success-screen">
-        <div class="check"><i class="fas fa-check"></i></div>
-        <h2>You're Checked In!</h2>
-        <p id="successMsg">Your attendance has been recorded for this meeting.</p>
-        <p style="margin-top:12px;font-size:0.78rem;color:rgba(255,255,255,0.3);">You may close this page.</p>
-      </div>
-    </div>
-
-    <!-- Already checked in -->
-    <div id="alreadyScreen" style="display:none;">
-      <div class="success-screen">
-        <div class="check" style="background:rgba(201,168,76,0.1);border-color:var(--gold);color:var(--gold);"><i class="fas fa-star"></i></div>
-        <h2>Already Checked In</h2>
-        <p>Your attendance was already recorded for this meeting. See you there, Brother!</p>
-      </div>
-    </div>
-
   </div>
+
+  <!-- Invalid -->
+  <div class="card" id="invalidScreen" style="display:none;">
+    <div class="invalid-screen">
+      <i class="fas fa-link-slash"></i>
+      <p>This check-in link is invalid or the meeting no longer exists.</p>
+    </div>
+  </div>
+
+  <!-- Main check-in UI -->
+  <div id="mainScreen" style="display:none;">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="meeting-info" id="meetingInfo"></div>
+    </div>
+
+    <!-- RSVP'd Brothers -->
+    <div class="card" style="margin-bottom:14px;">
+      <div class="section-label"><i class="fas fa-list-check"></i> RSVP'd Brothers</div>
+      <div id="rsvpList"><div class="empty-note">Loading…</div></div>
+    </div>
+
+    <!-- Search all members -->
+    <div class="card">
+      <div class="section-label"><i class="fas fa-search"></i> Search Member Directory</div>
+      <div class="search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" id="memberSearch" placeholder="Type a name to search…" oninput="filterMembers()" />
+      </div>
+      <div id="searchResults"><div class="empty-note">Type a name above to search.</div></div>
+
+      <!-- Manual add -->
+      <div class="manual-form" id="manualForm">
+        <div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:12px;">Not finding the person? Add them manually:</div>
+        <div class="err-msg" id="manualErr"></div>
+        <label>Full Name</label>
+        <input type="text" id="manualName" placeholder="First and last name" />
+        <label>Organization / Role <span style="font-weight:400;color:rgba(255,255,255,0.25);">(optional)</span></label>
+        <input type="text" id="manualRole" placeholder="e.g. Guest, Visitor, Alumni" />
+        <button class="manual-btn" onclick="checkInManual()"><i class="fas fa-user-plus"></i> Add &amp; Check In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="card" id="successScreen" style="display:none;">
+    <div class="success-screen">
+      <div class="check"><i class="fas fa-check"></i></div>
+      <h2>Checked In!</h2>
+      <p id="successMsg">Your attendance has been recorded.</p>
+      <p style="margin-top:12px;font-size:0.75rem;color:rgba(255,255,255,0.25);">You may close this page.</p>
+      <button onclick="resetCheckin()" style="margin-top:20px;padding:8px 20px;background:transparent;border:1px solid rgba(201,168,76,0.3);color:var(--gold);border-radius:6px;font-size:0.82rem;cursor:pointer;">Check In Another Person</button>
+    </div>
+  </div>
+
 </div>
 <script>
-const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
-const MEMBER_SESSION_KEY = 'nda_member_session';
-
-function getParams() {
-  var params = {};
-  window.location.search.replace(/^\?/, '').split('&').forEach(function(p) {
-    var parts = p.split('=');
-    if (parts.length === 2) params[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1]);
-  });
-  return params;
-}
-
-function show(id) {
-  ['loadingScreen','invalidScreen','formScreen','successScreen','alreadyScreen'].forEach(function(s) {
-    document.getElementById(s).style.display = s === id ? 'block' : 'none';
-  });
-}
-
-function time24ToAmPm(t) {
-  if (!t) return '';
-  var parts = t.split(':');
-  var h = parseInt(parts[0], 10);
-  var m = parts[1] || '00';
-  var ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-  return h + ':' + m + ' ' + ampm;
-}
+var SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+var MEMBER_SESSION_KEY = 'nda_member_session';
 
 var meetingId = null;
-var meetingData = null;
+var allMembers = [];
+var rsvpMemberIds = new Set();
+var checkedInEmails = new Set();
+
+function getParams() {
+  var p = {}; window.location.search.replace(/^\?/,'').split('&').forEach(function(s){ var kv=s.split('='); if(kv.length===2) p[decodeURIComponent(kv[0])]=decodeURIComponent(kv[1]); }); return p;
+}
+function show(id) {
+  ['loadingScreen','invalidScreen','mainScreen','successScreen'].forEach(function(s){
+    var el=document.getElementById(s); if(el) el.style.display = s===id?'block':'none';
+  });
+}
+function sbFetch(table, query) {
+  return fetch(SUPABASE_URL+'/rest/v1/'+table+'?'+query, { headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY} }).then(function(r){return r.json();});
+}
+function time24ToAmPm(t) {
+  if(!t) return ''; var p=t.split(':'); var h=parseInt(p[0],10); var m=p[1]||'00'; var ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ap;
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function initials(fn,ln) { return ((fn||'')[0]||'').toUpperCase()+((ln||'')[0]||'').toUpperCase(); }
 
 async function init() {
   var params = getParams();
   meetingId = params['id'];
   if (!meetingId) { show('invalidScreen'); return; }
-
   try {
-    var res = await fetch(SUPABASE_URL + '/rest/v1/meetings?id=eq.' + encodeURIComponent(meetingId) + '&limit=1', {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
-    });
-    var rows = await res.json();
-    if (!rows || !rows.length) { show('invalidScreen'); return; }
-    meetingData = rows[0];
+    var rows = await sbFetch('meetings','id=eq.'+encodeURIComponent(meetingId)+'&limit=1');
+    if (!rows||!rows.length) { show('invalidScreen'); return; }
+    var m = rows[0];
+    var dateStr = m.meeting_date ? new Date(m.meeting_date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '—';
+    var timeStr = m.start_time ? time24ToAmPm(m.start_time)+(m.end_time?' – '+time24ToAmPm(m.end_time):'') : '';
+    var info = '<h2>'+esc(m.title||'Chapter Meeting')+'</h2>';
+    info += '<p><i class="fas fa-calendar"></i> '+dateStr+'</p>';
+    if (timeStr) info += '<p><i class="fas fa-clock"></i> '+timeStr+'</p>';
+    if (m.location) info += '<p><i class="fas fa-map-marker-alt"></i> '+esc(m.location)+'</p>';
+    document.getElementById('meetingInfo').innerHTML = info;
 
-    var dateStr = meetingData.meeting_date ? new Date(meetingData.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '—';
-    var timeStr = meetingData.start_time ? time24ToAmPm(meetingData.start_time) + (meetingData.end_time ? ' – ' + time24ToAmPm(meetingData.end_time) : '') : '';
-    var infoHtml = '<h2>' + (meetingData.title || 'Chapter Meeting') + '</h2>';
-    infoHtml += '<p><i class="fas fa-calendar"></i> ' + dateStr + '</p>';
-    if (timeStr) infoHtml += '<p><i class="fas fa-clock"></i> ' + timeStr + '</p>';
-    if (meetingData.location) infoHtml += '<p><i class="fas fa-map-marker-alt"></i> ' + meetingData.location + '</p>';
-    document.getElementById('meetingInfo').innerHTML = infoHtml;
+    // Load data in parallel
+    var results = await Promise.all([
+      sbFetch('members','select=id,first_name,last_name,email,portal_access,status&order=last_name.asc'),
+      sbFetch('meeting_rsvps','meeting_id=eq.'+encodeURIComponent(meetingId)+'&response=in.(yes,maybe)&select=member_id,member_name,member_email,response'),
+      sbFetch('meeting_attendance','meeting_id=eq.'+encodeURIComponent(meetingId)+'&select=member_email,member_name')
+    ]);
+    allMembers    = results[0] || [];
+    var rsvps     = results[1] || [];
+    var attended  = results[2] || [];
+    attended.forEach(function(a){ if(a.member_email) checkedInEmails.add(a.member_email.toLowerCase()); });
 
-    // Pre-fill from portal session if available
-    var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
+    // Build RSVP list
+    rsvpMemberIds = new Set(rsvps.map(function(r){ return String(r.member_id||''); }));
+    var rsvpEl = document.getElementById('rsvpList');
+    if (!rsvps.length) {
+      rsvpEl.innerHTML = '<div class="empty-note">No RSVPs recorded yet.</div>';
+    } else {
+      // Match RSVP records to member data
+      var rsvpHtml = rsvps.map(function(r) {
+        var mem = allMembers.find(function(x){ return String(x.id)===String(r.member_id); });
+        var name = mem ? (mem.first_name+' '+mem.last_name).trim() : (r.member_name||'Unknown');
+        var email = mem ? (mem.email||'') : (r.member_email||'');
+        var ini = mem ? initials(mem.first_name,mem.last_name) : (name[0]||'?').toUpperCase();
+        var alreadyIn = email && checkedInEmails.has(email.toLowerCase());
+        var memberId = mem ? mem.id : null;
+        return memberRow(memberId, name, email, ini, alreadyIn, true, mem && mem.portal_access==='visiting');
+      }).join('');
+      rsvpEl.innerHTML = rsvpHtml;
+    }
+
+    // Pre-fill search if logged into portal
+    var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY)||'null');
     if (session && session.user && session.user.email) {
-      document.getElementById('ciEmail').value = session.user.email;
-      if (session.user.user_metadata) {
-        var fn = session.user.user_metadata.first_name || '';
-        var ln = session.user.user_metadata.last_name || '';
-        if (fn || ln) document.getElementById('ciName').value = (fn + ' ' + ln).trim();
+      var me = allMembers.find(function(x){ return x.email===session.user.email; });
+      if (me) {
+        document.getElementById('memberSearch').value = (me.first_name+' '+me.last_name).trim();
+        filterMembers();
       }
     }
 
-    show('formScreen');
+    show('mainScreen');
   } catch(err) {
     show('invalidScreen');
   }
 }
 
-document.getElementById('ciForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  var name  = document.getElementById('ciName').value.trim();
-  var email = document.getElementById('ciEmail').value.trim();
-  var errEl = document.getElementById('ciError');
-  var errTx = document.getElementById('ciErrorText');
+function memberRow(memberId, name, email, ini, alreadyIn, isRsvp, isVisiting) {
+  var btnId = 'ci-btn-'+(email||name).replace(/[^a-z0-9]/gi,'_');
+  var btnHtml = alreadyIn
+    ? '<button class="checkin-btn done" disabled><i class="fas fa-check"></i> Checked In</button>'
+    : '<button class="checkin-btn" id="'+esc(btnId)+'" onclick="checkIn('+JSON.stringify(memberId)+','+JSON.stringify(name)+','+JSON.stringify(email)+','+JSON.stringify(btnId)+')"><i class="fas fa-door-open"></i> Check In</button>';
+  return '<div class="member-row">'+
+    '<div class="member-avatar">'+esc(ini)+'</div>'+
+    '<div class="member-name">'+esc(name)+
+      (isRsvp ? '<span class="member-badge badge-rsvp">RSVP\'d</span>' : '')+
+      (isVisiting ? '<span class="member-badge badge-visiting">Visiting</span>' : '')+
+    '</div>'+
+    btnHtml+
+    '</div>';
+}
 
-  function showErr(msg) {
-    errTx.textContent = msg;
-    errEl.className = 'msg error show';
+function filterMembers() {
+  var q = (document.getElementById('memberSearch').value||'').trim().toLowerCase();
+  var resultsEl = document.getElementById('searchResults');
+  if (!q) { resultsEl.innerHTML = '<div class="empty-note">Type a name above to search.</div>'; return; }
+  var filtered = allMembers.filter(function(m) {
+    var full = ((m.first_name||'')+' '+(m.last_name||'')).toLowerCase();
+    return full.includes(q);
+  }).slice(0,10);
+  if (!filtered.length) {
+    resultsEl.innerHTML = '<div class="empty-note">No match found. Use the manual form below.</div>';
+    return;
   }
-  errEl.classList.remove('show');
+  resultsEl.innerHTML = filtered.map(function(m) {
+    var name = (m.first_name+' '+m.last_name).trim();
+    var ini = initials(m.first_name,m.last_name);
+    var alreadyIn = m.email && checkedInEmails.has((m.email||'').toLowerCase());
+    var isVisiting = m.portal_access === 'visiting';
+    return memberRow(m.id, name, m.email||'', ini, alreadyIn, false, isVisiting);
+  }).join('');
+}
 
-  if (!name)  { showErr('Please enter your name.'); return; }
-  if (!email) { showErr('Please enter your email address.'); return; }
-
-  var btn = document.getElementById('ciBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Checking in…';
-
+async function checkIn(memberId, name, email, btnId) {
+  var btn = document.getElementById(btnId);
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; }
   try {
-    // Check if already checked in
-    var checkRes = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance?meeting_id=eq.' + encodeURIComponent(meetingId) + '&member_email=eq.' + encodeURIComponent(email) + '&limit=1', {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
-    });
-    var existing = await checkRes.json();
-    if (existing && existing.length) { show('alreadyScreen'); return; }
-
-    // Look up member_id from email
-    var memberRes = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id&limit=1', {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
-    });
-    var memberRows = await memberRes.json();
-    var memberId = (memberRows && memberRows.length) ? memberRows[0].id : null;
-
-    // Insert attendance record
-    var payload = { meeting_id: meetingId, member_email: email, member_name: name };
+    if (email && checkedInEmails.has(email.toLowerCase())) {
+      if (btn) { btn.className='checkin-btn done'; btn.innerHTML='<i class="fas fa-check"></i> Checked In'; }
+      return;
+    }
+    var payload = { meeting_id:meetingId, member_name:name };
     if (memberId) payload.member_id = memberId;
-    var insRes = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Prefer': 'return=minimal'
-      },
+    if (email) payload.member_email = email;
+    var res = await fetch(SUPABASE_URL+'/rest/v1/meeting_attendance', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Prefer':'return=minimal'},
       body: JSON.stringify(payload)
     });
-    if (!insRes.ok) {
-      var errData = await insRes.json().catch(function() { return {}; });
-      if (insRes.status === 409 || (errData.code && errData.code === '23505')) {
-        show('alreadyScreen'); return;
+    if (!res.ok) {
+      var ed = await res.json().catch(function(){return{};});
+      if (res.status===409||(ed.code&&ed.code==='23505')) {
+        if (btn) { btn.className='checkin-btn done'; btn.disabled=true; btn.innerHTML='<i class="fas fa-check"></i> Checked In'; }
+        if (email) checkedInEmails.add(email.toLowerCase());
+        return;
       }
-      throw new Error(errData.message || 'Check-in failed.');
+      throw new Error(ed.message||'Check-in failed.');
     }
-    document.getElementById('successMsg').textContent = 'Welcome, ' + name.split(' ')[0] + '! Your attendance has been recorded.';
+    if (email) checkedInEmails.add(email.toLowerCase());
+    document.getElementById('successMsg').textContent = 'Welcome, '+name.split(' ')[0]+'! Attendance recorded.';
     show('successScreen');
   } catch(err) {
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-door-open"></i> Check In';
-    showErr(err.message || 'Could not check in. Please try again.');
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-door-open"></i> Check In'; }
+    alert('Error: '+(err.message||'Could not check in.'));
   }
-});
+}
+
+async function checkInManual() {
+  var name = (document.getElementById('manualName').value||'').trim();
+  var role = (document.getElementById('manualRole').value||'').trim();
+  var errEl = document.getElementById('manualErr');
+  errEl.style.display = 'none';
+  if (!name) { errEl.textContent='Please enter a name.'; errEl.style.display='block'; return; }
+  var displayName = name + (role ? ' ('+role+')' : '');
+  try {
+    var res = await fetch(SUPABASE_URL+'/rest/v1/meeting_attendance', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+SUPABASE_ANON_KEY,'Prefer':'return=minimal'},
+      body: JSON.stringify({ meeting_id:meetingId, member_name:displayName })
+    });
+    if (!res.ok) { var ed=await res.json().catch(function(){return{};}); throw new Error(ed.message||'Failed.'); }
+    document.getElementById('manualName').value='';
+    document.getElementById('manualRole').value='';
+    document.getElementById('successMsg').textContent = name+' has been checked in.';
+    show('successScreen');
+  } catch(err) {
+    errEl.textContent='Error: '+(err.message||'Could not check in.'); errEl.style.display='block';
+  }
+}
+
+function resetCheckin() {
+  show('mainScreen');
+  document.getElementById('memberSearch').value='';
+  document.getElementById('searchResults').innerHTML='<div class="empty-note">Type a name above to search.</div>';
+  // Reload to get fresh attendance data
+  init();
+}
 
 init();
 </script>
