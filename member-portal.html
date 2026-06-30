@@ -952,7 +952,10 @@ async function loadMeetingsPortal() {
             '<div style="font-size:0.83rem;color:rgba(255,255,255,0.8);">' + escapeHtml(d.title) + '</div>' +
             (d.uploaded_by_name ? '<div style="font-size:0.72rem;color:rgba(255,255,255,0.35);">' + escapeHtml(d.uploaded_by_name) + '</div>' : '') +
             '</div>' +
-            (d.file_url ? '<a href="' + escapeHtml(d.file_url) + '" target="_blank" style="color:var(--gold);font-size:0.78rem;text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;"><i class="fas fa-download"></i> Download</a>' : '') +
+            (d.file_url ? '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+              '<a href="' + escapeHtml(d.file_url) + '" target="_blank" style="color:var(--gold);font-size:0.78rem;text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;white-space:nowrap;"><i class="fas fa-eye"></i> View</a>' +
+              '<a href="' + escapeHtml(d.file_url) + '" download style="color:rgba(255,255,255,0.5);font-size:0.78rem;text-decoration:none;border:1px solid rgba(255,255,255,0.12);padding:3px 10px;border-radius:4px;white-space:nowrap;"><i class="fas fa-download"></i> Download</a>' +
+              '</div>' : '') +
             '</div>';
         }).join('') : '<div style="font-size:0.8rem;color:rgba(255,255,255,0.25);padding:4px 0;">No documents posted yet.</div>') +
         '<div id="committeeUpload-' + m.id + '" style="display:none;margin-top:12px;padding:14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(201,168,76,0.15);">' +
