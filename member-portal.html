@@ -201,6 +201,7 @@
     <div class="nav-section-label">Main</div>
     <button class="nav-item active" onclick="showPanel('dashboard')" id="nav-dashboard"><i class="fas fa-home"></i> Dashboard</button>
     <button class="nav-item" onclick="showPanel('events')" id="nav-events"><i class="fas fa-calendar-alt"></i> Events</button>
+    <button class="nav-item" onclick="showPanel('meetings');loadMeetingsPortal()" id="nav-meetings"><i class="fas fa-people-group"></i> Meetings</button>
     <button class="nav-item" onclick="showPanel('dues')" id="nav-dues"><i class="fas fa-dollar-sign"></i> Dues</button>
     <button class="nav-item" onclick="showPanel('documents')" id="nav-documents"><i class="fas fa-file-alt"></i> Documents</button>
     <div class="nav-section-label">Community</div>
@@ -256,6 +257,18 @@
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-calendar-alt"></i> All Chapter Events</h3><span id="eventsCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span></div>
         <div class="section-card-body" id="eventsList"><div class="empty-state"><i class="fas fa-calendar"></i><p>Loading events...</p></div></div>
+      </div>
+    </div>
+    <!-- MEETINGS -->
+    <div class="panel" id="panel-meetings">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-people-group"></i> Chapter Meetings</h3>
+          <button class="card-action" onclick="loadMeetingsPortal()"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="section-card-body" id="meetingsPortalList">
+          <div class="empty-state"><i class="fas fa-people-group"></i><p>Loading meetings…</p></div>
+        </div>
       </div>
     </div>
     <!-- DUES -->
@@ -518,6 +531,7 @@ function showToast(msg, type) {
 const PANEL_META = {
   dashboard: ['Dashboard',        'Member Portal'],
   events:    ['Events',           'Upcoming chapter events'],
+  meetings:  ['Meetings',        'Upcoming chapter meetings'],
   dues:      ['Dues',             'Your dues history'],
   documents: ['Documents',        'Chapter documents and resources'],
   directory: ['Brother Directory','Active chapter members'],
@@ -871,6 +885,103 @@ function printMemberCard() {
   setTimeout(function(){ wrap.style.display = 'none'; }, 500);
 }
 
+function time24ToAmPm(t) {
+  if (!t) return '';
+  var parts = t.split(':');
+  var h = parseInt(parts[0], 10);
+  var m = parts[1] || '00';
+  var ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + m + ' ' + ampm;
+}
+
+async function loadMeetingsPortal() {
+  var el = document.getElementById('meetingsPortalList');
+  if (!el) return;
+  var token = currentSession ? currentSession.access_token : null;
+  var memberId = currentMember ? String(currentMember.id || '') : '';
+  var memberEmail = currentMember ? (currentMember.email || '') : '';
+  el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>Loading meetings…</p></div>';
+  try {
+    var meetings = await sbGet('meetings', 'order=meeting_date.asc', token);
+    if (!meetings || !meetings.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>No meetings scheduled yet.</p></div>';
+      return;
+    }
+    // Load this member's RSVPs
+    var myRsvps = {};
+    if (memberId) {
+      var rsvpRows = await sbGet('meeting_rsvps', 'member_id=eq.' + encodeURIComponent(memberId), token);
+      (rsvpRows || []).forEach(function(r) { myRsvps[r.meeting_id] = r.response; });
+    }
+    var now = new Date(); now.setHours(0,0,0,0);
+    el.innerHTML = meetings.map(function(m) {
+      var mDate = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00') : null;
+      var isPast = mDate && mDate < now;
+      var dateStr = mDate ? mDate.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '—';
+      var timeStr = m.start_time ? time24ToAmPm(m.start_time) + (m.end_time ? ' – ' + time24ToAmPm(m.end_time) : '') : '';
+      var myResponse = myRsvps[m.id] || null;
+      var rsvpHtml = isPast ? '<span style="font-size:0.78rem;color:rgba(255,255,255,0.3);">This meeting has passed.</span>' :
+        '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+        '<span style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Your RSVP:</span>' +
+        ['yes','maybe','no'].map(function(val) {
+          var labels = { yes:'Yes', maybe:'Maybe', no:'No' };
+          var icons  = { yes:'fa-check', maybe:'fa-question', no:'fa-times' };
+          var colors = { yes:'#27ae60', maybe:'#f39c12', no:'#e74c3c' };
+          var isActive = myResponse === val;
+          return '<button onclick="submitRsvp(\'' + m.id + '\',\'' + val + '\',this)" style="padding:5px 14px;border-radius:20px;border:1.5px solid ' + colors[val] + ';background:' + (isActive ? colors[val] : 'transparent') + ';color:' + (isActive ? '#fff' : colors[val]) + ';font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;" data-meeting="' + m.id + '" data-val="' + val + '"><i class="fas ' + icons[val] + '"></i> ' + labels[val] + '</button>';
+        }).join('') +
+        '</div>';
+      return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px;margin-bottom:14px;background:rgba(255,255,255,0.03);">' +
+        '<div style="font-size:0.95rem;font-weight:700;color:var(--gold);margin-bottom:6px;">' + escapeHtml(m.title) + '</div>' +
+        '<div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:3px;"><i class="fas fa-calendar" style="width:16px;"></i> ' + dateStr + '</div>' +
+        (timeStr ? '<div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:3px;"><i class="fas fa-clock" style="width:16px;"></i> ' + timeStr + '</div>' : '') +
+        (m.location ? '<div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="width:16px;"></i> ' + escapeHtml(m.location) + '</div>' : '') +
+        (m.agenda ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin:10px 0;white-space:pre-wrap;border-left:2px solid rgba(201,168,76,0.3);padding-left:10px;">' + escapeHtml(m.agenda) + '</div>' : '') +
+        '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' + rsvpHtml + '</div>' +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Could not load meetings.</p></div>';
+  }
+}
+
+async function submitRsvp(meetingId, response, btn) {
+  var memberId = currentMember ? String(currentMember.id || '') : '';
+  var memberEmail = currentMember ? (currentMember.email || '') : '';
+  var memberName = currentMember ? ((currentMember.first_name || '') + ' ' + (currentMember.last_name || '')).trim() : '';
+  var token = currentSession ? currentSession.access_token : null;
+  if (!memberId) return;
+  // Optimistic UI — update all buttons for this meeting
+  var container = btn.closest('div[style]');
+  var allBtns = container ? container.querySelectorAll('button[data-meeting="' + meetingId + '"]') : [];
+  var colors = { yes:'#27ae60', maybe:'#f39c12', no:'#e74c3c' };
+  allBtns.forEach(function(b) {
+    var v = b.getAttribute('data-val');
+    b.style.background = v === response ? colors[v] : 'transparent';
+    b.style.color = v === response ? '#fff' : colors[v];
+  });
+  try {
+    // Upsert RSVP
+    await fetch(SUPABASE_URL + '/rest/v1/meeting_rsvps', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + token,
+        'Prefer': 'resolution=merge-duplicates,return=representation'
+      },
+      body: JSON.stringify({ meeting_id: meetingId, member_id: memberId, member_email: memberEmail, member_name: memberName, response: response })
+    });
+  } catch(err) {
+    // silent — UI already updated
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 function renderDocumentsPanel() {
   const c = document.getElementById('documentsList');
   const token = currentSession ? currentSession.access_token : null;
@@ -1162,7 +1273,7 @@ async function init() {
   const hasAccess   = portalAccess === 'granted';
   const isVisiting  = portalAccess === 'visiting';
   // Visiting brothers only see Dashboard, Events, and Dues
-  const visitingHidden = ['nav-documents', 'nav-directory'];
+  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-meetings'];
   visitingHidden.forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = isVisiting ? 'none' : '';

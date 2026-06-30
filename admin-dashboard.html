@@ -1186,6 +1186,9 @@
     <button class="sidebar-link" onclick="showPanel('documents');loadAdminDocuments()">
       <i class="fas fa-folder-open"></i> Documents
     </button>
+    <button class="sidebar-link" onclick="showPanel('meetings');loadMeetingsPanel()">
+      <i class="fas fa-people-group"></i> Meetings
+    </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2192,6 +2195,55 @@
     </div>
 
     <!-- ══════════════════════════════════
+         MEETINGS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-meetings">
+
+      <!-- Schedule a Meeting -->
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-plus-circle" style="color:var(--gold);margin-right:8px;"></i>Schedule a Meeting</h3>
+        </div>
+        <div class="section-card-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+            <div class="field-group" style="grid-column:span 2;margin:0;"><label>Meeting Title</label><input type="text" id="mtgTitle" placeholder="e.g. Chapter Meeting – July 2026" /></div>
+            <div class="field-group" style="margin:0;"><label>Date</label><input type="date" id="mtgDate" /></div>
+            <div class="field-group" style="margin:0;"><label>Start Time</label><input type="time" id="mtgStart" /></div>
+            <div class="field-group" style="margin:0;"><label>End Time</label><input type="time" id="mtgEnd" /></div>
+            <div class="field-group" style="margin:0;"><label>Location</label><input type="text" id="mtgLocation" placeholder="Address or venue name" /></div>
+            <div class="field-group" style="grid-column:1/-1;margin:0;"><label>Agenda / Notes <span style="font-weight:400;color:var(--gray-400);">(optional)</span></label><textarea id="mtgAgenda" rows="3" placeholder="Key agenda items or notes for brothers…" style="width:100%;resize:vertical;"></textarea></div>
+          </div>
+          <div id="mtgFormMsg" style="display:none;margin-top:10px;font-size:0.83rem;"></div>
+          <button class="btn-save" style="margin-top:16px;" onclick="saveMeeting()"><i class="fas fa-calendar-plus"></i> Schedule Meeting</button>
+        </div>
+      </div>
+
+      <!-- Meeting List -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-list" style="color:var(--gold);margin-right:8px;"></i>Scheduled Meetings</h3>
+          <button class="btn-sm view" onclick="loadMeetingsPanel()" style="font-size:0.75rem;padding:4px 10px;"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="section-card-body">
+          <div id="meetingsList"><div class="hint-text">Loading meetings…</div></div>
+        </div>
+      </div>
+
+      <!-- QR Modal -->
+      <div id="mtgQrModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:32px;max-width:380px;width:90%;text-align:center;position:relative;">
+          <button onclick="closeMtgQr()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
+          <h3 id="mtgQrTitle" style="margin:0 0 6px;font-size:1rem;color:var(--gray-800);"></h3>
+          <p id="mtgQrSub" style="font-size:0.8rem;color:var(--gray-500);margin:0 0 18px;"></p>
+          <img id="mtgQrImg" src="" alt="QR Code" style="width:200px;height:200px;border:1px solid var(--gray-200);border-radius:8px;" />
+          <p style="font-size:0.75rem;color:var(--gray-400);margin:12px 0 0;">Brothers scan this at the door to check in</p>
+          <button onclick="printMtgQr()" class="btn-save" style="margin-top:16px;width:100%;"><i class="fas fa-print"></i> Print QR Code</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════
          SETTINGS PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-settings">
@@ -2328,7 +2380,8 @@ const PANEL_META = {
   announcements: ['Announcement Bar',   'Edit the top announcement banner'],
   newsletter:    ['Newsletter Generator','Build and export chapter email campaigns'],
   gallery:       ['Event Photo Gallery', 'Photos displayed on the public gallery page'],
-  settings:      ['Settings',           'Admin account & chapter settings']
+  settings:      ['Settings',           'Admin account & chapter settings'],
+  meetings:      ['Meetings Manager',   'Schedule meetings and track RSVP & attendance']
 };
 
 function showPanel(id) {
@@ -2362,6 +2415,7 @@ function showPanel(id) {
   if (id === 'newsletter')    nlInitPanel();
   if (id === 'gallery')       loadEventGalleryPanel();
   if (id === 'pages')         setPageEditorStorageNotice('', '');
+  if (id === 'meetings')      loadMeetingsPanel();
   if (id === 'settings')      loadSettings();
   if (id === 'dashboard')     updateDashboardStats();
 }
@@ -2978,6 +3032,150 @@ async function grantAdminFromAccessPanel() {
   accessAdminEmails.add(email);
   renderAccessTable();
   loadAccessAdminsList();
+}
+
+// ══════════════════════════════════════════════════
+// MEETINGS
+// ══════════════════════════════════════════════════
+const CHECKIN_BASE = 'https://northdallasalphas.com/meeting-checkin.html';
+
+async function loadMeetingsPanel() {
+  const el = document.getElementById('meetingsList');
+  if (!el) return;
+  const token = getAdminToken();
+  el.innerHTML = '<div class="hint-text">Loading…</div>';
+  try {
+    const meetings = await sbGet('meetings', 'order=meeting_date.desc', token);
+    if (!meetings || !meetings.length) {
+      el.innerHTML = '<div class="hint-text">No meetings scheduled yet.</div>';
+      return;
+    }
+    // Fetch RSVP counts for all meetings
+    const rsvps = await sbGet('meeting_rsvps', 'select=meeting_id,response', token);
+    const attendance = await sbGet('meeting_attendance', 'select=meeting_id,id', token);
+    const rsvpMap = {};
+    (rsvps || []).forEach(function(r) {
+      if (!rsvpMap[r.meeting_id]) rsvpMap[r.meeting_id] = { yes:0, no:0, maybe:0 };
+      if (rsvpMap[r.meeting_id][r.response] !== undefined) rsvpMap[r.meeting_id][r.response]++;
+    });
+    const attMap = {};
+    (attendance || []).forEach(function(a) {
+      attMap[a.meeting_id] = (attMap[a.meeting_id] || 0) + 1;
+    });
+    el.innerHTML = meetings.map(function(m) {
+      const dateStr = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' }) : '—';
+      const timeStr = m.start_time ? time24ToAmPm(m.start_time) + (m.end_time ? ' – ' + time24ToAmPm(m.end_time) : '') : '';
+      const r = rsvpMap[m.id] || { yes:0, no:0, maybe:0 };
+      const checked = attMap[m.id] || 0;
+      const qrUrl = CHECKIN_BASE + '?id=' + encodeURIComponent(m.id);
+      return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">' +
+        '<div>' +
+        '<div style="font-size:0.95rem;font-weight:700;color:var(--gray-800);">' + escHtml(m.title) + '</div>' +
+        '<div style="font-size:0.82rem;color:var(--gray-500);margin-top:3px;"><i class="fas fa-calendar" style="width:14px;"></i> ' + escHtml(dateStr) + (timeStr ? ' &nbsp;·&nbsp; <i class="fas fa-clock" style="width:14px;"></i> ' + escHtml(timeStr) : '') + '</div>' +
+        (m.location ? '<div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px;"><i class="fas fa-map-marker-alt" style="width:14px;"></i> ' + escHtml(m.location) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button class="btn-sm view" onclick="showMtgQr(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\',\'' + escHtml(dateStr) + '\')"><i class="fas fa-qrcode"></i> QR Check-In</button>' +
+        '<button class="btn-sm view" onclick="showMtgAttendance(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-clipboard-check"></i> Attendance</button>' +
+        '<button class="btn-sm danger" onclick="deleteMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:16px;margin-top:12px;padding-top:10px;border-top:1px solid var(--gray-100);font-size:0.8rem;">' +
+        '<span style="color:var(--green);"><i class="fas fa-check"></i> ' + r.yes + ' Yes</span>' +
+        '<span style="color:var(--gray-400);"><i class="fas fa-question"></i> ' + r.maybe + ' Maybe</span>' +
+        '<span style="color:var(--red);"><i class="fas fa-times"></i> ' + r.no + ' No</span>' +
+        '<span style="color:var(--gold);margin-left:auto;"><i class="fas fa-door-open"></i> ' + checked + ' Checked In</span>' +
+        '</div>' +
+        (m.agenda ? '<div style="margin-top:10px;font-size:0.8rem;color:var(--gray-500);white-space:pre-wrap;">' + escHtml(m.agenda) + '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div style="color:var(--red);">Could not load meetings: ' + escHtml(err.message || 'error') + '</div>';
+  }
+}
+
+async function saveMeeting() {
+  const title    = (document.getElementById('mtgTitle')    || {}).value?.trim();
+  const date     = (document.getElementById('mtgDate')     || {}).value;
+  const start    = (document.getElementById('mtgStart')    || {}).value;
+  const end      = (document.getElementById('mtgEnd')      || {}).value;
+  const location = (document.getElementById('mtgLocation') || {}).value?.trim();
+  const agenda   = (document.getElementById('mtgAgenda')   || {}).value?.trim();
+  const msgEl    = document.getElementById('mtgFormMsg');
+  function mtgMsg(text, ok) {
+    if (!msgEl) return;
+    msgEl.style.display = 'block';
+    msgEl.style.color = ok ? 'var(--green)' : 'var(--red)';
+    msgEl.textContent = text;
+  }
+  if (!title) { mtgMsg('Please enter a meeting title.', false); return; }
+  if (!date)  { mtgMsg('Please select a date.', false); return; }
+  const token = getAdminToken();
+  try {
+    await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname }, token);
+    mtgMsg('Meeting scheduled!', true);
+    ['mtgTitle','mtgDate','mtgStart','mtgEnd','mtgLocation','mtgAgenda'].forEach(function(id) {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    loadMeetingsPanel();
+  } catch(err) {
+    mtgMsg('Error: ' + (err.message || 'could not save meeting.'), false);
+  }
+}
+
+async function deleteMeeting(id, title) {
+  if (!confirm('Delete meeting "' + title + '"? This will also remove all RSVPs and attendance records.')) return;
+  const token = getAdminToken();
+  try {
+    await sbDeleteByFilter('meetings', 'id=eq.' + encodeURIComponent(id), token);
+    showToast('Meeting deleted.', 'success');
+    loadMeetingsPanel();
+  } catch(err) {
+    showToast('Could not delete: ' + (err.message || 'error'), 'error');
+  }
+}
+
+function showMtgQr(id, title, dateStr) {
+  const modal = document.getElementById('mtgQrModal');
+  const qrUrl = CHECKIN_BASE + '?id=' + encodeURIComponent(id);
+  const imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
+  document.getElementById('mtgQrTitle').textContent = title;
+  document.getElementById('mtgQrSub').textContent = dateStr;
+  document.getElementById('mtgQrImg').src = imgUrl;
+  modal.style.display = 'flex';
+}
+
+function closeMtgQr() {
+  document.getElementById('mtgQrModal').style.display = 'none';
+}
+
+function printMtgQr() {
+  const title = document.getElementById('mtgQrTitle').textContent;
+  const sub   = document.getElementById('mtgQrSub').textContent;
+  const src   = document.getElementById('mtgQrImg').src;
+  const w = window.open('', '_blank', 'width=500,height=600');
+  w.document.write('<html><head><title>Check-In QR</title><style>body{font-family:Arial,sans-serif;text-align:center;padding:40px;}h2{margin:0 0 6px;}p{color:#666;margin:0 0 20px;}img{border:1px solid #ddd;border-radius:8px;}</style></head><body>');
+  w.document.write('<h2>' + title + '</h2><p>' + sub + '</p><img src="' + src + '" width="250" height="250"/><br><br><p style="font-size:0.85rem;">Scan to check in to this meeting</p>');
+  w.document.write('</body></html>');
+  w.document.close();
+  w.focus();
+  setTimeout(function(){ w.print(); }, 500);
+}
+
+async function showMtgAttendance(id, title) {
+  const token = getAdminToken();
+  try {
+    const rows = await sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(id) + '&order=checked_in_at.asc', token);
+    if (!rows || !rows.length) { showToast('No check-ins recorded for this meeting yet.', 'info'); return; }
+    const list = rows.map(function(r) {
+      const t = r.checked_in_at ? new Date(r.checked_in_at).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' }) : '';
+      return (r.member_name || r.member_email || 'Unknown') + (t ? '  (' + t + ')' : '');
+    }).join('\n');
+    alert('Attendance for "' + title + '" (' + rows.length + ' checked in):\n\n' + list);
+  } catch(err) {
+    showToast('Could not load attendance.', 'error');
+  }
 }
 
 async function loadMemberRequests() {
