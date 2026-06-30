@@ -980,7 +980,7 @@ async function init() {
   if (!currentMember) {
     try {
       const meta = (currentSession.user && currentSession.user.user_metadata) ? currentSession.user.user_metadata : {};
-      const created = await sbPost('members', { email:userEmail, first_name:meta.first_name||'', last_name:meta.last_name||'', phone:meta.phone||'', status:'pending' }, currentSession.access_token);
+      const created = await sbPost('members', { email:userEmail, first_name:meta.first_name||'', last_name:meta.last_name||'', phone:meta.phone||'', portal_access:'pending' }, currentSession.access_token);
       currentMember = Array.isArray(created) ? created[0] : created;
     } catch(e) {}
   }
@@ -988,10 +988,11 @@ async function init() {
   const lastName  = (currentMember && currentMember.last_name)  ? currentMember.last_name  : '';
   const fullName  = [firstName, lastName].filter(Boolean).join(' ');
   const initials  = (firstName[0]||'') + (lastName[0]||'') || '?';
-  const status    = (currentMember && currentMember.status) ? currentMember.status : 'pending';
+  const portalAccess = (currentMember && currentMember.portal_access) ? currentMember.portal_access : 'pending';
+  const hasAccess = portalAccess === 'granted';
   document.getElementById('sidebarName').textContent = fullName;
-  document.getElementById('statusText').textContent  = status === 'active' ? 'Active Member' : 'Pending Approval';
-  document.getElementById('statusDot').className = 'status-dot' + (status !== 'active' ? ' pending' : '');
+  document.getElementById('statusText').textContent  = hasAccess ? 'Active Member' : 'Pending Approval';
+  document.getElementById('statusDot').className = 'status-dot' + (!hasAccess ? ' pending' : '');
   const avEl = document.getElementById('sidebarAvatar');
   if (currentMember && currentMember.photo) { avEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { avEl.textContent = initials.toUpperCase(); }
@@ -999,8 +1000,8 @@ async function init() {
   document.getElementById('profileMemberSince').textContent = (currentMember && currentMember.member_since) ? 'Member since ' + currentMember.member_since : 'Update your profile to add details';
   document.getElementById('welcomeName').textContent        = firstName;
   const statusEl = document.getElementById('profileStatus');
-  statusEl.className = 'member-status ' + (status === 'active' ? 'active' : 'pending');
-  statusEl.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (status === 'active' ? 'Active Member' : 'Pending Approval');
+  statusEl.className = 'member-status ' + (hasAccess ? 'active' : 'pending');
+  statusEl.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (hasAccess ? 'Active Member' : 'Pending Approval');
   const pAvEl = document.getElementById('profileAvatarLarge');
   if (currentMember && currentMember.photo) { pAvEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { pAvEl.textContent = initials.toUpperCase(); }

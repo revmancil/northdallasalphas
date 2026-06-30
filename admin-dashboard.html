@@ -2067,9 +2067,9 @@
           <p class="hint-text">View all member portal accounts by status. Grant or revoke portal access and promote members to dashboard admins.</p>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
             <button class="btn-sm" id="accessTab-all"     onclick="setAccessTab('all')"     style="background:var(--gold);color:#000;font-weight:700;">All</button>
-            <button class="btn-sm view" id="accessTab-active"  onclick="setAccessTab('active')">Active</button>
+            <button class="btn-sm" id="accessTab-granted"  onclick="setAccessTab('granted')"  style="background:var(--gray-200);color:var(--gray-700);">Granted</button>
             <button class="btn-sm" id="accessTab-pending" onclick="setAccessTab('pending')" style="background:var(--gray-200);color:var(--gray-700);">Pending</button>
-            <button class="btn-sm" id="accessTab-rejected" onclick="setAccessTab('rejected')" style="background:var(--gray-200);color:var(--gray-700);">Rejected</button>
+            <button class="btn-sm" id="accessTab-revoked" onclick="setAccessTab('revoked')" style="background:var(--gray-200);color:var(--gray-700);">Revoked</button>
           </div>
           <div style="overflow-x:auto;">
             <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
@@ -2704,7 +2704,7 @@ async function loadAccessPanel() {
   tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">Loading…</td></tr>';
   try {
     const [members, admins] = await Promise.all([
-      sbGet('members', 'status=in.(pending,active,rejected)&order=created_at.desc', token),
+      sbGet('members', 'portal_access=not.is.null&order=created_at.desc', token),
       sbGet('chapter_admins', 'select=email', token)
     ]);
     allAccessMembers = members || [];
@@ -2718,7 +2718,7 @@ async function loadAccessPanel() {
 
 function setAccessTab(tab) {
   accessTabFilter = tab;
-  ['all', 'active', 'pending', 'rejected'].forEach(function(t) {
+  ['all', 'granted', 'pending', 'revoked'].forEach(function(t) {
     const btn = document.getElementById('accessTab-' + t);
     if (!btn) return;
     if (t === tab) {
@@ -2738,58 +2738,59 @@ function renderAccessTable() {
   const tbody = document.getElementById('accessTableBody');
   const countEl = document.getElementById('accessGrantedCount');
   if (!tbody) return;
-  const active = allAccessMembers.filter(function(m) { return (m.status || '') === 'active'; });
-  if (countEl) countEl.textContent = active.length + ' active';
+  const grantedCount = allAccessMembers.filter(function(m) { return (m.portal_access || '') === 'granted'; }).length;
+  if (countEl) countEl.textContent = grantedCount + ' granted';
   const rows = accessTabFilter === 'all' ? allAccessMembers
-    : allAccessMembers.filter(function(m) { return (m.status || '') === accessTabFilter; });
+    : allAccessMembers.filter(function(m) { return (m.portal_access || '') === accessTabFilter; });
   if (!rows.length) {
     tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">No members found.</td></tr>';
     return;
   }
   tbody.innerHTML = rows.map(function(m) {
     const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || '—';
-    const status = (m.status || 'pending').toLowerCase();
+    const portalAccess = (m.portal_access || 'pending').toLowerCase();
+    const chapterStatus = (m.status || '').toLowerCase();
     const isAdmin = accessAdminEmails.has((m.email || '').toLowerCase());
-    const statusColor = status === 'active' ? 'var(--green)' : status === 'pending' ? 'var(--blue)' : 'var(--red)';
+    const accessColor = portalAccess === 'granted' ? 'var(--green)' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
     const requested = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const granted = (status === 'active' && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const grantedDate = (portalAccess === 'granted' && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const adminBadge = isAdmin ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;"><i class="fas fa-user-shield"></i> ADMIN</span>' : '';
+    const membershipBadge = chapterStatus ? '<span style="display:inline-block;font-size:0.72rem;color:var(--gray-400);margin-left:4px;text-transform:capitalize;">(' + escHtml(chapterStatus) + ')</span>' : '';
     let actions = '';
-    if (status === 'pending') {
-      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'active\')"><i class="fas fa-check"></i> Approve</button> ' +
-                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>';
-    } else if (status === 'active') {
-      actions = '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'rejected\')" title="Revoke access"><i class="fas fa-ban"></i> Revoke</button>';
+    if (portalAccess === 'pending') {
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'granted\')"><i class="fas fa-check"></i> Approve</button> ' +
+                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>';
+    } else if (portalAccess === 'granted') {
+      actions = '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
       if (!isAdmin) {
         actions += ' <button class="btn-sm edit" onclick="prefillAdminGrant(\'' + escHtml(m.email || '') + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button>';
       }
     } else {
-      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'active\')"><i class="fas fa-redo"></i> Restore</button>';
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'granted\')"><i class="fas fa-redo"></i> Restore</button>';
     }
     return '<tr style="border-bottom:1px solid var(--gray-100);">' +
-      '<td style="padding:10px 12px;font-weight:600;">' + escHtml(name) + adminBadge + '</td>' +
+      '<td style="padding:10px 12px;font-weight:600;">' + escHtml(name) + membershipBadge + adminBadge + '</td>' +
       '<td style="padding:10px 12px;color:var(--gray-600);">' + escHtml(m.email || '—') + '</td>' +
-      '<td style="padding:10px 12px;"><span style="color:' + statusColor + ';font-weight:600;text-transform:capitalize;">' + escHtml(status) + '</span></td>' +
+      '<td style="padding:10px 12px;"><span style="color:' + accessColor + ';font-weight:600;text-transform:capitalize;">' + escHtml(portalAccess) + '</span></td>' +
       '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + requested + '</td>' +
-      '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + granted + '</td>' +
+      '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + grantedDate + '</td>' +
       '<td style="padding:10px 12px;white-space:nowrap;">' + actions + '</td>' +
       '</tr>';
   }).join('');
 }
 
-async function accessUpdateStatus(memberId, status) {
+async function accessUpdateStatus(memberId, portalAccess) {
   const token = getAdminToken();
   if (!token) { showToast('Session expired.', 'error'); return; }
-  const label = status === 'active' ? 'approve' : status === 'rejected' ? 'revoke access for' : 'update';
+  const label = portalAccess === 'granted' ? 'grant portal access to' : portalAccess === 'revoked' ? 'revoke portal access for' : 'update';
   if (!confirm('Are you sure you want to ' + label + ' this member?')) return;
-  const payload = { status: status, updated_at: new Date().toISOString() };
-  if (status === 'active') payload.chapter_active_date = new Date().toISOString().slice(0, 10);
+  const payload = { portal_access: portalAccess, updated_at: new Date().toISOString() };
   try {
     await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
     const m = allAccessMembers.find(function(x) { return String(x.id) === String(memberId); });
-    if (m) { m.status = status; m.updated_at = payload.updated_at; if (payload.chapter_active_date) m.chapter_active_date = payload.chapter_active_date; }
+    if (m) { m.portal_access = portalAccess; m.updated_at = payload.updated_at; }
     renderAccessTable();
-    showToast(status === 'active' ? 'Access granted.' : status === 'rejected' ? 'Access revoked.' : 'Status updated.', 'success');
+    showToast(portalAccess === 'granted' ? 'Portal access granted.' : portalAccess === 'revoked' ? 'Portal access revoked.' : 'Status updated.', 'success');
   } catch (err) {
     showToast('Could not update status: ' + (err.message || 'error'), 'error');
   }
@@ -2897,15 +2898,13 @@ async function loadMemberRequests() {
   visitingContainer.innerHTML = '<div class="hint-text" style="margin:0;">Loading visiting brother requests...</div>';
   loadBrothersDirectory();
   try {
-    const members = await sbGet(
-      'members',
-      'status=in.(pending,active,rejected)&order=id.desc',
-      token
-    );
-    const pending = (members || []).filter(m => (m.status || '').toLowerCase() === 'pending');
-    const activeMembers = (members || []).filter(function(m) { return (m.status || '').toLowerCase() === 'active'; });
+    const [portalMembers, activeMembers] = await Promise.all([
+      sbGet('members', 'portal_access=eq.pending&order=id.desc', token),
+      sbGet('members', 'status=eq.active&order=last_name.asc', token)
+    ]);
+    const pending = portalMembers || [];
     countEl.textContent = String(pending.length);
-    complianceCountEl.textContent = String(activeMembers.length);
+    complianceCountEl.textContent = String((activeMembers || []).length);
     if (!pending.length) {
       container.innerHTML = '<div class="hint-text" style="margin:0;">No pending requests right now.</div>';
     } else {
@@ -2919,13 +2918,13 @@ async function loadMemberRequests() {
           '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Requested: ' + escHtml(requested) + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
-          '<button class="btn-sm success" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'active\')"><i class="fas fa-check"></i> Approve</button>' +
-          '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'rejected\')"><i class="fas fa-times"></i> Reject</button>' +
+          '<button class="btn-sm success" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'granted\')"><i class="fas fa-check"></i> Approve</button>' +
+          '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'revoked\')"><i class="fas fa-times"></i> Reject</button>' +
           '</div>' +
           '</div>';
       }).join('');
     }
-    renderMemberComplianceList(activeMembers);
+    renderMemberComplianceList(activeMembers || []);
     await loadVisitingBrotherRequests(token);
   } catch (err) {
     container.innerHTML = '<div class="hint-text" style="margin:0;color:var(--red);">Could not load member requests: ' + escHtml(err.message || 'unknown error') + '</div>';
@@ -2968,27 +2967,19 @@ function renderMemberComplianceList(members) {
   }).join('');
 }
 
-async function updateMemberStatus(memberId, status) {
+async function updateMemberStatus(memberId, portalAccess) {
   if (!memberId) return;
   const token = getAdminToken();
   if (!token) {
     showToast('Admin session expired. Please sign in again.', 'error');
     return;
   }
-  const approved = status === 'active';
+  const approved = portalAccess === 'granted';
   if (!confirm((approved ? 'Approve' : 'Reject') + ' this member request?')) return;
   try {
-    const payload = { status: status, updated_at: new Date().toISOString() };
-    if (approved) {
-      payload.chapter_active_date = new Date().toISOString().slice(0, 10);
-    }
-    await sbPatch(
-      'members',
-      'id=eq.' + encodeURIComponent(memberId),
-      payload,
-      token
-    );
-    showToast(approved ? 'Member approved successfully.' : 'Member request rejected.', approved ? 'success' : 'info');
+    const payload = { portal_access: portalAccess, updated_at: new Date().toISOString() };
+    await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
+    showToast(approved ? 'Portal access granted.' : 'Member request rejected.', approved ? 'success' : 'info');
     await loadMemberRequests();
   } catch (err) {
     showToast('Could not update member status: ' + (err.message || 'unknown error'), 'error');
