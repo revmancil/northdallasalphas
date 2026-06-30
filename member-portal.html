@@ -594,7 +594,13 @@ function parseDate(dtStr) {
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const parts = dtStr.split(' ');
   const dp = parts[0].split('/');
-  return { day: dp[1] || '?', month: months[parseInt(dp[0])-1] || '???', time: parts.slice(1).join(' ') || '' };
+  let day = dp[1] || '?';
+  // Handle multi-day range stored as M/DD-M/DD/YYYY → dp = ["M","DD-M","DD","YYYY"]
+  // dp[1] ends up as "DD-M" so reconstruct "DD-DD" using dp[2]
+  if (day.includes('-') && dp[2] && /^\d{1,2}$/.test(dp[2])) {
+    day = day.split('-')[0] + '-' + dp[2];
+  }
+  return { day: day, month: months[parseInt(dp[0])-1] || '???', time: parts.slice(1).join(' ') || '' };
 }
 
 function renderEventItem(ev) {
