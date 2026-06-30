@@ -295,7 +295,7 @@ document.getElementById('forgotForm').addEventListener('submit', async function(
   try {
     await fetch(SUPABASE_URL+'/auth/v1/recover', {
       method:'POST', headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
-      body: JSON.stringify({email})
+      body: JSON.stringify({email, redirect_to: 'https://northdallasalphas.com/reset-password.html'})
     });
     setLoading('forgotBtn', false, '<i class="fas fa-paper-plane"></i> Send Reset Link');
     showMsg('forgotSuccess','success');
