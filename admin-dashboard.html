@@ -1906,6 +1906,17 @@
           <div id="docUploadStatus" style="display:none;padding:10px 14px;border-radius:6px;font-size:0.85rem;margin-top:4px;"></div>
         </div>
       </div>
+      <!-- Pending committee submissions -->
+      <div class="section-card" style="margin-bottom:20px;" id="pendingDocsCard">
+        <div class="section-card-header">
+          <h3><i class="fas fa-clock" style="color:#f59e0b;margin-right:8px;"></i>Pending Committee Submissions</h3>
+          <span id="pendingDocCount" style="font-size:0.82rem;color:var(--gray-400);"></span>
+        </div>
+        <div class="section-card-body" id="pendingDocsList">
+          <div class="hint-text">Loading…</div>
+        </div>
+      </div>
+      <!-- Approved docs -->
       <div class="section-card">
         <div class="section-card-header">
           <h3><i class="fas fa-folder-open" style="color:var(--gold);margin-right:8px;"></i>Chapter Documents</h3>
@@ -3062,12 +3073,51 @@ async function loadMeetingsPanel() {
     (attendance || []).forEach(function(a) {
       attMap[a.meeting_id] = (attMap[a.meeting_id] || 0) + 1;
     });
+    // Fetch meeting docs
+    const allDocs = await sbGet('documents', 'meeting_id=not.is.null&order=created_at.desc', token);
+    const docsByMtg = {};
+    (allDocs || []).forEach(function(d) {
+      if (!docsByMtg[d.meeting_id]) docsByMtg[d.meeting_id] = [];
+      docsByMtg[d.meeting_id].push(d);
+    });
+
     el.innerHTML = meetings.map(function(m) {
       const dateStr = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' }) : '—';
       const timeStr = m.start_time ? time24ToAmPm(m.start_time) + (m.end_time ? ' – ' + time24ToAmPm(m.end_time) : '') : '';
       const r = rsvpMap[m.id] || { yes:0, no:0, maybe:0 };
       const checked = attMap[m.id] || 0;
-      const qrUrl = CHECKIN_BASE + '?id=' + encodeURIComponent(m.id);
+      const mDocs = docsByMtg[m.id] || [];
+      const pendingDocs  = mDocs.filter(function(d) { return (d.status || 'approved') === 'pending'; });
+      const approvedDocs = mDocs.filter(function(d) { return (d.status || 'approved') !== 'pending'; });
+
+      const docsHtml =
+        '<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--gray-100);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+        '<span style="font-size:0.8rem;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:0.06em;"><i class="fas fa-paperclip"></i> Meeting Documents</span>' +
+        '<button class="btn-sm view" onclick="triggerMtgDocUpload(\'' + escHtml(m.id) + '\')"><i class="fas fa-upload"></i> Attach Doc</button>' +
+        '</div>' +
+        '<input type="file" id="mtgDocFile-' + escHtml(m.id) + '" style="display:none;" onchange="handleMtgDocUpload(event,\'' + escHtml(m.id) + '\')" />' +
+        (pendingDocs.length ? '<div style="background:#fef3c7;border:1px solid #fcd34d;border-radius:6px;padding:10px 12px;margin-bottom:8px;">' +
+          '<div style="font-size:0.75rem;font-weight:700;color:#92400e;margin-bottom:6px;"><i class="fas fa-clock"></i> Pending Approval (' + pendingDocs.length + ')</div>' +
+          pendingDocs.map(function(d) {
+            return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 0;">' +
+              '<span style="font-size:0.82rem;color:var(--gray-800);">' + escHtml(d.title) + (d.uploaded_by_name ? ' <span style="color:var(--gray-500);">— ' + escHtml(d.uploaded_by_name) + '</span>' : '') + '</span>' +
+              '<div style="display:flex;gap:4px;">' +
+              '<button class="btn-sm success" style="padding:3px 8px;font-size:0.72rem;" onclick="approveDocument(\'' + escHtml(d.id) + '\')"><i class="fas fa-check"></i> Approve</button>' +
+              '<button class="btn-sm danger" style="padding:3px 8px;font-size:0.72rem;" onclick="rejectDocument(\'' + escHtml(d.id) + '\',\'' + escHtml(d.title) + '\')"><i class="fas fa-times"></i> Reject</button>' +
+              '</div></div>';
+          }).join('') +
+          '</div>' : '') +
+        (approvedDocs.length ? approvedDocs.map(function(d) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--gray-100);">' +
+            '<i class="fas fa-file-alt" style="color:var(--gold);"></i>' +
+            '<span style="flex:1;font-size:0.83rem;color:var(--gray-800);">' + escHtml(d.title) + (d.uploaded_by_name ? ' <span style="color:var(--gray-400);font-size:0.75rem;">— ' + escHtml(d.uploaded_by_name) + '</span>' : '') + '</span>' +
+            (d.file_url ? '<a href="' + escHtml(d.file_url) + '" target="_blank" class="btn-sm view" style="padding:3px 8px;font-size:0.72rem;"><i class="fas fa-download"></i></a>' : '') +
+            '<button class="btn-sm danger" style="padding:3px 8px;font-size:0.72rem;" onclick="deleteDocument(\'' + escHtml(d.id) + '\',\'' + escHtml(d.title) + '\')"><i class="fas fa-trash"></i></button>' +
+            '</div>';
+        }).join('') : '<div style="font-size:0.8rem;color:var(--gray-400);padding:4px 0;">No documents attached yet.</div>') +
+        '</div>';
+
       return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">' +
         '<div>' +
@@ -3088,6 +3138,7 @@ async function loadMeetingsPanel() {
         '<span style="color:var(--gold);margin-left:auto;"><i class="fas fa-door-open"></i> ' + checked + ' Checked In</span>' +
         '</div>' +
         (m.agenda ? '<div style="margin-top:10px;font-size:0.8rem;color:var(--gray-500);white-space:pre-wrap;">' + escHtml(m.agenda) + '</div>' : '') +
+        docsHtml +
         '</div>';
     }).join('');
   } catch(err) {
@@ -3175,6 +3226,37 @@ async function showMtgAttendance(id, title) {
     alert('Attendance for "' + title + '" (' + rows.length + ' checked in):\n\n' + list);
   } catch(err) {
     showToast('Could not load attendance.', 'error');
+  }
+}
+
+function triggerMtgDocUpload(meetingId) {
+  const input = document.getElementById('mtgDocFile-' + meetingId);
+  if (input) input.click();
+}
+
+async function handleMtgDocUpload(e, meetingId) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const title = prompt('Document title:', file.name.replace(/\.[^.]+$/, ''));
+  if (!title) return;
+  const category = prompt('Category (General, Minutes, Financial, Bylaws, Forms, Policy, Announcements):', 'General') || 'General';
+  showToast('Uploading…', 'info');
+  try {
+    const uploaded = await uploadDocumentFile(file);
+    const token = getAdminToken();
+    await sbPost('documents', {
+      title,
+      category,
+      file_url:     uploaded.url,
+      members_only: true,
+      meeting_id:   meetingId,
+      status:       'approved'
+    }, token);
+    showToast('Document attached to meeting.', 'success');
+    loadMeetingsPanel();
+  } catch(err) {
+    showToast('Upload failed: ' + (err.message || 'error'), 'error');
   }
 }
 
@@ -7340,7 +7422,8 @@ async function handleDocumentUpload(e) {
       description:  description,
       category:     category,
       file_url:     uploaded.url,
-      members_only: true
+      members_only: true,
+      status:       'approved'
     }, token);
     statusEl.style.background = 'rgba(34,197,94,0.1)';
     statusEl.style.color = 'var(--green)';
@@ -7356,42 +7439,92 @@ async function handleDocumentUpload(e) {
   }
 }
 
+const DOC_CAT_COLORS = { General:'var(--blue)', Bylaws:'var(--gold)', Minutes:'#8b5cf6', Financial:'var(--green)', Forms:'#f59e0b', Policy:'#ef4444', Announcements:'#06b6d4', Committee:'#06b6d4' };
+
+function renderDocRow(doc, opts) {
+  opts = opts || {};
+  const color = DOC_CAT_COLORS[doc.category] || 'var(--blue)';
+  const date  = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+  const by    = doc.uploaded_by_name ? ' · By ' + escHtml(doc.uploaded_by_name) : '';
+  const mtgLabel = doc.meeting_id ? ' · <span style="color:var(--gold);font-size:0.72rem;">Meeting Doc</span>' : '';
+  return '<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--gray-100);">' +
+    '<div style="width:42px;height:42px;border-radius:8px;background:' + color + '22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+      '<i class="fas fa-file-alt" style="color:' + color + ';font-size:1.1rem;"></i>' +
+    '</div>' +
+    '<div style="flex:1;min-width:0;">' +
+      '<div style="font-weight:600;color:var(--dark);margin-bottom:2px;">' + escHtml(doc.title) + '</div>' +
+      '<div style="font-size:0.8rem;color:var(--gray-500);">' +
+        '<span style="background:' + color + '22;color:' + color + ';padding:1px 8px;border-radius:10px;font-weight:600;font-size:0.72rem;margin-right:8px;">' + escHtml(doc.category || 'General') + '</span>' +
+        (doc.description ? escHtml(doc.description) + ' · ' : '') + date + by + mtgLabel +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+    (opts.approve ? '<button class="btn-sm success" onclick="approveDocument(\'' + escHtml(String(doc.id)) + '\')"><i class="fas fa-check"></i> Approve</button>' : '') +
+    (opts.approve ? '<button class="btn-sm danger" onclick="rejectDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')"><i class="fas fa-times"></i> Reject</button>' : '') +
+    (doc.file_url && !opts.approve ? '<a href="' + escHtml(doc.file_url) + '" target="_blank" rel="noopener" class="btn-sm view" title="Download"><i class="fas fa-download"></i></a>' : '') +
+    (!opts.approve ? '<button class="btn-sm danger" onclick="deleteDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' : '') +
+    '</div>' +
+    '</div>';
+}
+
 async function loadAdminDocuments() {
-  const token = getAdminToken();
+  const token   = getAdminToken();
   const listEl  = document.getElementById('adminDocumentsList');
   const countEl = document.getElementById('docCountLabel');
+  const pendEl  = document.getElementById('pendingDocsList');
+  const pendCt  = document.getElementById('pendingDocCount');
+  const pendCard= document.getElementById('pendingDocsCard');
   if (!listEl) return;
   try {
     const docs = await sbGet('documents', 'order=created_at.desc', token);
-    if (!docs || !docs.length) {
+    const pending  = (docs || []).filter(function(d) { return (d.status || 'approved') === 'pending'; });
+    const approved = (docs || []).filter(function(d) { return (d.status || 'approved') !== 'pending'; });
+
+    // Pending section
+    if (pendEl) {
+      if (pending.length) {
+        pendEl.innerHTML = pending.map(function(d) { return renderDocRow(d, { approve: true }); }).join('');
+        if (pendCt) pendCt.textContent = pending.length + ' awaiting review';
+        if (pendCard) pendCard.style.display = '';
+      } else {
+        if (pendCard) pendCard.style.display = 'none';
+      }
+    }
+
+    // Approved section
+    if (!approved.length) {
       listEl.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No documents uploaded yet.</p></div>';
       if (countEl) countEl.textContent = '0 documents';
       return;
     }
-    if (countEl) countEl.textContent = docs.length + ' document' + (docs.length !== 1 ? 's' : '');
-    const catColors = { General:'var(--blue)', Bylaws:'var(--gold)', Minutes:'#8b5cf6', Financial:'var(--green)', Forms:'#f59e0b', Policy:'#ef4444', Announcements:'#06b6d4' };
-    listEl.innerHTML = docs.map(function(doc) {
-      const color = catColors[doc.category] || 'var(--blue)';
-      const date  = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
-      const size  = doc.file_size_bytes ? (doc.file_size_bytes > 1048576 ? (doc.file_size_bytes / 1048576).toFixed(1) + ' MB' : Math.round(doc.file_size_bytes / 1024) + ' KB') : '';
-      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--gray-100);">' +
-        '<div style="width:42px;height:42px;border-radius:8px;background:' + color + '22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
-          '<i class="fas fa-file-alt" style="color:' + color + ';font-size:1.1rem;"></i>' +
-        '</div>' +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="font-weight:600;color:var(--dark);margin-bottom:2px;">' + escHtml(doc.title) + '</div>' +
-          '<div style="font-size:0.8rem;color:var(--gray-500);">' +
-            '<span style="background:' + color + '22;color:' + color + ';padding:1px 8px;border-radius:10px;font-weight:600;font-size:0.72rem;margin-right:8px;">' + escHtml(doc.category || 'General') + '</span>' +
-            (doc.description ? escHtml(doc.description) + ' · ' : '') +
-            (size ? size + ' · ' : '') + date +
-          '</div>' +
-        '</div>' +
-        (doc.file_url ? '<a href="' + escHtml(doc.file_url) + '" target="_blank" rel="noopener" class="btn-sm view" title="Download"><i class="fas fa-download"></i></a> ' : '') +
-        '<button class="btn-sm danger" onclick="deleteDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
-        '</div>';
-    }).join('');
+    if (countEl) countEl.textContent = approved.length + ' document' + (approved.length !== 1 ? 's' : '');
+    listEl.innerHTML = approved.map(function(doc) { return renderDocRow(doc, {}); }).join('');
   } catch (err) {
     if (listEl) listEl.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load documents: ' + escHtml(err.message || '') + '</p></div>';
+  }
+}
+
+async function approveDocument(id) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('documents', 'id=eq.' + encodeURIComponent(id), { status: 'approved' }, token);
+    showToast('Document approved — now visible to brothers.', 'success');
+    loadAdminDocuments();
+  } catch(err) {
+    showToast('Could not approve: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function rejectDocument(id, title) {
+  if (!confirm('Reject and delete "' + title + '"? This cannot be undone.')) return;
+  const token = getAdminToken();
+  try {
+    await sbDeleteByFilter('documents', 'id=eq.' + encodeURIComponent(id), token);
+    showToast('Submission rejected and removed.', 'success');
+    loadAdminDocuments();
+    loadMeetingsPanel();
+  } catch(err) {
+    showToast('Could not reject: ' + (err.message || 'error'), 'error');
   }
 }
 

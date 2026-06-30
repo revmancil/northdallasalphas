@@ -914,6 +914,13 @@ async function loadMeetingsPortal() {
       var rsvpRows = await sbGet('meeting_rsvps', 'member_id=eq.' + encodeURIComponent(memberId), token);
       (rsvpRows || []).forEach(function(r) { myRsvps[r.meeting_id] = r.response; });
     }
+    // Load approved meeting documents
+    var allMtgDocs = await sbGet('documents', 'meeting_id=not.is.null&status=eq.approved&members_only=eq.true', token);
+    var docsByMtg = {};
+    (allMtgDocs || []).forEach(function(d) {
+      if (!docsByMtg[d.meeting_id]) docsByMtg[d.meeting_id] = [];
+      docsByMtg[d.meeting_id].push(d);
+    });
     var now = new Date(); now.setHours(0,0,0,0);
     el.innerHTML = meetings.map(function(m) {
       var mDate = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00') : null;
@@ -932,6 +939,37 @@ async function loadMeetingsPortal() {
           return '<button onclick="submitRsvp(\'' + m.id + '\',\'' + val + '\',this)" style="padding:5px 14px;border-radius:20px;border:1.5px solid ' + colors[val] + ';background:' + (isActive ? colors[val] : 'transparent') + ';color:' + (isActive ? '#fff' : colors[val]) + ';font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.2s;" data-meeting="' + m.id + '" data-val="' + val + '"><i class="fas ' + icons[val] + '"></i> ' + labels[val] + '</button>';
         }).join('') +
         '</div>';
+      var mDocs = docsByMtg[m.id] || [];
+      var docsHtml = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+        '<span style="font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;"><i class="fas fa-paperclip"></i> Meeting Documents</span>' +
+        (!isPast ? '<button onclick="toggleCommitteeUpload(\'' + m.id + '\')" style="background:none;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-size:0.72rem;padding:3px 10px;border-radius:4px;cursor:pointer;">+ Submit Report</button>' : '') +
+        '</div>' +
+        (mDocs.length ? mDocs.map(function(d) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);">' +
+            '<i class="fas fa-file-alt" style="color:var(--gold);font-size:0.85rem;"></i>' +
+            '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:0.83rem;color:rgba(255,255,255,0.8);">' + escapeHtml(d.title) + '</div>' +
+            (d.uploaded_by_name ? '<div style="font-size:0.72rem;color:rgba(255,255,255,0.35);">' + escapeHtml(d.uploaded_by_name) + '</div>' : '') +
+            '</div>' +
+            (d.file_url ? '<a href="' + escapeHtml(d.file_url) + '" target="_blank" style="color:var(--gold);font-size:0.78rem;text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;"><i class="fas fa-download"></i> Download</a>' : '') +
+            '</div>';
+        }).join('') : '<div style="font-size:0.8rem;color:rgba(255,255,255,0.25);padding:4px 0;">No documents posted yet.</div>') +
+        '<div id="committeeUpload-' + m.id + '" style="display:none;margin-top:12px;padding:14px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(201,168,76,0.15);">' +
+        '<div style="font-size:0.78rem;font-weight:700;color:var(--gold);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.06em;">Submit Committee Report</div>' +
+        '<div style="margin-bottom:8px;"><label style="font-size:0.72rem;color:rgba(255,255,255,0.4);display:block;margin-bottom:4px;">Your Name &amp; Role</label>' +
+        '<input type="text" id="ciUploadName-' + m.id + '" placeholder="e.g. John Smith, IMDP Chair" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#fff;font-size:0.85rem;" /></div>' +
+        '<div style="margin-bottom:8px;"><label style="font-size:0.72rem;color:rgba(255,255,255,0.4);display:block;margin-bottom:4px;">Document Title</label>' +
+        '<input type="text" id="ciUploadTitle-' + m.id + '" placeholder="e.g. IMDP Report – July 2026" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#fff;font-size:0.85rem;" /></div>' +
+        '<div id="ciUploadMsg-' + m.id + '" style="display:none;font-size:0.8rem;margin-bottom:8px;"></div>' +
+        '<div style="display:flex;gap:8px;">' +
+        '<button onclick="triggerCommitteeFile(\'' + m.id + '\')" style="flex:1;padding:8px;background:var(--gold);color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;"><i class="fas fa-upload"></i> Choose File &amp; Submit</button>' +
+        '<button onclick="toggleCommitteeUpload(\'' + m.id + '\')" style="padding:8px 12px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.4);border-radius:6px;font-size:0.82rem;cursor:pointer;">Cancel</button>' +
+        '</div>' +
+        '<input type="file" id="ciUploadFile-' + m.id + '" style="display:none;" onchange="submitCommitteeReport(event,\'' + m.id + '\')" />' +
+        '</div>' +
+        '</div>';
+
       return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px;margin-bottom:14px;background:rgba(255,255,255,0.03);">' +
         '<div style="font-size:0.95rem;font-weight:700;color:var(--gold);margin-bottom:6px;">' + escapeHtml(m.title) + '</div>' +
         '<div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:3px;"><i class="fas fa-calendar" style="width:16px;"></i> ' + dateStr + '</div>' +
@@ -939,6 +977,7 @@ async function loadMeetingsPortal() {
         (m.location ? '<div style="font-size:0.82rem;color:rgba(255,255,255,0.55);margin-bottom:3px;"><i class="fas fa-map-marker-alt" style="width:16px;"></i> ' + escapeHtml(m.location) + '</div>' : '') +
         (m.agenda ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin:10px 0;white-space:pre-wrap;border-left:2px solid rgba(201,168,76,0.3);padding-left:10px;">' + escapeHtml(m.agenda) + '</div>' : '') +
         '<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' + rsvpHtml + '</div>' +
+        docsHtml +
         '</div>';
     }).join('');
   } catch(err) {
@@ -975,6 +1014,88 @@ async function submitRsvp(meetingId, response, btn) {
     });
   } catch(err) {
     // silent — UI already updated
+  }
+}
+
+function toggleCommitteeUpload(meetingId) {
+  var el = document.getElementById('committeeUpload-' + meetingId);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function triggerCommitteeFile(meetingId) {
+  var nameEl  = document.getElementById('ciUploadName-'  + meetingId);
+  var titleEl = document.getElementById('ciUploadTitle-' + meetingId);
+  var msgEl   = document.getElementById('ciUploadMsg-'   + meetingId);
+  var name  = nameEl  ? nameEl.value.trim()  : '';
+  var title = titleEl ? titleEl.value.trim() : '';
+  if (!name)  { showPortalMsg(msgEl, 'Please enter your name and role.', false); return; }
+  if (!title) { showPortalMsg(msgEl, 'Please enter a document title.',   false); return; }
+  var fileEl = document.getElementById('ciUploadFile-' + meetingId);
+  if (fileEl) fileEl.click();
+}
+
+function showPortalMsg(el, text, ok) {
+  if (!el) return;
+  el.style.display = 'block';
+  el.style.color = ok ? '#27ae60' : '#e74c3c';
+  el.textContent = text;
+}
+
+async function submitCommitteeReport(e, meetingId) {
+  var file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  var nameEl  = document.getElementById('ciUploadName-'  + meetingId);
+  var titleEl = document.getElementById('ciUploadTitle-' + meetingId);
+  var msgEl   = document.getElementById('ciUploadMsg-'   + meetingId);
+  var byName = nameEl  ? nameEl.value.trim()  : '';
+  var title  = titleEl ? titleEl.value.trim() : '';
+  showPortalMsg(msgEl, 'Uploading…', true);
+  try {
+    var token = currentSession ? currentSession.access_token : null;
+    // Upload file to storage
+    var bucket = 'chapter-documents';
+    var stamp = Date.now() + '-' + Math.random().toString(36).slice(2,7);
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    var path = 'docs/' + stamp + '_' + safeName;
+    var storageRes = await fetch(SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + path, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY),
+        'Content-Type': file.type || 'application/octet-stream',
+        'x-upsert': 'false'
+      },
+      body: file
+    });
+    if (!storageRes.ok) { var se = await storageRes.json().catch(function(){return{};}); throw new Error(se.message || 'Storage upload failed.'); }
+    var fileUrl = SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + path;
+    // Insert document record as pending
+    var insRes = await fetch(SUPABASE_URL + '/rest/v1/documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY),
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        title:            title,
+        category:         'Committee',
+        file_url:         fileUrl,
+        members_only:     true,
+        meeting_id:       meetingId,
+        uploaded_by_name: byName,
+        status:           'pending'
+      })
+    });
+    if (!insRes.ok) { var de = await insRes.json().catch(function(){return{};}); throw new Error(de.message || 'Could not save document record.'); }
+    showPortalMsg(msgEl, '✓ Submitted! An admin will review and approve it shortly.', true);
+    if (nameEl)  nameEl.value  = '';
+    if (titleEl) titleEl.value = '';
+    setTimeout(function() { toggleCommitteeUpload(meetingId); }, 2500);
+  } catch(err) {
+    showPortalMsg(msgEl, 'Error: ' + (err.message || 'Upload failed.'), false);
   }
 }
 
