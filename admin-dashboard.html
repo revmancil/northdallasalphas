@@ -1183,6 +1183,9 @@
     <button class="sidebar-link" onclick="showPanel('news-manager')">
       <i class="fas fa-newspaper"></i> News Manager
     </button>
+    <button class="sidebar-link" onclick="showPanel('documents')">
+      <i class="fas fa-folder-open"></i> Documents
+    </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -1855,6 +1858,58 @@
           <div style="text-align:right;">
             <button class="btn-save" onclick="saveAnnouncement()"><i class="fas fa-save"></i> Save Announcement</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         DOCUMENTS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-documents">
+      <input type="file" id="docFileInput" style="display:none;" onchange="handleDocumentUpload(event)" />
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-upload" style="color:var(--gold);margin-right:8px;"></i>Upload New Document</h3>
+        </div>
+        <div class="section-card-body">
+          <p class="hint-text">Upload PDFs, Word docs, spreadsheets, or any file brothers should be able to download from the member portal.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="field-group" style="grid-column:span 2;">
+              <label>Title <span style="color:var(--red);">*</span></label>
+              <input type="text" id="docTitle" placeholder="e.g. Chapter Bylaws 2025" />
+            </div>
+            <div class="field-group" style="grid-column:span 2;">
+              <label>Description <span style="color:var(--gray-400);font-weight:400;">(optional)</span></label>
+              <input type="text" id="docDescription" placeholder="Brief description of the document" />
+            </div>
+            <div class="field-group">
+              <label>Category</label>
+              <select id="docCategory" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+                <option value="General">General</option>
+                <option value="Bylaws">Bylaws</option>
+                <option value="Minutes">Meeting Minutes</option>
+                <option value="Financial">Financial</option>
+                <option value="Forms">Forms</option>
+                <option value="Policy">Policy</option>
+                <option value="Announcements">Announcements</option>
+              </select>
+            </div>
+            <div class="field-group" style="display:flex;align-items:flex-end;">
+              <button class="btn-save" onclick="document.getElementById('docFileInput').click()" style="width:100%;">
+                <i class="fas fa-file-upload"></i> Choose File &amp; Upload
+              </button>
+            </div>
+          </div>
+          <div id="docUploadStatus" style="display:none;padding:10px 14px;border-radius:6px;font-size:0.85rem;margin-top:4px;"></div>
+        </div>
+      </div>
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-folder-open" style="color:var(--gold);margin-right:8px;"></i>Chapter Documents</h3>
+          <span id="docCountLabel" style="font-size:0.82rem;color:var(--gray-400);">Loading…</span>
+        </div>
+        <div class="section-card-body" id="adminDocumentsList">
+          <div class="empty-state"><i class="fas fa-folder-open"></i><p>Loading documents…</p></div>
         </div>
       </div>
     </div>
@@ -6985,6 +7040,137 @@ async function confirmInstallPresident() {
 document.getElementById('installPresidentOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeInstallPresidentModal();
 });
+
+// ══════════════════════════════════════════════════
+// DOCUMENTS MANAGER
+// ══════════════════════════════════════════════════
+const DOC_BUCKET = 'chapter-documents';
+
+async function uploadDocumentFile(file) {
+  const token = getAdminToken();
+  if (!token) throw new Error('Admin session expired.');
+  const stamp = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = 'docs/' + stamp + '_' + safeName;
+  const res = await fetch(SUPABASE_URL + '/storage/v1/object/' + DOC_BUCKET + '/' + path, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': file.type || 'application/octet-stream',
+      'x-upsert': 'true'
+    },
+    body: file
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || 'File upload failed. Make sure the chapter-documents bucket exists in Supabase Storage.');
+  }
+  return {
+    url: SUPABASE_URL + '/storage/v1/object/public/' + DOC_BUCKET + '/' + path,
+    name: file.name,
+    size: file.size
+  };
+}
+
+async function handleDocumentUpload(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const title = (document.getElementById('docTitle').value || '').trim();
+  if (!title) { showToast('Please enter a title before uploading.', 'error'); return; }
+  const description = (document.getElementById('docDescription').value || '').trim();
+  const category    = document.getElementById('docCategory').value || 'General';
+  const statusEl    = document.getElementById('docUploadStatus');
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'rgba(59,130,246,0.1)';
+  statusEl.style.color = 'var(--blue)';
+  statusEl.textContent = 'Uploading ' + file.name + '…';
+  try {
+    const uploaded = await uploadDocumentFile(file);
+    const token = getAdminToken();
+    await sbPost('documents', {
+      title:       title,
+      description: description,
+      category:    category,
+      file_url:    uploaded.url,
+      file_name:   uploaded.name,
+      file_size_bytes: uploaded.size,
+      members_only: true
+    }, token);
+    statusEl.style.background = 'rgba(34,197,94,0.1)';
+    statusEl.style.color = 'var(--green)';
+    statusEl.textContent = '✓ ' + file.name + ' uploaded successfully.';
+    document.getElementById('docTitle').value       = '';
+    document.getElementById('docDescription').value = '';
+    document.getElementById('docCategory').value    = 'General';
+    await loadAdminDocuments();
+  } catch (err) {
+    statusEl.style.background = 'rgba(239,68,68,0.1)';
+    statusEl.style.color = 'var(--red)';
+    statusEl.textContent = 'Error: ' + (err.message || 'Upload failed.');
+  }
+}
+
+async function loadAdminDocuments() {
+  const token = getAdminToken();
+  const listEl  = document.getElementById('adminDocumentsList');
+  const countEl = document.getElementById('docCountLabel');
+  if (!listEl) return;
+  try {
+    const docs = await sbGet('documents', 'order=created_at.desc', token);
+    if (!docs || !docs.length) {
+      listEl.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No documents uploaded yet.</p></div>';
+      if (countEl) countEl.textContent = '0 documents';
+      return;
+    }
+    if (countEl) countEl.textContent = docs.length + ' document' + (docs.length !== 1 ? 's' : '');
+    const catColors = { General:'var(--blue)', Bylaws:'var(--gold)', Minutes:'#8b5cf6', Financial:'var(--green)', Forms:'#f59e0b', Policy:'#ef4444', Announcements:'#06b6d4' };
+    listEl.innerHTML = docs.map(function(doc) {
+      const color = catColors[doc.category] || 'var(--blue)';
+      const date  = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
+      const size  = doc.file_size_bytes ? (doc.file_size_bytes > 1048576 ? (doc.file_size_bytes / 1048576).toFixed(1) + ' MB' : Math.round(doc.file_size_bytes / 1024) + ' KB') : '';
+      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--gray-100);">' +
+        '<div style="width:42px;height:42px;border-radius:8px;background:' + color + '22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+          '<i class="fas fa-file-alt" style="color:' + color + ';font-size:1.1rem;"></i>' +
+        '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-weight:600;color:var(--dark);margin-bottom:2px;">' + escHtml(doc.title) + '</div>' +
+          '<div style="font-size:0.8rem;color:var(--gray-500);">' +
+            '<span style="background:' + color + '22;color:' + color + ';padding:1px 8px;border-radius:10px;font-weight:600;font-size:0.72rem;margin-right:8px;">' + escHtml(doc.category || 'General') + '</span>' +
+            (doc.description ? escHtml(doc.description) + ' · ' : '') +
+            (size ? size + ' · ' : '') + date +
+          '</div>' +
+        '</div>' +
+        (doc.file_url ? '<a href="' + escHtml(doc.file_url) + '" target="_blank" rel="noopener" class="btn-sm view" title="Download"><i class="fas fa-download"></i></a> ' : '') +
+        '<button class="btn-sm danger" onclick="deleteDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
+        '</div>';
+    }).join('');
+  } catch (err) {
+    if (listEl) listEl.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load documents: ' + escHtml(err.message || '') + '</p></div>';
+  }
+}
+
+async function deleteDocument(id, title) {
+  if (!confirm('Delete "' + title + '"? This cannot be undone.')) return;
+  const token = getAdminToken();
+  try {
+    await sbDeleteByFilter('documents', 'id=eq.' + encodeURIComponent(id), token);
+    showToast('Document deleted.');
+    await loadAdminDocuments();
+  } catch (err) {
+    showToast('Could not delete: ' + (err.message || 'error'), 'error');
+  }
+}
+
+// Load documents when panel is shown
+const _origShowPanel = typeof showPanel === 'function' ? showPanel : null;
+(function() {
+  const origButtons = document.querySelectorAll('[onclick*="showPanel(\'documents\')"]');
+  origButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() { loadAdminDocuments(); });
+  });
+})();
 
 </script>
 
