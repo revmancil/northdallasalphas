@@ -3760,47 +3760,60 @@ let activeFlyerIndex = -1;
 function parseDatetimeToFields(dt) {
   const out = { start_date: '', start_time: '', end_date: '', end_time: '' };
   if (!dt) return out;
-  // Handle "MM/DD/YYYY - MM/DD/YYYY[ HH:MM AM]" or "M/DD/YYYY-M/DD/YYYY" range
-  const rangeSep = dt.includes(' - ') ? ' - ' : (dt.match(/(\d{1,2}\/\d{1,2}\/\d{4})-(\d{1,2}\/\d{1,2}\/\d{4})/) ? '-' : null);
-  let startPart = dt, endPart = '';
-  if (rangeSep === ' - ') {
-    const idx = dt.indexOf(' - ');
-    startPart = dt.slice(0, idx);
-    endPart = dt.slice(idx + 3);
-  } else if (rangeSep === '-') {
-    const m = dt.match(/^(\d{1,2}\/\d{1,2}\/\d{4})-(\d{1,2}\/\d{1,2}\/\d{4})(.*)/);
-    if (m) { startPart = m[1]; endPart = m[2] + (m[3] || ''); }
+
+  function amPmTo24(s) {
+    if (!s) return '';
+    const m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+    if (!m) return '';
+    let h = parseInt(m[1], 10);
+    const min = m[2];
+    const ampm = (m[3] || '').toUpperCase();
+    if (ampm === 'PM' && h < 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return String(h).padStart(2, '0') + ':' + min;
   }
-  function parseOnePart(str) {
-    const parts = str.trim().split(' ');
-    const datePart = parts[0] || '';
-    const timeParts = parts.slice(1).join(' ').trim();
+
+  // Parse one "M/D/YYYY[ H:MM XM][ - H:MM XM]" section
+  // Returns { date, time, endTime } where endTime is only set for same-day end-time range
+  function parseSection(str) {
+    str = str.trim();
+    const dateMatch = str.match(/^(\d{1,2}\/\d{1,2}\/\d{4})(.*)/);
+    const datePart = dateMatch ? dateMatch[1] : '';
+    const rest = dateMatch ? dateMatch[2].trim() : str.trim();
     const dp = datePart.split('/');
-    let isoDate = '';
-    if (dp.length === 3) {
-      isoDate = dp[2] + '-' + (dp[0] || '').padStart(2, '0') + '-' + (dp[1] || '').padStart(2, '0');
-    }
-    let time24 = '';
-    if (timeParts) {
-      const tm = timeParts.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
-      if (tm) {
-        let h = parseInt(tm[1], 10);
-        const min = tm[2];
-        const ampm = (tm[3] || '').toUpperCase();
-        if (ampm === 'PM' && h < 12) h += 12;
-        if (ampm === 'AM' && h === 12) h = 0;
-        time24 = String(h).padStart(2, '0') + ':' + min;
-      }
-    }
-    return { date: isoDate, time: time24 };
+    const isoDate = dp.length === 3
+      ? dp[2] + '-' + dp[0].padStart(2, '0') + '-' + dp[1].padStart(2, '0')
+      : '';
+    // rest may be "" or "H:MM XM" or "H:MM XM - H:MM XM"
+    const timeSepIdx = rest.indexOf(' - ');
+    const startTimeStr = timeSepIdx !== -1 ? rest.slice(0, timeSepIdx).trim() : rest.trim();
+    const endTimeStr   = timeSepIdx !== -1 ? rest.slice(timeSepIdx + 3).trim() : '';
+    return { date: isoDate, time: amPmTo24(startTimeStr), endTime: amPmTo24(endTimeStr) };
   }
-  const s = parseOnePart(startPart);
+
+  // Find the date-range separator: ' - ' followed immediately by M/D/YYYY
+  const rangeDateRe = / - (?=\d{1,2}\/\d{1,2}\/\d{4})/;
+  const rangeIdx = dt.search(rangeDateRe);
+
+  let startSection = dt, endSection = '';
+  if (rangeIdx !== -1) {
+    startSection = dt.slice(0, rangeIdx);
+    endSection   = dt.slice(rangeIdx + 3);
+  } else {
+    // Handle old compact format "M/DD/YYYY-M/DD/YYYY"
+    const oldM = dt.match(/^(\d{1,2}\/\d{1,2}\/\d{4})-(\d{1,2}\/\d{1,2}\/\d{4})(.*)/);
+    if (oldM) { startSection = oldM[1]; endSection = oldM[2] + (oldM[3] || ''); }
+  }
+
+  const s = parseSection(startSection);
   out.start_date = s.date;
   out.start_time = s.time;
-  if (endPart) {
-    const e = parseOnePart(endPart);
-    out.end_date = e.date !== out.start_date ? e.date : '';
-    out.end_time = e.time;
+  if (s.endTime) out.end_time = s.endTime; // same-day end-time range
+
+  if (endSection) {
+    const e = parseSection(endSection);
+    if (e.date && e.date !== out.start_date) out.end_date = e.date;
+    if (e.time) out.end_time = e.time;
   }
   return out;
 }
@@ -3823,9 +3836,15 @@ function buildDatetime(start_date, start_time, end_date, end_time) {
   }
   let dt = isoToMdy(start_date);
   if (!dt) return '';
-  if (end_date && end_date !== start_date) dt += ' - ' + isoToMdy(end_date);
+  // start_time always comes right after start_date
   if (start_time) dt += ' ' + time24ToAmPm(start_time);
-  if (end_time && end_time !== start_time) dt += ' - ' + time24ToAmPm(end_time);
+  const hasEndDate = end_date && end_date !== start_date;
+  if (hasEndDate) dt += ' - ' + isoToMdy(end_date);
+  // end_time appended to end_date (or as " - HH:MM" if same-day)
+  if (end_time) {
+    if (hasEndDate) dt += ' ' + time24ToAmPm(end_time);
+    else dt += ' - ' + time24ToAmPm(end_time);
+  }
   return dt;
 }
 

@@ -860,23 +860,41 @@ function getEvents() {
 // ── Parse date string into parts ──
 function parseEventDate(dtStr) {
   if (!dtStr) return { day: '—', month: '—', year: '—', time: '' };
-  // Expect formats: "MM/DD/YYYY" or "MM/DD/YYYY H:MM AM/PM"
-  const parts = dtStr.trim().split(' ');
-  const datePart = parts[0] || '';
-  const timePart = parts.slice(1).join(' ');
-  const segs = datePart.split('/');
-  if (segs.length < 3) {
-    return { day: '?', month: dtStr, year: '', time: timePart };
-  }
   const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Find date-range separator: ' - ' followed by M/D/YYYY
+  const rangeIdx = dtStr.search(/ - (?=\d{1,2}\/\d{1,2}\/\d{4})/);
+  let startStr = dtStr, endDateStr = '';
+  if (rangeIdx !== -1) {
+    startStr    = dtStr.slice(0, rangeIdx);
+    endDateStr  = dtStr.slice(rangeIdx + 3).trim().split(' ')[0];
+  }
+
+  const startParts = startStr.trim().split(' ');
+  const segs = (startParts[0] || '').split('/');
+  if (segs.length < 3) return { day: '?', month: dtStr, year: '', time: '' };
+
   const m = parseInt(segs[0], 10);
   const d = parseInt(segs[1], 10);
-  const y = segs[2];
+  const y = segs[2] || '';
+  // time is everything after the date; strip any same-day " - H:MM XM" end-time suffix
+  const timeRaw = startParts.slice(1).join(' ');
+  const timeSepIdx = timeRaw.indexOf(' - ');
+  const time = timeSepIdx !== -1 ? timeRaw.slice(0, timeSepIdx).trim() : timeRaw.trim();
+
+  let endDay = 0;
+  if (endDateStr) {
+    const eSegs = endDateStr.split('/');
+    endDay = parseInt(eSegs[1], 10) || 0;
+  }
+  const startDay = isNaN(d) ? '?' : String(d);
+  const day = (endDay && endDay !== d) ? startDay + '–' + endDay : startDay;
+
   return {
-    day:   isNaN(d) ? '?' : String(d),
+    day,
     month: (!isNaN(m) && m >= 1 && m <= 12) ? monthNames[m - 1] : segs[0],
-    year:  y || '',
-    time:  timePart
+    year:  y,
+    time
   };
 }
 

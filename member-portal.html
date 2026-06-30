@@ -593,42 +593,39 @@ function parseDate(dtStr) {
   if (!dtStr) return { day:'?', month:'???', time:'' };
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-  // New format from buildDatetime: "M/D/YYYY[ - M/D/YYYY][ H:MM AM][ - H:MM PM]"
-  // Detect by presence of " - " separating two date segments
-  const rangeSep = dtStr.indexOf(' - ');
-  if (rangeSep !== -1) {
-    const firstDate = dtStr.substring(0, rangeSep);
-    const dp1 = firstDate.split('/');
-    const month1 = parseInt(dp1[0]) - 1;
-    const startDay = dp1[1] || '?';
-    // Find second date segment after " - "
-    const rest = dtStr.substring(rangeSep + 3);
-    const dp2 = rest.split('/');
-    // rest may be "M/D/YYYY H:MM AM" or just a time "H:MM AM"
-    let endDay = startDay;
-    let timeStr = '';
-    if (dp2.length >= 2) {
-      // second date present
-      const afterDate = dp2.slice(2).join('/').trim(); // "YYYY H:MM AM" or "YYYY"
-      const yAndTime = afterDate.split(' ');
-      endDay = dp2[1] || startDay;
-      timeStr = yAndTime.slice(1).join(' ');
-    } else {
-      // rest is a time, no end date
-      timeStr = rest;
-    }
-    const day = startDay === endDay ? startDay : startDay + '-' + endDay;
-    return { day, month: months[month1] || '???', time: timeStr };
+  // Find date-range separator: ' - ' followed by M/D/YYYY
+  const rangeIdx = dtStr.search(/ - (?=\d{1,2}\/\d{1,2}\/\d{4})/);
+  let startStr = dtStr, endDateStr = '';
+  if (rangeIdx !== -1) {
+    startStr    = dtStr.slice(0, rangeIdx);
+    endDateStr  = dtStr.slice(rangeIdx + 3).trim().split(' ')[0];
   }
 
-  // Legacy format: "MM/DD/YYYY HH:MM AM" or old range "M/DD-M/DD/YYYY"
-  const parts = dtStr.split(' ');
-  const dp = parts[0].split('/');
-  let day = dp[1] || '?';
-  if (day.includes('-') && dp[2] && /^\d{1,2}$/.test(dp[2])) {
-    day = day.split('-')[0] + '-' + dp[2];
+  const startParts = startStr.trim().split(' ');
+  const dp = (startParts[0] || '').split('/');
+
+  // Handle old compact range "M/DD-M/DD/YYYY"
+  if (dp[1] && dp[1].includes('-') && dp[2] && /^\d{1,2}$/.test(dp[2])) {
+    const legacyStart = dp[1].split('-')[0];
+    const legacyEnd   = dp[2];
+    return { day: legacyStart + '–' + legacyEnd, month: months[parseInt(dp[0], 10) - 1] || '???', time: startParts.slice(1).join(' ') };
   }
-  return { day, month: months[parseInt(dp[0])-1] || '???', time: parts.slice(1).join(' ') || '' };
+
+  const m = parseInt(dp[0], 10);
+  const d = parseInt(dp[1], 10);
+  const timeRaw = startParts.slice(1).join(' ');
+  const timeSepIdx = timeRaw.indexOf(' - ');
+  const time = timeSepIdx !== -1 ? timeRaw.slice(0, timeSepIdx).trim() : timeRaw.trim();
+
+  let endDay = 0;
+  if (endDateStr) {
+    const eSegs = endDateStr.split('/');
+    endDay = parseInt(eSegs[1], 10) || 0;
+  }
+  const startDay = isNaN(d) ? '?' : String(d);
+  const day = (endDay && endDay !== d) ? startDay + '–' + endDay : startDay;
+
+  return { day, month: months[m - 1] || '???', time };
 }
 
 function renderEventItem(ev) {
