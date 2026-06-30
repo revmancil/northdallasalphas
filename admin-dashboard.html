@@ -3050,6 +3050,16 @@ async function grantAdminFromAccessPanel() {
 // ══════════════════════════════════════════════════
 const CHECKIN_BASE = 'https://northdallasalphas.com/meeting-checkin.html';
 
+function time24ToAmPm(t) {
+  if (!t) return '';
+  const parts = t.split(':');
+  let h = parseInt(parts[0], 10);
+  const min = parts[1] || '00';
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return h + ':' + min + ' ' + ampm;
+}
+
 async function loadMeetingsPanel() {
   const el = document.getElementById('meetingsList');
   if (!el) return;
