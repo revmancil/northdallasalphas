@@ -2758,27 +2758,35 @@ function renderAccessTable() {
     const portalAccess = (m.portal_access || 'pending').toLowerCase();
     const chapterStatus = (m.status || '').toLowerCase();
     const isAdmin = accessAdminEmails.has((m.email || '').toLowerCase());
-    const accessColor = portalAccess === 'granted' ? 'var(--green)' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
+    const accessColor = portalAccess === 'granted' ? 'var(--green)' : portalAccess === 'visiting' ? 'var(--gold)' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
+    const accessLabel = portalAccess === 'visiting' ? 'Visiting' : portalAccess.charAt(0).toUpperCase() + portalAccess.slice(1);
     const requested = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-    const grantedDate = (portalAccess === 'granted' && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const grantedDate = (['granted','visiting'].includes(portalAccess) && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const adminBadge = isAdmin ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;"><i class="fas fa-user-shield"></i> ADMIN</span>' : '';
     const membershipBadge = chapterStatus ? '<span style="display:inline-block;font-size:0.72rem;color:var(--gray-400);margin-left:4px;text-transform:capitalize;">(' + escHtml(chapterStatus) + ')</span>' : '';
     let actions = '';
+    const mid = escHtml(String(m.id));
+    const memail = escHtml(m.email || '');
     if (portalAccess === 'pending') {
-      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'granted\')"><i class="fas fa-check"></i> Approve</button> ' +
-                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>';
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + mid + '\',\'granted\')"><i class="fas fa-check"></i> Approve</button> ' +
+                '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="accessUpdateStatus(\'' + mid + '\',\'visiting\')" title="Grant limited access: Dashboard, Events, Dues only"><i class="fas fa-user-clock"></i> Visiting</button> ' +
+                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>';
+    } else if (portalAccess === 'visiting') {
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + mid + '\',\'granted\')" title="Upgrade to full member access"><i class="fas fa-arrow-up"></i> Full Access</button> ' +
+                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
     } else if (portalAccess === 'granted') {
-      actions = '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
+      actions = '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
       if (!isAdmin) {
-        actions += ' <button class="btn-sm edit" onclick="prefillAdminGrant(\'' + escHtml(m.email || '') + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button>';
+        actions += ' <button class="btn-sm edit" onclick="prefillAdminGrant(\'' + memail + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button>';
       }
     } else {
-      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + escHtml(String(m.id)) + '\',\'granted\')"><i class="fas fa-redo"></i> Restore</button>';
+      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + mid + '\',\'granted\')"><i class="fas fa-redo"></i> Restore</button> ' +
+                '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="accessUpdateStatus(\'' + mid + '\',\'visiting\')" title="Restore with visiting access"><i class="fas fa-user-clock"></i> Restore (Visiting)</button>';
     }
     return '<tr style="border-bottom:1px solid var(--gray-100);">' +
       '<td style="padding:10px 12px;font-weight:600;">' + escHtml(name) + membershipBadge + adminBadge + '</td>' +
       '<td style="padding:10px 12px;color:var(--gray-600);">' + escHtml(m.email || '—') + '</td>' +
-      '<td style="padding:10px 12px;"><span style="color:' + accessColor + ';font-weight:600;text-transform:capitalize;">' + escHtml(portalAccess) + '</span></td>' +
+      '<td style="padding:10px 12px;"><span style="color:' + accessColor + ';font-weight:600;">' + escHtml(accessLabel) + '</span></td>' +
       '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + requested + '</td>' +
       '<td style="padding:10px 12px;color:var(--gray-500);font-size:0.82rem;">' + grantedDate + '</td>' +
       '<td style="padding:10px 12px;white-space:nowrap;">' + actions + '</td>' +
@@ -2789,7 +2797,10 @@ function renderAccessTable() {
 async function accessUpdateStatus(memberId, portalAccess) {
   const token = getAdminToken();
   if (!token) { showToast('Session expired.', 'error'); return; }
-  const label = portalAccess === 'granted' ? 'grant portal access to' : portalAccess === 'revoked' ? 'revoke portal access for' : 'update';
+  const label = portalAccess === 'granted' ? 'grant full portal access to'
+              : portalAccess === 'visiting' ? 'grant visiting brother portal access to'
+              : portalAccess === 'revoked'  ? 'revoke portal access for'
+              : 'update';
   if (!confirm('Are you sure you want to ' + label + ' this member?')) return;
   const payload = { portal_access: portalAccess, updated_at: new Date().toISOString() };
   try {
@@ -2797,7 +2808,10 @@ async function accessUpdateStatus(memberId, portalAccess) {
     const m = allAccessMembers.find(function(x) { return String(x.id) === String(memberId); });
     if (m) { m.portal_access = portalAccess; m.updated_at = payload.updated_at; }
     renderAccessTable();
-    showToast(portalAccess === 'granted' ? 'Portal access granted.' : portalAccess === 'revoked' ? 'Portal access revoked.' : 'Status updated.', 'success');
+    showToast(portalAccess === 'granted' ? 'Full portal access granted.'
+            : portalAccess === 'visiting' ? 'Visiting brother access granted (Dashboard, Events, Dues).'
+            : portalAccess === 'revoked'  ? 'Portal access revoked.'
+            : 'Status updated.', 'success');
   } catch (err) {
     showToast('Could not update status: ' + (err.message || 'error'), 'error');
   }

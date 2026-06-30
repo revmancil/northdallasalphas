@@ -290,7 +290,7 @@
                 <div class="pfield"><label>Middle Name</label><input type="text" id="pfMiddleName" placeholder="Middle name" /></div>
                 <div class="pfield"><label>Last Name</label><input type="text" id="pfLastName" placeholder="Last name" /></div>
                 <div class="pfield"><label>Suffix</label><input type="text" id="pfSuffix" placeholder="Jr., Sr., III" /></div>
-                <div class="pfield"><label>Birthday</label><input type="text" id="pfBirthday" placeholder="e.g. 03/15/1985" /></div>
+                <div class="pfield"><label>Birthday</label><input type="text" id="pfBirthday" placeholder="MM/DD" /></div>
                 <div class="pfield"><label>Phone Number</label><input type="tel" id="pfPhone" placeholder="(555) 000-0000" /></div>
                 <div class="pfield"><label>City</label><input type="text" id="pfCity" placeholder="City" /></div>
                 <div class="pfield"><label>State</label><input type="text" id="pfState" placeholder="TX" maxlength="2" /></div>
@@ -783,6 +783,18 @@ function displayOptionalDate(value) {
   return v;
 }
 
+function formatBirthday(value) {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  // ISO: "1985-03-15" → "03/15"
+  const isoM = v.match(/^\d{4}-(\d{2})-(\d{2})/);
+  if (isoM) return isoM[1] + '/' + isoM[2];
+  // MM/DD/YYYY or MM/DD → keep only MM/DD
+  const mdyM = v.match(/^(\d{1,2})\/(\d{1,2})/);
+  if (mdyM) return mdyM[1].padStart(2, '0') + '/' + mdyM[2].padStart(2, '0');
+  return v;
+}
+
 function renderDirectoryPanel() {
   if (!allMembers.length) { loadDirectory(); return; }
   renderDirectoryList(allMembers);
@@ -830,7 +842,7 @@ function renderDirectoryList(members) {
     if (imdpDate) certParts.push('IMDP ' + escHtml(imdpDate));
     if (riskDate) certParts.push('Risk Mgmt ' + escHtml(riskDate));
     const certMeta = certParts.join(' &middot; ');
-    const birthday = displayOptionalDate(m.birthday);
+    const birthday = formatBirthday(m.birthday);
     return '<div class="member-card">' +
       '<div class="member-card-avatar">' + (m.photo ? '<img src="' + escHtml(m.photo) + '" alt="' + escHtml(name) + '" />' : escHtml(initials)) + '</div>' +
       '<div class="member-card-info"><div class="mc-name">Bro. ' + escHtml(name) + '</div>' +
@@ -862,7 +874,7 @@ function loadProfileForm(member) {
   document.getElementById('pfMiddleName').value       = member.middle_name       || '';
   document.getElementById('pfLastName').value         = member.last_name         || '';
   document.getElementById('pfSuffix').value           = member.suffix            || '';
-  document.getElementById('pfBirthday').value         = displayOptionalDate(member.birthday);
+  document.getElementById('pfBirthday').value         = formatBirthday(member.birthday);
   document.getElementById('pfPhone').value            = member.phone             || '';
   document.getElementById('pfCity').value             = member.city              || '';
   document.getElementById('pfState').value            = member.state             || '';
@@ -1020,10 +1032,22 @@ async function init() {
   const fullName  = [firstName, lastName].filter(Boolean).join(' ');
   const initials  = (firstName[0]||'') + (lastName[0]||'') || '?';
   const portalAccess = (currentMember && currentMember.portal_access) ? currentMember.portal_access : 'pending';
-  const hasAccess = portalAccess === 'granted';
+  const hasAccess   = portalAccess === 'granted';
+  const isVisiting  = portalAccess === 'visiting';
+  // Visiting brothers only see Dashboard, Events, and Dues
+  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-profile'];
+  visitingHidden.forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isVisiting ? 'none' : '';
+  });
+  // Also hide the section labels if all items under them are hidden
+  const communityLabel = document.querySelector('.nav-section-label:nth-of-type(2)');
+  const accountLabel   = document.querySelector('.nav-section-label:nth-of-type(3)');
+  if (communityLabel) communityLabel.style.display = isVisiting ? 'none' : '';
+  if (accountLabel)   accountLabel.style.display   = isVisiting ? 'none' : '';
   document.getElementById('sidebarName').textContent = fullName;
-  document.getElementById('statusText').textContent  = hasAccess ? 'Active Member' : 'Pending Approval';
-  document.getElementById('statusDot').className = 'status-dot' + (!hasAccess ? ' pending' : '');
+  document.getElementById('statusText').textContent  = hasAccess ? 'Active Member' : (isVisiting ? 'Visiting Brother' : 'Pending Approval');
+  document.getElementById('statusDot').className = 'status-dot' + ((!hasAccess && !isVisiting) ? ' pending' : '');
   const avEl = document.getElementById('sidebarAvatar');
   if (currentMember && currentMember.photo) { avEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { avEl.textContent = initials.toUpperCase(); }
@@ -1031,8 +1055,8 @@ async function init() {
   document.getElementById('profileMemberSince').textContent = (currentMember && currentMember.member_since) ? 'Member since ' + currentMember.member_since : 'Update your profile to add details';
   document.getElementById('welcomeName').textContent        = firstName;
   const statusEl = document.getElementById('profileStatus');
-  statusEl.className = 'member-status ' + (hasAccess ? 'active' : 'pending');
-  statusEl.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (hasAccess ? 'Active Member' : 'Pending Approval');
+  statusEl.className = 'member-status ' + (hasAccess ? 'active' : (isVisiting ? 'active' : 'pending'));
+  statusEl.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (hasAccess ? 'Active Member' : (isVisiting ? 'Visiting Brother' : 'Pending Approval'));
   const pAvEl = document.getElementById('profileAvatarLarge');
   if (currentMember && currentMember.photo) { pAvEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { pAvEl.textContent = initials.toUpperCase(); }
