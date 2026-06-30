@@ -7090,12 +7090,10 @@ async function handleDocumentUpload(e) {
     const uploaded = await uploadDocumentFile(file);
     const token = getAdminToken();
     await sbPost('documents', {
-      title:       title,
-      description: description,
-      category:    category,
-      file_url:    uploaded.url,
-      file_name:   uploaded.name,
-      file_size_bytes: uploaded.size,
+      title:        title,
+      description:  description,
+      category:     category,
+      file_url:     uploaded.url,
       members_only: true
     }, token);
     statusEl.style.background = 'rgba(34,197,94,0.1)';
