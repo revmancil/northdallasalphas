@@ -1183,7 +1183,7 @@
     <button class="sidebar-link" onclick="showPanel('news-manager')">
       <i class="fas fa-newspaper"></i> News Manager
     </button>
-    <button class="sidebar-link" onclick="showPanel('documents')">
+    <button class="sidebar-link" onclick="showPanel('documents');loadAdminDocuments()">
       <i class="fas fa-folder-open"></i> Documents
     </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
@@ -7037,7 +7037,8 @@ async function confirmInstallPresident() {
 }
 
 // Close modal when clicking outside
-document.getElementById('installPresidentOverlay').addEventListener('click', function(e) {
+const _presOverlay = document.getElementById('installPresidentOverlay');
+if (_presOverlay) _presOverlay.addEventListener('click', function(e) {
   if (e.target === this) closeInstallPresidentModal();
 });
 
@@ -7163,14 +7164,6 @@ async function deleteDocument(id, title) {
   }
 }
 
-// Load documents when panel is shown
-const _origShowPanel = typeof showPanel === 'function' ? showPanel : null;
-(function() {
-  const origButtons = document.querySelectorAll('[onclick*="showPanel(\'documents\')"]');
-  origButtons.forEach(function(btn) {
-    btn.addEventListener('click', function() { loadAdminDocuments(); });
-  });
-})();
 
 </script>
 
