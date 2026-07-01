@@ -822,7 +822,7 @@ h1, h2, h3, h4, h5 {
 .president-photo-wrap {
   position: relative;
   width: 100%;
-  max-width: 440px;
+  max-width: 760px;
   margin-bottom: 40px;
 }
 .president-photo {
@@ -1282,7 +1282,6 @@ h1, h2, h3, h4, h5 {
   }
   .impact-grid { grid-template-columns: repeat(2, 1fr); }
   .events-layout { grid-template-columns: 1fr; }
-  .president-photo-wrap { max-width: 340px; }
 }
 
 @media (max-width: 1220px) {
