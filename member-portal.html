@@ -1308,10 +1308,20 @@ function loadDirectory() {
 
 function filterDirectory() {
   const q = (document.getElementById('dirSearch').value || '').toLowerCase();
+  const twoYearsAgo = new Date();
+  twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+
   var list = allMembers.filter(function(m) {
     // Filter tab
     if (dirFilter === 'life'     && !m.life_member_number) return false;
     if (dirFilter === 'visiting' && m.portal_access !== 'visiting') return false;
+    // Newest Members sort: only brothers initiated within the last 2 years
+    if (dirSort === 'newest') {
+      var dateStr = m.chapter_active_date || m.initiation_date;
+      if (!dateStr) return false;
+      var d = new Date(dateStr);
+      if (isNaN(d.getTime()) || d < twoYearsAgo) return false;
+    }
     // Search
     if (q) {
       return [m.first_name, m.middle_name, m.last_name, m.suffix, m.city, m.alpha_id, m.initiation_chapter, m.life_member_number]
@@ -1325,9 +1335,9 @@ function filterDirectory() {
       return (b.last_name||'').localeCompare(a.last_name||'') || (b.first_name||'').localeCompare(a.first_name||'');
     }
     if (dirSort === 'newest') {
-      var ay = parseInt(a.member_since, 10) || 0;
-      var by = parseInt(b.member_since, 10) || 0;
-      return by - ay;
+      var ad = new Date(a.chapter_active_date || a.initiation_date || 0).getTime();
+      var bd = new Date(b.chapter_active_date || b.initiation_date || 0).getTime();
+      return bd - ad;
     }
     // a-z (default)
     return (a.last_name||'').localeCompare(b.last_name||'') || (a.first_name||'').localeCompare(b.first_name||'');
