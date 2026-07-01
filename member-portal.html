@@ -2088,9 +2088,9 @@ function openItemModal(id) {
   optsEl.innerHTML = (p.options||[]).map(function(g){
     return '<div>' +
       '<label style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.6);display:block;margin-bottom:5px;">' + escHtml(g.name) + '</label>' +
-      '<select data-opt="' + escHtml(g.name) + '" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" onchange="updateItemTotal()">' +
-        '<option value="">— Select ' + escHtml(g.name) + ' —</option>' +
-        (g.values||[]).map(function(v){ return '<option value="' + escHtml(v) + '">' + escHtml(v) + '</option>'; }).join('') +
+      '<select data-opt="' + escHtml(g.name) + '" style="width:100%;padding:9px 12px;background:#2a2a2a;border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#fff;font-size:0.88rem;" onchange="updateItemTotal()">' +
+        '<option value="" style="background:#2a2a2a;color:#fff;">— Select ' + escHtml(g.name) + ' —</option>' +
+        (g.values||[]).map(function(v){ return '<option value="' + escHtml(v) + '" style="background:#2a2a2a;color:#fff;">' + escHtml(v) + '</option>'; }).join('') +
       '</select>' +
     '</div>';
   }).join('');
