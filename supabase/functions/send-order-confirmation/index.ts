@@ -135,11 +135,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const sendgridKey = Deno.env.get("SENDGRID_API_KEY");
-  const fromEmail   = Deno.env.get("SENDGRID_FROM_EMAIL") ?? "northdallasalphas@gmail.com";
-  const fromName    = Deno.env.get("SENDGRID_FROM_NAME")  ?? "North Dallas Alphas";
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  const fromEmail = Deno.env.get("RESEND_FROM_EMAIL") ?? "northdallasalphas@gmail.com";
+  const fromName  = Deno.env.get("RESEND_FROM_NAME")  ?? "North Dallas Alphas";
 
-  if (!sendgridKey) return json({ error: "Email is not configured on the server." }, 503);
+  if (!resendKey) return json({ error: "Email is not configured on the server." }, 503);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -169,25 +169,23 @@ serve(async (req) => {
   const memberName = String(order.member_name ?? "Brother");
   const ordShort   = String(order.id ?? "").slice(0, 8).toUpperCase();
 
-  const sgRes = await fetch("https://api.sendgrid.com/v3/mail/send", {
+  const resendRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
-      "Authorization": "Bearer " + sendgridKey,
+      "Authorization": "Bearer " + resendKey,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      personalizations: [{
-        to: [{ email: toEmail, name: memberName }],
-        subject: `Order Confirmed — #${ordShort} | North Dallas Alphas`,
-      }],
-      from: { email: fromEmail, name: fromName },
-      content: [{ type: "text/html", value: html }],
+      from: `${fromName} <${fromEmail}>`,
+      to: [toEmail],
+      subject: `Order Confirmed — #${ordShort} | North Dallas Alphas`,
+      html,
     }),
   });
 
-  if (!sgRes.ok) {
-    const errText = await sgRes.text().catch(() => "unknown");
-    console.error("SendGrid error:", errText);
+  if (!resendRes.ok) {
+    const errText = await resendRes.text().catch(() => "unknown");
+    console.error("Resend error:", errText);
     return json({ error: "Email delivery failed." }, 502);
   }
 
