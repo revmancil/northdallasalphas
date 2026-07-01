@@ -1970,15 +1970,25 @@ async function placeOrder() {
     updated_at: new Date().toISOString()
   };
   try {
-    await fetch(SUPABASE_URL + '/rest/v1/store_orders', {
+    var orderRes = await fetch(SUPABASE_URL + '/rest/v1/store_orders', {
       method: 'POST',
-      headers: Object.assign({}, { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token, 'Prefer':'return=minimal' }),
+      headers: Object.assign({}, { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token, 'Prefer':'return=representation' }),
       body: JSON.stringify(payload)
     });
+    var orderData = await orderRes.json().catch(function(){ return []; });
+    var newOrderId = Array.isArray(orderData) && orderData[0] ? orderData[0].id : null;
+    // Send confirmation email (fire-and-forget — don't block on failure)
+    if (newOrderId) {
+      fetch(SUPABASE_URL + '/functions/v1/send-order-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token },
+        body: JSON.stringify({ order_id: newOrderId })
+      }).catch(function(){});
+    }
     _storeCart = [];
     updateCartBadge();
     closeCart();
-    showToast('Order placed! Chapter leadership will follow up with payment details.', 'success');
+    showToast('Order placed! A confirmation email is on its way.', 'success');
     loadMyOrders();
   } catch(e) {
     errEl.textContent = 'Could not place order: ' + (e.message||'error');
