@@ -2472,8 +2472,23 @@
               <textarea id="siDescription" rows="3" placeholder="Brief description of the item..." style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
             </div>
             <div class="field-group" style="grid-column:span 2;margin:0;">
-              <label>Image URL <span style="font-size:0.78rem;font-weight:400;color:var(--gray-400);">(paste a direct image link)</span></label>
-              <input type="url" id="siImageUrl" placeholder="https://..." />
+              <label>Product Image</label>
+              <input type="file" id="siImageFile" accept="image/*" style="display:none;" onchange="handleStoreImageUpload(event)" />
+              <input type="hidden" id="siImageUrl" />
+              <div id="siImagePreviewWrap" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <div id="siImagePreview" style="width:80px;height:80px;border-radius:6px;border:1px dashed var(--gray-300);background:#f9fafb;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                  <i class="fas fa-image" style="color:var(--gray-300);font-size:1.4rem;"></i>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;">
+                  <button type="button" id="siUploadBtn" onclick="document.getElementById('siImageFile').click()" class="btn-sm" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);">
+                    <i class="fas fa-upload"></i> Upload Image
+                  </button>
+                  <button type="button" id="siRemoveImgBtn" onclick="clearStoreImage()" style="display:none;background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid rgba(220,38,38,0.2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">
+                    <i class="fas fa-times"></i> Remove
+                  </button>
+                  <div id="siUploadStatus" style="font-size:0.75rem;color:var(--gray-400);"></div>
+                </div>
+              </div>
             </div>
             <div class="field-group" style="margin:0;display:flex;align-items:center;gap:10px;">
               <input type="checkbox" id="siActive" checked style="width:16px;height:16px;accent-color:var(--gold);" />
@@ -8148,11 +8163,15 @@ function openStoreItemModal(id) {
   document.getElementById('siName').value     = item ? (item.name||'') : '';
   document.getElementById('siPrice').value    = item ? (item.price||'') : '';
   document.getElementById('siDescription').value = item ? (item.description||'') : '';
-  document.getElementById('siImageUrl').value = item ? (item.image_url||'') : '';
   document.getElementById('siActive').checked = item ? !!item.active : true;
   var cat = document.getElementById('siCategory');
   if (item && item.category) cat.value = item.category;
   else cat.value = 'Apparel';
+  // Image preview
+  var imgUrl = item ? (item.image_url||'') : '';
+  document.getElementById('siImageUrl').value = imgUrl;
+  setStoreImagePreview(imgUrl);
+  document.getElementById('siUploadStatus').textContent = '';
   var opts = [];
   if (item && item.options) {
     try { opts = typeof item.options === 'string' ? JSON.parse(item.options) : item.options; } catch(e){}
@@ -8161,6 +8180,60 @@ function openStoreItemModal(id) {
   document.getElementById('siErr').style.display = 'none';
   renderOptionGroupsBuilder();
   document.getElementById('storeItemModal').style.display = 'flex';
+}
+
+function setStoreImagePreview(url) {
+  var preview = document.getElementById('siImagePreview');
+  var removeBtn = document.getElementById('siRemoveImgBtn');
+  if (url) {
+    preview.innerHTML = '<img src="' + escHtml(url) + '" style="width:100%;height:100%;object-fit:cover;" onerror="clearStoreImage()" />';
+    removeBtn.style.display = '';
+  } else {
+    preview.innerHTML = '<i class="fas fa-image" style="color:var(--gray-300);font-size:1.4rem;"></i>';
+    removeBtn.style.display = 'none';
+  }
+}
+
+function clearStoreImage() {
+  document.getElementById('siImageUrl').value = '';
+  document.getElementById('siImageFile').value = '';
+  setStoreImagePreview('');
+}
+
+async function handleStoreImageUpload(e) {
+  var file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  var statusEl = document.getElementById('siUploadStatus');
+  var uploadBtn = document.getElementById('siUploadBtn');
+  statusEl.textContent = 'Uploading…';
+  uploadBtn.disabled = true;
+  try {
+    var token = getAdminToken();
+    var bucket = 'chapter-media';
+    var stamp = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    var path = 'store/' + stamp + '_' + safeName;
+    var res = await fetch(SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + path, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': file.type || 'image/jpeg', 'x-upsert': 'true' },
+      body: file
+    });
+    if (!res.ok) {
+      var err = await res.json().catch(function(){ return {}; });
+      throw new Error(err.message || 'Upload failed. Make sure the chapter-media bucket exists in Supabase Storage.');
+    }
+    var url = SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + path;
+    document.getElementById('siImageUrl').value = url;
+    setStoreImagePreview(url);
+    statusEl.textContent = 'Uploaded ✓';
+    statusEl.style.color = 'var(--green)';
+  } catch(err) {
+    statusEl.textContent = err.message || 'Upload failed.';
+    statusEl.style.color = 'var(--red)';
+  } finally {
+    uploadBtn.disabled = false;
+  }
 }
 
 function closeStoreItemModal() {
