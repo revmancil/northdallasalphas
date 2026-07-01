@@ -1496,10 +1496,10 @@ function filterDirectory() {
     if (dirFilter === 'visiting' && m.portal_access !== 'visiting') return false;
     // Newest Members sort: only brothers initiated within the last 2 years
     if (dirSort === 'newest') {
-      var dateStr = m.initiation_date;
-      if (!dateStr) return false;
-      var d = new Date(dateStr + 'T00:00:00');
-      if (isNaN(d.getTime()) || d < twoYearsAgo) return false;
+      var d1 = m.initiation_date    ? new Date(m.initiation_date    + 'T00:00:00') : null;
+      var d2 = m.chapter_active_date? new Date(m.chapter_active_date + 'T00:00:00') : null;
+      var newest = (d1 && d2) ? (d1 > d2 ? d1 : d2) : (d1 || d2);
+      if (!newest || isNaN(newest.getTime()) || newest < twoYearsAgo) return false;
     }
     // Search
     if (q) {
