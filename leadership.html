@@ -420,9 +420,9 @@
       padding: 3px 9px;
       border-radius: 3px;
     }
-    .level-district  { background: rgba(201,168,76,0.45); color: #a87c1a; border: 1px solid rgba(201,168,76,0.7); }
-    .level-regional  { background: rgba(74,144,226,0.45); color: #1a5fa8; border: 1px solid rgba(74,144,226,0.7); }
-    .level-national  { background: rgba(155,89,182,0.45); color: #7b2fa8; border: 1px solid rgba(155,89,182,0.7); }
+    .level-district  { background: #8C5E2A; color: #fff; border: 1px solid #7a5124; }
+    .level-regional  { background: #7D7F84; color: #fff; border: 1px solid #6b6d71; }
+    .level-national  { background: #C9A84C; color: #fff; border: 1px solid #b8972b; }
     .fraternal-omega-badge {
       position: absolute;
       top: 12px;
@@ -627,12 +627,14 @@
       <!-- Willie Edwards -->
       <div class="fraternal-card">
         <div class="fraternal-card-photo">
-          <img src="images/fraternal-willie-edwards.jpg" alt="Bro. Dr. Willie Edwards" loading="lazy" />
+          <img src="images/fraternal-willie-edwards.jpg" alt="Bro. Dr. Willie Edwards" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.photo-placeholder').style.display='flex';" />
+          <div class="photo-placeholder" style="display:none;"><i class="fas fa-user"></i><span>WE</span></div>
           <span class="fraternal-level-badge level-district">District</span>
         </div>
         <div class="fraternal-card-body">
           <h3>Bro. Dr. Willie Edwards</h3>
           <div class="role">14th Texas District Director</div>
+          <div class="role-sub">Zeta Tau College Advisor</div>
         </div>
       </div>
 
@@ -670,6 +672,8 @@
         <div class="fraternal-card-body">
           <h3>Bro. Dr. Mancil Carroll</h3>
           <div class="role">Southwestern Regional Chaplain</div>
+          <div class="role-sub">Assistant Area 1 Director</div>
+          <div class="role-sub">TCAC District Chaplain (Past)</div>
           <div class="role-sub">Xi Tau Lambda · 19th Chapter President</div>
         </div>
       </div>
@@ -696,7 +700,33 @@
         <div class="fraternal-card-body">
           <h3>Bro. Adrian Escalante</h3>
           <div class="role">19th Texas District Director</div>
+          <div class="role-sub">Assistant Area 1 Director (Past)</div>
           <div class="role-sub">Xi Tau Lambda · 18th Chapter President</div>
+        </div>
+      </div>
+
+      <!-- Matthew Merritt -->
+      <div class="fraternal-card">
+        <div class="fraternal-card-photo">
+          <div class="photo-placeholder"><i class="fas fa-user"></i><span>MM</span></div>
+          <span class="fraternal-level-badge level-district">District</span>
+        </div>
+        <div class="fraternal-card-body">
+          <h3>Bro. Matthew Merritt</h3>
+          <div class="role">District Secretary (Past)</div>
+          <div class="role-sub">Assistant District Director (Past)</div>
+        </div>
+      </div>
+
+      <!-- Darrin Nixon -->
+      <div class="fraternal-card">
+        <div class="fraternal-card-photo">
+          <div class="photo-placeholder"><i class="fas fa-user"></i><span>DN</span></div>
+          <span class="fraternal-level-badge level-regional">Regional</span>
+        </div>
+        <div class="fraternal-card-body">
+          <h3>Bro. Darrin Nixon</h3>
+          <div class="role">Assistant Regional Vice President (Past)</div>
         </div>
       </div>
 
