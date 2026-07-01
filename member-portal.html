@@ -1496,9 +1496,9 @@ function filterDirectory() {
     if (dirFilter === 'visiting' && m.portal_access !== 'visiting') return false;
     // Newest Members sort: only brothers initiated within the last 2 years
     if (dirSort === 'newest') {
-      var dateStr = m.chapter_active_date || m.initiation_date;
+      var dateStr = m.initiation_date;
       if (!dateStr) return false;
-      var d = new Date(dateStr);
+      var d = new Date(dateStr + 'T00:00:00');
       if (isNaN(d.getTime()) || d < twoYearsAgo) return false;
     }
     // Search
@@ -1514,8 +1514,8 @@ function filterDirectory() {
       return (b.last_name||'').localeCompare(a.last_name||'') || (b.first_name||'').localeCompare(a.first_name||'');
     }
     if (dirSort === 'newest') {
-      var ad = new Date(a.chapter_active_date || a.initiation_date || 0).getTime();
-      var bd = new Date(b.chapter_active_date || b.initiation_date || 0).getTime();
+      var ad = new Date((a.initiation_date || '1900-01-01') + 'T00:00:00').getTime();
+      var bd = new Date((b.initiation_date || '1900-01-01') + 'T00:00:00').getTime();
       return bd - ad;
     }
     // a-z (default)
