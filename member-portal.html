@@ -1578,7 +1578,7 @@ function renderDirectoryList(members) {
     const actions = [];
     if (email && m.share_email !== false) actions.push('<a href="mailto:' + escHtml(email) + '" class="mc-btn mc-btn-email"><i class="fas fa-envelope"></i> Email</a>');
     if (phone && m.share_phone !== false) actions.push('<a href="tel:' + escHtml(phone.replace(/\s+/g,'')) + '" class="mc-btn mc-btn-phone"><i class="fas fa-phone"></i> Call</a>');
-    var militaryFlag = m.military_service ? ' <span title="' + escHtml(m.military_branch || 'U.S. Military Veteran') + '" style="font-size:0.85em;">🇺🇸</span>' : '';
+    var militaryFlag = m.military_service ? ' <span title="' + escHtml(m.military_branch || 'U.S. Military Veteran') + '" style="display:inline-flex;align-items:center;gap:1px;font-size:0.7em;margin-left:3px;vertical-align:middle;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 18" width="22" height="14" style="border-radius:2px;flex-shrink:0;"><rect width="28" height="18" fill="#B22234"/><rect y="2" width="28" height="2" fill="#fff"/><rect y="5.5" width="28" height="2" fill="#fff"/><rect y="9" width="28" height="2" fill="#fff"/><rect y="12.5" width="28" height="2" fill="#fff"/><rect y="16" width="28" height="2" fill="#fff"/><rect width="11" height="9.5" fill="#3C3B6E"/></svg></span>' : '';
     if (m.linkedin) actions.push('<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" class="mc-btn mc-btn-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</a>');
 
     return '<div class="member-card">' +
