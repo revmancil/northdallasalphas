@@ -1485,6 +1485,16 @@ function loadDirectory() {
     .catch(function() { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Could not load directory.</p></div>'; });
 }
 
+function parseLocalDate(str) {
+  if (!str) return null;
+  var m = str.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[1] - 1, +m[2]);
+  var d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function filterDirectory() {
   const q = (document.getElementById('dirSearch').value || '').toLowerCase();
   const twoYearsAgo = new Date();
@@ -1496,9 +1506,8 @@ function filterDirectory() {
     if (dirFilter === 'visiting' && m.portal_access !== 'visiting') return false;
     // Newest Members sort: only brothers initiated within the last 2 years
     if (dirSort === 'newest') {
-      if (!m.initiation_date) return false;
-      var d = new Date(m.initiation_date + 'T00:00:00');
-      if (isNaN(d.getTime()) || d < twoYearsAgo) return false;
+      var d = parseLocalDate(m.initiation_date);
+      if (!d || d < twoYearsAgo) return false;
     }
     // Search
     if (q) {
@@ -1513,8 +1522,8 @@ function filterDirectory() {
       return (b.last_name||'').localeCompare(a.last_name||'') || (b.first_name||'').localeCompare(a.first_name||'');
     }
     if (dirSort === 'newest') {
-      var ad = new Date((a.initiation_date || '1900-01-01') + 'T00:00:00').getTime();
-      var bd = new Date((b.initiation_date || '1900-01-01') + 'T00:00:00').getTime();
+      var ad = (parseLocalDate(a.initiation_date) || new Date(0)).getTime();
+      var bd = (parseLocalDate(b.initiation_date) || new Date(0)).getTime();
       return bd - ad;
     }
     // a-z (default)
