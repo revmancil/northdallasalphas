@@ -1195,6 +1195,9 @@
     <button class="sidebar-link" onclick="showPanel('store');loadStorePanel()">
       <i class="fas fa-store"></i> Chapter Store
     </button>
+    <button class="sidebar-link" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
+      <i class="fas fa-bullhorn"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:var(--gold);color:#000;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;"></span>
+    </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2403,6 +2406,24 @@
     <!-- ══════════════════════════════════
          SETTINGS PANEL
     ══════════════════════════════════ -->
+    <!-- ══════════════════════════════════
+         MEMBER ANNOUNCEMENTS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-member-announcements">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:0.88rem;color:var(--gray-500);" id="annAdminCount"></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sm active" id="annAdminFilterAll"      onclick="setAnnFilter('all',this)">All</button>
+          <button class="btn-sm"        id="annAdminFilterPending"   onclick="setAnnFilter('pending',this)">Pending</button>
+          <button class="btn-sm"        id="annAdminFilterApproved" onclick="setAnnFilter('approved',this)">Approved</button>
+          <button class="btn-sm"        id="annAdminFilterRejected" onclick="setAnnFilter('rejected',this)">Rejected</button>
+        </div>
+      </div>
+      <div id="annAdminList">
+        <div class="empty-state"><i class="fas fa-bullhorn"></i><p>Loading announcements...</p></div>
+      </div>
+    </div>
+
     <!-- ══════════════════════════════════
          CHAPTER STORE PANEL
     ══════════════════════════════════ -->
@@ -8084,6 +8105,80 @@ async function deleteDocument(id, title) {
   } catch (err) {
     showToast('Could not delete: ' + (err.message || 'error'), 'error');
   }
+}
+
+/* ═══════════════════════════════════════════
+   MEMBER ANNOUNCEMENTS — ADMIN
+═══════════════════════════════════════════ */
+var _allAnnouncements = [];
+var _annFilter = 'all';
+
+async function loadMemberAnnouncements() {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    var rows = await sbGet('member_announcements', 'order=created_at.desc', token);
+    _allAnnouncements = rows || [];
+    var pending = _allAnnouncements.filter(function(r){ return r.status === 'pending'; }).length;
+    var badge = document.getElementById('annPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderAnnouncements();
+  } catch(e) { showToast('Could not load announcements: ' + (e.message||'error'), 'error'); }
+}
+
+function setAnnFilter(f, btn) {
+  _annFilter = f;
+  document.querySelectorAll('#panel-member-announcements .btn-sm').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderAnnouncements();
+}
+
+function renderAnnouncements() {
+  var list = _allAnnouncements.filter(function(r){ return _annFilter === 'all' || r.status === _annFilter; });
+  var countEl = document.getElementById('annAdminCount');
+  if (countEl) countEl.textContent = list.length + ' announcement' + (list.length !== 1 ? 's' : '');
+  var el = document.getElementById('annAdminList');
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No announcements' + (_annFilter !== 'all' ? ' with status "' + _annFilter + '"' : '') + '.</p></div>'; return; }
+  el.innerHTML = list.map(function(r) {
+    var statusColor = r.status==='approved'?'var(--green)':r.status==='rejected'?'var(--red)':'var(--gold)';
+    var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    var id = escHtml(String(r.id));
+    var actions = '';
+    if (r.status === 'pending') {
+      actions = '<button class="btn-sm success" onclick="updateAnnStatus(\'' + id + '\',\'approved\')"><i class="fas fa-check"></i> Approve</button> ' +
+                '<button class="btn-sm danger"  onclick="updateAnnStatus(\'' + id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>';
+    } else {
+      actions = '<button class="btn-sm" onclick="updateAnnStatus(\'' + id + '\',\'pending\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
+    }
+    return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;">' +
+        '<div style="flex:1;min-width:200px;">' +
+          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.title||'Untitled') + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' +
+            escHtml(r.member_name||'Unknown') + ' · ' + escHtml(r.category||'General') + ' · ' + date +
+          '</div>' +
+        '</div>' +
+        '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
+      '</div>' +
+      '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.6;white-space:pre-wrap;">' + escHtml(r.body||'') + '</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function updateAnnStatus(id, status) {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    await sbPatch('member_announcements', 'id=eq.' + encodeURIComponent(id), { status: status, updated_at: new Date().toISOString() }, token);
+    var r = _allAnnouncements.find(function(x){ return String(x.id)===String(id); });
+    if (r) r.status = status;
+    renderAnnouncements();
+    var pending = _allAnnouncements.filter(function(x){ return x.status==='pending'; }).length;
+    var badge = document.getElementById('annPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    showToast('Announcement ' + status + '.');
+  } catch(e) { showToast('Could not update: ' + (e.message||'error'), 'error'); }
 }
 
 /* ═══════════════════════════════════════════

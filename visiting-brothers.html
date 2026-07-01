@@ -262,16 +262,17 @@ document.getElementById('visitingForm').addEventListener('submit', async functio
     if (!res.ok) throw new Error(await res.text());
     const rows = await res.json();
     const requestId = rows && rows.length ? rows[0].id : '';
-    const subject = encodeURIComponent('Visiting Brother Request - ' + firstName + ' ' + lastName);
-    const body = encodeURIComponent(
-      'A new visiting brother request was submitted.\n\n' +
-      'Name: ' + firstName + ' ' + lastName + '\n' +
-      'Email: ' + email + '\n' +
-      'Request ID: ' + requestId + '\n\n' +
-      'Please review in the admin dashboard.'
-    );
-    window.open('mailto:' + ADMIN_EMAIL + '?subject=' + subject + '&body=' + body, '_blank');
-    showVbMsg(true, 'Request submitted successfully. An email draft to the admin has been opened for notification.');
+    fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({
+        type: 'visitor_request',
+        name: firstName + ' ' + lastName,
+        email: email,
+        chapter: payload.initiation_chapter
+      })
+    }).catch(() => {});
+    showVbMsg(true, 'Request submitted successfully. Chapter leadership will be in touch shortly.');
     document.getElementById('visitingForm').reset();
   } catch (err) {
     showVbMsg(false, 'Could not submit request: ' + (err.message || 'unknown error'));

@@ -178,22 +178,41 @@ serve(async (req) => {
       return json({ error: "Dues amount is not configured." }, 503);
     }
 
+    const applyLateFee = payload.lateFee === true;
+    const lateFeeCents = parseInt(Deno.env.get("LATE_FEE_CENTS") ?? "1000", 10) || 1000;
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
+      {
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: duesCents,
+          product_data: {
+            name: "Xi Tau Lambda — Chapter dues",
+            description: "Chapter dues payment",
+          },
+        },
+      },
+    ];
+
+    if (applyLateFee) {
+      lineItems.push({
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: lateFeeCents,
+          product_data: {
+            name: "Late fee",
+            description: "Dues received after December 31 deadline",
+          },
+        },
+      });
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: email,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: duesCents,
-            product_data: {
-              name: "Xi Tau Lambda — Chapter dues",
-              description: "Chapter dues payment",
-            },
-          },
-        },
-      ],
+      line_items: lineItems,
       success_url: `${siteBase}/member-portal.html?dues=success`,
       cancel_url: `${siteBase}/member-portal.html?dues=cancel`,
       metadata: {

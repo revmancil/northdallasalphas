@@ -242,6 +242,7 @@
     <button class="nav-item" onclick="showPanel('directory')" id="nav-directory"><i class="fas fa-users"></i> Brother Directory</button>
     <div class="nav-section-label">Account</div>
     <button class="nav-item" onclick="showPanel('card');renderMemberCard()" id="nav-card"><i class="fas fa-id-card"></i> Membership Card</button>
+    <button class="nav-item" onclick="showPanel('announcements-submit')" id="nav-announcements-submit"><i class="fas fa-bullhorn"></i> Submit Announcement</button>
     <button class="nav-item" onclick="showPanel('profile')" id="nav-profile"><i class="fas fa-user-circle"></i> My Profile</button>
   </nav>
   <div class="sidebar-footer">
@@ -330,6 +331,7 @@
         <div class="section-card-header"><h3><i class="fas fa-credit-card"></i> Pay dues online</h3></div>
         <div class="section-card-body">
           <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;">Pay chapter dues securely with a card (Stripe). The payment amount is configured by chapter leadership. The email below must match the account you used to sign in.</p>
+          <div id="duesLateFeeNotice" style="display:none;margin-top:12px;padding:11px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:0.83rem;color:rgba(255,255,255,0.7);display:flex;align-items:center;gap:6px;"></div>
           <div class="pfield" style="margin-top:14px;"><label>Full name</label><input type="text" id="duesPayName" autocomplete="name" /></div>
           <div class="profile-grid" style="margin-top:12px;">
             <div class="pfield"><label>Phone</label><input type="tel" id="duesPayPhone" autocomplete="tel" /></div>
@@ -508,6 +510,47 @@
       </div>
     </div>
     <!-- PROFILE -->
+    <!-- SUBMIT ANNOUNCEMENT -->
+    <div class="panel" id="panel-announcements-submit">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-bullhorn" style="color:var(--gold);margin-right:8px;"></i>Submit an Announcement</h3></div>
+        <div class="section-card-body">
+          <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;margin-bottom:18px;">Submit announcements, updates, or notices for chapter leadership to review and share with the brotherhood.</p>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:600px;">
+            <div class="pfield">
+              <label>Title <span style="color:var(--red);">*</span></label>
+              <input type="text" id="annTitle" placeholder="e.g. Community Service Opportunity" />
+            </div>
+            <div class="pfield">
+              <label>Category</label>
+              <select id="annCategory" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;">
+                <option value="General">General</option>
+                <option value="Community Service">Community Service</option>
+                <option value="Scholarship">Scholarship</option>
+                <option value="Fraternal">Fraternal</option>
+                <option value="Event">Event</option>
+                <option value="Prayer Request">Prayer Request</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="pfield">
+              <label>Message <span style="color:var(--red);">*</span></label>
+              <textarea id="annBody" rows="5" placeholder="Write your announcement here..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div id="annErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
+            <div id="annSuccess" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#4ade80;padding:12px 16px;border-radius:6px;font-size:0.85rem;">
+              <i class="fas fa-check-circle"></i> Your announcement has been submitted for review. Chapter leadership will be notified.
+            </div>
+            <button onclick="submitAnnouncement()" id="annSubmitBtn" class="btn-gold" style="align-self:flex-start;"><i class="fas fa-paper-plane"></i> Submit Announcement</button>
+          </div>
+          <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:22px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Submissions</div>
+            <div id="myAnnouncementsList"><div class="empty-state" style="padding:16px 0;"><i class="fas fa-bullhorn"></i><p>No submissions yet.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-profile">
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-user-circle"></i> My Profile</h3></div>
@@ -557,6 +600,35 @@
                 <div class="pfield"><label>IMDP Certification Date</label><input type="text" id="pfImdp" readonly /></div>
                 <div class="pfield"><label>Risk Management Certification Date</label><input type="text" id="pfRiskMgmt" readonly /></div>
                 <div class="pfield"><label>Chapter Renewal Date</label><input type="text" id="pfRenewalDate" placeholder="e.g. 06/30/2025" /></div>
+              </div>
+            </div>
+            <!-- Military Service -->
+            <div style="margin-bottom:16px;">
+              <p style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-400);margin-bottom:12px;">Military Service</p>
+              <label class="toggle-row" style="margin-bottom:12px;">
+                <div class="toggle-row-text">
+                  <div class="toggle-row-title">I served / currently serve in the U.S. Military</div>
+                  <div class="toggle-row-sub">A flag icon will appear next to your name in the directory</div>
+                </div>
+                <div class="toggle-wrap">
+                  <input type="checkbox" id="pfMilitaryService" onchange="toggleMilitaryBranch()" />
+                  <span class="toggle-slider"></span>
+                </div>
+              </label>
+              <div id="militaryBranchWrap" style="display:none;">
+                <div class="pfield" style="max-width:280px;">
+                  <label>Branch of Service</label>
+                  <select id="pfMilitaryBranch" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;">
+                    <option value="">— Select Branch —</option>
+                    <option value="Army">Army</option>
+                    <option value="Navy">Navy</option>
+                    <option value="Air Force">Air Force</option>
+                    <option value="Marine Corps">Marine Corps</option>
+                    <option value="Coast Guard">Coast Guard</option>
+                    <option value="Space Force">Space Force</option>
+                    <option value="National Guard">National Guard</option>
+                  </select>
+                </div>
               </div>
             </div>
             <!-- Bio and Links -->
@@ -968,7 +1040,7 @@ async function startDuesStripeCheckout() {
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': 'Bearer ' + currentSession.access_token
       },
-      body: JSON.stringify({ mode: 'dues', fullName: fullName, phone: phone, email: email })
+      body: JSON.stringify({ mode: 'dues', fullName: fullName, phone: phone, email: email, lateFee: getDuesStatus().isLate })
     });
     var payload = null;
     try { payload = await r.json(); } catch (e1) { payload = { error: await r.text() }; }
@@ -988,6 +1060,7 @@ async function startDuesStripeCheckout() {
 function renderDuesPanel() {
   const c = document.getElementById('duesList');
   prefillDuesPayFields();
+  renderDuesLateFeeNotice();
   if (!currentMember) { c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Sign in to view your dues.</p></div>'; return; }
   sbGet('dues', 'member_id=eq.' + currentMember.id + '&order=year.desc', currentSession.access_token)
     .then(function(dues) {
@@ -1484,12 +1557,13 @@ function renderDirectoryList(members) {
     const actions = [];
     if (email && m.share_email !== false) actions.push('<a href="mailto:' + escHtml(email) + '" class="mc-btn mc-btn-email"><i class="fas fa-envelope"></i> Email</a>');
     if (phone && m.share_phone !== false) actions.push('<a href="tel:' + escHtml(phone.replace(/\s+/g,'')) + '" class="mc-btn mc-btn-phone"><i class="fas fa-phone"></i> Call</a>');
+    var militaryFlag = m.military_service ? ' <span title="' + escHtml(m.military_branch || 'U.S. Military Veteran') + '" style="font-size:0.85em;">🇺🇸</span>' : '';
     if (m.linkedin) actions.push('<a href="' + escHtml(m.linkedin) + '" target="_blank" rel="noopener" class="mc-btn mc-btn-linkedin"><i class="fab fa-linkedin"></i> LinkedIn</a>');
 
     return '<div class="member-card">' +
       '<div class="member-card-avatar">' + avatarHtml + '</div>' +
       '<div class="member-card-info">' +
-        '<div class="mc-name">Bro. ' + escHtml(name) +
+        '<div class="mc-name">Bro. ' + escHtml(name) + militaryFlag +
           (isLife     ? '<span class="mc-badge mc-badge-life">Life</span>' : '') +
           (isVisiting ? '<span class="mc-badge mc-badge-visiting">Visiting</span>' : '') +
         '</div>' +
@@ -1530,6 +1604,9 @@ function loadProfileForm(member) {
   document.getElementById('pfLinkedin').value         = member.linkedin          || '';
   document.getElementById('pfShareEmail').checked     = member.share_email !== false;
   document.getElementById('pfSharePhone').checked     = member.share_phone !== false;
+  document.getElementById('pfMilitaryService').checked = !!member.military_service;
+  document.getElementById('pfMilitaryBranch').value   = member.military_branch || '';
+  document.getElementById('militaryBranchWrap').style.display = member.military_service ? '' : 'none';
   var ph = member.photo || '';
   document.getElementById('pfPhoto').value = ph;
   var urlEl = document.getElementById('pfPhotoUrl');
@@ -1594,6 +1671,8 @@ document.getElementById('profileForm').addEventListener('submit', async function
       photo:               document.getElementById('pfPhoto').value.trim(),
       share_email:         document.getElementById('pfShareEmail').checked,
       share_phone:         document.getElementById('pfSharePhone').checked,
+      military_service:    document.getElementById('pfMilitaryService').checked,
+      military_branch:     document.getElementById('pfMilitaryService').checked ? (document.getElementById('pfMilitaryBranch').value || null) : null,
       updated_at:          new Date().toISOString()
     };
     if (updates.photo && updates.photo.indexOf('data:image') === 0 && updates.photo.length > 450000) {
@@ -1665,6 +1744,12 @@ async function init() {
       const meta = (currentSession.user && currentSession.user.user_metadata) ? currentSession.user.user_metadata : {};
       const created = await sbPost('members', { email:userEmail, first_name:meta.first_name||'', last_name:meta.last_name||'', phone:meta.phone||'', portal_access:'pending' }, currentSession.access_token);
       currentMember = Array.isArray(created) ? created[0] : created;
+      // Notify admins of new member request (fire-and-forget)
+      fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+        body: JSON.stringify({ type: 'member_request', name: [meta.first_name||'', meta.last_name||''].filter(Boolean).join(' ') || userEmail, email: userEmail })
+      }).catch(function(){});
     } catch(e) {}
   }
   const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (userEmail.split('@')[0] || 'Member');
@@ -1722,6 +1807,112 @@ async function init() {
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity 0.4s';
   setTimeout(function() { overlay.style.display = 'none'; }, 400);
+}
+
+function toggleMilitaryBranch() {
+  var checked = document.getElementById('pfMilitaryService').checked;
+  document.getElementById('militaryBranchWrap').style.display = checked ? '' : 'none';
+}
+
+/* ═══════════════════════════════════════════
+   DUES LATE FEE
+═══════════════════════════════════════════ */
+function getDuesStatus() {
+  var now = new Date();
+  var month = now.getMonth() + 1; // 1-12
+  var day   = now.getDate();
+  // Collection window: Sept 1 (9/1) through Dec 31 (12/31)
+  var inWindow = (month >= 9 && month <= 12);
+  // Late: Jan 1 onwards (previous year's dues)
+  var isLate   = (month >= 1 && month <= 8);
+  return { inWindow: inWindow, isLate: isLate, lateFee: 10 };
+}
+
+function renderDuesLateFeeNotice() {
+  var status = getDuesStatus();
+  var noticeEl = document.getElementById('duesLateFeeNotice');
+  if (!noticeEl) return;
+  if (status.isLate) {
+    noticeEl.style.display = '';
+    noticeEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:8px;"></i>' +
+      '<span>A <strong style="color:#f59e0b;">$' + status.lateFee + ' late fee</strong> has been added. Dues collection ran Sept 1 – Dec 31.</span>';
+  } else if (status.inWindow) {
+    noticeEl.style.display = '';
+    noticeEl.innerHTML = '<i class="fas fa-calendar-check" style="color:var(--gold);margin-right:8px;"></i>' +
+      '<span>Dues collection is open through <strong>December 31</strong>. Pay by Dec 31 to avoid a $' + status.lateFee + ' late fee.</span>';
+  } else {
+    noticeEl.style.display = 'none';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   ANNOUNCEMENTS
+═══════════════════════════════════════════ */
+async function submitAnnouncement() {
+  var errEl     = document.getElementById('annErr');
+  var successEl = document.getElementById('annSuccess');
+  var btn       = document.getElementById('annSubmitBtn');
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+  if (!currentMember || !currentSession) { errEl.textContent = 'Sign in to submit.'; errEl.style.display = ''; return; }
+  var title = (document.getElementById('annTitle').value || '').trim();
+  var body  = (document.getElementById('annBody').value  || '').trim();
+  var cat   = document.getElementById('annCategory').value || 'General';
+  if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = ''; return; }
+  if (!body)  { errEl.textContent = 'Please enter a message.'; errEl.style.display = ''; return; }
+  btn.disabled = true;
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/member_announcements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        member_id:    currentMember.id,
+        member_name:  [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '),
+        member_email: currentMember.email,
+        title:        title,
+        category:     cat,
+        body:         body,
+        status:       'pending',
+        created_at:   new Date().toISOString()
+      })
+    });
+    // Notify admins (fire-and-forget)
+    fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+      body: JSON.stringify({ type: 'announcement', name: [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '), title: title, category: cat })
+    }).catch(function(){});
+    document.getElementById('annTitle').value = '';
+    document.getElementById('annBody').value  = '';
+    successEl.style.display = '';
+    loadMyAnnouncements();
+  } catch(e) {
+    errEl.textContent = 'Could not submit: ' + (e.message || 'error');
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadMyAnnouncements() {
+  if (!currentMember || !currentSession) return;
+  var el = document.getElementById('myAnnouncementsList');
+  if (!el) return;
+  try {
+    var rows = await sbGet('member_announcements', 'member_id=eq.' + currentMember.id + '&order=created_at.desc', currentSession.access_token);
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-bullhorn"></i><p>No submissions yet.</p></div>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      var statusColor = r.status==='approved'?'#4ade80':r.status==='rejected'?'#f87171':'#fbbf24';
+      var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + escHtml(r.title) + '</div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.category||'General') + ' · ' + date + '</div></div>' +
+          '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><p>Could not load submissions.</p></div>'; }
 }
 
 document.addEventListener('DOMContentLoaded', init);
