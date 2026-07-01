@@ -235,6 +235,7 @@
     <button class="nav-item" onclick="showPanel('events')" id="nav-events"><i class="fas fa-calendar-alt"></i> Events</button>
     <button class="nav-item" onclick="showPanel('meetings');loadMeetingsPortal()" id="nav-meetings"><i class="fas fa-people-group"></i> Meetings</button>
     <button class="nav-item" onclick="showPanel('dues')" id="nav-dues"><i class="fas fa-dollar-sign"></i> Dues</button>
+    <button class="nav-item" onclick="showPanel('store');loadMemberStore()" id="nav-store"><i class="fas fa-store"></i> Chapter Store <span id="cartBadge" style="display:none;background:var(--gold);color:#000;font-size:0.6rem;font-weight:800;padding:1px 5px;border-radius:10px;margin-left:4px;"></span></button>
     <button class="nav-item" onclick="showPanel('documents')" id="nav-documents"><i class="fas fa-file-alt"></i> Documents</button>
     <button class="nav-item" onclick="showPanel('news-feed');loadNewsFeed()" id="nav-news-feed"><i class="fas fa-bullhorn"></i> Chapter News</button>
     <div class="nav-section-label">Community</div>
@@ -350,6 +351,98 @@
         <div class="section-card-body" id="documentsList"><div class="empty-state"><i class="fas fa-file-alt"></i><p>No documents uploaded yet. Check back soon.</p></div></div>
       </div>
     </div>
+    <!-- CHAPTER STORE -->
+    <div class="panel" id="panel-store">
+
+      <!-- Store header + cart toggle -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Xi Tau Lambda</div>
+          <h3 style="margin:0;font-size:1.1rem;color:var(--white);">Chapter Store</h3>
+        </div>
+        <button onclick="openCart()" style="position:relative;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);color:var(--gold);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:8px;">
+          <i class="fas fa-shopping-cart"></i> Cart <span id="cartCountBtn" style="background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:1px 6px;border-radius:10px;display:none;"></span>
+        </button>
+      </div>
+
+      <!-- Category filter -->
+      <div id="storeCatFilter" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;"></div>
+
+      <!-- Product grid -->
+      <div id="storeProductGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;">
+        <div class="empty-state"><i class="fas fa-store"></i><p>Loading store...</p></div>
+      </div>
+
+      <!-- My Orders -->
+      <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:24px;">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Orders</div>
+        <div id="myOrdersList"><div class="empty-state" style="padding:20px 0;"><i class="fas fa-receipt"></i><p>No orders yet.</p></div></div>
+      </div>
+
+      <!-- Product detail / purchase modal -->
+      <div id="storeItemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#1a1a1a;border:1px solid rgba(201,168,76,0.15);border-radius:12px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;position:relative;">
+          <button onclick="closeItemModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:rgba(255,255,255,0.4);z-index:1;">×</button>
+          <div id="storeItemModalImg" style="border-radius:12px 12px 0 0;overflow:hidden;"></div>
+          <div style="padding:22px 22px 24px;">
+            <div id="siModalCat" style="font-size:0.68rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;"></div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px;">
+              <h3 id="siModalName" style="margin:0;font-size:1.1rem;color:var(--white);"></h3>
+              <div id="siModalPrice" style="font-size:1.2rem;font-weight:800;color:var(--gold);white-space:nowrap;"></div>
+            </div>
+            <p id="siModalDesc" style="font-size:0.85rem;color:rgba(255,255,255,0.5);line-height:1.6;margin:0 0 18px;"></p>
+
+            <!-- Option selectors -->
+            <div id="siModalOptions" style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;"></div>
+
+            <!-- Quantity -->
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+              <span style="font-size:0.82rem;font-weight:600;color:rgba(255,255,255,0.6);">Quantity</span>
+              <div style="display:flex;align-items:center;gap:0;border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;">
+                <button onclick="changeQty(-1)" style="width:36px;height:36px;background:rgba(255,255,255,0.05);border:none;color:var(--white);font-size:1.1rem;cursor:pointer;">−</button>
+                <div id="siQty" style="width:36px;text-align:center;font-size:0.95rem;font-weight:700;color:var(--white);">1</div>
+                <button onclick="changeQty(1)"  style="width:36px;height:36px;background:rgba(255,255,255,0.05);border:none;color:var(--white);font-size:1.1rem;cursor:pointer;">+</button>
+              </div>
+              <div id="siModalTotal" style="font-size:0.9rem;font-weight:700;color:var(--gold);margin-left:auto;"></div>
+            </div>
+
+            <div id="siModalErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.82rem;margin-bottom:14px;"></div>
+            <button onclick="addToCart()" id="siAddToCartBtn" style="width:100%;padding:13px;background:var(--gold);color:#000;border:none;border-radius:8px;font-size:0.95rem;font-weight:800;cursor:pointer;letter-spacing:0.03em;">
+              <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart modal -->
+      <div id="storeCartModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;padding:16px;">
+        <div style="background:#1a1a1a;border:1px solid rgba(201,168,76,0.15);border-radius:12px;max-width:460px;width:100%;max-height:90vh;overflow-y:auto;position:relative;display:flex;flex-direction:column;">
+          <div style="padding:20px 22px 0;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="margin:0;font-size:1rem;color:var(--white);"><i class="fas fa-shopping-cart" style="color:var(--gold);margin-right:8px;"></i>Your Cart</h3>
+            <button onclick="closeCart()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:rgba(255,255,255,0.4);">×</button>
+          </div>
+          <div id="cartItemsList" style="padding:16px 22px;flex:1;overflow-y:auto;"></div>
+          <div style="padding:0 22px 22px;border-top:1px solid rgba(255,255,255,0.07);padding-top:16px;">
+            <div id="cartEmpty" style="text-align:center;color:rgba(255,255,255,0.3);padding:20px 0;display:none;"><i class="fas fa-shopping-cart" style="font-size:1.8rem;margin-bottom:8px;display:block;"></i>Your cart is empty</div>
+            <div id="cartSummary">
+              <div style="display:flex;justify-content:space-between;font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:14px;">
+                <span>Total</span><span id="cartTotal" style="color:var(--gold);"></span>
+              </div>
+              <div style="margin-bottom:12px;">
+                <label style="font-size:0.78rem;color:rgba(255,255,255,0.5);display:block;margin-bottom:5px;">Notes / Special Instructions (optional)</label>
+                <textarea id="cartNotes" rows="2" placeholder="e.g. Rush order, gift wrapping..." style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;font-size:0.85rem;color:var(--white);resize:none;font-family:inherit;box-sizing:border-box;"></textarea>
+              </div>
+              <div id="cartOrderErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.82rem;margin-bottom:12px;"></div>
+              <button onclick="placeOrder()" id="placeOrderBtn" style="width:100%;padding:13px;background:var(--gold);color:#000;border:none;border-radius:8px;font-size:0.95rem;font-weight:800;cursor:pointer;">
+                <i class="fas fa-check"></i> Place Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- MEMBERSHIP CARD -->
     <div class="panel" id="panel-card">
       <div class="section-card">
@@ -1629,6 +1722,299 @@ async function init() {
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity 0.4s';
   setTimeout(function() { overlay.style.display = 'none'; }, 400);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+/* ═══════════════════════════════════════════
+   CHAPTER STORE — MEMBER PORTAL
+═══════════════════════════════════════════ */
+var _storeProducts    = [];
+var _storeCart        = [];
+var _storeCatFilter   = 'all';
+var _viewingProduct   = null;
+var _siQty            = 1;
+
+function updateCartBadge() {
+  var total = _storeCart.reduce(function(s,i){ return s + i.quantity; }, 0);
+  ['cartBadge','cartCountBtn'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = total;
+    el.style.display = total ? 'inline' : 'none';
+  });
+}
+
+async function loadMemberStore() {
+  try {
+    var items = await sbGet('store_items', 'active=eq.true&order=sort_order.asc,created_at.desc', currentSession ? currentSession.access_token : SUPABASE_ANON_KEY);
+    _storeProducts = (items || []).map(function(p){
+      var opts = p.options;
+      if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch(e){ opts=[]; } }
+      p.options = Array.isArray(opts) ? opts : [];
+      return p;
+    });
+    renderStoreCatFilter();
+    renderStoreGrid();
+    loadMyOrders();
+  } catch(e) {
+    document.getElementById('storeProductGrid').innerHTML = '<div class="empty-state"><i class="fas fa-store"></i><p>Could not load store.</p></div>';
+  }
+}
+
+function renderStoreCatFilter() {
+  var cats = ['all'].concat(
+    _storeProducts.map(function(p){ return p.category||'General'; })
+      .filter(function(c,i,a){ return a.indexOf(c)===i; })
+  );
+  document.getElementById('storeCatFilter').innerHTML = cats.map(function(c){
+    var active = _storeCatFilter === c;
+    return '<button onclick="setStoreCat(\'' + c + '\',this)" style="padding:5px 14px;border-radius:20px;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;cursor:pointer;border:1px solid ' +
+      (active ? 'rgba(201,168,76,0.5);background:rgba(201,168,76,0.12);color:var(--gold);' : 'rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.4);') + '">' +
+      (c === 'all' ? 'All Items' : c) + '</button>';
+  }).join('');
+}
+
+function setStoreCat(cat, btn) {
+  _storeCatFilter = cat;
+  renderStoreCatFilter();
+  renderStoreGrid();
+}
+
+function renderStoreGrid() {
+  var grid = document.getElementById('storeProductGrid');
+  var list = _storeProducts.filter(function(p){
+    return _storeCatFilter === 'all' || (p.category||'General') === _storeCatFilter;
+  });
+  if (!list.length) {
+    grid.innerHTML = '<div class="empty-state"><i class="fas fa-store"></i><p>No items in this category.</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(function(p) {
+    var hasOpts = p.options && p.options.length > 0;
+    return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;transition:border-color 0.2s;" onmouseover="this.style.borderColor=\'rgba(201,168,76,0.3)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,0.07)\'">' +
+      (p.image_url
+        ? '<img src="' + escHtml(p.image_url) + '" style="width:100%;height:180px;object-fit:cover;" onerror="this.style.display=\'none\'" />'
+        : '<div style="height:120px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;"><i class="fas fa-tshirt" style="font-size:2.5rem;color:rgba(255,255,255,0.1);"></i></div>') +
+      '<div style="padding:14px;flex:1;display:flex;flex-direction:column;gap:6px;">' +
+        '<div style="font-size:0.65rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);">' + escHtml(p.category||'General') + '</div>' +
+        '<div style="font-weight:700;font-size:0.95rem;color:var(--white);">' + escHtml(p.name) + '</div>' +
+        (p.description ? '<div style="font-size:0.78rem;color:rgba(255,255,255,0.4);line-height:1.5;">' + escHtml(p.description) + '</div>' : '') +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;">' +
+          '<div style="font-size:1.05rem;font-weight:800;color:var(--gold);">$' + parseFloat(p.price||0).toFixed(2) + '</div>' +
+          (hasOpts ? '<span style="font-size:0.68rem;color:rgba(255,255,255,0.3);">Options available</span>' : '') +
+        '</div>' +
+        '<button onclick="openItemModal(\'' + escHtml(String(p.id)) + '\')" style="width:100%;margin-top:8px;padding:10px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.25);color:var(--gold);border-radius:7px;font-size:0.85rem;font-weight:700;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background=\'rgba(201,168,76,0.22)\'" onmouseout="this.style.background=\'rgba(201,168,76,0.12)\'">' +
+          '<i class="fas fa-plus"></i> Add to Cart' +
+        '</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function openItemModal(id) {
+  var p = _storeProducts.find(function(x){ return String(x.id)===String(id); });
+  if (!p) return;
+  _viewingProduct = p;
+  _siQty = 1;
+  document.getElementById('siModalCat').textContent   = p.category || 'General';
+  document.getElementById('siModalName').textContent  = p.name;
+  document.getElementById('siModalPrice').textContent = '$' + parseFloat(p.price||0).toFixed(2);
+  document.getElementById('siModalDesc').textContent  = p.description || '';
+  document.getElementById('siQty').textContent        = '1';
+  document.getElementById('siModalErr').style.display = 'none';
+  var imgEl = document.getElementById('storeItemModalImg');
+  imgEl.innerHTML = p.image_url
+    ? '<img src="' + escHtml(p.image_url) + '" style="width:100%;max-height:240px;object-fit:cover;" onerror="this.style.display=\'none\'" />'
+    : '';
+  var optsEl = document.getElementById('siModalOptions');
+  optsEl.innerHTML = (p.options||[]).map(function(g){
+    return '<div>' +
+      '<label style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.6);display:block;margin-bottom:5px;">' + escHtml(g.name) + '</label>' +
+      '<select data-opt="' + escHtml(g.name) + '" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" onchange="updateItemTotal()">' +
+        '<option value="">— Select ' + escHtml(g.name) + ' —</option>' +
+        (g.values||[]).map(function(v){ return '<option value="' + escHtml(v) + '">' + escHtml(v) + '</option>'; }).join('') +
+      '</select>' +
+    '</div>';
+  }).join('');
+  updateItemTotal();
+  document.getElementById('storeItemModal').style.display = 'flex';
+}
+
+function updateItemTotal() {
+  if (!_viewingProduct) return;
+  var total = parseFloat(_viewingProduct.price||0) * _siQty;
+  document.getElementById('siModalTotal').textContent = 'Total: $' + total.toFixed(2);
+}
+
+function closeItemModal() {
+  document.getElementById('storeItemModal').style.display = 'none';
+  _viewingProduct = null;
+}
+
+function changeQty(delta) {
+  _siQty = Math.max(1, Math.min(10, _siQty + delta));
+  document.getElementById('siQty').textContent = _siQty;
+  updateItemTotal();
+}
+
+function addToCart() {
+  var errEl = document.getElementById('siModalErr');
+  errEl.style.display = 'none';
+  if (!_viewingProduct) return;
+  var selections = {};
+  var valid = true;
+  document.querySelectorAll('#siModalOptions select').forEach(function(sel){
+    var optName = sel.getAttribute('data-opt');
+    if (!sel.value) { errEl.textContent = 'Please select a ' + optName + '.'; errEl.style.display = ''; valid = false; }
+    else selections[optName] = sel.value;
+  });
+  if (!valid) return;
+  var key = _viewingProduct.id + '|' + JSON.stringify(selections);
+  var existing = _storeCart.find(function(c){ return c._key === key; });
+  if (existing) {
+    existing.quantity = Math.min(10, existing.quantity + _siQty);
+  } else {
+    _storeCart.push({
+      _key: key,
+      item_id: _viewingProduct.id,
+      name: _viewingProduct.name,
+      price: parseFloat(_viewingProduct.price||0),
+      quantity: _siQty,
+      selections: selections,
+      image_url: _viewingProduct.image_url || ''
+    });
+  }
+  updateCartBadge();
+  closeItemModal();
+  showToast(_viewingProduct.name + ' added to cart.');
+}
+
+function openCart() {
+  renderCartModal();
+  document.getElementById('storeCartModal').style.display = 'flex';
+}
+
+function closeCart() {
+  document.getElementById('storeCartModal').style.display = 'none';
+}
+
+function renderCartModal() {
+  var listEl   = document.getElementById('cartItemsList');
+  var emptyEl  = document.getElementById('cartEmpty');
+  var summaryEl= document.getElementById('cartSummary');
+  var totalEl  = document.getElementById('cartTotal');
+  if (!_storeCart.length) {
+    listEl.innerHTML = '';
+    emptyEl.style.display = '';
+    summaryEl.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  summaryEl.style.display = '';
+  var cartTotal = 0;
+  listEl.innerHTML = _storeCart.map(function(item, i){
+    var sels = Object.entries(item.selections||{}).map(function(kv){ return kv[0]+': '+kv[1]; }).join(' · ');
+    var lineTotal = item.price * item.quantity;
+    cartTotal += lineTotal;
+    return '<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.06);align-items:flex-start;">' +
+      (item.image_url ? '<img src="'+escHtml(item.image_url)+'" style="width:52px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;" onerror="this.style.display=\'none\'" />' : '<div style="width:52px;height:52px;background:rgba(255,255,255,0.05);border-radius:6px;flex-shrink:0;"></div>') +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-weight:600;font-size:0.88rem;color:var(--white);">' + escHtml(item.name) + '</div>' +
+        (sels ? '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(sels) + '</div>' : '') +
+        '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">' +
+          '<div style="display:flex;align-items:center;gap:0;border:1px solid rgba(255,255,255,0.1);border-radius:6px;overflow:hidden;">' +
+            '<button onclick="cartChangeQty('+i+',-1)" style="width:28px;height:28px;background:rgba(255,255,255,0.04);border:none;color:var(--white);cursor:pointer;">−</button>' +
+            '<div style="width:28px;text-align:center;font-size:0.85rem;color:var(--white);">' + item.quantity + '</div>' +
+            '<button onclick="cartChangeQty('+i+',1)"  style="width:28px;height:28px;background:rgba(255,255,255,0.04);border:none;color:var(--white);cursor:pointer;">+</button>' +
+          '</div>' +
+          '<button onclick="removeFromCart('+i+')" style="background:none;border:none;color:rgba(220,38,38,0.7);font-size:0.75rem;cursor:pointer;"><i class="fas fa-trash"></i></button>' +
+          '<div style="margin-left:auto;font-weight:700;color:var(--gold);">$' + lineTotal.toFixed(2) + '</div>' +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+  totalEl.textContent = '$' + cartTotal.toFixed(2);
+}
+
+function cartChangeQty(i, delta) {
+  _storeCart[i].quantity = Math.max(1, Math.min(10, _storeCart[i].quantity + delta));
+  updateCartBadge();
+  renderCartModal();
+}
+
+function removeFromCart(i) {
+  _storeCart.splice(i, 1);
+  updateCartBadge();
+  renderCartModal();
+}
+
+async function placeOrder() {
+  var errEl = document.getElementById('cartOrderErr');
+  errEl.style.display = 'none';
+  if (!currentMember || !currentSession) { errEl.textContent = 'Sign in to place an order.'; errEl.style.display = ''; return; }
+  if (!_storeCart.length) { errEl.textContent = 'Your cart is empty.'; errEl.style.display = ''; return; }
+  var btn = document.getElementById('placeOrderBtn');
+  btn.disabled = true; btn.textContent = 'Placing order...';
+  var notes = (document.getElementById('cartNotes').value||'').trim();
+  var total = _storeCart.reduce(function(s,i){ return s + i.price * i.quantity; }, 0);
+  var payload = {
+    member_id: currentMember.id,
+    member_name: [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '),
+    member_email: currentMember.email,
+    items: JSON.stringify(_storeCart.map(function(c){
+      return { item_id:c.item_id, name:c.name, price:c.price, quantity:c.quantity, selections:c.selections };
+    })),
+    total: total,
+    status: 'pending',
+    notes: notes || null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/store_orders', {
+      method: 'POST',
+      headers: Object.assign({}, { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token, 'Prefer':'return=minimal' }),
+      body: JSON.stringify(payload)
+    });
+    _storeCart = [];
+    updateCartBadge();
+    closeCart();
+    showToast('Order placed! Chapter leadership will follow up with payment details.', 'success');
+    loadMyOrders();
+  } catch(e) {
+    errEl.textContent = 'Could not place order: ' + (e.message||'error');
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+  }
+}
+
+async function loadMyOrders() {
+  if (!currentMember || !currentSession) return;
+  var el = document.getElementById('myOrdersList');
+  if (!el) return;
+  try {
+    var orders = await sbGet('store_orders', 'member_id=eq.' + currentMember.id + '&order=created_at.desc', currentSession.access_token);
+    if (!orders || !orders.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px 0;"><i class="fas fa-receipt"></i><p>No orders yet.</p></div>';
+      return;
+    }
+    el.innerHTML = orders.map(function(o){
+      var items = [];
+      try { items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items; } catch(e){}
+      var statusColor = o.status==='paid'?'#4ade80':o.status==='fulfilled'?'#60a5fa':o.status==='cancelled'?'#f87171':'#fbbf24';
+      var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      var summary = items.map(function(li){ return li.name + (li.quantity>1?' ×'+li.quantity:''); }).join(', ');
+      return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div>' +
+            '<div style="font-size:0.85rem;font-weight:600;color:var(--white);">' + escHtml(summary||'Order') + '</div>' +
+            '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + date + ' · $' + parseFloat(o.total||0).toFixed(2) + '</div>' +
+          '</div>' +
+          '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';text-transform:capitalize;">' + escHtml(o.status||'pending') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><p>Could not load orders.</p></div>'; }
 }
 
 document.addEventListener('DOMContentLoaded', init);

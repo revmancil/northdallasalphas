@@ -1192,6 +1192,9 @@
     <button class="sidebar-link" onclick="showPanel('chapter-news');loadChapterNewsPanel()">
       <i class="fas fa-bullhorn"></i> Chapter News Feed
     </button>
+    <button class="sidebar-link" onclick="showPanel('store');loadStorePanel()">
+      <i class="fas fa-store"></i> Chapter Store
+    </button>
     <button class="sidebar-link" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2400,6 +2403,118 @@
     <!-- ══════════════════════════════════
          SETTINGS PANEL
     ══════════════════════════════════ -->
+    <!-- ══════════════════════════════════
+         CHAPTER STORE PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-store">
+
+      <!-- Store tab bar -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--gray-200);padding-bottom:0;">
+        <button id="storeTabItems" onclick="switchStoreTab('items')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid var(--gold);color:var(--gold);">
+          <i class="fas fa-box-open"></i> Items
+        </button>
+        <button id="storeTabOrders" onclick="switchStoreTab('orders')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
+          <i class="fas fa-receipt"></i> Orders <span id="storePendingBadge" style="display:none;background:var(--gold);color:#000;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;"></span>
+        </button>
+      </div>
+
+      <!-- Items tab -->
+      <div id="storeTabPaneItems">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+          <div style="font-size:0.88rem;color:var(--gray-500);" id="storeItemCount"></div>
+          <button class="btn-save" onclick="openStoreItemModal(null)"><i class="fas fa-plus"></i> Add Item</button>
+        </div>
+        <div id="storeItemsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+          <div class="empty-state"><i class="fas fa-store"></i><p>Loading store items...</p></div>
+        </div>
+      </div>
+
+      <!-- Orders tab -->
+      <div id="storeTabPaneOrders" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="btn-sm active" id="ordFilterAll"     onclick="setOrderFilter('all',this)">All</button>
+          <button class="btn-sm"        id="ordFilterPending" onclick="setOrderFilter('pending',this)">Pending</button>
+          <button class="btn-sm"        id="ordFilterPaid"    onclick="setOrderFilter('paid',this)">Paid</button>
+          <button class="btn-sm"        id="ordFilterFulfilled" onclick="setOrderFilter('fulfilled',this)">Fulfilled</button>
+        </div>
+        <div id="storeOrdersList">
+          <div class="empty-state"><i class="fas fa-receipt"></i><p>No orders yet.</p></div>
+        </div>
+      </div>
+
+      <!-- Add / Edit Item Modal -->
+      <div id="storeItemModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+        <div style="background:#fff;border-radius:12px;padding:28px;max-width:600px;width:100%;position:relative;margin:auto;">
+          <button onclick="closeStoreItemModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);">×</button>
+          <h3 id="storeItemModalTitle" style="margin:0 0 20px;font-size:1rem;color:var(--gray-800);"></h3>
+          <input type="hidden" id="siId" />
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+            <div class="field-group" style="grid-column:span 2;margin:0;">
+              <label>Item Name <span style="color:var(--red);">*</span></label>
+              <input type="text" id="siName" placeholder="e.g. Chapter Polo Shirt" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Category</label>
+              <select id="siCategory" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+                <option value="Apparel">Apparel</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Drinkware">Drinkware</option>
+                <option value="Stationery">Stationery</option>
+                <option value="General">General</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Price ($) <span style="color:var(--red);">*</span></label>
+              <input type="number" id="siPrice" min="0" step="0.01" placeholder="0.00" />
+            </div>
+            <div class="field-group" style="grid-column:span 2;margin:0;">
+              <label>Description</label>
+              <textarea id="siDescription" rows="3" placeholder="Brief description of the item..." style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div class="field-group" style="grid-column:span 2;margin:0;">
+              <label>Image URL <span style="font-size:0.78rem;font-weight:400;color:var(--gray-400);">(paste a direct image link)</span></label>
+              <input type="url" id="siImageUrl" placeholder="https://..." />
+            </div>
+            <div class="field-group" style="margin:0;display:flex;align-items:center;gap:10px;">
+              <input type="checkbox" id="siActive" checked style="width:16px;height:16px;accent-color:var(--gold);" />
+              <label for="siActive" style="margin:0;cursor:pointer;">Active (visible in store)</label>
+            </div>
+          </div>
+
+          <!-- Options builder -->
+          <div style="border-top:1px solid var(--gray-200);padding-top:16px;margin-bottom:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+              <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);">Purchase Options</div>
+              <button type="button" onclick="addStoreOptionGroup()" class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border-color:rgba(201,168,76,0.3);font-size:0.75rem;">
+                <i class="fas fa-plus"></i> Add Option Group
+              </button>
+            </div>
+            <div id="siOptionsBuilder" style="display:flex;flex-direction:column;gap:12px;">
+              <!-- Option groups rendered here -->
+            </div>
+            <div id="siOptionsEmpty" style="font-size:0.82rem;color:var(--gray-400);padding:10px 0;">No options yet. Add a group for Size, Color, or any custom choice.</div>
+          </div>
+
+          <div id="siErr" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:6px;font-size:0.85rem;margin-bottom:14px;"></div>
+          <div style="display:flex;gap:10px;">
+            <button onclick="saveStoreItem()" class="btn-save" style="flex:1;"><i class="fas fa-save"></i> Save Item</button>
+            <button onclick="closeStoreItemModal()" style="padding:10px 18px;border:1px solid var(--gray-200);border-radius:6px;background:#fff;color:var(--gray-600);cursor:pointer;font-size:0.85rem;">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Order Detail Modal -->
+      <div id="storeOrderModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:28px;max-width:500px;width:92%;max-height:85vh;overflow-y:auto;position:relative;">
+          <button onclick="closeStoreOrderModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-400);">×</button>
+          <h3 id="storeOrderModalTitle" style="margin:0 0 18px;font-size:1rem;color:var(--gray-800);"></h3>
+          <div id="storeOrderModalBody"></div>
+          <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;" id="storeOrderModalActions"></div>
+        </div>
+      </div>
+
+    </div>
+
     <div class="panel" id="panel-settings">
       <div class="section-card">
         <div class="section-card-header">
@@ -7956,6 +8071,287 @@ async function deleteDocument(id, title) {
   }
 }
 
+/* ═══════════════════════════════════════════
+   CHAPTER STORE — ADMIN
+═══════════════════════════════════════════ */
+var _storeItems = [];
+var _storeOrders = [];
+var _storeOrderFilter = 'all';
+var _editingStoreItemId = null;
+var _storeOptionGroups = [];
+
+async function loadStorePanel() {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    var items = await sbGet('store_items', 'order=sort_order.asc,created_at.desc', token);
+    _storeItems = items || [];
+    renderStoreItems();
+    var orders = await sbGet('store_orders', 'order=created_at.desc', token);
+    _storeOrders = orders || [];
+    renderStoreOrders();
+    var pending = _storeOrders.filter(function(o){ return o.status === 'pending'; }).length;
+    var badge = document.getElementById('storePendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+  } catch(e) { showToast('Could not load store: ' + (e.message||'error'), 'error'); }
+}
+
+function switchStoreTab(tab) {
+  document.getElementById('storeTabPaneItems').style.display  = tab === 'items'  ? '' : 'none';
+  document.getElementById('storeTabPaneOrders').style.display = tab === 'orders' ? '' : 'none';
+  document.getElementById('storeTabItems').style.borderBottomColor  = tab === 'items'  ? 'var(--gold)' : 'transparent';
+  document.getElementById('storeTabOrders').style.borderBottomColor = tab === 'orders' ? 'var(--gold)' : 'transparent';
+  document.getElementById('storeTabItems').style.color  = tab === 'items'  ? 'var(--gold)' : 'var(--gray-400)';
+  document.getElementById('storeTabOrders').style.color = tab === 'orders' ? 'var(--gold)' : 'var(--gray-400)';
+}
+
+function renderStoreItems() {
+  var grid = document.getElementById('storeItemsGrid');
+  var countEl = document.getElementById('storeItemCount');
+  if (countEl) countEl.textContent = _storeItems.length + ' item' + (_storeItems.length !== 1 ? 's' : '');
+  if (!_storeItems.length) {
+    grid.innerHTML = '<div class="empty-state"><i class="fas fa-store"></i><p>No store items yet. Add your first item.</p></div>';
+    return;
+  }
+  grid.innerHTML = _storeItems.map(function(item) {
+    var opts = Array.isArray(item.options) ? item.options : (item.options ? JSON.parse(item.options) : []);
+    var optSummary = opts.map(function(g){ return g.name + ': ' + (g.values||[]).join(', '); }).join(' · ');
+    return '<div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;display:flex;flex-direction:column;">' +
+      (item.image_url
+        ? '<img src="' + escHtml(item.image_url) + '" style="width:100%;height:160px;object-fit:cover;" onerror="this.style.display=\'none\'" />'
+        : '<div style="height:100px;background:var(--gray-100);display:flex;align-items:center;justify-content:center;"><i class="fas fa-image" style="font-size:2rem;color:var(--gray-300);"></i></div>') +
+      '<div style="padding:14px;flex:1;display:flex;flex-direction:column;gap:6px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(item.name) + '</div>' +
+          '<div style="font-weight:700;color:var(--gold);white-space:nowrap;">$' + parseFloat(item.price||0).toFixed(2) + '</div>' +
+        '</div>' +
+        '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-400);">' + escHtml(item.category||'General') + '</div>' +
+        (item.description ? '<div style="font-size:0.8rem;color:var(--gray-500);line-height:1.5;">' + escHtml(item.description) + '</div>' : '') +
+        (optSummary ? '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">' + escHtml(optSummary) + '</div>' : '') +
+        '<div style="margin-top:4px;display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;' + (item.active ? 'background:#dcfce7;color:#16a34a;' : 'background:#f3f4f6;color:#6b7280;') + '">' + (item.active ? '● Active' : '○ Hidden') + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:8px;">' +
+          '<button class="btn-sm edit" style="flex:1;" onclick="openStoreItemModal(\'' + escHtml(String(item.id)) + '\')"><i class="fas fa-edit"></i> Edit</button>' +
+          '<button class="btn-sm danger" onclick="deleteStoreItem(\'' + escHtml(String(item.id)) + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+function openStoreItemModal(id) {
+  _editingStoreItemId = id || null;
+  _storeOptionGroups = [];
+  var item = id ? _storeItems.find(function(x){ return String(x.id) === String(id); }) : null;
+  document.getElementById('storeItemModalTitle').textContent = item ? 'Edit Item' : 'Add Store Item';
+  document.getElementById('siId').value       = item ? item.id : '';
+  document.getElementById('siName').value     = item ? (item.name||'') : '';
+  document.getElementById('siPrice').value    = item ? (item.price||'') : '';
+  document.getElementById('siDescription').value = item ? (item.description||'') : '';
+  document.getElementById('siImageUrl').value = item ? (item.image_url||'') : '';
+  document.getElementById('siActive').checked = item ? !!item.active : true;
+  var cat = document.getElementById('siCategory');
+  if (item && item.category) cat.value = item.category;
+  else cat.value = 'Apparel';
+  var opts = [];
+  if (item && item.options) {
+    try { opts = typeof item.options === 'string' ? JSON.parse(item.options) : item.options; } catch(e){}
+  }
+  _storeOptionGroups = opts.map(function(g){ return { name: g.name, values: (g.values||[]).join(', ') }; });
+  document.getElementById('siErr').style.display = 'none';
+  renderOptionGroupsBuilder();
+  document.getElementById('storeItemModal').style.display = 'flex';
+}
+
+function closeStoreItemModal() {
+  document.getElementById('storeItemModal').style.display = 'none';
+}
+
+function renderOptionGroupsBuilder() {
+  var empty = document.getElementById('siOptionsEmpty');
+  var builder = document.getElementById('siOptionsBuilder');
+  if (!_storeOptionGroups.length) {
+    empty.style.display = '';
+    builder.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  builder.innerHTML = _storeOptionGroups.map(function(g, i) {
+    return '<div style="background:#f9fafb;border:1px solid var(--gray-200);border-radius:8px;padding:12px;display:grid;grid-template-columns:1fr 2fr auto;gap:10px;align-items:start;">' +
+      '<div class="field-group" style="margin:0;">' +
+        '<label style="font-size:0.75rem;">Option Name</label>' +
+        '<input type="text" value="' + escHtml(g.name) + '" placeholder="e.g. Size" oninput="updateOptionGroup(' + i + ',\'name\',this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.85rem;" />' +
+      '</div>' +
+      '<div class="field-group" style="margin:0;">' +
+        '<label style="font-size:0.75rem;">Values <span style="font-weight:400;color:var(--gray-400);">(comma-separated)</span></label>' +
+        '<input type="text" value="' + escHtml(g.values) + '" placeholder="e.g. S, M, L, XL, 2XL" oninput="updateOptionGroup(' + i + ',\'values\',this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.85rem;" />' +
+      '</div>' +
+      '<button onclick="removeOptionGroup(' + i + ')" style="margin-top:20px;padding:6px 10px;border:1px solid #fecaca;border-radius:5px;background:#fef2f2;color:#dc2626;cursor:pointer;font-size:0.8rem;"><i class="fas fa-times"></i></button>' +
+    '</div>';
+  }).join('');
+}
+
+function addStoreOptionGroup() {
+  _storeOptionGroups.push({ name: '', values: '' });
+  renderOptionGroupsBuilder();
+}
+
+function removeOptionGroup(i) {
+  _storeOptionGroups.splice(i, 1);
+  renderOptionGroupsBuilder();
+}
+
+function updateOptionGroup(i, field, val) {
+  if (_storeOptionGroups[i]) _storeOptionGroups[i][field] = val;
+}
+
+async function saveStoreItem() {
+  var token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  var errEl = document.getElementById('siErr');
+  errEl.style.display = 'none';
+  var name  = (document.getElementById('siName').value||'').trim();
+  var price = parseFloat(document.getElementById('siPrice').value);
+  if (!name) { errEl.textContent = 'Item name is required.'; errEl.style.display = ''; return; }
+  if (isNaN(price) || price < 0) { errEl.textContent = 'Enter a valid price.'; errEl.style.display = ''; return; }
+  var options = _storeOptionGroups
+    .filter(function(g){ return g.name.trim(); })
+    .map(function(g){
+      return { name: g.name.trim(), values: g.values.split(',').map(function(v){ return v.trim(); }).filter(Boolean) };
+    });
+  var payload = {
+    name: name,
+    price: price,
+    category: document.getElementById('siCategory').value,
+    description: (document.getElementById('siDescription').value||'').trim() || null,
+    image_url: (document.getElementById('siImageUrl').value||'').trim() || null,
+    active: document.getElementById('siActive').checked,
+    options: JSON.stringify(options),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    var id = _editingStoreItemId;
+    if (id) {
+      await sbPatch('store_items', 'id=eq.' + encodeURIComponent(id), payload, token);
+      var idx = _storeItems.findIndex(function(x){ return String(x.id)===String(id); });
+      if (idx > -1) _storeItems[idx] = Object.assign({}, _storeItems[idx], payload, { options: options });
+      showToast('Item updated.');
+    } else {
+      payload.created_at = new Date().toISOString();
+      var res = await fetch(SUPABASE_URL + '/rest/v1/store_items', {
+        method: 'POST',
+        headers: Object.assign({}, sbHeaders(token), { 'Content-Type': 'application/json', 'Prefer': 'return=representation' }),
+        body: JSON.stringify(payload)
+      });
+      var newItem = (await res.json())[0];
+      if (newItem) { newItem.options = options; _storeItems.unshift(newItem); }
+      showToast('Item added to store.');
+    }
+    renderStoreItems();
+    closeStoreItemModal();
+  } catch(e) { errEl.textContent = 'Could not save: ' + (e.message||'error'); errEl.style.display = ''; }
+}
+
+async function deleteStoreItem(id) {
+  if (!confirm('Delete this store item? This cannot be undone.')) return;
+  var token = getAdminToken();
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/store_items?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: sbHeaders(token) });
+    _storeItems = _storeItems.filter(function(x){ return String(x.id) !== String(id); });
+    renderStoreItems();
+    showToast('Item deleted.');
+  } catch(e) { showToast('Could not delete item.', 'error'); }
+}
+
+function setOrderFilter(f, btn) {
+  _storeOrderFilter = f;
+  document.querySelectorAll('#storeTabPaneOrders .btn-sm').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderStoreOrders();
+}
+
+function renderStoreOrders() {
+  var list = document.getElementById('storeOrdersList');
+  var orders = _storeOrders.filter(function(o){
+    return _storeOrderFilter === 'all' || o.status === _storeOrderFilter;
+  });
+  if (!orders.length) {
+    list.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>No orders' + (_storeOrderFilter !== 'all' ? ' with status "' + _storeOrderFilter + '"' : '') + '.</p></div>';
+    return;
+  }
+  list.innerHTML = orders.map(function(o) {
+    var items = Array.isArray(o.items) ? o.items : [];
+    var statusColor = o.status==='paid'?'#16a34a':o.status==='fulfilled'?'#0369a1':o.status==='cancelled'?'#dc2626':'#d97706';
+    var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:14px 16px;margin-bottom:10px;background:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">' +
+      '<div style="flex:1;min-width:200px;">' +
+        '<div style="font-weight:700;font-size:0.92rem;color:var(--gray-800);">' + escHtml(o.member_name||'Unknown') + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--gray-500);">' + escHtml(o.member_email||'') + ' · ' + date + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:4px;">' + items.length + ' item' + (items.length!==1?'s':'') + ' · $' + parseFloat(o.total||0).toFixed(2) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">' +
+        '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(o.status||'pending') + '</span>' +
+        '<button class="btn-sm" onclick="openStoreOrderModal(\'' + escHtml(String(o.id)) + '\')"><i class="fas fa-eye"></i> View</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+var _viewingOrderId = null;
+function openStoreOrderModal(id) {
+  _viewingOrderId = id;
+  var o = _storeOrders.find(function(x){ return String(x.id)===String(id); });
+  if (!o) return;
+  var items = Array.isArray(o.items) ? o.items : [];
+  var date = o.created_at ? new Date(o.created_at).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}) : '—';
+  document.getElementById('storeOrderModalTitle').textContent = 'Order — ' + (o.member_name||'Unknown');
+  document.getElementById('storeOrderModalBody').innerHTML =
+    '<div style="font-size:0.82rem;color:var(--gray-500);margin-bottom:14px;">' + escHtml(o.member_email||'') + ' · ' + date + '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:14px;">' +
+    '<thead><tr style="border-bottom:2px solid var(--gray-200);">' +
+      '<th style="text-align:left;padding:6px 8px;color:var(--gray-500);">Item</th>' +
+      '<th style="text-align:center;padding:6px 8px;color:var(--gray-500);">Qty</th>' +
+      '<th style="text-align:right;padding:6px 8px;color:var(--gray-500);">Price</th>' +
+    '</tr></thead><tbody>' +
+    items.map(function(li){
+      var sels = li.selections ? Object.entries(li.selections).map(function(kv){ return kv[0]+': '+kv[1]; }).join(', ') : '';
+      return '<tr style="border-bottom:1px solid var(--gray-100);">' +
+        '<td style="padding:8px;"><div style="font-weight:600;">' + escHtml(li.name||'') + '</div>' + (sels?'<div style="font-size:0.75rem;color:var(--gray-400);">'+escHtml(sels)+'</div>':'') + '</td>' +
+        '<td style="padding:8px;text-align:center;">' + (li.quantity||1) + '</td>' +
+        '<td style="padding:8px;text-align:right;">$' + (parseFloat(li.price||0)*(li.quantity||1)).toFixed(2) + '</td>' +
+      '</tr>';
+    }).join('') +
+    '</tbody><tfoot><tr><td colspan="2" style="padding:10px 8px;font-weight:700;text-align:right;">Total</td><td style="padding:10px 8px;font-weight:700;text-align:right;color:var(--gold);">$' + parseFloat(o.total||0).toFixed(2) + '</td></tr></tfoot>' +
+    '</table>' +
+    (o.notes ? '<div style="background:#fafafa;border:1px solid var(--gray-200);border-radius:6px;padding:10px 12px;font-size:0.83rem;color:var(--gray-600);"><strong>Notes:</strong> ' + escHtml(o.notes) + '</div>' : '');
+  var actions = document.getElementById('storeOrderModalActions');
+  var btns = '';
+  if (o.status === 'pending') btns += '<button class="btn-sm success" onclick="updateOrderStatus(\'' + id + '\',\'paid\')"><i class="fas fa-check"></i> Mark Paid</button> ';
+  if (o.status === 'paid')    btns += '<button class="btn-sm success" onclick="updateOrderStatus(\'' + id + '\',\'fulfilled\')"><i class="fas fa-box"></i> Mark Fulfilled</button> ';
+  if (o.status !== 'cancelled') btns += '<button class="btn-sm danger" onclick="updateOrderStatus(\'' + id + '\',\'cancelled\')"><i class="fas fa-times"></i> Cancel</button>';
+  actions.innerHTML = btns + '<button onclick="closeStoreOrderModal()" style="padding:8px 16px;border:1px solid var(--gray-200);border-radius:6px;background:#fff;color:var(--gray-600);cursor:pointer;font-size:0.82rem;">Close</button>';
+  document.getElementById('storeOrderModal').style.display = 'flex';
+}
+
+function closeStoreOrderModal() {
+  document.getElementById('storeOrderModal').style.display = 'none';
+}
+
+async function updateOrderStatus(id, status) {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    await sbPatch('store_orders', 'id=eq.' + encodeURIComponent(id), { status: status, updated_at: new Date().toISOString() }, token);
+    var o = _storeOrders.find(function(x){ return String(x.id)===String(id); });
+    if (o) o.status = status;
+    renderStoreOrders();
+    closeStoreOrderModal();
+    showToast('Order marked ' + status + '.');
+    var pending = _storeOrders.filter(function(x){ return x.status==='pending'; }).length;
+    var badge = document.getElementById('storePendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+  } catch(e) { showToast('Could not update order: ' + (e.message||'error'), 'error'); }
+}
 
 </script>
 
