@@ -8161,6 +8161,7 @@ function renderAnnouncements() {
         '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
       '</div>' +
       '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.6;white-space:pre-wrap;">' + escHtml(r.body||'') + '</p>' +
+      (r.flyer_url ? '<div style="margin-bottom:12px;"><img src="' + escHtml(r.flyer_url) + '" alt="Flyer" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--gray-200);object-fit:contain;" /></div>' : '') +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + '</div>' +
     '</div>';
   }).join('');

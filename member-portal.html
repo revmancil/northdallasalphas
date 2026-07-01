@@ -537,6 +537,19 @@
               <label>Message <span style="color:var(--red);">*</span></label>
               <textarea id="annBody" rows="5" placeholder="Write your announcement here..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
             </div>
+            <div class="pfield">
+              <label>Flyer / Image <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional)</span></label>
+              <input type="file" id="annFlyerInput" accept="image/*" style="display:none;" onchange="handleAnnFlyerSelect(event)" />
+              <div id="annFlyerDropzone" onclick="document.getElementById('annFlyerInput').click()"
+                style="border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:22px 16px;text-align:center;cursor:pointer;transition:border-color 0.2s;color:rgba(255,255,255,0.4);font-size:0.83rem;">
+                <i class="fas fa-image" style="font-size:1.4rem;margin-bottom:6px;display:block;color:var(--gold);"></i>
+                Click to upload a flyer or image
+              </div>
+              <div id="annFlyerPreviewWrap" style="display:none;margin-top:10px;position:relative;display:none;">
+                <img id="annFlyerPreview" src="" alt="Flyer preview" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);object-fit:contain;" />
+                <button type="button" onclick="clearAnnFlyer()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);border:none;color:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.75rem;"><i class="fas fa-times"></i></button>
+              </div>
+            </div>
             <div id="annErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
             <div id="annSuccess" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#4ade80;padding:12px 16px;border-radius:6px;font-size:0.85rem;">
               <i class="fas fa-check-circle"></i> Your announcement has been submitted for review. Chapter leadership will be notified.
@@ -1848,6 +1861,41 @@ function renderDuesLateFeeNotice() {
 /* ═══════════════════════════════════════════
    ANNOUNCEMENTS
 ═══════════════════════════════════════════ */
+var _annFlyerFile = null;
+
+function handleAnnFlyerSelect(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  _annFlyerFile = file;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('annFlyerPreview').src = ev.target.result;
+    document.getElementById('annFlyerPreviewWrap').style.display = 'block';
+    document.getElementById('annFlyerDropzone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearAnnFlyer() {
+  _annFlyerFile = null;
+  document.getElementById('annFlyerInput').value = '';
+  document.getElementById('annFlyerPreview').src = '';
+  document.getElementById('annFlyerPreviewWrap').style.display = 'none';
+  document.getElementById('annFlyerDropzone').style.display = '';
+}
+
+async function uploadAnnFlyer(file) {
+  var ext = file.name.split('.').pop() || 'jpg';
+  var path = 'announcements/' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.' + ext;
+  var res = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Content-Type': file.type, 'x-upsert': 'true' },
+    body: file
+  });
+  if (!res.ok) throw new Error('Flyer upload failed');
+  return SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+}
+
 async function submitAnnouncement() {
   var errEl     = document.getElementById('annErr');
   var successEl = document.getElementById('annSuccess');
@@ -1861,7 +1909,13 @@ async function submitAnnouncement() {
   if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = ''; return; }
   if (!body)  { errEl.textContent = 'Please enter a message.'; errEl.style.display = ''; return; }
   btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
   try {
+    var flyerUrl = null;
+    if (_annFlyerFile) {
+      try { flyerUrl = await uploadAnnFlyer(_annFlyerFile); }
+      catch(fe) { errEl.textContent = 'Flyer upload failed: ' + (fe.message||'error'); errEl.style.display = ''; btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Announcement'; return; }
+    }
     await fetch(SUPABASE_URL + '/rest/v1/member_announcements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Prefer': 'return=minimal' },
@@ -1872,6 +1926,7 @@ async function submitAnnouncement() {
         title:        title,
         category:     cat,
         body:         body,
+        flyer_url:    flyerUrl,
         status:       'pending',
         created_at:   new Date().toISOString()
       })
@@ -1884,6 +1939,7 @@ async function submitAnnouncement() {
     }).catch(function(){});
     document.getElementById('annTitle').value = '';
     document.getElementById('annBody').value  = '';
+    clearAnnFlyer();
     successEl.style.display = '';
     loadMyAnnouncements();
   } catch(e) {
@@ -1891,6 +1947,7 @@ async function submitAnnouncement() {
     errEl.style.display = '';
   } finally {
     btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Announcement';
   }
 }
 
@@ -1904,10 +1961,12 @@ async function loadMyAnnouncements() {
     el.innerHTML = rows.map(function(r) {
       var statusColor = r.status==='approved'?'#4ade80':r.status==='rejected'?'#f87171':'#fbbf24';
       var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      var flyerThumb = r.flyer_url ? '<img src="' + escHtml(r.flyer_url) + '" alt="Flyer" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);flex-shrink:0;" />' : '';
       return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div style="display:flex;align-items:center;gap:12px;">' + flyerThumb +
           '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + escHtml(r.title) + '</div>' +
-          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.category||'General') + ' · ' + date + '</div></div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.category||'General') + ' · ' + date + '</div></div></div>' +
           '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
         '</div>' +
       '</div>';
