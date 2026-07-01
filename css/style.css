@@ -814,19 +814,22 @@ h1, h2, h3, h4, h5 {
   background: var(--white);
 }
 .president-layout {
-  display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 60px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
+  gap: 0;
 }
 .president-photo-wrap {
   position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin-bottom: 40px;
 }
 .president-photo {
   width: 100%;
-  aspect-ratio: 3/4;
-  object-fit: cover;
-  object-position: center top;
+  height: auto;
+  display: block;
+  object-fit: contain;
   border-radius: 4px;
 }
 .president-badge-wrap {
@@ -1279,7 +1282,6 @@ h1, h2, h3, h4, h5 {
   }
   .impact-grid { grid-template-columns: repeat(2, 1fr); }
   .events-layout { grid-template-columns: 1fr; }
-  .president-layout { grid-template-columns: 1fr; gap: 40px; }
   .president-photo-wrap { max-width: 340px; }
 }
 
