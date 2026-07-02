@@ -1165,90 +1165,90 @@
 
   <div class="sidebar-section">
     <div class="sidebar-label">Content</div>
-    <button class="sidebar-link" onclick="showPanel('pages')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages')">
       <i class="fas fa-edit"></i> Page Editor
     </button>
-    <button class="sidebar-link" onclick="showPanel('members')">
+    <button class="sidebar-link" data-section="members" onclick="showPanel('members')">
       <i class="fas fa-user-check"></i> Member Requests
     </button>
-    <button class="sidebar-link" onclick="showPanel('access')">
+    <button class="sidebar-link" data-section="access" onclick="showPanel('access')">
       <i class="fas fa-user-shield"></i> Access &amp; Permissions
     </button>
-    <button class="sidebar-link" onclick="showPanel('events')">
+    <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
-    <button class="sidebar-link" onclick="showPanel('registrations')">
+    <button class="sidebar-link" data-section="registrations" onclick="showPanel('registrations')">
       <i class="fas fa-clipboard-list"></i> Event Registrations
     </button>
-    <button class="sidebar-link" onclick="showPanel('news-manager')">
+    <button class="sidebar-link" data-section="news-manager" onclick="showPanel('news-manager')">
       <i class="fas fa-newspaper"></i> News Manager
     </button>
-    <button class="sidebar-link" onclick="showPanel('documents');loadAdminDocuments()">
+    <button class="sidebar-link" data-section="documents" onclick="showPanel('documents');loadAdminDocuments()">
       <i class="fas fa-folder-open"></i> Documents
     </button>
-    <button class="sidebar-link" onclick="showPanel('meetings');loadMeetingsPanel()">
+    <button class="sidebar-link" data-section="meetings" onclick="showPanel('meetings');loadMeetingsPanel()">
       <i class="fas fa-people-group"></i> Meetings
     </button>
-    <button class="sidebar-link" onclick="showPanel('chapter-news');loadChapterNewsPanel()">
+    <button class="sidebar-link" data-section="chapter-news" onclick="showPanel('chapter-news');loadChapterNewsPanel()">
       <i class="fas fa-bullhorn"></i> Chapter News Feed
     </button>
-    <button class="sidebar-link" onclick="showPanel('store');loadStorePanel()">
+    <button class="sidebar-link" data-section="store" onclick="showPanel('store');loadStorePanel()">
       <i class="fas fa-store"></i> Chapter Store
     </button>
-    <button class="sidebar-link" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
+    <button class="sidebar-link" data-section="member-announcements" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
       <i class="fas fa-bullhorn"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:var(--gold);color:#000;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;"></span>
     </button>
-    <button class="sidebar-link" onclick="showPanel('gallery')">
+    <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
-    <button class="sidebar-link" onclick="showPanel('officers')">
+    <button class="sidebar-link" data-section="officers" onclick="showPanel('officers')">
       <i class="fas fa-users"></i> Officers Manager
     </button>
-    <button class="sidebar-link" onclick="showPanel('presidents')">
+    <button class="sidebar-link" data-section="presidents" onclick="showPanel('presidents')">
       <i class="fas fa-crown"></i> Past Presidents
     </button>
-    <button class="sidebar-link" onclick="showPanel('announcements')">
+    <button class="sidebar-link" data-section="announcements" onclick="showPanel('announcements')">
       <i class="fas fa-bullhorn"></i> Announcement Bar
     </button>
-    <button class="sidebar-link" onclick="showPanel('newsletter')">
+    <button class="sidebar-link" data-section="newsletter" onclick="showPanel('newsletter')">
       <i class="fas fa-envelope-open-text"></i> Newsletter Generator
     </button>
   </div>
 
-  <div class="sidebar-section">
+  <div class="sidebar-section" id="sidebarSitePagesSection">
     <div class="sidebar-label">Site Pages (Edit)</div>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('home')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('home')">
       <i class="fas fa-home"></i> Home
     </button>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('about')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('about')">
       <i class="fas fa-book"></i> Chapter History
     </button>
-    <button class="sidebar-link" onclick="showPanel('events')">
+    <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
       <i class="fas fa-calendar"></i> Events
     </button>
-    <button class="sidebar-link" onclick="showPanel('officers')">
+    <button class="sidebar-link" data-section="officers" onclick="showPanel('officers')">
       <i class="fas fa-id-badge"></i> Leadership
     </button>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('membership')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('membership')">
       <i class="fas fa-user-plus"></i> Membership
     </button>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('news')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('news')">
       <i class="fas fa-newspaper"></i> News
     </button>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('gallery')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('gallery')">
       <i class="fas fa-images"></i> Photo Gallery
     </button>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('contact')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('contact')">
       <i class="fas fa-envelope"></i> Contact
     </button>
-    <button class="sidebar-link" onclick="showPanel('pages'); loadPageSection('visiting')">
+    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('visiting')">
       <i class="fas fa-plane-arrival"></i> Visiting Brothers
     </button>
   </div>
 
   <div class="sidebar-section">
     <div class="sidebar-label">Account</div>
-    <button class="sidebar-link" onclick="showPanel('settings')">
+    <button class="sidebar-link" data-section="settings" onclick="showPanel('settings')">
       <i class="fas fa-cog"></i> Settings
     </button>
   </div>
@@ -1258,7 +1258,7 @@
       <div class="user-avatar" id="userAvatar">A</div>
       <div class="user-info">
         <div class="uname" id="userNameDisplay">Admin</div>
-        <div class="urole">Site Administrator</div>
+        <div class="urole" id="userRoleDisplay">Site Administrator</div>
       </div>
     </div>
     <button class="btn-logout" onclick="logout()">
@@ -2191,22 +2191,30 @@
           <h3><i class="fas fa-user-shield" style="color:var(--gold);margin-right:8px;"></i>Admin Dashboard Access</h3>
         </div>
         <div class="section-card-body">
-          <p class="hint-text">Brothers listed here can sign in to this admin dashboard. To add the very first admin, run the SQL seed in <code>SUPABASE_CONTENT_SCHEMA.sql</code>.</p>
+          <p class="hint-text">Brothers listed here can sign in to this admin dashboard. Full admins can see and manage everything; a limited admin only sees the sections checked below (e.g. a secretary limited to Meetings, Events &amp; Announcements). To add the very first admin, run the SQL seed in <code>SUPABASE_CONTENT_SCHEMA.sql</code>.</p>
           <div id="accessAdminsList" style="margin-bottom:20px;"><span class="hint-text">Loading…</span></div>
           <div style="border-top:1px solid var(--gray-200);padding-top:18px;">
-            <h4 style="margin:0 0 12px;font-size:0.9rem;color:var(--gray-800);">Grant admin dashboard access</h4>
+            <h4 id="accessGrantFormTitle" style="margin:0 0 12px;font-size:0.9rem;color:var(--gray-800);">Grant admin dashboard access</h4>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;align-items:end;">
               <div class="field-group" style="margin:0;">
                 <label for="accessAdminEmail">Email address</label>
                 <input type="email" id="accessAdminEmail" placeholder="brother@example.com" autocomplete="off" />
               </div>
-              <div class="field-group" style="margin:0;">
+              <div class="field-group" style="margin:0;" id="accessAdminPasswordGroup">
                 <label for="accessAdminPassword">Temporary password <span style="font-weight:400;color:var(--gray-400);">(min 8 chars)</span></label>
                 <input type="password" id="accessAdminPassword" placeholder="They should change after first login" autocomplete="new-password" />
               </div>
-              <div>
-                <button type="button" class="btn-save" onclick="grantAdminFromAccessPanel()"><i class="fas fa-user-plus"></i> Grant Admin Access</button>
-              </div>
+            </div>
+            <div style="margin-top:14px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;color:var(--gray-800);cursor:pointer;">
+                <input type="checkbox" id="accessAdminIsFull" checked onchange="onAccessFullAdminToggle()" style="width:16px;height:16px;" />
+                Full Admin (all sections, can manage other admins)
+              </label>
+              <div id="accessAdminSectionsGrid" style="display:none;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px 16px;margin-top:10px;padding:12px;background:var(--gray-100);border-radius:8px;"></div>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;">
+              <button type="button" class="btn-save" id="accessGrantSubmitBtn" onclick="grantAdminFromAccessPanel()"><i class="fas fa-user-plus"></i> Grant Admin Access</button>
+              <button type="button" class="btn-sm" id="accessGrantCancelBtn" onclick="resetAdminGrantForm()" style="display:none;background:var(--gray-200);color:var(--gray-700);">Cancel</button>
             </div>
             <p class="hint-text" style="margin-top:10px;margin-bottom:0;">The <code>grant-chapter-admin</code> Edge Function must be deployed: <code>supabase functions deploy grant-chapter-admin</code>.</p>
           </div>
@@ -2690,7 +2698,87 @@ const PANEL_META = {
   'chapter-news':['Chapter News Feed',  'Post private announcements and updates for brothers']
 };
 
+// ── Admin Permissions (full admin vs. restricted to certain sections) ──
+// Keep in sync with ALLOWED_SECTIONS in supabase/functions/grant-chapter-admin/index.ts.
+const ADMIN_SECTIONS = [
+  { key: 'pages',                 label: 'Page Content Editor (website changes)' },
+  { key: 'members',               label: 'Member Requests' },
+  { key: 'events',                label: 'Events Manager' },
+  { key: 'registrations',         label: 'Event Registrations' },
+  { key: 'news-manager',          label: 'News Manager' },
+  { key: 'documents',             label: 'Documents' },
+  { key: 'meetings',              label: 'Meetings Manager' },
+  { key: 'chapter-news',          label: 'Chapter News Feed' },
+  { key: 'store',                 label: 'Chapter Store' },
+  { key: 'member-announcements',  label: 'Member Announcements' },
+  { key: 'gallery',                label: 'Event Photo Gallery' },
+  { key: 'officers',              label: 'Officers Manager' },
+  { key: 'presidents',            label: 'Past Presidents' },
+  { key: 'announcements',         label: 'Announcement Bar' },
+  { key: 'newsletter',            label: 'Newsletter Generator' }
+];
+
+// Sections that always require full admin and are never grantable a la carte.
+const FULL_ADMIN_ONLY_SECTIONS = ['access', 'settings'];
+
+// Fails open (full admin) until loadCurrentAdminPermissions() resolves, and
+// stays open if that lookup errors -- e.g. the ADMIN_PERMISSIONS_SCHEMA.sql
+// migration hasn't been run yet on this Supabase project. This matches the
+// pre-existing behavior where every chapter admin had full access.
+let currentAdminPermissions = { isFullAdmin: true, sections: [] };
+
+async function loadCurrentAdminPermissions() {
+  const token = getAdminToken();
+  const email = (sessionStorage.getItem('nda_admin_user') || '').trim().toLowerCase();
+  if (!token || !email) { applySidebarPermissions(); return; }
+  try {
+    const rows = await sbGet(
+      'chapter_admins',
+      'email=eq.' + encodeURIComponent(email) + '&select=is_full_admin,sections&limit=1',
+      token
+    );
+    if (rows && rows.length) {
+      currentAdminPermissions = {
+        isFullAdmin: rows[0].is_full_admin !== false,
+        sections: Array.isArray(rows[0].sections) ? rows[0].sections : []
+      };
+    }
+  } catch (e) {
+    // Fail open -- see comment above.
+  }
+  applySidebarPermissions();
+}
+
+function canAccessSection(key) {
+  if (key === 'dashboard') return true;
+  if (currentAdminPermissions.isFullAdmin) return true;
+  if (FULL_ADMIN_ONLY_SECTIONS.indexOf(key) !== -1) return false;
+  return currentAdminPermissions.sections.indexOf(key) !== -1;
+}
+
+function applySidebarPermissions() {
+  document.querySelectorAll('.sidebar-link[data-section]').forEach(function(link) {
+    link.style.display = canAccessSection(link.getAttribute('data-section')) ? '' : 'none';
+  });
+  document.querySelectorAll('.sidebar-section').forEach(function(section) {
+    const links = section.querySelectorAll('.sidebar-link[data-section]');
+    if (!links.length) return;
+    const anyVisible = Array.prototype.some.call(links, function(l) { return l.style.display !== 'none'; });
+    section.style.display = anyVisible ? '' : 'none';
+  });
+  const roleEl = document.getElementById('userRoleDisplay');
+  if (roleEl) {
+    roleEl.textContent = currentAdminPermissions.isFullAdmin
+      ? 'Full Admin'
+      : 'Limited Admin';
+  }
+}
+
 function showPanel(id) {
+  if (!canAccessSection(id)) {
+    showToast("You don't have access to that section.", 'error');
+    return;
+  }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
 
@@ -2984,24 +3072,30 @@ async function loadChapterAdminPanel() {
     return;
   }
   try {
-    const rows = await sbGet('chapter_admins', 'select=email,granted_at,granted_by&order=email.asc', token);
+    const rows = await sbGet('chapter_admins', 'select=email,granted_at,granted_by,is_full_admin,sections&order=email.asc', token);
     if (!rows || !rows.length) {
       el.innerHTML = '<div class="hint-text" style="margin:0;">No administrators in the roster (or you are not listed). Seed the first admin in Supabase SQL: <code>insert into public.chapter_admins (email, granted_by) values (\'your@email.com\',\'bootstrap\');</code></div>';
       return;
     }
     const me = (sessionStorage.getItem('nda_admin_user') || '').trim().toLowerCase();
     el.innerHTML = '<div style="font-size:0.85rem;font-weight:600;color:var(--gray-700);margin-bottom:8px;">Current chapter admins</div>' +
+      '<p class="hint-text" style="margin-top:0;">To limit an admin to specific sections, use <a href="#" onclick="showPanel(\'access\');return false;">Access &amp; Permissions</a>.</p>' +
       rows.map(function(m) {
         const em = (m.email || '').trim();
         const when = m.granted_at ? new Date(m.granted_at).toLocaleString() : '';
         const by = m.granted_by ? escHtml(m.granted_by) : '';
         const safeData = encodeURIComponent(em);
         const isSelf = em.toLowerCase() === me;
+        const isFull = m.is_full_admin !== false;
+        const sections = Array.isArray(m.sections) ? m.sections : [];
+        const roleBadge = isFull
+          ? '<span style="background:var(--gold);color:#000;font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;">Full Admin</span>'
+          : '<span style="background:var(--gray-200);color:var(--gray-700);font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;">Limited: ' + escHtml(sections.length ? sections.join(', ') : 'none') + '</span>';
         const removeBtn = isSelf
           ? '<span class="hint-text" style="margin:0;">(you)</span>'
           : '<button type="button" class="btn-sm danger" data-admin-email="' + safeData + '" onclick="removeChapterAdminFromBtn(this)">Remove</button>';
-        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-200);">' +
-          '<div><div style="font-weight:600;">' + escHtml(em) + '</div>' +
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-200);flex-wrap:wrap;">' +
+          '<div><div style="font-weight:600;">' + escHtml(em) + ' ' + roleBadge + '</div>' +
           '<div style="font-size:0.75rem;color:var(--gray-500);margin-top:2px;">Added: ' + escHtml(when) + (by ? ' · by ' + by : '') + '</div></div>' +
           removeBtn +
           '</div>';
@@ -3030,27 +3124,18 @@ async function removeChapterAdminFromBtn(btn) {
   }
 }
 
-async function grantChapterAdminAccess() {
-  const emailEl = document.getElementById('grantAdminEmail');
-  const passEl = document.getElementById('grantAdminPassword');
-  const email = (emailEl && emailEl.value || '').trim().toLowerCase();
-  const password = (passEl && passEl.value) || '';
+// Shared low-level caller for the grant-chapter-admin Edge Function.
+// body: { email, password?, isFullAdmin?, sections?, updatePermissionsOnly? }
+// Returns true on success (and shows a success toast), false otherwise.
+async function callGrantChapterAdmin(body) {
   const token = getAdminToken();
   if (!token) {
     showToast('Session expired.', 'error');
-    return;
+    return false;
   }
   if (!supabaseClient) {
     showToast('Supabase client not available. Refresh the page and try again.', 'error');
-    return;
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showToast('Enter a valid email.', 'error');
-    return;
-  }
-  if (password.length < 8) {
-    showToast('Password must be at least 8 characters.', 'error');
-    return;
+    return false;
   }
   try {
     const raw = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
@@ -3059,11 +3144,9 @@ async function grantChapterAdminAccess() {
     const { error: sessionErr } = await supabaseClient.auth.setSession(sessionPayload);
     if (sessionErr) {
       showToast(sessionErr.message || 'Could not attach session for this request.', 'error');
-      return;
+      return false;
     }
-    const { data, error } = await supabaseClient.functions.invoke('grant-chapter-admin', {
-      body: { email: email, password: password },
-    });
+    const { data, error } = await supabaseClient.functions.invoke('grant-chapter-admin', { body: body });
     if (error) {
       var httpStatus = 0;
       try {
@@ -3078,21 +3161,43 @@ async function grantChapterAdminAccess() {
             '3. In Supabase Dashboard → Edge Functions, confirm "grant-chapter-admin" is listed.\n\n' +
             'Docs: https://supabase.com/docs/guides/functions/deploy'
         );
-        return;
+        return false;
       }
       showToast(error.message || 'Request failed.', 'error');
-      return;
+      return false;
     }
     if (data && data.error) {
       showToast(typeof data.error === 'string' ? data.error : 'Request failed', 'error');
-      return;
+      return false;
     }
-    showToast((data && data.message) || 'Access granted.', 'success');
+    showToast((data && data.message) || 'Saved.', 'success');
+    return true;
+  } catch (err) {
+    showToast(err.message || 'Network error', 'error');
+    return false;
+  }
+}
+
+// Quick "add another full admin" form in Settings. For section-restricted
+// admins, use the Access & Permissions panel instead.
+async function grantChapterAdminAccess() {
+  const emailEl = document.getElementById('grantAdminEmail');
+  const passEl = document.getElementById('grantAdminPassword');
+  const email = (emailEl && emailEl.value || '').trim().toLowerCase();
+  const password = (passEl && passEl.value) || '';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showToast('Enter a valid email.', 'error');
+    return;
+  }
+  if (password.length < 8) {
+    showToast('Password must be at least 8 characters.', 'error');
+    return;
+  }
+  const ok = await callGrantChapterAdmin({ email: email, password: password, isFullAdmin: true, sections: [] });
+  if (ok) {
     if (emailEl) emailEl.value = '';
     if (passEl) passEl.value = '';
     await loadChapterAdminPanel();
-  } catch (err) {
-    showToast(err.message || 'Network error', 'error');
   }
 }
 
@@ -3307,23 +3412,99 @@ async function savePromoteDetails() {
   }
 }
 
+// null = creating a new admin; an email string = editing that admin's permissions in place.
+let accessAdminEditingEmail = null;
+
+function ensureSectionsGridBuilt() {
+  const grid = document.getElementById('accessAdminSectionsGrid');
+  if (!grid || grid.childElementCount) return;
+  grid.innerHTML = ADMIN_SECTIONS.map(function(s) {
+    return '<label style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--gray-700);cursor:pointer;">' +
+      '<input type="checkbox" class="access-section-cb" value="' + escHtml(s.key) + '" style="width:14px;height:14px;" />' +
+      escHtml(s.label) + '</label>';
+  }).join('');
+}
+
+function onAccessFullAdminToggle() {
+  const full = document.getElementById('accessAdminIsFull').checked;
+  const grid = document.getElementById('accessAdminSectionsGrid');
+  if (grid) grid.style.display = full ? 'none' : 'grid';
+}
+
+function collectSelectedSections() {
+  return Array.prototype.slice
+    .call(document.querySelectorAll('.access-section-cb:checked'))
+    .map(function(cb) { return cb.value; });
+}
+
+function setSelectedSections(sections) {
+  const set = new Set(sections || []);
+  document.querySelectorAll('.access-section-cb').forEach(function(cb) {
+    cb.checked = set.has(cb.value);
+  });
+}
+
+function resetAdminGrantForm() {
+  accessAdminEditingEmail = null;
+  const emailEl = document.getElementById('accessAdminEmail');
+  const passEl = document.getElementById('accessAdminPassword');
+  const fullEl = document.getElementById('accessAdminIsFull');
+  if (emailEl) { emailEl.value = ''; emailEl.disabled = false; }
+  if (passEl) passEl.value = '';
+  if (fullEl) fullEl.checked = true;
+  setSelectedSections([]);
+  onAccessFullAdminToggle();
+  const passGroup = document.getElementById('accessAdminPasswordGroup');
+  if (passGroup) passGroup.style.display = '';
+  const title = document.getElementById('accessGrantFormTitle');
+  if (title) title.textContent = 'Grant admin dashboard access';
+  const submitBtn = document.getElementById('accessGrantSubmitBtn');
+  if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-user-plus"></i> Grant Admin Access';
+  const cancelBtn = document.getElementById('accessGrantCancelBtn');
+  if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
 function prefillAdminGrant(email) {
+  ensureSectionsGridBuilt();
+  resetAdminGrantForm();
   const emailEl = document.getElementById('accessAdminEmail');
   const passEl = document.getElementById('accessAdminPassword');
   if (emailEl) emailEl.value = email;
   if (passEl) { passEl.value = ''; passEl.focus(); }
   const adminCard = document.getElementById('accessAdminsList');
   if (adminCard) adminCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast('Email pre-filled. Set a temporary password and click Grant Admin Access.', 'info');
+  showToast('Email pre-filled. Choose access, set a temporary password, and click Grant Admin Access.', 'info');
+}
+
+function editAdminPermissions(email, isFullAdmin, sections) {
+  ensureSectionsGridBuilt();
+  accessAdminEditingEmail = email;
+  const emailEl = document.getElementById('accessAdminEmail');
+  const fullEl = document.getElementById('accessAdminIsFull');
+  if (emailEl) { emailEl.value = email; emailEl.disabled = true; }
+  if (fullEl) fullEl.checked = !!isFullAdmin;
+  setSelectedSections(sections);
+  onAccessFullAdminToggle();
+  const passGroup = document.getElementById('accessAdminPasswordGroup');
+  if (passGroup) passGroup.style.display = 'none';
+  const title = document.getElementById('accessGrantFormTitle');
+  if (title) title.textContent = 'Edit access for ' + email;
+  const submitBtn = document.getElementById('accessGrantSubmitBtn');
+  if (submitBtn) submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Permissions';
+  const cancelBtn = document.getElementById('accessGrantCancelBtn');
+  if (cancelBtn) cancelBtn.style.display = '';
+  const formCard = document.getElementById('accessGrantFormTitle');
+  if (formCard) formCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 async function loadAccessAdminsList(token) {
   const el = document.getElementById('accessAdminsList');
   if (!el) return;
+  ensureSectionsGridBuilt();
   const t = token || getAdminToken();
   if (!t) { el.innerHTML = '<span style="color:var(--red);">Session expired.</span>'; return; }
   try {
-    const rows = await sbGet('chapter_admins', 'select=email,granted_at,granted_by&order=email.asc', t);
+    const rows = await sbGet('chapter_admins', 'select=email,granted_at,granted_by,is_full_admin,sections&order=email.asc', t);
     if (!rows || !rows.length) {
       el.innerHTML = '<p class="hint-text" style="margin:0;">No admins on record. Seed the first admin via Supabase SQL Editor.</p>';
       return;
@@ -3334,17 +3515,32 @@ async function loadAccessAdminsList(token) {
       const when = a.granted_at ? new Date(a.granted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
       const by = a.granted_by ? ' · by ' + escHtml(a.granted_by) : '';
       const isSelf = em.toLowerCase() === me;
+      const isFull = a.is_full_admin !== false;
+      const sections = Array.isArray(a.sections) ? a.sections : [];
+      const roleBadge = isFull
+        ? '<span style="background:var(--gold);color:#000;font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;">Full Admin</span>'
+        : '<span style="background:var(--gray-200);color:var(--gray-700);font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;" title="' +
+          escHtml(sections.join(', ') || 'no sections granted') + '">Limited: ' +
+          escHtml(sections.length ? sections.join(', ') : 'none') + '</span>';
+      const editBtn = '<button class="btn-sm" data-admin-email="' + encodeURIComponent(em) + '" data-full="' + (isFull ? '1' : '0') + '" data-sections="' + escHtml(sections.join(',')) + '" onclick="editAdminPermissionsFromBtn(this)" style="background:var(--gray-200);color:var(--gray-700);">Edit Access</button>';
       const removeBtn = isSelf
         ? '<span class="hint-text" style="margin:0;">(you)</span>'
         : '<button class="btn-sm danger" data-admin-email="' + encodeURIComponent(em) + '" onclick="removeAccessAdmin(this)">Remove</button>';
-      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-200);">' +
-        '<div><div style="font-weight:600;">' + escHtml(em) + '</div>' +
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-200);flex-wrap:wrap;">' +
+        '<div><div style="font-weight:600;">' + escHtml(em) + ' ' + roleBadge + '</div>' +
         '<div style="font-size:0.75rem;color:var(--gray-500);margin-top:2px;">Added: ' + escHtml(when) + by + '</div></div>' +
-        removeBtn + '</div>';
+        '<div style="display:flex;gap:6px;">' + editBtn + removeBtn + '</div></div>';
     }).join('');
   } catch (err) {
     el.innerHTML = '<span style="color:var(--red);">Could not load admins: ' + escHtml(err.message || 'error') + '</span>';
   }
+}
+
+function editAdminPermissionsFromBtn(btn) {
+  const email = decodeURIComponent(btn.getAttribute('data-admin-email') || '');
+  const isFull = btn.getAttribute('data-full') === '1';
+  const sections = (btn.getAttribute('data-sections') || '').split(',').filter(Boolean);
+  editAdminPermissions(email, isFull, sections);
 }
 
 async function removeAccessAdmin(btn) {
@@ -3367,23 +3563,44 @@ async function removeAccessAdmin(btn) {
 async function grantAdminFromAccessPanel() {
   const emailEl = document.getElementById('accessAdminEmail');
   const passEl = document.getElementById('accessAdminPassword');
+  const fullEl = document.getElementById('accessAdminIsFull');
   const email = ((emailEl && emailEl.value) || '').trim().toLowerCase();
-  const password = (passEl && passEl.value) || '';
-  const token = getAdminToken();
-  if (!token) { showToast('Session expired.', 'error'); return; }
+  const isFullAdmin = !!(fullEl && fullEl.checked);
+  const sections = isFullAdmin ? [] : collectSelectedSections();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Enter a valid email.', 'error'); return; }
+
+  if (accessAdminEditingEmail) {
+    const ok = await callGrantChapterAdmin({
+      email: email,
+      isFullAdmin: isFullAdmin,
+      sections: sections,
+      updatePermissionsOnly: true
+    });
+    if (ok) {
+      resetAdminGrantForm();
+      loadAccessAdminsList();
+    }
+    return;
+  }
+
+  const password = (passEl && passEl.value) || '';
   if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
-  // Reuse existing grant logic by temporarily setting the settings panel inputs and calling grantChapterAdminAccess
-  const sEmail = document.getElementById('grantAdminEmail');
-  const sPass = document.getElementById('grantAdminPassword');
-  if (sEmail) sEmail.value = email;
-  if (sPass) sPass.value = password;
-  await grantChapterAdminAccess();
-  if (emailEl) emailEl.value = '';
-  if (passEl) passEl.value = '';
-  accessAdminEmails.add(email);
-  renderAccessTable();
-  loadAccessAdminsList();
+  if (!isFullAdmin && !sections.length) {
+    showToast('Choose at least one section for a limited admin, or check Full Admin.', 'error');
+    return;
+  }
+  const ok = await callGrantChapterAdmin({
+    email: email,
+    password: password,
+    isFullAdmin: isFullAdmin,
+    sections: sections
+  });
+  if (ok) {
+    resetAdminGrantForm();
+    accessAdminEmails.add(email);
+    renderAccessTable();
+    loadAccessAdminsList();
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -7779,6 +7996,8 @@ function isInvalidImageUrl(url) {
 // ══════════════════════════════════════════════════
 (function init() {
   verifyChapterAdminAccess().then(function() {
+    return loadCurrentAdminPermissions();
+  }).then(function() {
     ensurePageEditorQuill();
     loadSettings();
     updateDashboardStats();

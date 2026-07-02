@@ -25,6 +25,33 @@ function trimLowerEmail(v: unknown): string {
   return String(v ?? "").trim().toLowerCase();
 }
 
+// Keep in sync with ADMIN_SECTIONS in admin-dashboard.html.
+const ALLOWED_SECTIONS = [
+  "pages",
+  "members",
+  "events",
+  "registrations",
+  "news-manager",
+  "documents",
+  "meetings",
+  "chapter-news",
+  "store",
+  "member-announcements",
+  "gallery",
+  "officers",
+  "presidents",
+  "announcements",
+  "newsletter",
+];
+
+function sanitizeSections(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  const set = new Set(
+    v.map((s) => String(s ?? "").trim()).filter((s) => ALLOWED_SECTIONS.includes(s)),
+  );
+  return Array.from(set);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
@@ -56,7 +83,13 @@ serve(async (req) => {
     }
     const requesterEmail = trimLowerEmail(userData.user.email);
 
-    let body: { email?: string; password?: string };
+    let body: {
+      email?: string;
+      password?: string;
+      isFullAdmin?: boolean;
+      sections?: string[];
+      updatePermissionsOnly?: boolean;
+    };
     try {
       body = await req.json();
     } catch {
@@ -64,11 +97,15 @@ serve(async (req) => {
     }
 
     const email = trimLowerEmail(body.email);
-    const password = String(body.password ?? "");
+    const updatePermissionsOnly = body.updatePermissionsOnly === true;
+    const isFullAdmin = body.isFullAdmin !== false; // default true, matches prior behavior
+    const sections = isFullAdmin ? [] : sanitizeSections(body.sections);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return json({ error: "A valid email address is required." }, 400);
     }
-    if (password.length < 8) {
+
+    const password = String(body.password ?? "");
+    if (!updatePermissionsOnly && password.length < 8) {
       return json({ error: "Password must be at least 8 characters." }, 400);
     }
 
@@ -81,24 +118,46 @@ serve(async (req) => {
       return json({ error: "Could not verify admin roster: " + countErr.message }, 500);
     }
     const adminCount = count ?? 0;
+    const isBootstrap = adminCount === 0;
 
-    if (adminCount === 0) {
-      return json(
-        {
-          error:
-            "No chapter administrators are defined yet. In Supabase SQL Editor, run: insert into public.chapter_admins (email, granted_by) values ('your-admin@email.com','bootstrap'); — use the same email as an existing Supabase Auth user who signs in at admin.html.",
-        },
-        403,
-      );
+    if (isBootstrap && updatePermissionsOnly) {
+      return json({ error: "No chapter administrators are defined yet." }, 403);
     }
 
-    const { data: row, error: gateErr } = await admin
-      .from("chapter_admins")
-      .select("email")
-      .eq("email", requesterEmail)
-      .maybeSingle();
-    if (gateErr || !row) {
-      return json({ error: "Only chapter administrators can grant access." }, 403);
+    if (!isBootstrap) {
+      const { data: row, error: gateErr } = await admin
+        .from("chapter_admins")
+        .select("email, is_full_admin")
+        .eq("email", requesterEmail)
+        .maybeSingle();
+      if (gateErr || !row) {
+        return json({ error: "Only chapter administrators can grant access." }, 403);
+      }
+      if (!row.is_full_admin) {
+        return json(
+          { error: "Only full admins can grant or edit admin access." },
+          403,
+        );
+      }
+    }
+
+    if (updatePermissionsOnly) {
+      const { data: existing, error: existingErr } = await admin
+        .from("chapter_admins")
+        .select("email")
+        .eq("email", email)
+        .maybeSingle();
+      if (existingErr || !existing) {
+        return json({ error: "That email is not a chapter administrator." }, 404);
+      }
+      const { error: updErr } = await admin
+        .from("chapter_admins")
+        .update({ is_full_admin: isFullAdmin, sections })
+        .eq("email", email);
+      if (updErr) {
+        return json({ error: "Could not update permissions: " + updErr.message }, 500);
+      }
+      return json({ ok: true, message: "Admin permissions updated." });
     }
 
     const authRes = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
@@ -138,11 +197,18 @@ serve(async (req) => {
     }
 
     const now = new Date().toISOString();
+    // The very first admin (bootstrap) is always a full admin, regardless of
+    // what the request sent, so the roster can never start out with nobody
+    // able to manage permissions.
+    const grantedIsFullAdmin = isBootstrap ? true : isFullAdmin;
+    const grantedSections = grantedIsFullAdmin ? [] : sections;
     const { error: insErr } = await admin.from("chapter_admins").upsert(
       {
         email,
         granted_by: requesterEmail,
         granted_at: now,
+        is_full_admin: grantedIsFullAdmin,
+        sections: grantedSections,
       },
       { onConflict: "email" },
     );
