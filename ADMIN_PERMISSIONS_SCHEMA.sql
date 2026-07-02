@@ -138,8 +138,20 @@ using ( public.current_user_can_manage('events') );
 --    the same full-admin requirement in application code.
 -- =============================================================================
 
+-- Every chapter admin (including limited ones) must be able to read their
+-- own row -- the dashboard uses it to decide which sections to show. Only
+-- full admins can see the rest of the roster. Postgres OR's multiple
+-- permissive SELECT policies together, so both apply.
 drop policy if exists "chapter_admins_select" on public.chapter_admins;
-create policy "chapter_admins_select"
+drop policy if exists "chapter_admins_select_self" on public.chapter_admins;
+drop policy if exists "chapter_admins_select_all_for_full_admins" on public.chapter_admins;
+
+create policy "chapter_admins_select_self"
+on public.chapter_admins for select
+to authenticated
+using ( lower(trim(email)) = lower(trim(auth.jwt() ->> 'email')) );
+
+create policy "chapter_admins_select_all_for_full_admins"
 on public.chapter_admins for select
 to authenticated
 using ( public.current_user_is_full_admin() );
