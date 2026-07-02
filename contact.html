@@ -37,6 +37,18 @@
     .contact-card.sankofa-card .sankofa-logo-wrap img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
     .quick-card .qicon.qicon-img { padding: 6px; overflow: hidden; }
     .quick-card .qicon.qicon-img img { width: 100%; height: 100%; object-fit: contain; border-radius: 50%; }
+    .affiliates-section { padding: 80px 0; background: var(--gray-100); }
+    .affiliates-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 36px; margin-top: 40px; }
+    .affiliate-item { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 150px; text-decoration: none; }
+    .affiliate-logo-wrap { width: 120px; height: 120px; border-radius: 50%; background: var(--white); border: 1px solid var(--gray-200); box-shadow: 0 2px 14px rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 12px; transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease; }
+    .affiliate-item:hover .affiliate-logo-wrap { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.12); border-color: var(--gold); }
+    .affiliate-logo-wrap img { width: 100%; height: 100%; object-fit: contain; }
+    .affiliate-name { font-size: 0.82rem; font-weight: 700; color: var(--gray-800); text-align: center; line-height: 1.35; }
+    .affiliate-item:hover .affiliate-name { color: var(--gold); }
+    .affiliate-logo-wrap.affiliate-text-badge { background: var(--black); }
+    .affiliate-wordmark { font-family: 'Playfair Display', serif; font-weight: 800; text-align: center; line-height: 1.2; }
+    .affiliate-wordmark .big { display: block; font-size: 1.4rem; color: var(--gold); letter-spacing: 0.02em; }
+    .affiliate-wordmark .small { display: block; font-size: 0.52rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255,255,255,0.6); margin-top: 3px; }
     @media (max-width: 768px) {
       .contact-layout { grid-template-columns: 1fr; }
       .form-row { grid-template-columns: 1fr; }
@@ -205,6 +217,41 @@
     </div>
   </div>
 </section>
+
+<section class="affiliates-section">
+  <div class="container">
+    <div class="fade-up" style="text-align:center;">
+      <span class="section-label">Alpha Family of Organizations</span>
+      <h2 class="section-title" style="font-size:2rem;">All the Noble, True, and Courageous</h2>
+      <div class="gold-bar"></div>
+      <p style="color:var(--gray-600); max-width:640px; margin:0 auto;">Xi Tau Lambda Chapter is proud to stand alongside these affiliated organizations in the Alpha Phi Alpha family.</p>
+    </div>
+    <div class="affiliates-grid fade-up">
+      <a class="affiliate-item" href="https://www.apa1906.net" target="_blank" rel="noopener">
+        <div class="affiliate-logo-wrap"><img src="images/apa-fraternity-logo.png" alt="Alpha Phi Alpha Fraternity, Inc. National" loading="lazy" /></div>
+        <span class="affiliate-name">National Fraternity</span>
+      </a>
+      <a class="affiliate-item" href="https://alphasouthwest.org" target="_blank" rel="noopener">
+        <div class="affiliate-logo-wrap"><img src="images/southwestern-region-logo.png" alt="Southwestern Region of Alpha Phi Alpha Fraternity, Inc." loading="lazy" /></div>
+        <span class="affiliate-name">Southwestern Region</span>
+      </a>
+      <a class="affiliate-item" href="https://alphatexas.org" target="_blank" rel="noopener">
+        <div class="affiliate-logo-wrap"><img src="images/tcac-logo.png" alt="Texas Council of Alpha Chapters" loading="lazy" /></div>
+        <span class="affiliate-name">Texas Council of Alpha Chapters</span>
+      </a>
+      <a class="affiliate-item" href="https://my.apa1906.net" target="_blank" rel="noopener">
+        <div class="affiliate-logo-wrap affiliate-text-badge">
+          <span class="affiliate-wordmark"><span class="big">AlphaMX</span><span class="small">Member Portal</span></span>
+        </div>
+        <span class="affiliate-name">AlphaMX</span>
+      </a>
+      <a class="affiliate-item" href="https://dfwsankofa.org" target="_blank" rel="noopener">
+        <div class="affiliate-logo-wrap"><img src="images/sankofa-foundation-logo.png" alt="Sankofa Foundation Dallas / Ft. Worth" loading="lazy" /></div>
+        <span class="affiliate-name">Sankofa Foundation</span>
+      </a>
+    </div>
+  </div>
+</section>
 </div>
 
 <footer class="site-footer">
@@ -213,18 +260,13 @@
       <div class="footer-brand">
         <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
         <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+        </div>
       </div>
       <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li></ul></div>
       <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="visiting-brothers.html">Visiting Brothers</a></li><li><a href="events.html#gala">Scholarship Gala</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
       <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-map-marker-alt"></i><span>224 W. Campbell Road #443<br/>Richardson, TX 75080</span></div><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="/cdn-cgi/l/email-protection#db92b5bdb49b95b4a9afb39fbab7b7baa89ab7abb3baa8f5b4a9bc" style="color:rgba(255,255,255,0.55);"><span class="__cf_email__" data-cfemail="fab3949c95bab495888e92be9b96969b89bb968a929b89d495889d">[email&#160;protected]</span></a></div></div>
-    </div>
-    <div class="footer-links-bar">
-      <span class="footer-links-label">Affiliated Organizations</span>
-      <a href="https://www.apa1906.net" target="_blank" rel="noopener">National Fraternity</a>
-      <a href="https://alphasouthwest.org" target="_blank" rel="noopener">Southwestern Region</a>
-      <a href="https://alphatexas.org" target="_blank" rel="noopener">Texas Council of Alpha Chapters</a>
-      <a href="https://my.apa1906.net" target="_blank" rel="noopener">AlphaMX</a>
-      <a href="https://dfwsankofa.org" target="_blank" rel="noopener">Sankofa Foundation</a>
     </div>
     <div class="footer-bottom">
       <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>

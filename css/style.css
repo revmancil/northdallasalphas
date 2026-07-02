@@ -1197,29 +1197,29 @@ h1, h2, h3, h4, h5 {
   color: rgba(255,255,255,0.55);
 }
 .footer-contact-item i { color: var(--gold); margin-top: 2px; min-width: 14px; }
-.footer-links-bar {
+.footer-social {
   display: flex;
-  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.footer-social a {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
   align-items: center;
-  gap: 8px 20px;
-  padding-bottom: 22px;
-  margin-bottom: 22px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.footer-links-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-right: 4px;
-}
-.footer-links-bar a {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.55);
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
   transition: var(--transition);
 }
-.footer-links-bar a:hover { color: var(--gold); }
+.footer-social a:hover {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #000;
+}
+.footer-social a i { font-size: 1rem; }
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,0.08);
   padding-top: 24px;
