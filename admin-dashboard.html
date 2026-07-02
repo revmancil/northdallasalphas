@@ -2162,6 +2162,7 @@
             </div>
             <button class="btn-sm" id="accessTab-all"     onclick="setAccessTab('all')"     style="background:var(--gold);color:#000;font-weight:700;">All</button>
             <button class="btn-sm" id="accessTab-granted"  onclick="setAccessTab('granted')"  style="background:var(--gray-200);color:var(--gray-700);">Granted</button>
+            <button class="btn-sm" id="accessTab-visiting" onclick="setAccessTab('visiting')" style="background:var(--gray-200);color:var(--gray-700);">Visiting</button>
             <button class="btn-sm" id="accessTab-pending" onclick="setAccessTab('pending')" style="background:var(--gray-200);color:var(--gray-700);">Pending</button>
             <button class="btn-sm" id="accessTab-revoked" onclick="setAccessTab('revoked')" style="background:var(--gray-200);color:var(--gray-700);">Revoked</button>
           </div>
@@ -3262,7 +3263,7 @@ async function loadAccessPanel() {
 
 function setAccessTab(tab) {
   accessTabFilter = tab;
-  ['all', 'granted', 'pending', 'revoked'].forEach(function(t) {
+  ['all', 'granted', 'visiting', 'pending', 'revoked'].forEach(function(t) {
     const btn = document.getElementById('accessTab-' + t);
     if (!btn) return;
     if (t === tab) {
