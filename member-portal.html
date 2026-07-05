@@ -209,6 +209,24 @@
     .notif-icon{width:36px;height:36px;border-radius:50%;background:var(--gold-pale);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:0.85rem;flex-shrink:0;}
     .notif-info .notif-title{font-size:0.84rem;font-weight:600;color:var(--white);}
     .notif-info .notif-body{font-size:0.78rem;color:var(--gray-400);margin-top:3px;}
+    .portal-reg-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:2100;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+    .portal-reg-modal-overlay.open{display:flex;}
+    .portal-reg-modal{background:#1a1a1a;border:1px solid rgba(255,255,255,0.08);border-radius:14px;max-width:440px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.55);position:relative;animation:modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;}
+    .portal-reg-modal-close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.08);border:none;border-radius:50%;width:34px;height:34px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray-400);z-index:10;}
+    .portal-reg-modal-close:hover{background:rgba(255,255,255,0.14);color:var(--white);}
+    .portal-reg-modal-body{padding:26px 28px 28px;}
+    .portal-reg-modal-body h3{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--white);margin-bottom:6px;padding-right:36px;}
+    .portal-reg-fee{font-size:0.88rem;color:var(--gold);font-weight:700;margin-bottom:18px;}
+    .portal-reg-field{margin-bottom:14px;}
+    .portal-reg-field label{display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--gray-400);margin-bottom:6px;}
+    .portal-reg-field input{width:100%;padding:11px 12px;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:0.92rem;font-family:inherit;background:rgba(255,255,255,0.05);color:var(--white);box-sizing:border-box;}
+    .portal-reg-field input:focus{outline:none;border-color:var(--gold);}
+    .portal-reg-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
+    .portal-reg-error{display:none;font-size:0.82rem;color:#f87171;margin-top:12px;line-height:1.4;}
+    .portal-reg-error.show{display:block;}
+    .portal-reg-flash{position:fixed;top:0;left:0;right:0;z-index:3000;padding:14px 20px;text-align:center;font-size:0.9rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);}
+    .portal-reg-flash.success{background:#ecfdf5;color:#065f46;border-bottom:1px solid #6ee7b7;}
+    .event-reg-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:0.78rem;font-weight:700;cursor:pointer;padding:6px 12px;border-radius:6px;border:none;}
   </style>
 </head>
 <body>
@@ -981,6 +999,14 @@ function parseDate(dtStr) {
 
 function renderEventItem(ev) {
   const d = parseDate(ev.datetime);
+  const n = portalNormalizeEvent(ev);
+  var regHtml = '';
+  if (n.regUrl && /^https?:\/\//i.test(n.regUrl)) {
+    regHtml = '<a href="' + escHtml(n.regUrl) + '" target="_blank" rel="noopener" class="btn-gold event-reg-btn"><i class="fas fa-ticket-alt"></i> Register</a>';
+  } else if (n.freeEnabled || n.paidEnabled) {
+    var label = n.fee > 0 ? 'Register — $' + (n.fee / 100).toFixed(2) : 'Register (Free)';
+    regHtml = '<button type="button" class="btn-gold event-reg-btn" onclick="portalOpenRegModal(\'' + escHtml(String(ev.id)) + '\')"><i class="fas fa-ticket-alt"></i> ' + label + '</button>';
+  }
   return '<div class="event-item">' +
     '<div class="event-date-badge"><div class="day">' + d.day + '</div><div class="month">' + d.month + '</div></div>' +
     '<div class="event-info">' +
@@ -989,7 +1015,7 @@ function renderEventItem(ev) {
     '<div class="meta"><i class="fas fa-map-marker-alt"></i> ' + escHtml(ev.location || 'TBD') +
     (d.time ? ' &middot; <i class="fas fa-clock"></i> ' + escHtml(d.time) : '') + '</div>' +
     (ev.description ? '<p style="font-size:0.78rem;color:var(--gray-400);margin-top:6px;line-height:1.5;">' + escHtml(ev.description) + '</p>' : '') +
-    (ev.reg_url ? '<a href="' + escHtml(ev.reg_url) + '" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;font-size:0.78rem;color:var(--gold);font-weight:600;text-decoration:none;"><i class="fas fa-ticket-alt"></i> Register / Get Tickets</a>' : '') +
+    regHtml +
     '</div></div>';
 }
 
@@ -2285,7 +2311,142 @@ async function loadMyOrders() {
   } catch(e) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><p>Could not load orders.</p></div>'; }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+
+function portalNormalizeEvent(ev) {
+  var fee = Math.max(0, parseInt(String(ev.registration_fee_cents || ev.registrationFeeCents || 0), 10) || 0);
+  var regUrl = String(ev.reg_url || '').trim();
+  var freeUrl = String(ev.free_registration_url || '').trim();
+  var chapterOn = !!ev.chapter_registration_enabled;
+  var freeEnabled = ev.free_registration_enabled != null ? !!ev.free_registration_enabled : false;
+  var paidEnabled = ev.paid_registration_enabled != null ? !!ev.paid_registration_enabled : false;
+  if (chapterOn && !freeEnabled && !paidEnabled) {
+    if (regUrl) paidEnabled = true;
+    else if (fee > 0) paidEnabled = true;
+    else freeEnabled = true;
+  }
+  if (freeUrl && /^https?:\/\//i.test(freeUrl)) freeEnabled = true;
+  if (regUrl && /^https?:\/\//i.test(regUrl)) paidEnabled = true;
+  return { id: ev.id, name: ev.name || '', fee: fee, regUrl: regUrl, freeUrl: freeUrl, freeEnabled: freeEnabled, paidEnabled: paidEnabled };
+}
+
+function portalOpenRegModal(eventId) {
+  var ev = allEvents.find(function(e) { return String(e.id) === String(eventId); });
+  if (!ev) return;
+  var n = portalNormalizeEvent(ev);
+  window.__portalRegEvent = ev;
+  window.__portalRegFee = n.fee;
+  document.getElementById('portalRegTitle').textContent = ev.name || 'Event Registration';
+  var feeLine = document.getElementById('portalRegFeeLine');
+  feeLine.textContent = n.fee <= 0 ? 'Free registration' : 'Registration fee: $' + (n.fee / 100).toFixed(2) + ' (secure payment via Stripe)';
+  var submitBtn = document.getElementById('portalRegSubmit');
+  submitBtn.innerHTML = n.fee <= 0 ? '<i class="fas fa-check"></i> Complete registration' : '<i class="fas fa-lock"></i> Continue to payment';
+  var nameEl = document.getElementById('portalRegName');
+  var phoneEl = document.getElementById('portalRegPhone');
+  var emailEl = document.getElementById('portalRegEmail');
+  if (currentMember) {
+    var fn = (currentMember.first_name || '').trim();
+    var ln = (currentMember.last_name || '').trim();
+    nameEl.value = [fn, ln].filter(Boolean).join(' ');
+    phoneEl.value = currentMember.phone || '';
+  } else {
+    nameEl.value = '';
+    phoneEl.value = '';
+  }
+  emailEl.value = (currentSession && currentSession.user && currentSession.user.email) ? currentSession.user.email : (currentMember && currentMember.email ? currentMember.email : '');
+  var errEl = document.getElementById('portalRegError');
+  errEl.classList.remove('show');
+  errEl.textContent = '';
+  document.getElementById('portalRegModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function portalCloseRegModal() {
+  document.getElementById('portalRegModalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  window.__portalRegEvent = null;
+  window.__portalRegFee = null;
+}
+
+function portalShowRegFlash(kind, msg) {
+  var el = document.createElement('div');
+  el.className = 'portal-reg-flash ' + (kind === 'success' ? 'success' : 'cancel');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 7000);
+}
+
+async function portalRegisterFree(eventId, fullName, phone, email) {
+  var res = await fetch(SUPABASE_URL + '/rest/v1/rpc/register_for_event_free', {
+    method: 'POST',
+    headers: sbHeaders(SUPABASE_ANON_KEY),
+    body: JSON.stringify({ event_id: eventId, full_name: fullName, phone: phone, email: email })
+  });
+  if (!res.ok) { var detail = await res.text(); throw new Error(detail || 'Registration could not be saved.'); }
+  return res.json();
+}
+
+async function portalSubmitRegistration(ev) {
+  var errEl = document.getElementById('portalRegError');
+  errEl.classList.remove('show');
+  var fullName = document.getElementById('portalRegName').value.trim();
+  var phone = document.getElementById('portalRegPhone').value.trim();
+  var email = document.getElementById('portalRegEmail').value.trim();
+  if (fullName.length < 2) { errEl.textContent = 'Please enter your name.'; errEl.classList.add('show'); return; }
+  if (phone.length < 7) { errEl.textContent = 'Please enter a valid phone number.'; errEl.classList.add('show'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Please enter a valid email address.'; errEl.classList.add('show'); return; }
+  var btn = document.getElementById('portalRegSubmit');
+  btn.disabled = true;
+  try {
+    var fee = window.__portalRegFee != null ? window.__portalRegFee : 0;
+    if (fee <= 0) {
+      await portalRegisterFree(ev.id, fullName, phone, email);
+      portalCloseRegModal();
+      portalShowRegFlash('success', 'You are registered. We look forward to seeing you!');
+    } else {
+      var r = await fetch(STRIPE_CHECKOUT_URL, {
+        method: 'POST',
+        headers: sbHeaders(SUPABASE_ANON_KEY),
+        body: JSON.stringify({ mode: 'event', eventId: ev.id, fullName: fullName, phone: phone, email: email })
+      });
+      var payload = null;
+      try { payload = await r.json(); } catch(e2) { payload = { error: await r.text() }; }
+      if (!r.ok) { throw new Error((payload && payload.error) ? payload.error : 'Could not start checkout.'); }
+      if (payload.url) { window.location.href = payload.url; return; }
+      throw new Error((payload && payload.error) ? payload.error : 'Checkout unavailable.');
+    }
+  } catch(e) {
+    var msg = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
+    if (/row-level security|42501/i.test(msg)) msg = 'Registration could not be saved. Please contact the chapter administrator.';
+    if (/register_for_event_free|PGRST202|42883/i.test(msg)) msg = 'Registration service is not configured. Please contact the chapter administrator.';
+    errEl.textContent = msg;
+    errEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  var overlay = document.getElementById('portalRegModalOverlay');
+  if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) portalCloseRegModal(); });
+});
 </script>
+
+<div class="portal-reg-modal-overlay" id="portalRegModalOverlay" role="dialog" aria-modal="true" aria-labelledby="portalRegTitle">
+  <div class="portal-reg-modal" onclick="event.stopPropagation();">
+    <button type="button" class="portal-reg-modal-close" onclick="portalCloseRegModal()" aria-label="Close">&times;</button>
+    <div class="portal-reg-modal-body">
+      <h3 id="portalRegTitle">Register</h3>
+      <p class="portal-reg-fee" id="portalRegFeeLine"></p>
+      <div class="portal-reg-field"><label for="portalRegName">Full name</label><input id="portalRegName" type="text" autocomplete="name" required /></div>
+      <div class="portal-reg-field"><label for="portalRegPhone">Phone</label><input id="portalRegPhone" type="tel" autocomplete="tel" required /></div>
+      <div class="portal-reg-field"><label for="portalRegEmail">Email</label><input id="portalRegEmail" type="email" autocomplete="email" required /></div>
+      <div class="portal-reg-error" id="portalRegError" role="alert"></div>
+      <div class="portal-reg-actions">
+        <button type="button" class="btn-gold" id="portalRegSubmit" onclick="if(window.__portalRegEvent) portalSubmitRegistration(window.__portalRegEvent);"><i class="fas fa-arrow-right"></i> Continue</button>
+        <button type="button" class="btn-outline" onclick="portalCloseRegModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
