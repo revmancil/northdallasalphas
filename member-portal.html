@@ -2416,8 +2416,13 @@ async function portalSubmitRegistration(ev) {
     }
   } catch(e) {
     var msg = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
-    if (/row-level security|42501/i.test(msg)) msg = 'Registration could not be saved. Please contact the chapter administrator.';
-    if (/register_for_event_free|PGRST202|42883/i.test(msg)) msg = 'Registration service is not configured. Please contact the chapter administrator.';
+    if (/already registered/i.test(msg) || /unique.*event_registrations|23505/i.test(msg)) {
+      msg = 'You are already registered for this event.';
+    } else if (/row-level security|42501/i.test(msg)) {
+      msg = 'Registration could not be saved. Please contact the chapter administrator.';
+    } else if (/register_for_event_free|PGRST202|42883/i.test(msg)) {
+      msg = 'Registration service is not configured. Please contact the chapter administrator.';
+    }
     errEl.textContent = msg;
     errEl.classList.add('show');
   } finally {

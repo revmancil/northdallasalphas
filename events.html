@@ -1353,10 +1353,11 @@ async function submitChapterRegistration(ev) {
     }
   } catch (e) {
     var msg = (e && e.message) ? e.message : 'Something went wrong. Please try again.';
-    if (/row-level security|42501/i.test(msg)) {
+    if (/already registered/i.test(msg) || /unique.*event_registrations|23505/i.test(msg)) {
+      msg = 'You are already registered for this event.';
+    } else if (/row-level security|42501/i.test(msg)) {
       msg = 'Registration could not be saved. Run the register_for_event_free SQL block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor, then try again.';
-    }
-    if (/register_for_event_free|PGRST202|42883/i.test(msg)) {
+    } else if (/register_for_event_free|PGRST202|42883/i.test(msg)) {
       msg = 'Registration service is not set up yet. Run the register_for_event_free SQL block in SUPABASE_CONTENT_SCHEMA.sql in the Supabase SQL Editor.';
     }
     errEl.textContent = msg;

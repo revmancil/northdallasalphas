@@ -338,6 +338,10 @@ create unique index if not exists event_registrations_stripe_session_uidx
   on public.event_registrations (stripe_checkout_session_id)
   where stripe_checkout_session_id is not null;
 
+create unique index if not exists event_registrations_email_event_uidx
+  on public.event_registrations (event_id, lower(trim(email)))
+  where event_id is not null;
+
 create table if not exists public.dues_payments (
   id bigserial primary key,
   member_id bigint,
@@ -420,6 +424,13 @@ begin
   end if;
   if position('@' in coalesce(email, '')) <= 1 then
     raise exception 'Please enter a valid email address';
+  end if;
+  if exists (
+    select 1 from public.event_registrations r
+    where r.event_id = register_for_event_free.event_id
+      and lower(trim(r.email)) = lower(trim(email))
+  ) then
+    raise exception 'You are already registered for this event';
   end if;
 
   insert into public.event_registrations (
