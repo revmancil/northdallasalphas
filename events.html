@@ -719,12 +719,14 @@ function normalizeEventRecord(r) {
     registrationFeeCents: fee,
     sponsorEnabled: !!r.sponsor_enabled,
     sponsorUrl: String(r.sponsor_url || '').trim(),
-    sponsorLabel: String(r.sponsor_label || 'Become a Sponsor').trim() || 'Become a Sponsor'
+    sponsorLabel: String(r.sponsor_label || 'Become a Sponsor').trim() || 'Become a Sponsor',
+    membersOnly: !!(r.members_only)
   };
 }
 
 function getRegistrationOptions(ev) {
   if (!ev) return [];
+  if (ev.membersOnly) return [];
   const opts = [];
   const freeUrl = isAbsoluteHttpUrl(ev.freeRegistrationUrl) ? ev.freeRegistrationUrl.trim() : '';
   const paidUrl = isAbsoluteHttpUrl(ev.registrationUrl) ? ev.registrationUrl.trim() : '';
@@ -951,8 +953,10 @@ function renderFeaturedEvent(events) {
         ${parsed.time ? `<div class="gala-detail"><i class="fas fa-clock"></i> Doors open at ${escHtml(parsed.time)}</div>` : ''}
         ${featured.location ? `<div class="gala-detail"><i class="fas fa-map-marker-alt"></i> ${escHtml(featured.location)}</div>` : ''}
       </div>
-      <div style="display:flex; flex-wrap:wrap; gap:12px;">
-        ${buildRegisterButtonHtml(featured, '', false)}
+      <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center;">
+        ${featured.membersOnly
+          ? `<span style="font-size:0.8rem;font-weight:700;color:var(--gold);letter-spacing:0.05em;text-transform:uppercase;"><i class="fas fa-lock"></i> Registration available in the Member Portal</span>`
+          : buildRegisterButtonHtml(featured, '', false)}
         ${(featured.flyer || featured.description)
           ? `<button type="button" class="btn btn-outline" onclick="openEventModal(allEventsStore.find(e=>e.featured)||allEventsStore[allEventsStore.length-1])">
                <i class="fas fa-expand-alt"></i> View Full Details
@@ -1006,7 +1010,9 @@ function renderAllEvents(events, opts) {
       : '';
 
     // Right-side action: registration modal / links
-    const actionBtn = buildRegisterButtonHtml(ev, 'white-space:nowrap;flex-shrink:0;', true);
+    const actionBtn = ev.membersOnly
+      ? `<div style="white-space:nowrap;flex-shrink:0;font-size:0.76rem;font-weight:700;color:var(--gold);letter-spacing:0.05em;text-transform:uppercase;opacity:0.85;"><i class="fas fa-lock"></i> Members Only</div>`
+      : buildRegisterButtonHtml(ev, 'white-space:nowrap;flex-shrink:0;', true);
 
     card.innerHTML = `
       <div class="event-full-date">
@@ -1199,7 +1205,9 @@ function openEventModal(ev) {
     ? `<div class="event-modal-desc">${escHtml(ev.description)}</div>` : '';
 
   // Action buttons
-  let actions = buildRegisterButtonHtml(ev, '', false);
+  let actions = ev.membersOnly
+    ? `<span style="font-size:0.82rem;font-weight:700;color:var(--gold);letter-spacing:0.05em;text-transform:uppercase;"><i class="fas fa-lock"></i> Registration available in the Member Portal</span>`
+    : buildRegisterButtonHtml(ev, '', false);
   if (eventHasSponsor(ev)) {
     actions += renderSponsorButtonHtml(ev, 'btn btn-outline');
   }

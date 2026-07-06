@@ -5065,7 +5065,8 @@ function normalizeAdminEventRecord(ev) {
     registrationFeeCents: fee,
     sponsorEnabled: !!(ev.sponsor_enabled ?? ev.sponsorEnabled),
     sponsorUrl: String(ev.sponsor_url || ev.sponsorUrl || '').trim(),
-    sponsorLabel: String(ev.sponsor_label || ev.sponsorLabel || 'Become a Sponsor').trim() || 'Become a Sponsor'
+    sponsorLabel: String(ev.sponsor_label || ev.sponsorLabel || 'Become a Sponsor').trim() || 'Become a Sponsor',
+    membersOnly: !!(ev.members_only ?? ev.membersOnly)
   };
 }
 
@@ -5307,6 +5308,12 @@ function renderEventsList() {
         <p style="font-size:0.76rem;color:var(--gray-500);margin:0 0 12px;line-height:1.45;">
           Choose one or both registration paths. If both are enabled, visitors see a modal to pick <strong>free</strong> or <strong>paid</strong> registration.
         </p>
+        <div style="padding:10px 14px;border:1px solid #f59e0b44;border-radius:8px;background:#fef9ee;margin-bottom:12px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;">
+            <input type="checkbox" id="members-only-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.membersOnly ? 'checked' : ''} onchange="eventsData[${i}].membersOnly=this.checked" />
+            <span><strong style="color:#b45309;">Brothers Only</strong> — hides the Register button on the public Events page. Registration is only available through the Member Portal.</span>
+          </label>
+        </div>
         <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);margin-bottom:12px;">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;margin-bottom:10px;">
             <input type="checkbox" id="free-reg-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.freeRegistrationEnabled ? 'checked' : ''} onchange="eventsData[${i}].freeRegistrationEnabled=this.checked" />
@@ -5568,6 +5575,7 @@ function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
       row.registration_fee_cents = paidOnSite
         ? Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0)
         : 0;
+      row.members_only = !!ev.membersOnly;
     }
     if (includeSponsorFields) {
       row.sponsor_enabled = !!ev.sponsorEnabled;
@@ -5628,6 +5636,8 @@ async function saveEvents() {
       if (paidReg) eventsData[i].paidRegistrationEnabled = paidReg.checked;
       if (freeRegUrl) eventsData[i].freeRegistrationUrl = freeRegUrl.value.trim();
       if (feeEl) eventsData[i].registrationFeeCents = Math.round((parseFloat(feeEl.value) || 0) * 100);
+      const membersOnlyEl = document.getElementById('members-only-' + i);
+      if (membersOnlyEl) eventsData[i].membersOnly = membersOnlyEl.checked;
       if (sponsorEnabled) eventsData[i].sponsorEnabled = sponsorEnabled.checked;
       if (sponsorUrl) eventsData[i].sponsorUrl = sponsorUrl.value.trim();
       if (sponsorLabel) eventsData[i].sponsorLabel = sponsorLabel.value.trim() || 'Become a Sponsor';

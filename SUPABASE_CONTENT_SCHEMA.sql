@@ -67,7 +67,8 @@ alter table if exists public.events
   add column if not exists sponsor_label text default 'Become a Sponsor',
   add column if not exists free_registration_enabled boolean not null default false,
   add column if not exists free_registration_url text,
-  add column if not exists paid_registration_enabled boolean not null default false;
+  add column if not exists paid_registration_enabled boolean not null default false,
+  add column if not exists members_only boolean not null default false;
 
 alter table if exists public.announcements
   add column if not exists link_text text,
@@ -307,7 +308,8 @@ alter table if exists public.events
   add column if not exists sponsor_label text default 'Become a Sponsor',
   add column if not exists free_registration_enabled boolean not null default false,
   add column if not exists free_registration_url text,
-  add column if not exists paid_registration_enabled boolean not null default false;
+  add column if not exists paid_registration_enabled boolean not null default false,
+  add column if not exists members_only boolean not null default false;
 
 create table if not exists public.event_registrations (
   id bigserial primary key,
