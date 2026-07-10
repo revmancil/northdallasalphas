@@ -163,8 +163,28 @@ async function signInForRequestFlow(email, pass) {
   if (!res.ok || !data.access_token) return null;
   return data;
 }
-async function upsertPendingMember(email, first, last, phone, alphaId, accessToken) {
+async function lookupMemberByAlphaId(alphaId) {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/members?alpha_id=eq.' + encodeURIComponent(alphaId) + '&select=id,email,status,portal_access&limit=1', {
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY }
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return (Array.isArray(rows) && rows.length) ? rows[0] : null;
+  } catch(e) { return null; }
+}
+async function upsertPendingMember(email, first, last, phone, alphaId, accessToken, memberId) {
   const authHeaders = accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {};
+  // If we already know the member's row ID (from Alpha ID lookup), use it directly
+  if (memberId) {
+    const payload = { first_name: first, last_name: last, phone, alpha_id: alphaId, email };
+    await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=representation' },
+      body: JSON.stringify(payload)
+    });
+    return;
+  }
   const selectRes = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id,status&limit=1', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders }
@@ -223,7 +243,7 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
   hideMsg('regError'); hideMsg('regSuccess');
   const first=document.getElementById('regFirst').value.trim();
   const last=document.getElementById('regLast').value.trim();
-  const email=document.getElementById('regEmail').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
   const phone=document.getElementById('regPhone').value.trim();
   const alphaIdRaw=document.getElementById('regAlphaId').value.trim();
   const pass=document.getElementById('regPassword').value;
@@ -231,26 +251,81 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
   if (!first||!last||!email||!alphaIdRaw||!pass) { showMsg('regError','error','Please fill in all required fields.'); return; }
   if (pass.length<8) { showMsg('regError','error','Password must be at least 8 characters.'); return; }
   if (pass!==confirm) { showMsg('regError','error','Passwords do not match.'); return; }
+  const alphaCheck = validateAlphaId(alphaIdRaw);
+  if (!alphaCheck.ok) { showMsg('regError','error', alphaCheck.reason); return; }
+  const alphaId = alphaCheck.normalized;
   setLoading('regBtn', true, '<i class="fas fa-user-plus"></i> Request Access');
   try {
-    const alphaCheck = validateAlphaId(alphaIdRaw);
-    if (!alphaCheck.ok) {
+    // Step 1: Check if this Alpha ID is already in the members table
+    const existingMember = await lookupMemberByAlphaId(alphaId);
+    if (existingMember) {
+      const memberEmail = (existingMember.email || '').trim().toLowerCase();
+      // If the chapter has a different email on file, stop here
+      if (memberEmail && memberEmail !== email) {
+        setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+        showMsg('regError','error','A member with that Alpha ID is already on file with a different email address. Please use the email the chapter has on record, or contact the administrator.');
+        return;
+      }
+      // Alpha ID matches and email matches (or no email on file yet)
+      // Step 2: Try signing in — they may already have a login set up
+      const existingLogin = await signInForRequestFlow(email, pass);
+      if (existingLogin && existingLogin.access_token) {
+        try { await upsertPendingMember(email, first, last, phone, alphaId, existingLogin.access_token, existingMember.id); } catch(ue) {}
+        setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+        showMsg('regSuccess','success','Your access request has been submitted and is pending admin approval.');
+        document.getElementById('regForm').reset();
+        return;
+      }
+      // No working login yet — create an auth account linked to the existing member record
+      const res = await fetch(SUPABASE_URL+'/auth/v1/signup', {
+        method:'POST', headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+        body: JSON.stringify({email, password:pass, data:{first_name:first, last_name:last, phone, alpha_id:alphaId}})
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        const errorText = parseAuthError(data);
+        if (isRateLimitError(errorText, res.status)) {
+          const retryLogin = await signInForRequestFlow(email, pass);
+          if (retryLogin && retryLogin.access_token) {
+            try { await upsertPendingMember(email, first, last, phone, alphaId, retryLogin.access_token, existingMember.id); } catch(ue) {}
+            setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+            showMsg('regSuccess','success','Your access request has been submitted and is pending admin approval.');
+            document.getElementById('regForm').reset();
+            return;
+          }
+          setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+          showMsg('regError','error','Email send limit reached. Please wait 1-2 minutes and try again.');
+          return;
+        }
+        if (/already registered|already been registered|user already exists/i.test(errorText)) {
+          setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+          showMsg('regError','error','An account with this email already exists. Please Sign In or use Forgot Password.');
+          return;
+        }
+        setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
+        showMsg('regError','error', errorText || 'Registration failed. Please try again.');
+        return;
+      }
+      // Auth account created — link it to the existing member record
+      try { await upsertPendingMember(email, first, last, phone, alphaId, data.access_token || null, existingMember.id); } catch(ue) {}
       setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
-      showMsg('regError','error', alphaCheck.reason);
+      showMsg('regSuccess','success');
+      document.getElementById('regForm').reset();
       return;
     }
-    const alphaId = alphaCheck.normalized;
+
+    // Step 3: Alpha ID not found — this is a new brother; create everything from scratch
     const existingLogin = await signInForRequestFlow(email, pass);
     if (existingLogin && existingLogin.access_token) {
-      try { await upsertPendingMember(email, first, last, phone, alphaId, existingLogin.access_token); } catch(e) {}
+      try { await upsertPendingMember(email, first, last, phone, alphaId, existingLogin.access_token, null); } catch(ue) {}
       setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
-      showMsg('regSuccess','success','Request already exists. Your access request has been submitted and is pending admin approval.');
+      showMsg('regSuccess','success','Your access request has been submitted and is pending admin approval.');
       document.getElementById('regForm').reset();
       return;
     }
     const res = await fetch(SUPABASE_URL+'/auth/v1/signup', {
       method:'POST', headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
-      body: JSON.stringify({email, password:pass, data:{first_name:first, last_name:last, phone, alpha_id: alphaId}})
+      body: JSON.stringify({email, password:pass, data:{first_name:first, last_name:last, phone, alpha_id:alphaId}})
     });
     const data = await res.json();
     if (!res.ok) {
@@ -258,17 +333,17 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
       if (isRateLimitError(errorText, res.status)) {
         const retryLogin = await signInForRequestFlow(email, pass);
         if (retryLogin && retryLogin.access_token) {
-          try { await upsertPendingMember(email, first, last, phone, alphaId, retryLogin.access_token); } catch(e) {}
+          try { await upsertPendingMember(email, first, last, phone, alphaId, retryLogin.access_token, null); } catch(ue) {}
           setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
-          showMsg('regSuccess','success','Request submitted. Email sending is temporarily rate-limited, but your account request is in the pending queue for admin review.');
+          showMsg('regSuccess','success','Request submitted. Your account is in the pending queue for admin review.');
           document.getElementById('regForm').reset();
           return;
         }
         setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
-        showMsg('regError','error','Email send limit reached. Please wait 1-2 minutes and try again, or contact an administrator for manual approval.');
+        showMsg('regError','error','Email send limit reached. Please wait 1-2 minutes and try again, or contact an administrator.');
         return;
       }
-      if (/already registered|already been registered|user already exists/i.test(errorText.toLowerCase())) {
+      if (/already registered|already been registered|user already exists/i.test(errorText)) {
         setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
         showMsg('regError','error','This email already has an account. Try Sign In or use Forgot Password.');
         return;
@@ -277,7 +352,7 @@ document.getElementById('regForm').addEventListener('submit', async function(e) 
       showMsg('regError','error', errorText || 'Registration failed.');
       return;
     }
-    try { await upsertPendingMember(email, first, last, phone, alphaId, data.access_token || null); } catch(e) {}
+    try { await upsertPendingMember(email, first, last, phone, alphaId, data.access_token || null, null); } catch(ue) {}
     setLoading('regBtn', false, '<i class="fas fa-user-plus"></i> Request Access');
     showMsg('regSuccess','success');
     document.getElementById('regForm').reset();
