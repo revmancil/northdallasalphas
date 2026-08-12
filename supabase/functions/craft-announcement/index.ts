@@ -78,7 +78,7 @@ Write only the announcement message body — no title, no greeting like "Dear Br
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
+        model: "claude-opus-5",
         max_tokens: 600,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
