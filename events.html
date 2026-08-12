@@ -879,7 +879,19 @@ function parseEventDate(dtStr) {
 
   const startParts = startStr.trim().split(' ');
   const segs = (startParts[0] || '').split('/');
-  if (segs.length < 3) return { day: '?', month: dtStr, year: '', time: '' };
+  if (segs.length < 3) {
+    // Fallback: try JS Date parsing (handles "Monday, August 31, 2026 7:00 AM" etc.)
+    const fb = new Date(dtStr);
+    if (!isNaN(fb.getTime())) {
+      return {
+        day:   String(fb.getDate()),
+        month: monthNames[fb.getMonth()],
+        year:  String(fb.getFullYear()),
+        time:  ''
+      };
+    }
+    return { day: '—', month: '—', year: '—', time: '' };
+  }
 
   const m = parseInt(segs[0], 10);
   const d = parseInt(segs[1], 10);
