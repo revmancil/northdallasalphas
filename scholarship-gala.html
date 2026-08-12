@@ -472,7 +472,7 @@
 
 <div class="announce-bar">
   🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
-  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="gala-ticket-link">Get Your Tickets →</a>
 </div>
 
 <div id="pageShell">
@@ -504,32 +504,32 @@
   <div class="container">
     <div class="gala-hero-text fade-up">
       <div class="gala-hero-eyebrow">Annual Signature Event</div>
-      <div class="gala-hero-label">14th Annual</div>
+      <div class="gala-hero-label" id="gala-hero-label">14th Annual</div>
       <h1 class="gala-hero-title">
         Alpha Legacy<br /><span>Scholarship Gala</span>
       </h1>
       <div class="gala-hero-details">
-        <div class="gala-hero-detail"><i class="fas fa-calendar"></i> Friday, June 13, 2026</div>
-        <div class="gala-hero-detail"><i class="fas fa-clock"></i> 6:00 PM · Doors open at 5:30 PM</div>
-        <div class="gala-hero-detail"><i class="fas fa-map-marker-alt"></i> Frisco Hall · 5353 Independence Pkwy, Frisco, TX</div>
-        <div class="gala-hero-detail"><i class="fas fa-tshirt"></i> Black Tie Invited</div>
+        <div class="gala-hero-detail" id="gala-hero-date"><i class="fas fa-calendar"></i> Friday, June 13, 2026</div>
+        <div class="gala-hero-detail" id="gala-hero-time"><i class="fas fa-clock"></i> 6:00 PM · Doors open at 5:30 PM</div>
+        <div class="gala-hero-detail" id="gala-hero-venue"><i class="fas fa-map-marker-alt"></i> Frisco Hall · 5353 Independence Pkwy, Frisco, TX</div>
+        <div class="gala-hero-detail" id="gala-hero-dress"><i class="fas fa-tshirt"></i> Black Tie Invited</div>
       </div>
       <p class="gala-hero-desc">
         An unforgettable evening of fellowship, scholarship, and community impact — celebrating the young scholars whose futures we are honored to help shape.
       </p>
       <div class="gala-hero-actions">
-        <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="btn btn-gold">
+        <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="btn btn-gold gala-ticket-link">
           <i class="fas fa-ticket-alt"></i> Get Tickets
         </a>
-        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline">
+        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline gala-sponsor-link">
           <i class="fas fa-handshake"></i> Become a Sponsor
         </a>
       </div>
     </div>
     <div class="gala-hero-img fade-up">
-      <img src="images/scholarship.jpg" alt="Scholarship recipients at the Alpha Legacy Scholarship Gala" />
+      <img id="gala-hero-img" src="images/gala-award-ceremony.jpg" alt="Scholarship award presentation at the Alpha Legacy Scholarship Gala" />
       <div class="gala-hero-img-badge">
-        <div class="num">14th</div>
+        <div class="num" id="gala-hero-badge-num">14th</div>
         <div class="lbl">Annual Gala</div>
       </div>
     </div>
@@ -541,7 +541,7 @@
   <div class="container">
     <div class="gala-about-grid">
       <div class="gala-about-img fade-up">
-        <img src="images/chapter-event.jpg" alt="Brothers and guests at the Alpha Legacy Scholarship Gala" />
+        <img id="gala-about-img" src="images/gala-award-ceremony.jpg" alt="Brothers and guests at the Alpha Legacy Scholarship Gala" />
         <div class="gala-about-img-accent"></div>
       </div>
       <div class="gala-about-text fade-up">
@@ -559,11 +559,11 @@
         </p>
         <div class="gala-stat-row">
           <div class="gala-stat">
-            <div class="num">14</div>
+            <div class="num" id="gala-stat-years">14</div>
             <div class="lbl">Years of Giving</div>
           </div>
           <div class="gala-stat">
-            <div class="num">100+</div>
+            <div class="num" id="gala-stat-scholars">100+</div>
             <div class="lbl">Scholars Supported</div>
           </div>
         </div>
@@ -578,19 +578,19 @@
     <div class="gala-legacy-inner">
       <div class="gala-legacy-text">
         <h3>A Legacy Built Year by Year</h3>
-        <p>From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most.</p>
+        <p id="gala-leg-tagline">From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most.</p>
       </div>
       <div class="gala-legacy-nums">
         <div class="gala-legacy-num">
-          <div class="n">14</div>
+          <div class="n" id="gala-leg-num1">14</div>
           <div class="l">Annual Galas</div>
         </div>
         <div class="gala-legacy-num">
-          <div class="n">2026</div>
+          <div class="n" id="gala-leg-num2">2026</div>
           <div class="l">This Year</div>
         </div>
         <div class="gala-legacy-num">
-          <div class="n">June 13</div>
+          <div class="n" id="gala-leg-date">June 13</div>
           <div class="l">Save the Date</div>
         </div>
       </div>
@@ -642,17 +642,17 @@
       <div class="gala-detail-card">
         <div class="gala-detail-card-icon"><i class="fas fa-calendar-alt"></i></div>
         <h4>Date &amp; Time</h4>
-        <p><strong>Friday, June 13, 2026</strong><br />Doors open at 5:30 PM<br />Program begins at 6:00 PM</p>
+        <p id="gala-det-date"><strong>Friday, June 13, 2026</strong><br />Doors open at 5:30 PM<br />Program begins at 6:00 PM</p>
       </div>
       <div class="gala-detail-card">
         <div class="gala-detail-card-icon"><i class="fas fa-map-marker-alt"></i></div>
         <h4>Venue</h4>
-        <p><strong>Frisco Hall</strong><br />5353 Independence Pkwy<br />Frisco, TX 75035</p>
+        <p id="gala-det-venue"><strong>Frisco Hall</strong><br />5353 Independence Pkwy<br />Frisco, TX 75035</p>
       </div>
       <div class="gala-detail-card">
         <div class="gala-detail-card-icon"><i class="fas fa-tshirt"></i></div>
         <h4>Dress Code</h4>
-        <p><strong>Black Tie Invited</strong><br />Formal attire encouraged.<br />Semi-formal welcomed.</p>
+        <p id="gala-det-dress"><strong>Black Tie Invited</strong><br />Formal attire encouraged.<br />Semi-formal welcomed.</p>
       </div>
       <div class="gala-detail-card">
         <div class="gala-detail-card-icon"><i class="fas fa-utensils"></i></div>
@@ -688,7 +688,7 @@
           Sponsoring the gala places your brand in front of community leaders, business owners, educators, and civic professionals — while making a lasting difference in a young scholar's life.
         </p>
         <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:32px;">
-          <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-gold">
+          <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-gold gala-sponsor-link">
             <i class="fas fa-file-pdf"></i> View Sponsorship Packages
           </a>
           <a href="contact.html?subject=sponsorship" class="btn btn-outline">
@@ -743,10 +743,10 @@
         Every ticket purchased and every dollar raised goes to a young scholar's future. Join us for an evening that celebrates what's possible when a community invests in its own.
       </p>
       <div class="gala-cta-actions">
-        <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="btn btn-gold">
+        <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="btn btn-gold gala-ticket-link">
           <i class="fas fa-ticket-alt"></i> Purchase Tickets
         </a>
-        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline">
+        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline gala-sponsor-link">
           <i class="fas fa-handshake"></i> Sponsorship Info
         </a>
         <a href="contact.html?subject=gala" class="btn btn-outline">
@@ -785,6 +785,113 @@
 <script>
 const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+
+const GALA_DEFAULTS = {
+  edition_number: 14,
+  event_year: 2026,
+  event_date: 'Friday, June 13, 2026',
+  doors_time: '5:30 PM',
+  program_time: '6:00 PM',
+  venue_name: 'Frisco Hall',
+  venue_address: '5353 Independence Pkwy, Frisco, TX 75035',
+  dress_code: 'Black Tie Invited',
+  dress_code_sub: 'Formal attire encouraged. Semi-formal welcomed.',
+  ticket_url: 'https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala',
+  sponsorship_pdf_url: 'assets/Sponsorship/2026-gala-sponsorship-letter.pdf',
+  hero_image: 'images/gala-award-ceremony.jpg',
+  about_image: 'images/gala-award-ceremony.jpg',
+  years_giving: 14,
+  scholars_supported: '100+',
+  announce_bar_text: '🎓 Tickets Now Available — 14th Annual Alpha Legacy Scholarship Gala | June 13, 2026 · Frisco Hall',
+  cta_date_label: 'June 13',
+  legacy_tagline: 'From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most.'
+};
+
+async function loadGalaSettings() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.gala_settings&select=content_json&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) return GALA_DEFAULTS;
+    const rows = await res.json();
+    if (!rows.length) return GALA_DEFAULTS;
+    return Object.assign({}, GALA_DEFAULTS, rows[0].content_json);
+  } catch (e) {
+    return GALA_DEFAULTS;
+  }
+}
+
+function applyGalaSettings(s) {
+  /* Announce bar */
+  const bar = document.querySelector('.announce-bar');
+  if (bar) {
+    bar.innerHTML = s.announce_bar_text + ' &nbsp;<a href="' + s.ticket_url + '" target="_blank">Get Your Tickets &rarr;</a>';
+  }
+
+  /* Hero */
+  const heroLabel = document.getElementById('gala-hero-label');
+  if (heroLabel) heroLabel.textContent = s.edition_number + 'th Annual';
+
+  const heroDate = document.getElementById('gala-hero-date');
+  if (heroDate) heroDate.innerHTML = '<i class="fas fa-calendar"></i> ' + s.event_date;
+
+  const heroTime = document.getElementById('gala-hero-time');
+  if (heroTime) heroTime.innerHTML = '<i class="fas fa-clock"></i> ' + s.program_time + ' · Doors open at ' + s.doors_time;
+
+  const heroVenue = document.getElementById('gala-hero-venue');
+  if (heroVenue) heroVenue.innerHTML = '<i class="fas fa-map-marker-alt"></i> ' + s.venue_name + ' · ' + s.venue_address;
+
+  const heroDress = document.getElementById('gala-hero-dress');
+  if (heroDress) heroDress.innerHTML = '<i class="fas fa-tshirt"></i> ' + s.dress_code;
+
+  document.querySelectorAll('.gala-ticket-link').forEach(a => { a.href = s.ticket_url; });
+  document.querySelectorAll('.gala-sponsor-link').forEach(a => { a.href = s.sponsorship_pdf_url; });
+
+  const heroImg = document.getElementById('gala-hero-img');
+  if (heroImg) { heroImg.src = s.hero_image; }
+
+  const heroBadge = document.getElementById('gala-hero-badge-num');
+  if (heroBadge) heroBadge.textContent = s.edition_number + 'th';
+
+  /* About */
+  const aboutImg = document.getElementById('gala-about-img');
+  if (aboutImg) { aboutImg.src = s.about_image; }
+
+  /* Details cards */
+  const detDate = document.getElementById('gala-det-date');
+  if (detDate) detDate.innerHTML = '<strong>' + s.event_date + '</strong><br />Doors open at ' + s.doors_time + '<br />Program begins at ' + s.program_time;
+
+  const detVenue = document.getElementById('gala-det-venue');
+  if (detVenue) detVenue.innerHTML = '<strong>' + s.venue_name + '</strong><br />' + s.venue_address;
+
+  const detDress = document.getElementById('gala-det-dress');
+  if (detDress) detDress.innerHTML = '<strong>' + s.dress_code + '</strong><br />' + s.dress_code_sub;
+
+  /* Legacy banner */
+  const legNum1 = document.getElementById('gala-leg-num1');
+  if (legNum1) legNum1.textContent = s.edition_number;
+
+  const legNum2 = document.getElementById('gala-leg-num2');
+  if (legNum2) legNum2.textContent = s.event_year;
+
+  const legTagline = document.getElementById('gala-leg-tagline');
+  if (legTagline) legTagline.textContent = s.legacy_tagline;
+
+  const legDate = document.getElementById('gala-leg-date');
+  if (legDate) legDate.textContent = s.cta_date_label;
+
+  /* Stats */
+  const statYears = document.getElementById('gala-stat-years');
+  if (statYears) statYears.textContent = s.years_giving;
+
+  const statScholars = document.getElementById('gala-stat-scholars');
+  if (statScholars) statScholars.textContent = s.scholars_supported;
+
+  /* Page title */
+  document.title = s.edition_number + 'th Annual Alpha Legacy Scholarship Gala | North Dallas Alphas — Xi Tau Lambda';
+}
+
+loadGalaSettings().then(applyGalaSettings);
 </script>
 </body>
 </html>

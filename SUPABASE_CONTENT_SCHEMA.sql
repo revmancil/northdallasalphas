@@ -535,3 +535,33 @@ using (
 );
 
 -- Inserts/updates only via service role (e.g. grant-chapter-admin Edge Function).
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- GALA SETTINGS — seed default row into site_content
+-- ──────────────────────────────────────────────────────────────────────────────
+insert into public.site_content (content_key, content_json, updated_at)
+values (
+  'gala_settings',
+  '{
+    "edition_number": 14,
+    "event_year": 2026,
+    "event_date": "Friday, June 13, 2026",
+    "cta_date_label": "June 13",
+    "doors_time": "5:30 PM",
+    "program_time": "6:00 PM",
+    "venue_name": "Frisco Hall",
+    "venue_address": "5353 Independence Pkwy, Frisco, TX 75035",
+    "dress_code": "Black Tie Invited",
+    "dress_code_sub": "Formal attire encouraged. Semi-formal welcomed.",
+    "ticket_url": "https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala",
+    "sponsorship_pdf_url": "assets/Sponsorship/2026-gala-sponsorship-letter.pdf",
+    "years_giving": 14,
+    "scholars_supported": "100+",
+    "legacy_tagline": "From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most.",
+    "announce_bar_text": "🎓 Tickets Now Available — 14th Annual Alpha Legacy Scholarship Gala | June 13, 2026 · Frisco Hall",
+    "hero_image": "images/gala-award-ceremony.jpg",
+    "about_image": "images/gala-award-ceremony.jpg"
+  }'::jsonb,
+  now()
+)
+on conflict (content_key) do nothing;

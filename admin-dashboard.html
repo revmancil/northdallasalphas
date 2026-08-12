@@ -1177,6 +1177,9 @@
     <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
       <i class="fas fa-calendar-alt"></i> Events Manager
     </button>
+    <button class="sidebar-link" data-section="gala" onclick="showPanel('gala');loadGalaPanel()">
+      <i class="fas fa-graduation-cap"></i> Scholarship Gala
+    </button>
     <button class="sidebar-link" data-section="registrations" onclick="showPanel('registrations')">
       <i class="fas fa-clipboard-list"></i> Event Registrations
     </button>
@@ -2560,6 +2563,115 @@
 
     </div>
 
+    <!-- ═══ GALA PANEL ═══ -->
+    <div class="panel" id="panel-gala">
+      <div class="section-card">
+        <div class="section-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <h3><i class="fas fa-graduation-cap" style="color:var(--gold);margin-right:8px;"></i>Scholarship Gala Settings</h3>
+          <div style="display:flex;gap:10px;">
+            <button class="btn btn-sm btn-outline" onclick="window.open('scholarship-gala.html','_blank')"><i class="fas fa-external-link-alt"></i> Preview Page</button>
+            <button class="btn btn-sm btn-gold" id="galaAdminSaveBtn" onclick="saveGalaSettings()"><i class="fas fa-save"></i> Save Changes</button>
+          </div>
+        </div>
+        <div class="section-card-body">
+          <div id="galaAdminStatus" style="display:none;padding:10px 14px;border-radius:6px;margin-bottom:16px;font-size:0.88rem;font-weight:600;"></div>
+
+          <h4 style="color:var(--gray-700);margin-bottom:16px;font-size:0.82rem;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);padding-bottom:8px;">Event Details</h4>
+          <div class="settings-grid">
+            <div class="field-group">
+              <label>Edition Number (e.g. 14)</label>
+              <input type="number" id="galaEditionNumber" min="1" value="14" />
+            </div>
+            <div class="field-group">
+              <label>Event Year (e.g. 2026)</label>
+              <input type="number" id="galaEventYear" min="2024" value="2026" />
+            </div>
+            <div class="field-group">
+              <label>Event Date (displayed text)</label>
+              <input type="text" id="galaEventDate" placeholder="Friday, June 13, 2026" value="Friday, June 13, 2026" />
+            </div>
+            <div class="field-group">
+              <label>Save the Date Label (e.g. June 13)</label>
+              <input type="text" id="galaCtaDateLabel" placeholder="June 13" value="June 13" />
+            </div>
+            <div class="field-group">
+              <label>Doors Open Time</label>
+              <input type="text" id="galaDoorsTime" placeholder="5:30 PM" value="5:30 PM" />
+            </div>
+            <div class="field-group">
+              <label>Program Start Time</label>
+              <input type="text" id="galaProgramTime" placeholder="6:00 PM" value="6:00 PM" />
+            </div>
+          </div>
+
+          <h4 style="color:var(--gray-700);margin:24px 0 16px;font-size:0.82rem;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);padding-bottom:8px;">Venue</h4>
+          <div class="settings-grid">
+            <div class="field-group">
+              <label>Venue Name</label>
+              <input type="text" id="galaVenueName" placeholder="Frisco Hall" value="Frisco Hall" />
+            </div>
+            <div class="field-group">
+              <label>Venue Address</label>
+              <input type="text" id="galaVenueAddress" placeholder="5353 Independence Pkwy, Frisco, TX 75035" value="5353 Independence Pkwy, Frisco, TX 75035" />
+            </div>
+            <div class="field-group">
+              <label>Dress Code</label>
+              <input type="text" id="galaDressCode" placeholder="Black Tie Invited" value="Black Tie Invited" />
+            </div>
+            <div class="field-group">
+              <label>Dress Code Sub-text</label>
+              <input type="text" id="galaDressCodeSub" placeholder="Formal attire encouraged. Semi-formal welcomed." value="Formal attire encouraged. Semi-formal welcomed." />
+            </div>
+          </div>
+
+          <h4 style="color:var(--gray-700);margin:24px 0 16px;font-size:0.82rem;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);padding-bottom:8px;">Links &amp; Files</h4>
+          <div class="settings-grid">
+            <div class="field-group">
+              <label>Ticket Purchase URL</label>
+              <input type="url" id="galaTicketUrl" placeholder="https://www.zeffy.com/..." value="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" />
+            </div>
+            <div class="field-group">
+              <label>Sponsorship PDF URL</label>
+              <input type="text" id="galaSponsorshipPdf" placeholder="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" value="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" />
+            </div>
+          </div>
+
+          <h4 style="color:var(--gray-700);margin:24px 0 16px;font-size:0.82rem;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);padding-bottom:8px;">Statistics &amp; Content</h4>
+          <div class="settings-grid">
+            <div class="field-group">
+              <label>Years of Giving (number)</label>
+              <input type="number" id="galaYearsGiving" min="1" value="14" />
+            </div>
+            <div class="field-group">
+              <label>Scholars Supported (displayed text)</label>
+              <input type="text" id="galaScholarsSupported" placeholder="100+" value="100+" />
+            </div>
+          </div>
+          <div class="field-group" style="margin-top:16px;">
+            <label>Legacy Banner Tagline</label>
+            <input type="text" id="galaLegacyTagline" value="From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most." />
+          </div>
+          <div class="field-group" style="margin-top:16px;">
+            <label>Announce Bar Text (appears at top of all pages)</label>
+            <input type="text" id="galaAnnounceBarText" value="🎓 Tickets Now Available — 14th Annual Alpha Legacy Scholarship Gala | June 13, 2026 · Frisco Hall" />
+          </div>
+
+          <h4 style="color:var(--gray-700);margin:24px 0 16px;font-size:0.82rem;letter-spacing:0.08em;text-transform:uppercase;border-bottom:1px solid var(--gray-200);padding-bottom:8px;">Images</h4>
+          <div class="settings-grid">
+            <div class="field-group">
+              <label>Hero / Feature Image (filename in images/ folder)</label>
+              <input type="text" id="galaHeroImage" placeholder="images/gala-award-ceremony.jpg" value="images/gala-award-ceremony.jpg" />
+              <small style="color:var(--gray-500);font-size:0.77rem;margin-top:4px;display:block;">e.g. images/gala-award-ceremony.jpg</small>
+            </div>
+            <div class="field-group">
+              <label>About Section Image (filename in images/ folder)</label>
+              <input type="text" id="galaAboutImage" placeholder="images/gala-award-ceremony.jpg" value="images/gala-award-ceremony.jpg" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="panel" id="panel-settings">
       <div class="section-card">
         <div class="section-card-header">
@@ -3605,6 +3717,120 @@ async function grantAdminFromAccessPanel() {
 }
 
 // ══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
+// GALA SETTINGS
+// ══════════════════════════════════════════════════
+const GALA_CONTENT_KEY = 'gala_settings';
+
+const GALA_ADMIN_DEFAULTS = {
+  edition_number: 14, event_year: 2026, event_date: 'Friday, June 13, 2026',
+  cta_date_label: 'June 13', doors_time: '5:30 PM', program_time: '6:00 PM',
+  venue_name: 'Frisco Hall', venue_address: '5353 Independence Pkwy, Frisco, TX 75035',
+  dress_code: 'Black Tie Invited', dress_code_sub: 'Formal attire encouraged. Semi-formal welcomed.',
+  ticket_url: 'https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala',
+  sponsorship_pdf_url: 'assets/Sponsorship/2026-gala-sponsorship-letter.pdf',
+  years_giving: 14, scholars_supported: '100+',
+  legacy_tagline: 'From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most.',
+  announce_bar_text: '🎓 Tickets Now Available — 14th Annual Alpha Legacy Scholarship Gala | June 13, 2026 · Frisco Hall',
+  hero_image: 'images/gala-award-ceremony.jpg',
+  about_image: 'images/gala-award-ceremony.jpg'
+};
+
+function galaAdminFields() {
+  return {
+    edition_number: parseInt(document.getElementById('galaEditionNumber').value) || 14,
+    event_year: parseInt(document.getElementById('galaEventYear').value) || 2026,
+    event_date: document.getElementById('galaEventDate').value.trim(),
+    cta_date_label: document.getElementById('galaCtaDateLabel').value.trim(),
+    doors_time: document.getElementById('galaDoorsTime').value.trim(),
+    program_time: document.getElementById('galaProgramTime').value.trim(),
+    venue_name: document.getElementById('galaVenueName').value.trim(),
+    venue_address: document.getElementById('galaVenueAddress').value.trim(),
+    dress_code: document.getElementById('galaDressCode').value.trim(),
+    dress_code_sub: document.getElementById('galaDressCodeSub').value.trim(),
+    ticket_url: document.getElementById('galaTicketUrl').value.trim(),
+    sponsorship_pdf_url: document.getElementById('galaSponsorshipPdf').value.trim(),
+    years_giving: parseInt(document.getElementById('galaYearsGiving').value) || 14,
+    scholars_supported: document.getElementById('galaScholarsSupported').value.trim(),
+    legacy_tagline: document.getElementById('galaLegacyTagline').value.trim(),
+    announce_bar_text: document.getElementById('galaAnnounceBarText').value.trim(),
+    hero_image: document.getElementById('galaHeroImage').value.trim(),
+    about_image: document.getElementById('galaAboutImage').value.trim()
+  };
+}
+
+function galaAdminPopulate(s) {
+  document.getElementById('galaEditionNumber').value = s.edition_number;
+  document.getElementById('galaEventYear').value = s.event_year;
+  document.getElementById('galaEventDate').value = s.event_date;
+  document.getElementById('galaCtaDateLabel').value = s.cta_date_label;
+  document.getElementById('galaDoorsTime').value = s.doors_time;
+  document.getElementById('galaProgramTime').value = s.program_time;
+  document.getElementById('galaVenueName').value = s.venue_name;
+  document.getElementById('galaVenueAddress').value = s.venue_address;
+  document.getElementById('galaDressCode').value = s.dress_code;
+  document.getElementById('galaDressCodeSub').value = s.dress_code_sub;
+  document.getElementById('galaTicketUrl').value = s.ticket_url;
+  document.getElementById('galaSponsorshipPdf').value = s.sponsorship_pdf_url;
+  document.getElementById('galaYearsGiving').value = s.years_giving;
+  document.getElementById('galaScholarsSupported').value = s.scholars_supported;
+  document.getElementById('galaLegacyTagline').value = s.legacy_tagline;
+  document.getElementById('galaAnnounceBarText').value = s.announce_bar_text;
+  document.getElementById('galaHeroImage').value = s.hero_image;
+  document.getElementById('galaAboutImage').value = s.about_image;
+}
+
+function galaAdminShowStatus(msg, ok) {
+  const el = document.getElementById('galaAdminStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.background = ok ? '#f0fdf4' : '#fef2f2';
+  el.style.color = ok ? '#166534' : '#991b1b';
+  el.style.border = '1px solid ' + (ok ? '#86efac' : '#fca5a5');
+  setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+async function loadGalaPanel() {
+  const token = getAdminToken();
+  if (!token) return;
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.' + GALA_CONTENT_KEY + '&select=content_json&limit=1', {
+      headers: sbHeaders(token)
+    });
+    if (!res.ok) throw new Error('fetch failed');
+    const rows = await res.json();
+    const settings = rows.length ? Object.assign({}, GALA_ADMIN_DEFAULTS, rows[0].content_json) : GALA_ADMIN_DEFAULTS;
+    galaAdminPopulate(settings);
+  } catch (e) {
+    galaAdminPopulate(GALA_ADMIN_DEFAULTS);
+  }
+}
+
+async function saveGalaSettings() {
+  const token = getAdminToken();
+  if (!token) { alert('Not logged in'); return; }
+  const btn = document.getElementById('galaAdminSaveBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    const payload = { content_key: GALA_CONTENT_KEY, content_json: galaAdminFields(), updated_at: new Date().toISOString() };
+    const res = await fetch(SUPABASE_URL + '/rest/v1/site_content', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(token), {
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      }),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) { const t = await res.text(); throw new Error(t); }
+    galaAdminShowStatus('Gala settings saved! The scholarship-gala.html page will reflect these changes immediately.', true);
+  } catch (e) {
+    galaAdminShowStatus('Error saving: ' + e.message, false);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Changes'; }
+  }
+}
+
 // CHAPTER NEWS FEED
 // ══════════════════════════════════════════════════
 const CN_CAT_COLORS = { General:'var(--blue)', Announcement:'var(--gold)', Reminder:'#f59e0b', 'Event Update':'#8b5cf6', Financial:'var(--green)' };
