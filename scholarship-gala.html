@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alpha Legacy Scholarship Gala | North Dallas Alphas — Xi Tau Lambda</title>
+  <meta name="description" content="The Annual Alpha Legacy Scholarship Gala is a signature fundraising event benefiting scholarships and youth programs throughout North Dallas County." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    /* ── Hero ── */
+    .gala-page-hero {
+      position: relative;
+      background: var(--black);
+      min-height: 88vh;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      padding-top: var(--nav-height);
+    }
+    .gala-page-hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('images/scholarship.jpg');
+      background-size: cover;
+      background-position: center 30%;
+      opacity: 0.28;
+    }
+    .gala-page-hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(10,10,10,0.97) 45%, rgba(10,10,10,0.55));
+    }
+    .gala-page-hero .container {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      padding: 80px 24px;
+    }
+    .gala-hero-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+    .gala-hero-eyebrow {
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.7);
+      margin-bottom: 10px;
+    }
+    .gala-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.1;
+      margin-bottom: 24px;
+    }
+    .gala-hero-title span { color: var(--gold); }
+    .gala-hero-desc {
+      color: rgba(255,255,255,0.65);
+      font-size: 1.05rem;
+      line-height: 1.75;
+      margin-bottom: 36px;
+      max-width: 520px;
+    }
+    .gala-hero-details {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+    .gala-hero-detail {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.75);
+    }
+    .gala-hero-detail i {
+      color: var(--gold);
+      width: 18px;
+      flex-shrink: 0;
+    }
+    .gala-hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+    .gala-hero-img {
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .gala-hero-img img {
+      width: 100%;
+      height: 480px;
+      object-fit: cover;
+      display: block;
+    }
+    .gala-hero-img-badge {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      background: rgba(10,10,10,0.85);
+      border: 1px solid rgba(201,168,76,0.4);
+      backdrop-filter: blur(8px);
+      border-radius: 4px;
+      padding: 14px 20px;
+    }
+    .gala-hero-img-badge .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .gala-hero-img-badge .lbl {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      margin-top: 4px;
+    }
+
+    /* ── About Section ── */
+    .gala-about { padding: 100px 0; background: var(--white); }
+    .gala-about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .gala-about-img {
+      position: relative;
+    }
+    .gala-about-img img {
+      width: 100%;
+      height: 420px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .gala-about-img-accent {
+      position: absolute;
+      bottom: -24px;
+      right: -24px;
+      width: 160px;
+      height: 160px;
+      border: 3px solid var(--gold);
+      border-radius: 4px;
+      z-index: -1;
+    }
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 12px;
+      display: block;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 3vw, 2.4rem);
+      font-weight: 800;
+      color: var(--gray-800);
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    .gold-bar {
+      width: 48px;
+      height: 3px;
+      background: var(--gold);
+      margin-bottom: 24px;
+    }
+    .gold-bar.left { margin-right: auto; }
+    .gala-about-text p {
+      color: var(--gray-600);
+      line-height: 1.8;
+      margin-bottom: 18px;
+    }
+    .gala-stat-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 36px;
+    }
+    .gala-stat {
+      background: var(--gray-100);
+      border-left: 3px solid var(--gold);
+      padding: 18px 20px;
+      border-radius: 0 4px 4px 0;
+    }
+    .gala-stat .num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--gold);
+      line-height: 1;
+    }
+    .gala-stat .lbl {
+      font-size: 0.76rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-600);
+      margin-top: 5px;
+    }
+
+    /* ── Foundation Section ── */
+    .gala-foundation { padding: 90px 0; background: var(--black); }
+    .gala-foundation-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .gala-foundation-logo-wrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .gala-foundation-logo-bg {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 8px;
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      text-align: center;
+    }
+    .gala-foundation-logo-bg img {
+      width: 140px;
+      height: 140px;
+      object-fit: contain;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
+      padding: 12px;
+    }
+    .gala-foundation-logo-bg .name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+    .gala-foundation-logo-bg .url {
+      font-size: 0.8rem;
+      color: var(--gold);
+      text-decoration: none;
+    }
+    .gala-foundation-logo-bg .url:hover { text-decoration: underline; }
+    .gala-foundation-text .section-title { color: var(--white); }
+    .gala-foundation-text p {
+      color: rgba(255,255,255,0.65);
+      line-height: 1.8;
+      margin-bottom: 18px;
+    }
+    .gala-foundation-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      transition: var(--transition);
+    }
+    .gala-foundation-link:hover { color: var(--gold-light); gap: 12px; }
+
+    /* ── Event Details ── */
+    .gala-details-section { padding: 90px 0; background: var(--gray-100); }
+    .gala-details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 28px;
+      margin-top: 50px;
+    }
+    .gala-detail-card {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: 4px;
+      padding: 32px 28px;
+      text-align: center;
+    }
+    .gala-detail-card-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--gold-pale);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 18px;
+      color: var(--gold);
+      font-size: 1.3rem;
+    }
+    .gala-detail-card h4 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      color: var(--gray-800);
+      margin-bottom: 8px;
+    }
+    .gala-detail-card p {
+      font-size: 0.88rem;
+      color: var(--gray-600);
+      line-height: 1.65;
+    }
+    .gala-detail-card p strong { color: var(--gray-800); }
+
+    /* ── Sponsorship ── */
+    .gala-sponsor { padding: 90px 0; background: var(--white); }
+    .gala-sponsor-inner {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .gala-sponsor-text p {
+      color: var(--gray-600);
+      line-height: 1.8;
+      margin-bottom: 18px;
+    }
+    .gala-sponsor-tiers {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .gala-sponsor-tier {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--gray-100);
+      border-radius: 4px;
+      padding: 16px 20px;
+      border-left: 4px solid var(--gold);
+    }
+    .gala-sponsor-tier .tier-icon {
+      color: var(--gold);
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+    .gala-sponsor-tier .tier-name {
+      font-weight: 700;
+      color: var(--gray-800);
+      font-size: 0.9rem;
+    }
+    .gala-sponsor-tier .tier-desc {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+      margin-top: 2px;
+    }
+
+    /* ── CTA ── */
+    .gala-cta {
+      padding: 90px 0;
+      background: var(--black);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .gala-cta::before {
+      content: 'ΑΦΑ';
+      position: absolute;
+      font-family: 'Playfair Display', serif;
+      font-size: 40vw;
+      font-weight: 800;
+      color: rgba(201,168,76,0.03);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .gala-cta-inner { position: relative; z-index: 2; }
+    .gala-cta h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      color: var(--white);
+      margin-bottom: 16px;
+    }
+    .gala-cta h2 span { color: var(--gold); }
+    .gala-cta p {
+      color: rgba(255,255,255,0.6);
+      font-size: 1rem;
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.75;
+    }
+    .gala-cta-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* ── Legacy Banner ── */
+    .gala-legacy {
+      padding: 60px 0;
+      background: var(--gold);
+    }
+    .gala-legacy-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .gala-legacy-text h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--black);
+      margin-bottom: 6px;
+    }
+    .gala-legacy-text p {
+      color: rgba(0,0,0,0.65);
+      font-size: 0.92rem;
+    }
+    .gala-legacy-nums {
+      display: flex;
+      gap: 48px;
+      flex-wrap: wrap;
+    }
+    .gala-legacy-num { text-align: center; }
+    .gala-legacy-num .n {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--black);
+      line-height: 1;
+    }
+    .gala-legacy-num .l {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,0.6);
+      margin-top: 4px;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 980px) {
+      .gala-page-hero .container { grid-template-columns: 1fr; gap: 40px; padding: 60px 24px; }
+      .gala-hero-img { display: none; }
+      .gala-about-grid,
+      .gala-foundation-grid,
+      .gala-sponsor-inner { grid-template-columns: 1fr; gap: 40px; }
+      .gala-about-img-accent { display: none; }
+      .gala-details-grid { grid-template-columns: 1fr; }
+      .gala-legacy-inner { flex-direction: column; text-align: center; }
+      .gala-legacy-nums { justify-content: center; }
+    }
+    @media (max-width: 600px) {
+      .gala-stat-row { grid-template-columns: 1fr; }
+      .gala-hero-actions { flex-direction: column; }
+      .gala-cta-actions { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a><a href="about.html">About</a><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+      <a href="membership.html">Membership</a><a href="news.html">News</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="contact.html">Contact</a>
+      <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+      <a href="member-login.html" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<!-- ═══ HERO ═══ -->
+<section class="gala-page-hero">
+  <div class="gala-page-hero-bg"></div>
+  <div class="gala-page-hero-overlay"></div>
+  <div class="container">
+    <div class="gala-hero-text fade-up">
+      <div class="gala-hero-eyebrow">Annual Signature Event</div>
+      <div class="gala-hero-label">14th Annual</div>
+      <h1 class="gala-hero-title">
+        Alpha Legacy<br /><span>Scholarship Gala</span>
+      </h1>
+      <div class="gala-hero-details">
+        <div class="gala-hero-detail"><i class="fas fa-calendar"></i> Friday, June 13, 2026</div>
+        <div class="gala-hero-detail"><i class="fas fa-clock"></i> 6:00 PM · Doors open at 5:30 PM</div>
+        <div class="gala-hero-detail"><i class="fas fa-map-marker-alt"></i> Frisco Hall · 5353 Independence Pkwy, Frisco, TX</div>
+        <div class="gala-hero-detail"><i class="fas fa-tshirt"></i> Black Tie Invited</div>
+      </div>
+      <p class="gala-hero-desc">
+        An unforgettable evening of fellowship, scholarship, and community impact — celebrating the young scholars whose futures we are honored to help shape.
+      </p>
+      <div class="gala-hero-actions">
+        <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="btn btn-gold">
+          <i class="fas fa-ticket-alt"></i> Get Tickets
+        </a>
+        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline">
+          <i class="fas fa-handshake"></i> Become a Sponsor
+        </a>
+      </div>
+    </div>
+    <div class="gala-hero-img fade-up">
+      <img src="images/scholarship.jpg" alt="Scholarship recipients at the Alpha Legacy Scholarship Gala" />
+      <div class="gala-hero-img-badge">
+        <div class="num">14th</div>
+        <div class="lbl">Annual Gala</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ABOUT ═══ -->
+<section class="gala-about">
+  <div class="container">
+    <div class="gala-about-grid">
+      <div class="gala-about-img fade-up">
+        <img src="images/chapter-event.jpg" alt="Brothers and guests at the Alpha Legacy Scholarship Gala" />
+        <div class="gala-about-img-accent"></div>
+      </div>
+      <div class="gala-about-text fade-up">
+        <span class="section-label">About the Event</span>
+        <h2 class="section-title">An Evening of Legacy &amp; Impact</h2>
+        <div class="gold-bar left"></div>
+        <p>
+          The Alpha Legacy Scholarship Gala is the signature annual fundraising event of the Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc., produced in partnership with the Sankofa Foundation of Dallas/Fort Worth.
+        </p>
+        <p>
+          Each year, brothers, community leaders, corporate sponsors, and friends gather for an elegant evening of dinner, entertainment, and celebration — all in support of North Dallas County's brightest young scholars. Proceeds fund scholarships and youth mentoring programs that have opened doors for hundreds of students since the event's founding.
+        </p>
+        <p>
+          The gala honors the founding principle of Alpha Phi Alpha: that education and service are the highest expressions of brotherhood. It is our most visible commitment to that ideal.
+        </p>
+        <div class="gala-stat-row">
+          <div class="gala-stat">
+            <div class="num">14</div>
+            <div class="lbl">Years of Giving</div>
+          </div>
+          <div class="gala-stat">
+            <div class="num">100+</div>
+            <div class="lbl">Scholars Supported</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LEGACY BANNER ═══ -->
+<div class="gala-legacy">
+  <div class="container">
+    <div class="gala-legacy-inner">
+      <div class="gala-legacy-text">
+        <h3>A Legacy Built Year by Year</h3>
+        <p>From our first gala to our 14th, every ticket and every sponsorship has gone directly to students who need it most.</p>
+      </div>
+      <div class="gala-legacy-nums">
+        <div class="gala-legacy-num">
+          <div class="n">14</div>
+          <div class="l">Annual Galas</div>
+        </div>
+        <div class="gala-legacy-num">
+          <div class="n">2026</div>
+          <div class="l">This Year</div>
+        </div>
+        <div class="gala-legacy-num">
+          <div class="n">June 13</div>
+          <div class="l">Save the Date</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FOUNDATION PARTNERSHIP ═══ -->
+<section class="gala-foundation">
+  <div class="container">
+    <div class="gala-foundation-grid">
+      <div class="gala-foundation-logo-wrap fade-up">
+        <div class="gala-foundation-logo-bg">
+          <img src="images/sankofa-foundation-logo.png" alt="Sankofa Foundation Dallas / Fort Worth" />
+          <div class="name">Sankofa Foundation<br />Dallas / Fort Worth</div>
+          <a href="https://dfwsankofa.org" target="_blank" rel="noopener" class="url">dfwsankofa.org</a>
+        </div>
+      </div>
+      <div class="gala-foundation-text fade-up">
+        <span class="section-label">Our Partner</span>
+        <h2 class="section-title" style="color:var(--white);">Produced with the<br />Sankofa Foundation</h2>
+        <div class="gold-bar left"></div>
+        <p>
+          The Alpha Legacy Scholarship Gala is a collaborative effort between Xi Tau Lambda Chapter and the Sankofa Foundation of Dallas/Fort Worth — a 501(c)(3) nonprofit organization that grew directly out of our chapter's work.
+        </p>
+        <p>
+          In 1995, Xi Tau Lambda was one of just 15 chapters nationwide selected to receive a W. K. Kellogg Foundation grant to pioneer the Sankofa Project — a groundbreaking teen male mentoring and rites of passage initiative. To ensure its long-term sustainability, the Xi Tau Lambda Foundation (now operating as the Sankofa Foundation of DFW) was established as a separate nonprofit to carry that mission forward.
+        </p>
+        <p>
+          Today, the Sankofa Foundation administers the scholarship programs that the Gala makes possible, ensuring that funds raised go directly to students across North Dallas County.
+        </p>
+        <a href="https://dfwsankofa.org" target="_blank" rel="noopener" class="gala-foundation-link">
+          Visit the Foundation <i class="fas fa-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ EVENT DETAILS ═══ -->
+<section class="gala-details-section">
+  <div class="container">
+    <div class="text-center fade-up" style="max-width:620px; margin:0 auto;">
+      <span class="section-label">Event Information</span>
+      <h2 class="section-title">What to Expect</h2>
+      <div class="gold-bar" style="margin:16px auto 0;"></div>
+    </div>
+    <div class="gala-details-grid fade-up">
+      <div class="gala-detail-card">
+        <div class="gala-detail-card-icon"><i class="fas fa-calendar-alt"></i></div>
+        <h4>Date &amp; Time</h4>
+        <p><strong>Friday, June 13, 2026</strong><br />Doors open at 5:30 PM<br />Program begins at 6:00 PM</p>
+      </div>
+      <div class="gala-detail-card">
+        <div class="gala-detail-card-icon"><i class="fas fa-map-marker-alt"></i></div>
+        <h4>Venue</h4>
+        <p><strong>Frisco Hall</strong><br />5353 Independence Pkwy<br />Frisco, TX 75035</p>
+      </div>
+      <div class="gala-detail-card">
+        <div class="gala-detail-card-icon"><i class="fas fa-tshirt"></i></div>
+        <h4>Dress Code</h4>
+        <p><strong>Black Tie Invited</strong><br />Formal attire encouraged.<br />Semi-formal welcomed.</p>
+      </div>
+      <div class="gala-detail-card">
+        <div class="gala-detail-card-icon"><i class="fas fa-utensils"></i></div>
+        <h4>Program</h4>
+        <p>Dinner, entertainment, scholarship awards ceremony, and a live program celebrating this year's recipients.</p>
+      </div>
+      <div class="gala-detail-card">
+        <div class="gala-detail-card-icon"><i class="fas fa-ticket-alt"></i></div>
+        <h4>Tickets</h4>
+        <p>Individual and table packages available. Secure your seat early — the gala sells out each year.</p>
+      </div>
+      <div class="gala-detail-card">
+        <div class="gala-detail-card-icon"><i class="fas fa-graduation-cap"></i></div>
+        <h4>Mission</h4>
+        <p>All proceeds benefit scholarships and mentoring programs serving students throughout North Dallas County.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SPONSORSHIP ═══ -->
+<section class="gala-sponsor">
+  <div class="container">
+    <div class="gala-sponsor-inner">
+      <div class="gala-sponsor-text fade-up">
+        <span class="section-label">Support the Gala</span>
+        <h2 class="section-title">Become a Sponsor</h2>
+        <div class="gold-bar left"></div>
+        <p>
+          Corporate and individual sponsorships are the backbone of the Alpha Legacy Scholarship Gala. Your investment goes directly to scholarships awarded to North Dallas County students who have demonstrated excellence in academics, leadership, and community service.
+        </p>
+        <p>
+          Sponsoring the gala places your brand in front of community leaders, business owners, educators, and civic professionals — while making a lasting difference in a young scholar's life.
+        </p>
+        <div style="display:flex; gap:14px; flex-wrap:wrap; margin-top:32px;">
+          <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-gold">
+            <i class="fas fa-file-pdf"></i> View Sponsorship Packages
+          </a>
+          <a href="contact.html?subject=sponsorship" class="btn btn-outline">
+            <i class="fas fa-envelope"></i> Contact Us
+          </a>
+        </div>
+      </div>
+      <div class="gala-sponsor-tiers fade-up">
+        <div class="gala-sponsor-tier">
+          <div class="tier-icon"><i class="fas fa-star"></i></div>
+          <div>
+            <div class="tier-name">Title / Presenting Sponsor</div>
+            <div class="tier-desc">Premier branding, reserved table, speaking opportunity, and maximum visibility.</div>
+          </div>
+        </div>
+        <div class="gala-sponsor-tier">
+          <div class="tier-icon"><i class="fas fa-gem"></i></div>
+          <div>
+            <div class="tier-name">Platinum Sponsor</div>
+            <div class="tier-desc">High-visibility recognition, reserved seating, and digital presence.</div>
+          </div>
+        </div>
+        <div class="gala-sponsor-tier">
+          <div class="tier-icon"><i class="fas fa-award"></i></div>
+          <div>
+            <div class="tier-name">Gold Sponsor</div>
+            <div class="tier-desc">Program recognition, complimentary tickets, and on-site branding.</div>
+          </div>
+        </div>
+        <div class="gala-sponsor-tier">
+          <div class="tier-icon"><i class="fas fa-hands-helping"></i></div>
+          <div>
+            <div class="tier-name">Patron / Friend</div>
+            <div class="tier-desc">Individual or small business support with event program recognition.</div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem; color:var(--gray-600); margin-top:8px;">
+          Full details and pricing in the sponsorship letter. Contact us for custom packages.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="gala-cta">
+  <div class="container">
+    <div class="gala-cta-inner fade-up">
+      <span class="section-label" style="color:var(--gold); display:block; margin-bottom:16px;">Join Us on June 13</span>
+      <h2>Be Part of <span>Something Greater</span></h2>
+      <p>
+        Every ticket purchased and every dollar raised goes to a young scholar's future. Join us for an evening that celebrates what's possible when a community invests in its own.
+      </p>
+      <div class="gala-cta-actions">
+        <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank" class="btn btn-gold">
+          <i class="fas fa-ticket-alt"></i> Purchase Tickets
+        </a>
+        <a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank" class="btn btn-outline">
+          <i class="fas fa-handshake"></i> Sponsorship Info
+        </a>
+        <a href="contact.html?subject=gala" class="btn btn-outline">
+          <i class="fas fa-envelope"></i> Contact Us
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.youtube.com/@northdallasalphas6133" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="visiting-brothers.html">Visiting Brothers</a></li><li><a href="scholarship-gala.html">Scholarship Gala</a></li><li><a href="assets/Sponsorship/2026-gala-sponsorship-letter.pdf" target="_blank">Sponsor an Event</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="mailto:info@northdallasalphas.org" style="color:rgba(255,255,255,0.55); font-size:0.82rem;">info@northdallasalphas.org</a></div><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="mailto:membership@northdallasalphas.org" style="color:rgba(255,255,255,0.55);">membership@northdallasalphas.org</a></div></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+</script>
+</body>
+</html>
