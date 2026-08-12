@@ -1026,6 +1026,13 @@ function renderEventItem(ev) {
     var label = n.fee > 0 ? 'Register — $' + (n.fee / 100).toFixed(2) : 'Register (Free)';
     regHtml = '<button type="button" class="btn-gold event-reg-btn" onclick="portalOpenRegModal(\'' + escHtml(String(ev.id)) + '\')"><i class="fas fa-ticket-alt"></i> ' + label + '</button>';
   }
+  var flyerHtml = '';
+  if (ev.flyer && ev.flyer.trim()) {
+    flyerHtml = '<div style="margin:10px 0 4px;border-radius:8px;overflow:hidden;cursor:pointer;max-height:260px;" onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" title="Click to view full flyer">' +
+      '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:100%;max-height:260px;object-fit:cover;object-position:top;display:block;border:1px solid rgba(255,255,255,0.08);border-radius:8px;" />' +
+      '<div style="font-size:0.7rem;color:rgba(255,255,255,0.3);text-align:right;margin-top:3px;"><i class="fas fa-expand-alt" style="margin-right:3px;"></i>View full flyer</div>' +
+    '</div>';
+  }
   return '<div class="event-item">' +
     '<div class="event-date-badge"><div class="day">' + d.day + '</div><div class="month">' + d.month + '</div></div>' +
     '<div class="event-info">' +
@@ -1034,8 +1041,22 @@ function renderEventItem(ev) {
     '<div class="meta"><i class="fas fa-map-marker-alt"></i> ' + escHtml(ev.location || 'TBD') +
     (d.time ? ' &middot; <i class="fas fa-clock"></i> ' + escHtml(d.time) : '') + '</div>' +
     (ev.description ? '<p style="font-size:0.78rem;color:var(--gray-400);margin-top:6px;line-height:1.5;">' + escHtml(ev.description) + '</p>' : '') +
+    flyerHtml +
     regHtml +
     '</div></div>';
+}
+
+function openFlyerLightbox(url, name) {
+  var lb = document.getElementById('flyerLightbox');
+  if (!lb) return;
+  document.getElementById('flyerLightboxImg').src = url;
+  document.getElementById('flyerLightboxImg').alt = name + ' flyer';
+  document.getElementById('flyerLightboxTitle').textContent = name;
+  lb.style.display = 'flex';
+}
+function closeFlyerLightbox() {
+  var lb = document.getElementById('flyerLightbox');
+  if (lb) lb.style.display = 'none';
 }
 
 function renderEventsPanel() {
@@ -2494,6 +2515,19 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
+<!-- ═══ FLYER LIGHTBOX ═══ -->
+<div id="flyerLightbox" style="display:none;position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.92);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;padding:16px;" onclick="if(event.target===this)closeFlyerLightbox()">
+  <div style="position:relative;max-width:720px;width:100%;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div id="flyerLightboxTitle" style="color:var(--white);font-weight:600;font-size:0.95rem;"></div>
+      <button onclick="closeFlyerLightbox()" style="background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.7);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <img id="flyerLightboxImg" src="" alt="" style="width:100%;max-height:80vh;object-fit:contain;border-radius:8px;display:block;" />
+  </div>
+</div>
+
 <!-- ═══ AI ASSIST MODAL ═══ -->
 <div id="aiAssistOverlay" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
   <div style="background:#1a1a2e;border:1px solid rgba(124,58,237,0.4);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
