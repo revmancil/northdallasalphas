@@ -8665,10 +8665,18 @@ async function addAnnouncementToEvents(id) {
   var r = _allAnnouncements.find(function(x){ return String(x.id)===String(id); });
   if (!r) { showToast('Announcement not found.', 'error'); return; }
   try {
-    // Build datetime string from stored event_date / event_time
+    // Build datetime string in MM/DD/YYYY H:MM AM/PM format (required by Events Manager)
     var dtStr = '';
     if (r.event_date && r.event_date !== 'TBD') {
-      dtStr = r.event_date;
+      var d = new Date(r.event_date);
+      if (!isNaN(d.getTime())) {
+        var mm = String(d.getMonth() + 1).padStart(2, '0');
+        var dd = String(d.getDate()).padStart(2, '0');
+        var yyyy = d.getFullYear();
+        dtStr = mm + '/' + dd + '/' + yyyy;
+      } else {
+        dtStr = r.event_date; // fallback: pass as-is
+      }
       if (r.event_time && r.event_time !== 'TBD') dtStr += ' ' + r.event_time;
     }
     var payload = {
