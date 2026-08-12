@@ -432,9 +432,10 @@
     }
     .gala-carousel-slide img {
       width: 100%;
-      height: 540px;
-      object-fit: cover;
-      object-position: center top;
+      height: auto;
+      max-height: 620px;
+      object-fit: contain;
+      background: #0a0a0a;
       display: block;
     }
     .gala-carousel-caption {
@@ -491,7 +492,7 @@
       transform: scale(1.3);
     }
     @media (max-width: 768px) {
-      .gala-carousel-slide img { height: 280px; object-position: center top; }
+      .gala-carousel-slide img { max-height: 340px; }
     }
 
     /* ── Legacy Banner ── */
