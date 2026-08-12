@@ -339,6 +339,18 @@
       // Keep static defaults on failure.
     }
   })();
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var subject = params.get('subject');
+    if (subject) {
+      var sel = document.getElementById('subject');
+      if (sel) {
+        for (var i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === subject) { sel.selectedIndex = i; break; }
+        }
+      }
+    }
+  })();
 </script>
 </body>
 </html>
