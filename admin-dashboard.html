@@ -8571,7 +8571,11 @@ var _annFilter = 'all';
 
 async function loadMemberAnnouncements() {
   var token = getAdminToken();
-  if (!token) return;
+  var el = document.getElementById('annAdminList');
+  if (!token) {
+    if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>Not logged in.</p></div>';
+    return;
+  }
   try {
     var rows = await sbGet('member_announcements', 'order=created_at.desc', token);
     _allAnnouncements = rows || [];
@@ -8579,7 +8583,9 @@ async function loadMemberAnnouncements() {
     var badge = document.getElementById('annPendingBadge');
     if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
     renderAnnouncements();
-  } catch(e) { showToast('Could not load announcements: ' + (e.message||'error'), 'error'); }
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--gold);"></i><p style="color:var(--gray-600);">Could not load announcements.<br><small>' + (e.message||'Unknown error') + '</small><br><small style="color:var(--gray-400);">Run the SQL schema update in Supabase to grant admin read access.</small></p></div>';
+  }
 }
 
 function setAnnFilter(f, btn) {
