@@ -2654,27 +2654,46 @@ async function generateAiAnnouncement() {
       category: (document.getElementById('annCategory').value || 'General'),
       tone:     _aiSelectedTone
     };
-    var res = await fetch(SUPABASE_URL + '/functions/v1/craft-announcement', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + (currentSession ? currentSession.access_token : SUPABASE_ANON_KEY)
-      },
-      body: JSON.stringify(payload)
-    });
-    var data = await res.json();
+    var res;
+    try {
+      res = await fetch(SUPABASE_URL + '/functions/v1/craft-announcement', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': 'Bearer ' + (currentSession ? currentSession.access_token : SUPABASE_ANON_KEY)
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch(fetchErr) {
+      errEl.innerHTML = '<strong>Network error.</strong> Could not reach the AI service. Check your internet connection and try again.';
+      errEl.style.display = '';
+      return;
+    }
+
+    // Try to parse JSON — non-deployed functions return HTML 404
+    var data;
+    try {
+      data = await res.json();
+    } catch(jsonErr) {
+      if (res.status === 404) {
+        errEl.innerHTML = '<strong>AI function not deployed.</strong> A chapter admin needs to run:<br><code style="background:rgba(255,255,255,0.08);padding:2px 6px;border-radius:4px;font-size:0.82rem;">supabase functions deploy craft-announcement</code><br><span style="font-size:0.8em;opacity:0.7;">Then set the secret: supabase secrets set ANTHROPIC_API_KEY=sk-ant-...</span>';
+      } else {
+        errEl.innerHTML = '<strong>Server error (' + res.status + ').</strong> Please try again in a moment.';
+      }
+      errEl.style.display = '';
+      return;
+    }
+
     if (!res.ok || data.error) {
       errEl.textContent = data.error || 'Could not generate announcement. Please try again.';
       errEl.style.display = '';
       return;
     }
+
     _aiLastResult = data.announcement || '';
     document.getElementById('aiAssistResultText').textContent = _aiLastResult;
     document.getElementById('aiAssistResult').style.display = '';
-  } catch(e) {
-    errEl.textContent = 'Connection error. Please try again.';
-    errEl.style.display = '';
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Announcement';
