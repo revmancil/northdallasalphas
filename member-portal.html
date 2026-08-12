@@ -566,7 +566,12 @@
               <input type="text" id="annLocation" placeholder="e.g. Frisco Hall, 5353 Independence Pkwy, Frisco TX" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;box-sizing:border-box;" />
             </div>
             <div class="pfield">
-              <label>Message <span style="color:var(--red);">*</span></label>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <label style="margin-bottom:0;">Message <span style="color:var(--red);">*</span></label>
+                <button type="button" onclick="openAiAssist()" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:20px;color:#fff;font-size:0.75rem;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.03em;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                  <i class="fas fa-wand-magic-sparkles"></i> AI Assist
+                </button>
+              </div>
               <textarea id="annBody" rows="5" placeholder="Write your announcement here..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
             </div>
             <div class="pfield">
@@ -2489,5 +2494,171 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 </div>
+<!-- ═══ AI ASSIST MODAL ═══ -->
+<div id="aiAssistOverlay" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#1a1a2e;border:1px solid rgba(124,58,237,0.4);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.6);">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.07);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <i class="fas fa-wand-magic-sparkles" style="color:#fff;font-size:0.85rem;"></i>
+        </div>
+        <div>
+          <div style="font-weight:700;color:var(--white);font-size:0.95rem;">AI Announcement Assistant</div>
+          <div style="font-size:0.72rem;color:rgba(255,255,255,0.4);margin-top:1px;">Describe what you want to say — AI will write it for you</div>
+        </div>
+      </div>
+      <button onclick="closeAiAssist()" style="background:rgba(255,255,255,0.07);border:none;color:rgba(255,255,255,0.5);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div style="padding:20px 24px;display:flex;flex-direction:column;gap:16px;">
+
+      <!-- Tone selector -->
+      <div>
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:8px;">Tone</div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="ai-tone-btn active" data-tone="Professional" onclick="selectAiTone(this)">Professional</button>
+          <button type="button" class="ai-tone-btn" data-tone="Casual" onclick="selectAiTone(this)">Casual</button>
+          <button type="button" class="ai-tone-btn" data-tone="Formal" onclick="selectAiTone(this)">Formal</button>
+        </div>
+      </div>
+
+      <!-- Description input -->
+      <div>
+        <label style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);display:block;margin-bottom:8px;">What do you want to announce?</label>
+        <textarea id="aiAssistDesc" rows="4" placeholder="e.g. We're hosting a community service event at the food bank on Saturday the 14th at 9am. Brothers should wear chapter shirts and bring gloves. Sign up before Thursday." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(124,58,237,0.3);border-radius:8px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;line-height:1.6;"></textarea>
+        <div style="font-size:0.72rem;color:rgba(255,255,255,0.25);margin-top:4px;">Include key details: what, when, where, any action required from brothers.</div>
+      </div>
+
+      <!-- Error -->
+      <div id="aiAssistErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
+
+      <!-- Generate button -->
+      <button type="button" id="aiAssistGenerateBtn" onclick="generateAiAnnouncement()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:600;padding:11px 20px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+        <i class="fas fa-wand-magic-sparkles"></i> Generate Announcement
+      </button>
+
+      <!-- Result -->
+      <div id="aiAssistResult" style="display:none;">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:8px;">Generated Announcement</div>
+        <div id="aiAssistResultText" style="background:rgba(255,255,255,0.04);border:1px solid rgba(124,58,237,0.25);border-radius:8px;padding:14px 16px;font-size:0.88rem;color:rgba(255,255,255,0.85);line-height:1.75;white-space:pre-wrap;"></div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+          <button type="button" onclick="useAiResult()" style="background:var(--gold);border:none;border-radius:8px;color:var(--black);font-size:0.85rem;font-weight:700;padding:9px 18px;cursor:pointer;display:flex;align-items:center;gap:7px;flex:1;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+            <i class="fas fa-check"></i> Use This
+          </button>
+          <button type="button" onclick="generateAiAnnouncement()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:rgba(255,255,255,0.7);font-size:0.85rem;font-weight:600;padding:9px 18px;cursor:pointer;display:flex;align-items:center;gap:7px;" onmouseover="this.style.opacity='0.75'" onmouseout="this.style.opacity='1'">
+            <i class="fas fa-rotate"></i> Regenerate
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.ai-tone-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px;
+  color: rgba(255,255,255,0.55);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ai-tone-btn.active {
+  background: rgba(124,58,237,0.2);
+  border-color: rgba(124,58,237,0.6);
+  color: #a78bfa;
+}
+</style>
+
+<script>
+var _aiSelectedTone = 'Professional';
+var _aiLastResult = '';
+
+function openAiAssist() {
+  var overlay = document.getElementById('aiAssistOverlay');
+  overlay.style.display = 'flex';
+  document.getElementById('aiAssistErr').style.display = 'none';
+  document.getElementById('aiAssistResult').style.display = 'none';
+  setTimeout(function(){ document.getElementById('aiAssistDesc').focus(); }, 80);
+}
+
+function closeAiAssist() {
+  document.getElementById('aiAssistOverlay').style.display = 'none';
+}
+
+function selectAiTone(btn) {
+  document.querySelectorAll('.ai-tone-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  _aiSelectedTone = btn.dataset.tone;
+}
+
+async function generateAiAnnouncement() {
+  var desc = (document.getElementById('aiAssistDesc').value || '').trim();
+  var errEl = document.getElementById('aiAssistErr');
+  errEl.style.display = 'none';
+  if (!desc || desc.length < 5) {
+    errEl.textContent = 'Please describe what you want to announce.';
+    errEl.style.display = '';
+    return;
+  }
+  var btn = document.getElementById('aiAssistGenerateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating…';
+  document.getElementById('aiAssistResult').style.display = 'none';
+  try {
+    var payload = {
+      description: desc,
+      title:    (document.getElementById('annTitle').value || '').trim(),
+      category: (document.getElementById('annCategory').value || 'General'),
+      tone:     _aiSelectedTone
+    };
+    var res = await fetch(SUPABASE_URL + '/functions/v1/craft-announcement', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (currentSession ? currentSession.access_token : SUPABASE_ANON_KEY)
+      },
+      body: JSON.stringify(payload)
+    });
+    var data = await res.json();
+    if (!res.ok || data.error) {
+      errEl.textContent = data.error || 'Could not generate announcement. Please try again.';
+      errEl.style.display = '';
+      return;
+    }
+    _aiLastResult = data.announcement || '';
+    document.getElementById('aiAssistResultText').textContent = _aiLastResult;
+    document.getElementById('aiAssistResult').style.display = '';
+  } catch(e) {
+    errEl.textContent = 'Connection error. Please try again.';
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate Announcement';
+  }
+}
+
+function useAiResult() {
+  if (_aiLastResult) {
+    document.getElementById('annBody').value = _aiLastResult;
+  }
+  closeAiAssist();
+}
+
+// Close on backdrop click
+document.getElementById('aiAssistOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeAiAssist();
+});
+</script>
+
 </body>
 </html>
