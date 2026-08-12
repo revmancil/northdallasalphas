@@ -8599,20 +8599,30 @@ function renderAnnouncements() {
     var statusColor = r.status==='approved'?'var(--green)':r.status==='rejected'?'var(--red)':'var(--gold)';
     var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
     var id = escHtml(String(r.id));
+    var evtDate = escHtml(r.event_date || 'TBD');
+    var evtTime = escHtml(r.event_time || 'TBD');
+    var evtLoc  = escHtml(r.event_location || 'TBD');
     var actions = '';
     if (r.status === 'pending') {
       actions = '<button class="btn-sm success" onclick="updateAnnStatus(\'' + id + '\',\'approved\')"><i class="fas fa-check"></i> Approve</button> ' +
                 '<button class="btn-sm danger"  onclick="updateAnnStatus(\'' + id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>';
     } else {
       actions = '<button class="btn-sm" onclick="updateAnnStatus(\'' + id + '\',\'pending\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
+      if (r.status === 'approved') {
+        actions += ' <button class="btn-sm" style="background:#f0f9ff;border-color:#0ea5e9;color:#0369a1;" onclick="addAnnouncementToEvents(\'' + id + '\')"><i class="fas fa-calendar-plus"></i> Add to Events</button>';
+      }
     }
+    var metaRow = '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' +
+      escHtml(r.member_name||'Unknown') + ' · ' + escHtml(r.category||'General') + ' · Submitted ' + date;
+    if (evtDate !== 'TBD') metaRow += ' &nbsp;|&nbsp; <i class="fas fa-calendar"></i> ' + evtDate;
+    if (evtTime !== 'TBD') metaRow += ' &nbsp;<i class="fas fa-clock"></i> ' + evtTime;
+    if (evtLoc  !== 'TBD') metaRow += ' &nbsp;|&nbsp; <i class="fas fa-map-marker-alt"></i> ' + evtLoc;
+    metaRow += '</div>';
     return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;">' +
         '<div style="flex:1;min-width:200px;">' +
           '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.title||'Untitled') + '</div>' +
-          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' +
-            escHtml(r.member_name||'Unknown') + ' · ' + escHtml(r.category||'General') + ' · ' + date +
-          '</div>' +
+          metaRow +
         '</div>' +
         '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
       '</div>' +
@@ -8627,7 +8637,12 @@ async function updateAnnStatus(id, status) {
   var token = getAdminToken();
   if (!token) return;
   try {
-    await sbPatch('member_announcements', 'id=eq.' + encodeURIComponent(id), { status: status, updated_at: new Date().toISOString() }, token);
+    var updated = await sbPatch('member_announcements', 'id=eq.' + encodeURIComponent(id), { status: status, updated_at: new Date().toISOString() }, token);
+    // If RLS blocked the update, Supabase returns an empty array instead of throwing
+    if (!updated || (Array.isArray(updated) && updated.length === 0)) {
+      showToast('Permission denied — run the SQL schema update in Supabase to allow admin status changes.', 'error');
+      return;
+    }
     var r = _allAnnouncements.find(function(x){ return String(x.id)===String(id); });
     if (r) r.status = status;
     renderAnnouncements();
@@ -8636,6 +8651,39 @@ async function updateAnnStatus(id, status) {
     if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
     showToast('Announcement ' + status + '.');
   } catch(e) { showToast('Could not update: ' + (e.message||'error'), 'error'); }
+}
+
+async function addAnnouncementToEvents(id) {
+  var token = getAdminToken();
+  if (!token) return;
+  var r = _allAnnouncements.find(function(x){ return String(x.id)===String(id); });
+  if (!r) { showToast('Announcement not found.', 'error'); return; }
+  try {
+    // Build datetime string from stored event_date / event_time
+    var dtStr = '';
+    if (r.event_date && r.event_date !== 'TBD') {
+      dtStr = r.event_date;
+      if (r.event_time && r.event_time !== 'TBD') dtStr += ' ' + r.event_time;
+    }
+    var payload = {
+      name:        r.title || 'Untitled Event',
+      location:    (r.event_location && r.event_location !== 'TBD') ? r.event_location : '',
+      datetime:    dtStr,
+      description: r.body || '',
+      flyer:       r.flyer_url || '',
+      featured:    false,
+      chapter_registration_enabled: false,
+      members_only: false,
+      created_at:  new Date().toISOString(),
+      updated_at:  new Date().toISOString()
+    };
+    await sbPost('events', payload, token);
+    showToast('Event "' + (r.title||'Untitled') + '" added to Events. Open Events Manager to set registration options.');
+    // Reload events if the events panel is visible
+    if (document.getElementById('panel-events') && document.getElementById('panel-events').classList.contains('active')) {
+      loadEvents();
+    }
+  } catch(e) { showToast('Could not create event: ' + (e.message||'error'), 'error'); }
 }
 
 /* ═══════════════════════════════════════════

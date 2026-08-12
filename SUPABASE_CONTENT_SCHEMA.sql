@@ -565,3 +565,29 @@ values (
   now()
 )
 on conflict (content_key) do nothing;
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- MEMBER ANNOUNCEMENTS — add event detail columns + admin RLS policy
+-- ──────────────────────────────────────────────────────────────────────────────
+
+-- New columns for event date/time/location (TBD if not provided)
+alter table if exists public.member_announcements
+  add column if not exists event_date     text not null default 'TBD',
+  add column if not exists event_time     text not null default 'TBD',
+  add column if not exists event_location text not null default 'TBD';
+
+-- Allow chapter admins to update status (and other fields) on member_announcements.
+-- Without this policy the PATCH returns 200 with 0 rows affected (silent RLS block).
+drop policy if exists "member_announcements_admin_update" on public.member_announcements;
+create policy "member_announcements_admin_update"
+on public.member_announcements for update
+to authenticated
+using ( public.current_user_is_chapter_admin() )
+with check ( public.current_user_is_chapter_admin() );
+
+-- Allow chapter admins to read all announcements (select)
+drop policy if exists "member_announcements_admin_select" on public.member_announcements;
+create policy "member_announcements_admin_select"
+on public.member_announcements for select
+to authenticated
+using ( public.current_user_is_chapter_admin() or auth.uid() = member_id );

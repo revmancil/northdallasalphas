@@ -551,6 +551,20 @@
                 <option value="Other">Other</option>
               </select>
             </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="pfield">
+                <label>Event Date <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — leave blank for TBD)</span></label>
+                <input type="date" id="annDate" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;box-sizing:border-box;color-scheme:dark;" />
+              </div>
+              <div class="pfield">
+                <label>Event Time <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional)</span></label>
+                <input type="time" id="annTime" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;box-sizing:border-box;color-scheme:dark;" />
+              </div>
+            </div>
+            <div class="pfield">
+              <label>Location <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — leave blank for TBD)</span></label>
+              <input type="text" id="annLocation" placeholder="e.g. Frisco Hall, 5353 Independence Pkwy, Frisco TX" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;box-sizing:border-box;" />
+            </div>
             <div class="pfield">
               <label>Message <span style="color:var(--red);">*</span></label>
               <textarea id="annBody" rows="5" placeholder="Write your announcement here..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
@@ -1937,9 +1951,22 @@ async function submitAnnouncement() {
   errEl.style.display = 'none';
   successEl.style.display = 'none';
   if (!currentMember || !currentSession) { errEl.textContent = 'Sign in to submit.'; errEl.style.display = ''; return; }
-  var title = (document.getElementById('annTitle').value || '').trim();
-  var body  = (document.getElementById('annBody').value  || '').trim();
-  var cat   = document.getElementById('annCategory').value || 'General';
+  var title    = (document.getElementById('annTitle').value    || '').trim();
+  var body     = (document.getElementById('annBody').value     || '').trim();
+  var cat      = document.getElementById('annCategory').value  || 'General';
+  var annDate  = (document.getElementById('annDate').value     || '').trim();
+  var annTime  = (document.getElementById('annTime').value     || '').trim();
+  var location = (document.getElementById('annLocation').value || '').trim() || 'TBD';
+  // Format date for display; default TBD
+  var eventDate = 'TBD';
+  if (annDate) {
+    var d = new Date(annDate + 'T00:00:00');
+    eventDate = d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  }
+  var eventTime = annTime ? (function(){
+    var parts = annTime.split(':'); var h = parseInt(parts[0]); var m = parts[1];
+    return (h % 12 || 12) + ':' + m + ' ' + (h < 12 ? 'AM' : 'PM');
+  })() : 'TBD';
   if (!title) { errEl.textContent = 'Please enter a title.'; errEl.style.display = ''; return; }
   if (!body)  { errEl.textContent = 'Please enter a message.'; errEl.style.display = ''; return; }
   btn.disabled = true;
@@ -1961,6 +1988,9 @@ async function submitAnnouncement() {
         category:     cat,
         body:         body,
         flyer_url:    flyerUrl,
+        event_date:   eventDate,
+        event_time:   eventTime,
+        event_location: location,
         status:       'pending',
         created_at:   new Date().toISOString()
       })
@@ -1971,8 +2001,11 @@ async function submitAnnouncement() {
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
       body: JSON.stringify({ type: 'announcement', name: [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '), title: title, category: cat })
     }).catch(function(){});
-    document.getElementById('annTitle').value = '';
-    document.getElementById('annBody').value  = '';
+    document.getElementById('annTitle').value    = '';
+    document.getElementById('annBody').value     = '';
+    document.getElementById('annDate').value     = '';
+    document.getElementById('annTime').value     = '';
+    document.getElementById('annLocation').value = '';
     clearAnnFlyer();
     successEl.style.display = '';
     loadMyAnnouncements();
@@ -2000,7 +2033,10 @@ async function loadMyAnnouncements() {
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
           '<div style="display:flex;align-items:center;gap:12px;">' + flyerThumb +
           '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + escHtml(r.title) + '</div>' +
-          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.category||'General') + ' · ' + date + '</div></div></div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.category||'General') + ' · ' + date +
+          (r.event_date && r.event_date !== 'TBD' ? ' · <i class="fas fa-calendar" style="margin-left:4px;"></i> ' + escHtml(r.event_date) : '') +
+          (r.event_location && r.event_location !== 'TBD' ? ' · <i class="fas fa-map-marker-alt" style="margin-left:4px;"></i> ' + escHtml(r.event_location) : '') +
+          '</div></div></div>' +
           '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
         '</div>' +
       '</div>';
