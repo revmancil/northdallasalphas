@@ -78,7 +78,7 @@ Write only the announcement message body — no title, no greeting like "Dear Br
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
+        model: "claude-3-5-haiku-20241022",
         max_tokens: 600,
         system: systemPrompt,
         messages: [{ role: "user", content: userPrompt }],
@@ -88,7 +88,12 @@ Write only the announcement message body — no title, no greeting like "Dear Br
     if (!response.ok) {
       const err = await response.text();
       console.error("Anthropic API error:", err);
-      return json({ error: "AI service error. Please try again." }, 502);
+      let errMsg = "AI service error. Please try again.";
+      try {
+        const parsed = JSON.parse(err);
+        if (parsed?.error?.message) errMsg = parsed.error.message;
+      } catch (_) { /* use default */ }
+      return json({ error: errMsg }, 502);
     }
 
     const data = await response.json();
