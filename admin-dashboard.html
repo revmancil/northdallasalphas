@@ -5784,10 +5784,19 @@ function datetimeToIsoDate(dtStr) {
   return '';
 }
 
+function nlUuid() {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
   return eventsData.map(function(ev, idx) {
+    // Ensure every row always has `id` so PostgREST upsert keys match across the batch
+    if (!ev.id) ev.id = nlUuid();
     const row = {
-      ...(ev.id ? { id: ev.id } : {}),
+      id: ev.id,
       name: ev.name || '',
       location: ev.location || '',
       datetime: ev.datetime || '',
