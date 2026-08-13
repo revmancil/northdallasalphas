@@ -227,5 +227,100 @@ serve(async (req) => {
     return json({ url: session.url });
   }
 
+  if (mode === "store") {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    if (!authHeader.startsWith("Bearer ")) {
+      return json({ error: "Sign in to the member portal to checkout." }, 401);
+    }
+
+    const userClient = createClient(supabaseUrl, anonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user?.email) {
+      return json({ error: "Invalid or expired session. Please sign in again." }, 401);
+    }
+
+    const userEmail = String(userData.user.email).toLowerCase();
+
+    const { data: member } = await admin
+      .from("members")
+      .select("id,first_name,last_name")
+      .eq("email", userEmail)
+      .maybeSingle();
+
+    if (!member?.id) {
+      return json({ error: "Member profile not found." }, 403);
+    }
+
+    const items = Array.isArray(payload.items) ? payload.items as Record<string, unknown>[] : [];
+    if (!items.length) return json({ error: "Cart is empty." }, 400);
+
+    const notes = trimStr(payload.notes, 500);
+    const totalCents = items.reduce((s: number, i: Record<string, unknown>) =>
+      s + Math.round(Number(i.price ?? 0) * 100) * Math.max(1, parseInt(String(i.quantity ?? 1), 10)), 0);
+
+    if (totalCents <= 0) return json({ error: "Order total must be greater than zero for Stripe checkout." }, 400);
+
+    const memberName = [member.first_name, member.last_name].filter(Boolean).join(" ");
+
+    // Save order first so webhook can reference it by ID
+    const { data: order, error: orderErr } = await admin
+      .from("store_orders")
+      .insert({
+        member_id: member.id,
+        member_name: memberName,
+        member_email: userEmail,
+        items: JSON.stringify(items.map((i) => ({
+          item_id: i.item_id,
+          name: trimStr(i.name, 200),
+          price: Number(i.price ?? 0),
+          quantity: Math.max(1, parseInt(String(i.quantity ?? 1), 10)),
+          selections: i.selections ?? {},
+        }))),
+        total: totalCents / 100,
+        status: "awaiting_payment",
+        notes: notes || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (orderErr || !order?.id) {
+      console.error("store_orders insert:", orderErr);
+      return json({ error: "Could not create order record." }, 500);
+    }
+
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((i) => ({
+      quantity: Math.max(1, parseInt(String(i.quantity ?? 1), 10)),
+      price_data: {
+        currency: "usd",
+        unit_amount: Math.round(Number(i.price ?? 0) * 100),
+        product_data: {
+          name: trimStr(i.name, 120) || "Store item",
+          description: "Xi Tau Lambda Chapter Store",
+        },
+      },
+    }));
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer_email: email,
+      line_items: lineItems,
+      success_url: `${siteBase}/member-portal.html?store=success`,
+      cancel_url: `${siteBase}/member-portal.html?store=cancel&order=${order.id}`,
+      metadata: {
+        kind: "store",
+        order_id: String(order.id),
+        member_id: String(member.id),
+        full_name: fullName,
+        email,
+      },
+    });
+
+    return json({ url: session.url });
+  }
+
   return json({ error: "Unknown mode." }, 400);
 });

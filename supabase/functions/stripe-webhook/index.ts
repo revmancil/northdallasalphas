@@ -109,6 +109,28 @@ serve(async (req) => {
       console.error("dues_payments insert:", error);
       return new Response(error.message, { status: 500 });
     }
+  } else if (kind === "store") {
+    const orderId = String(meta.order_id ?? "").trim();
+    if (!orderId) {
+      console.error("Missing order_id in store webhook metadata", meta);
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const { error } = await admin
+      .from("store_orders")
+      .update({
+        status: "paid",
+        stripe_checkout_session_id: sessionId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", orderId);
+
+    if (error) {
+      console.error("store_orders update:", error);
+      return new Response(error.message, { status: 500 });
+    }
   }
 
   return new Response(JSON.stringify({ received: true }), {

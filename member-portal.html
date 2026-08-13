@@ -1940,6 +1940,12 @@ async function init() {
     } else if (q.get('dues') === 'cancel') {
       showToast('Checkout was canceled.', 'error');
       history.replaceState({}, '', 'member-portal.html');
+    } else if (q.get('store') === 'success') {
+      showToast('Order placed and payment received — thank you!', 'success');
+      history.replaceState({}, '', 'member-portal.html');
+    } else if (q.get('store') === 'cancel') {
+      showToast('Checkout was canceled. Your cart items are still available.', 'error');
+      history.replaceState({}, '', 'member-portal.html');
     }
   })();
   const overlay = document.getElementById('loadingOverlay');
@@ -2395,16 +2401,42 @@ async function placeOrder() {
   if (!currentMember || !currentSession) { errEl.textContent = 'Sign in to place an order.'; errEl.style.display = ''; return; }
   if (!_storeCart.length) { errEl.textContent = 'Your cart is empty.'; errEl.style.display = ''; return; }
   var btn = document.getElementById('placeOrderBtn');
-  btn.disabled = true; btn.textContent = 'Placing order...';
+  btn.disabled = true;
   var notes = (document.getElementById('cartNotes').value||'').trim();
   var total = _storeCart.reduce(function(s,i){ return s + i.price * i.quantity; }, 0);
+  var cartItems = _storeCart.map(function(c){ return { item_id:c.item_id, name:c.name, price:c.price, quantity:c.quantity, selections:c.selections }; });
+
+  // Paid orders go through Stripe
+  if (total > 0) {
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to payment…';
+    try {
+      var memberEmail = currentMember.email || (currentSession.user && currentSession.user.email) || '';
+      var memberName  = [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ');
+      var memberPhone = currentMember.phone || '000-000-0000';
+      var stripeRes = await fetch(STRIPE_CHECKOUT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token },
+        body: JSON.stringify({ mode:'store', fullName:memberName, phone:memberPhone, email:memberEmail, items:cartItems, notes:notes })
+      });
+      var stripeData = await stripeRes.json().catch(function(){ return {}; });
+      if (!stripeRes.ok || !stripeData.url) throw new Error(stripeData.error || 'Could not start checkout.');
+      window.location.href = stripeData.url;
+      return; // browser redirects — no finally needed
+    } catch(e) {
+      errEl.textContent = 'Payment error: ' + (e.message||'error');
+      errEl.style.display = '';
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+      return;
+    }
+  }
+
+  // Free orders save directly
+  btn.textContent = 'Placing order...';
   var payload = {
     member_id: currentMember.id,
     member_name: [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '),
     member_email: currentMember.email,
-    items: JSON.stringify(_storeCart.map(function(c){
-      return { item_id:c.item_id, name:c.name, price:c.price, quantity:c.quantity, selections:c.selections };
-    })),
+    items: JSON.stringify(cartItems),
     total: total,
     status: 'pending',
     notes: notes || null,
@@ -2414,12 +2446,11 @@ async function placeOrder() {
   try {
     var orderRes = await fetch(SUPABASE_URL + '/rest/v1/store_orders', {
       method: 'POST',
-      headers: Object.assign({}, { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token, 'Prefer':'return=representation' }),
+      headers: { 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token, 'Prefer':'return=representation' },
       body: JSON.stringify(payload)
     });
     var orderData = await orderRes.json().catch(function(){ return []; });
     var newOrderId = Array.isArray(orderData) && orderData[0] ? orderData[0].id : null;
-    // Send confirmation email (fire-and-forget — don't block on failure)
     if (newOrderId) {
       fetch(SUPABASE_URL + '/functions/v1/send-order-confirmation', {
         method: 'POST',
