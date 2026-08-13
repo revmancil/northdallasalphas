@@ -1218,6 +1218,9 @@
     <button class="sidebar-link" data-section="newsletter" onclick="showPanel('newsletter')">
       <i class="fas fa-envelope-open-text"></i> Newsletter Generator
     </button>
+    <button class="sidebar-link" data-section="dues-admin" onclick="showPanel('dues-admin');loadDuesAdminPanel()">
+      <i class="fas fa-dollar-sign"></i> Dues &amp; Payments <span id="navBadge-dues-admin" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle;"></span>
+    </button>
   </div>
 
   <div class="sidebar-section" id="sidebarSitePagesSection">
@@ -2753,6 +2756,132 @@
         </div>
       </div>
     </div>
+
+    <!-- ══════════════ DUES & PAYMENTS PANEL ══════════════ -->
+    <div class="panel" id="panel-dues-admin">
+
+      <!-- Tab bar -->
+      <div style="display:flex;gap:8px;margin-bottom:20px;border-bottom:1px solid var(--gray-200);padding-bottom:0;">
+        <button id="duesAdminTabHistory" onclick="switchDuesTab('history')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid var(--gold);color:var(--gold);">
+          <i class="fas fa-history"></i> Payment History
+        </button>
+        <button id="duesAdminTabRecord" onclick="switchDuesTab('record')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
+          <i class="fas fa-plus-circle"></i> Record Payment
+        </button>
+        <button id="duesAdminTabConfig" onclick="switchDuesTab('config')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
+          <i class="fas fa-sliders-h"></i> Configure
+        </button>
+      </div>
+
+      <!-- Payment History tab -->
+      <div id="duesAdminPaneHistory">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <input type="text" id="duesSearchInput" placeholder="Search by name or email…" oninput="filterDuesPayments()" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.88rem;width:260px;max-width:100%;" />
+          </div>
+          <div style="font-size:0.82rem;color:var(--gray-500);" id="duesPaymentCount"></div>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;" id="duesPaymentsTable">
+            <thead>
+              <tr style="border-bottom:2px solid var(--gray-200);text-align:left;">
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Name</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Email</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Phone</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Amount</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Method</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Status</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Date</th>
+                <th style="padding:8px 10px;color:var(--gray-500);font-weight:600;">Notes</th>
+                <th style="padding:8px 10px;"></th>
+              </tr>
+            </thead>
+            <tbody id="duesPaymentsBody">
+              <tr><td colspan="9" style="padding:30px;text-align:center;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Record Payment tab -->
+      <div id="duesAdminPaneRecord" style="display:none;">
+        <div class="section-card" style="max-width:560px;">
+          <div class="section-card-header"><h3><i class="fas fa-plus-circle"></i> Record Cash / Check Payment</h3></div>
+          <div class="section-card-body">
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-bottom:18px;">Use this form to manually record a dues payment received outside of Stripe (cash, check, etc.).</p>
+            <div class="field-group">
+              <label>Member <span style="color:var(--red);">*</span></label>
+              <select id="duesRecordMember" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+                <option value="">— select member —</option>
+              </select>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="field-group">
+                <label>Full Name <span style="color:var(--red);">*</span></label>
+                <input type="text" id="duesRecordName" placeholder="e.g. John Smith" />
+              </div>
+              <div class="field-group">
+                <label>Email <span style="color:var(--red);">*</span></label>
+                <input type="email" id="duesRecordEmail" placeholder="member@email.com" />
+              </div>
+              <div class="field-group">
+                <label>Phone</label>
+                <input type="tel" id="duesRecordPhone" placeholder="(214) 555-0100" />
+              </div>
+              <div class="field-group">
+                <label>Amount ($) <span style="color:var(--red);">*</span></label>
+                <input type="number" id="duesRecordAmount" min="0.01" step="0.01" placeholder="150.00" />
+              </div>
+            </div>
+            <div class="field-group">
+              <label>Payment Method</label>
+              <select id="duesRecordMethod" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+                <option value="zelle">Zelle</option>
+                <option value="cashapp">Cash App</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label>Notes / Reference</label>
+              <input type="text" id="duesRecordNotes" placeholder="Check #, confirmation, etc." />
+            </div>
+            <p id="duesRecordErr" style="display:none;color:var(--red);font-size:0.83rem;margin-top:8px;"></p>
+            <div style="margin-top:18px;">
+              <button class="btn-save" id="duesRecordBtn" onclick="submitDuesRecord()"><i class="fas fa-save"></i> Save Payment</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configure tab -->
+      <div id="duesAdminPaneConfig" style="display:none;">
+        <div class="section-card" style="max-width:480px;">
+          <div class="section-card-header"><h3><i class="fas fa-sliders-h"></i> Dues Configuration</h3></div>
+          <div class="section-card-body">
+            <p style="color:var(--gray-500);font-size:0.85rem;margin-bottom:18px;">Set the annual dues amount members see in the portal. Changes take effect immediately on next portal load.</p>
+            <div class="field-group">
+              <label>Annual Dues Amount ($)</label>
+              <input type="number" id="duesConfigAmount" min="0" step="0.01" placeholder="150.00" />
+            </div>
+            <div class="field-group">
+              <label>Late Fee Amount ($)</label>
+              <input type="number" id="duesConfigLateFee" min="0" step="0.01" placeholder="10.00" />
+            </div>
+            <div class="field-group">
+              <label>Late Fee Notice (shown to member when late fee applies)</label>
+              <textarea id="duesConfigLateMsg" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;" placeholder="A late fee has been added per chapter policy…"></textarea>
+            </div>
+            <p id="duesConfigErr" style="display:none;color:var(--red);font-size:0.83rem;margin-top:8px;"></p>
+            <div style="margin-top:18px;">
+              <button class="btn-save" id="duesConfigBtn" onclick="saveDuesConfig()"><i class="fas fa-save"></i> Save Configuration</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- end panel-dues-admin -->
 
   </main>
 </div>
@@ -9214,6 +9343,230 @@ async function updateOrderStatus(id, status) {
     var badge = document.getElementById('storePendingBadge');
     if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
   } catch(e) { showToast('Could not update order: ' + (e.message||'error'), 'error'); }
+}
+
+// ══════════════════════════════════════════════════
+//  DUES & PAYMENTS ADMIN PANEL
+// ══════════════════════════════════════════════════
+
+var _duesPayments = [];
+var _duesMembersForSelect = [];
+
+async function loadDuesAdminPanel() {
+  await Promise.allSettled([
+    _fetchDuesPayments(),
+    _fetchDuesMembersForSelect(),
+    _loadDuesConfig()
+  ]);
+}
+
+async function _fetchDuesPayments() {
+  var token = getAdminToken();
+  if (!token) return;
+  var body = document.getElementById('duesPaymentsBody');
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/dues_payments?select=*&order=created_at.desc', { headers: sbHeaders(token) });
+    _duesPayments = res.ok ? (await res.json()) : [];
+    renderDuesPayments();
+  } catch(e) {
+    if (body) body.innerHTML = '<tr><td colspan="9" style="padding:20px;text-align:center;color:var(--red);">Could not load payments.</td></tr>';
+  }
+}
+
+async function _fetchDuesMembersForSelect() {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/members?select=id,first_name,last_name,email&order=last_name.asc', { headers: sbHeaders(token) });
+    _duesMembersForSelect = res.ok ? (await res.json()) : [];
+    var sel = document.getElementById('duesRecordMember');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— select member (optional) —</option>';
+    _duesMembersForSelect.forEach(function(m) {
+      var name = [m.first_name, m.last_name].filter(Boolean).join(' ');
+      var opt = document.createElement('option');
+      opt.value = m.id;
+      opt.dataset.name = name;
+      opt.dataset.email = m.email || '';
+      opt.textContent = name + (m.email ? ' (' + m.email + ')' : '');
+      sel.appendChild(opt);
+    });
+    sel.onchange = function() {
+      var opt = sel.options[sel.selectedIndex];
+      if (opt && opt.dataset.name) {
+        document.getElementById('duesRecordName').value = opt.dataset.name;
+        document.getElementById('duesRecordEmail').value = opt.dataset.email;
+      }
+    };
+  } catch(e) {}
+}
+
+async function _loadDuesConfig() {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.payments&select=content_json', { headers: sbHeaders(token) });
+    if (!res.ok) return;
+    var rows = await res.json();
+    var j = rows && rows[0] && rows[0].content_json;
+    if (!j) return;
+    var amtEl = document.getElementById('duesConfigAmount');
+    var feeEl = document.getElementById('duesConfigLateFee');
+    var msgEl = document.getElementById('duesConfigLateMsg');
+    if (amtEl && j.dues_amount_cents) amtEl.value = (j.dues_amount_cents / 100).toFixed(2);
+    if (feeEl && j.late_fee_cents) feeEl.value = (j.late_fee_cents / 100).toFixed(2);
+    if (msgEl && j.late_fee_notice) msgEl.value = j.late_fee_notice;
+  } catch(e) {}
+}
+
+function renderDuesPayments() {
+  var body = document.getElementById('duesPaymentsBody');
+  var countEl = document.getElementById('duesPaymentCount');
+  if (!body) return;
+  var q = (document.getElementById('duesSearchInput') || {}).value || '';
+  var filtered = _duesPayments.filter(function(p) {
+    if (!q) return true;
+    var s = q.toLowerCase();
+    return (p.full_name||'').toLowerCase().includes(s) || (p.email||'').toLowerCase().includes(s);
+  });
+  if (countEl) countEl.textContent = filtered.length + ' payment' + (filtered.length !== 1 ? 's' : '');
+  if (!filtered.length) {
+    body.innerHTML = '<tr><td colspan="9" style="padding:30px;text-align:center;color:var(--gray-400);">No payments found.</td></tr>';
+    return;
+  }
+  body.innerHTML = filtered.map(function(p) {
+    var amt = p.amount_cents ? '$' + (p.amount_cents / 100).toFixed(2) : (p.amount ? '$' + Number(p.amount).toFixed(2) : '—');
+    var method = p.payment_method || (p.stripe_checkout_session_id ? 'Stripe' : '—');
+    var statusColor = p.payment_status === 'paid' ? 'var(--green)' : 'var(--gold)';
+    var date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '—';
+    return '<tr style="border-bottom:1px solid var(--gray-100);">' +
+      '<td style="padding:8px 10px;">' + esc(p.full_name||'—') + '</td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + esc(p.email||'—') + '</td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + esc(p.phone||'—') + '</td>' +
+      '<td style="padding:8px 10px;font-weight:600;">' + amt + '</td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + esc(method) + '</td>' +
+      '<td style="padding:8px 10px;"><span style="color:' + statusColor + ';font-weight:600;">' + esc(p.payment_status||'—') + '</span></td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + date + '</td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(p.notes||'') + '">' + esc(p.notes||'—') + '</td>' +
+      '<td style="padding:8px 10px;"><button onclick="deleteDuesPayment(\'' + esc(String(p.id)) + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.8rem;" title="Delete"><i class="fas fa-trash"></i></button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function filterDuesPayments() { renderDuesPayments(); }
+
+function switchDuesTab(tab) {
+  var tabs = ['history','record','config'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('duesAdminTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    var pane = document.getElementById('duesAdminPane' + t.charAt(0).toUpperCase() + t.slice(1));
+    var active = t === tab;
+    if (btn) { btn.style.borderBottomColor = active ? 'var(--gold)' : 'transparent'; btn.style.color = active ? 'var(--gold)' : 'var(--gray-400)'; }
+    if (pane) pane.style.display = active ? '' : 'none';
+  });
+}
+
+async function submitDuesRecord() {
+  var token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  var errEl = document.getElementById('duesRecordErr');
+  errEl.style.display = 'none';
+  var name   = (document.getElementById('duesRecordName').value||'').trim();
+  var email  = (document.getElementById('duesRecordEmail').value||'').trim().toLowerCase();
+  var phone  = (document.getElementById('duesRecordPhone').value||'').trim();
+  var amount = parseFloat(document.getElementById('duesRecordAmount').value);
+  var method = document.getElementById('duesRecordMethod').value;
+  var notes  = (document.getElementById('duesRecordNotes').value||'').trim();
+  var memberId = document.getElementById('duesRecordMember').value || null;
+
+  if (!name) { errEl.textContent = 'Full name is required.'; errEl.style.display = ''; return; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.textContent = 'Valid email is required.'; errEl.style.display = ''; return; }
+  if (isNaN(amount) || amount <= 0) { errEl.textContent = 'Enter a valid amount.'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('duesRecordBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+  try {
+    var payload = {
+      member_id: memberId || null,
+      full_name: name,
+      email: email,
+      phone: phone || null,
+      amount_cents: Math.round(amount * 100),
+      payment_status: 'paid',
+      payment_method: method,
+      notes: notes || null,
+      created_at: new Date().toISOString()
+    };
+    var res = await fetch(SUPABASE_URL + '/rest/v1/dues_payments', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=representation' }),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.message || 'Could not save.'); }
+    var rows = await res.json();
+    if (rows && rows[0]) _duesPayments.unshift(rows[0]);
+    showToast('Payment recorded successfully.');
+    // Reset form
+    ['duesRecordMember','duesRecordName','duesRecordEmail','duesRecordPhone','duesRecordAmount','duesRecordNotes'].forEach(function(id) {
+      var el = document.getElementById(id); if (el) el.value = '';
+    });
+    switchDuesTab('history');
+  } catch(e) {
+    errEl.textContent = e.message || 'Could not save payment.'; errEl.style.display = '';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Payment';
+  }
+}
+
+async function saveDuesConfig() {
+  var token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  var errEl = document.getElementById('duesConfigErr');
+  errEl.style.display = 'none';
+  var amtVal = parseFloat(document.getElementById('duesConfigAmount').value);
+  var feeVal = parseFloat(document.getElementById('duesConfigLateFee').value);
+  var msg    = (document.getElementById('duesConfigLateMsg').value||'').trim();
+  if (isNaN(amtVal) || amtVal <= 0) { errEl.textContent = 'Enter a valid dues amount.'; errEl.style.display = ''; return; }
+  if (isNaN(feeVal) || feeVal < 0) { errEl.textContent = 'Enter a valid late fee (0 to disable).'; errEl.style.display = ''; return; }
+
+  var btn = document.getElementById('duesConfigBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+  try {
+    // Fetch existing payments config to merge
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.payments&select=content_json', { headers: sbHeaders(token) });
+    var rows = res.ok ? await res.json() : [];
+    var existing = (rows && rows[0] && rows[0].content_json) || {};
+    var merged = Object.assign({}, existing, {
+      dues_amount_cents: Math.round(amtVal * 100),
+      late_fee_cents: Math.round(feeVal * 100),
+      late_fee_notice: msg || null
+    });
+
+    var upsertRes = await fetch(SUPABASE_URL + '/rest/v1/site_content', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'resolution=merge-duplicates' }),
+      body: JSON.stringify({ content_key: 'payments', content_json: merged })
+    });
+    if (!upsertRes.ok) throw new Error('Could not save configuration.');
+    showToast('Dues configuration saved.');
+  } catch(e) {
+    errEl.textContent = e.message || 'Could not save.'; errEl.style.display = '';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Configuration';
+  }
+}
+
+async function deleteDuesPayment(id) {
+  if (!confirm('Delete this payment record? This cannot be undone.')) return;
+  var token = getAdminToken();
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/dues_payments?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: sbHeaders(token) });
+    _duesPayments = _duesPayments.filter(function(p){ return String(p.id) !== String(id); });
+    renderDuesPayments();
+    showToast('Payment record deleted.');
+  } catch(e) { showToast('Could not delete record.', 'error'); }
 }
 
 </script>

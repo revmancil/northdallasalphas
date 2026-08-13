@@ -591,3 +591,18 @@ create policy "member_announcements_admin_select"
 on public.member_announcements for select
 to authenticated
 using ( public.current_user_is_chapter_admin() or auth.uid() = member_id );
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- DUES PAYMENTS — add payment_method and notes columns for manual recording
+-- ──────────────────────────────────────────────────────────────────────────────
+
+alter table if exists public.dues_payments
+  add column if not exists payment_method text,
+  add column if not exists notes text;
+
+-- Allow admins to read, insert, update, and delete dues_payments
+drop policy if exists "dues_payments_admin_all" on public.dues_payments;
+create policy "dues_payments_admin_all"
+on public.dues_payments for all
+to authenticated
+using ( public.current_user_is_chapter_admin() );
