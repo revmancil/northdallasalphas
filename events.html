@@ -37,6 +37,7 @@
     }
     .gala-img img {
       width: 100%;
+      min-height: 300px; /* Safari <15 fallback */
       aspect-ratio: 3/4;
       object-fit: cover;
       object-position: center top;
@@ -44,6 +45,7 @@
     }
     .gala-img .no-flyer-placeholder {
       width: 100%;
+      min-height: 300px; /* Safari <15 fallback */
       aspect-ratio: 3/4;
       background: linear-gradient(135deg, #111 0%, #1c1c1c 100%);
       display: flex;
@@ -75,6 +77,7 @@
       margin-bottom: 20px;
     }
     .gala-text h2 {
+      font-size: 1.8rem; /* Safari <11.1 fallback */
       font-size: clamp(1.8rem, 3vw, 2.8rem);
       color: var(--white);
       margin-bottom: 18px;
@@ -238,6 +241,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
     }
     .event-modal-overlay.open { display: flex; }
@@ -248,11 +252,16 @@
       width: 100%;
       max-height: 90vh;
       overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
       box-shadow: 0 24px 80px rgba(0,0,0,0.35);
       animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
       position: relative;
     }
-    @keyframes modalIn {
+    @-webkit-keyframes modalIn {{
+      from { opacity: 0; transform: scale(0.92) translateY(20px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }}
+@keyframes modalIn {
       from { opacity: 0; transform: scale(0.92) translateY(20px); }
       to   { opacity: 1; transform: scale(1) translateY(0); }
     }
@@ -381,6 +390,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
+      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
     }
     .reg-modal-overlay.open { display: flex; }
@@ -391,6 +401,7 @@
       width: 100%;
       max-height: 90vh;
       overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
       box-shadow: 0 24px 80px rgba(0,0,0,0.35);
       position: relative;
       animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;

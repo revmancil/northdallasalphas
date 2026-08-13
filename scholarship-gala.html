@@ -59,6 +59,7 @@
     }
     .gala-hero-title {
       font-family: 'Playfair Display', serif;
+      font-size: 2.2rem; /* Safari <11.1 fallback */
       font-size: clamp(2.2rem, 4vw, 3.4rem);
       font-weight: 800;
       color: var(--white);
@@ -110,6 +111,7 @@
       left: 24px;
       background: rgba(10,10,10,0.85);
       border: 1px solid rgba(201,168,76,0.4);
+      -webkit-backdrop-filter: blur(8px);
       backdrop-filter: blur(8px);
       border-radius: 4px;
       padding: 14px 20px;
@@ -168,6 +170,7 @@
     }
     .section-title {
       font-family: 'Playfair Display', serif;
+      font-size: 1.8rem; /* Safari <11.1 fallback */
       font-size: clamp(1.8rem, 3vw, 2.4rem);
       font-weight: 800;
       color: var(--gray-800);
@@ -385,6 +388,7 @@
     .gala-cta-inner { position: relative; z-index: 2; }
     .gala-cta h2 {
       font-family: 'Playfair Display', serif;
+      font-size: 2rem; /* Safari <11.1 fallback */
       font-size: clamp(2rem, 4vw, 3rem);
       font-weight: 800;
       color: var(--white);
@@ -466,6 +470,7 @@
       font-size: 1rem;
       transition: background 0.2s, border-color 0.2s;
       z-index: 10;
+      -webkit-backdrop-filter: blur(4px);
       backdrop-filter: blur(4px);
     }
     .gala-carousel-btn:hover { background: rgba(201,168,76,0.25); border-color: var(--gold); }

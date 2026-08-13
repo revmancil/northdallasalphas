@@ -52,7 +52,8 @@
     .invalid-screen { text-align:center; padding:20px 0; }
     .invalid-screen i { font-size:2rem; color:rgba(231,76,60,0.5); display:block; margin-bottom:12px; }
     .invalid-screen p { color:rgba(255,255,255,0.4); font-size:0.88rem; }
-    @keyframes spin { to { transform:rotate(360deg); } }
+    @-webkit-keyframes spin {{ to { transform:rotate(360deg); } }}
+@keyframes spin { to { transform:rotate(360deg); } }
     .spinner { width:24px; height:24px; border:2px solid rgba(201,168,76,0.2); border-top-color:var(--gold); border-radius:50%; animation:spin 0.7s linear infinite; margin:0 auto; }
   </style>
 </head>
