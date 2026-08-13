@@ -231,7 +231,7 @@ function memberRow(memberId, name, email, ini, alreadyIn, isRsvp, isVisiting) {
   var btnId = 'ci-btn-'+(email||name).replace(/[^a-z0-9]/gi,'_');
   var btnHtml = alreadyIn
     ? '<button class="checkin-btn done" disabled><i class="fas fa-check"></i> Checked In</button>'
-    : '<button class="checkin-btn" id="'+esc(btnId)+'" onclick="checkIn('+JSON.stringify(memberId)+','+JSON.stringify(name)+','+JSON.stringify(email)+','+JSON.stringify(btnId)+')"><i class="fas fa-door-open"></i> Check In</button>';
+    : '<button class="checkin-btn" id="'+esc(btnId)+'" data-member-id="'+esc(memberId)+'" data-name="'+esc(name)+'" data-email="'+esc(email)+'" data-btn-id="'+esc(btnId)+'" onclick="checkInFromBtn(this)"><i class="fas fa-door-open"></i> Check In</button>';
   return '<div class="member-row">'+
     '<div class="member-avatar">'+esc(ini)+'</div>'+
     '<div class="member-name">'+esc(name)+
@@ -261,6 +261,15 @@ function filterMembers() {
     var isVisiting = m.portal_access === 'visiting';
     return memberRow(m.id, name, m.email||'', ini, alreadyIn, false, isVisiting);
   }).join('');
+}
+
+function checkInFromBtn(btn) {
+  var memberId = btn.dataset.memberId || null;
+  var name     = btn.dataset.name || '';
+  var email    = btn.dataset.email || '';
+  var btnId    = btn.dataset.btnId || '';
+  if (memberId === 'null' || memberId === '') memberId = null;
+  checkIn(memberId, name, email, btnId);
 }
 
 async function checkIn(memberId, name, email, btnId) {
