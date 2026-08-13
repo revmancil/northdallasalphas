@@ -263,6 +263,7 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('news-feed');loadNewsFeed()" id="nav-news-feed"><i class="fas fa-bullhorn"></i> Chapter News</button>
     <div class="nav-section-label">Community</div>
     <button class="nav-item" onclick="showPanel('directory')" id="nav-directory"><i class="fas fa-users"></i> Brother Directory</button>
+    <button class="nav-item" onclick="showPanel('newsletters');loadNewslettersPortal()" id="nav-newsletters"><i class="fas fa-newspaper"></i> Newsletters</button>
     <div class="nav-section-label">Account</div>
     <button class="nav-item" onclick="showPanel('card');renderMemberCard()" id="nav-card"><i class="fas fa-id-card"></i> Membership Card</button>
     <button class="nav-item" onclick="showPanel('announcements-submit')" id="nav-announcements-submit"><i class="fas fa-bullhorn"></i> Submit Announcement</button>
@@ -536,6 +537,26 @@ backdrop-filter:blur(4px);}
       </div>
     </div>
     <!-- PROFILE -->
+    <!-- NEWSLETTERS -->
+    <div class="panel" id="panel-newsletters">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-newspaper" style="color:var(--gold);margin-right:8px;"></i>Chapter Newsletters</h3></div>
+        <div class="section-card-body" id="newslettersList">
+          <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading newsletters…</p></div>
+        </div>
+      </div>
+      <!-- Newsletter viewer modal -->
+      <div id="newsletterModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;overflow:auto;padding:20px;">
+        <div style="max-width:680px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;position:relative;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#111;border-bottom:1px solid #2a2a2a;">
+            <span id="nlModalTitle" style="color:#c9a84c;font-weight:700;font-size:0.9rem;"></span>
+            <button onclick="document.getElementById('newsletterModal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
+          </div>
+          <iframe id="nlModalFrame" style="width:100%;min-height:600px;border:none;display:block;" title="Newsletter"></iframe>
+        </div>
+      </div>
+    </div>
+
     <!-- SUBMIT ANNOUNCEMENT -->
     <div class="panel" id="panel-announcements-submit">
       <div class="section-card">
@@ -2072,6 +2093,50 @@ async function submitAnnouncement() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Announcement';
+  }
+}
+
+async function loadNewslettersPortal() {
+  var el = document.getElementById('newslettersList');
+  if (!el) return;
+  try {
+    var rows = await sbGet('newsletters', 'status=eq.published&order=published_at.desc&select=id,title,subject,published_at', SUPABASE_ANON_KEY);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-newspaper"></i><p>No newsletters published yet.</p></div>';
+      return;
+    }
+    el.innerHTML = rows.map(function(n) {
+      var dateStr = n.published_at ? new Date(n.published_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : '';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.07);">' +
+        '<div>' +
+          '<div style="font-weight:600;color:var(--white);font-size:0.9rem;">' + esc(n.title) + '</div>' +
+          (dateStr ? '<div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px;">' + dateStr + '</div>' : '') +
+        '</div>' +
+        '<button onclick="openNewsletter(' + JSON.stringify(n.id) + ',' + JSON.stringify(n.title) + ')" style="padding:7px 16px;background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:6px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;"><i class="fas fa-book-open"></i> Read</button>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Could not load newsletters.</p></div>';
+  }
+}
+
+async function openNewsletter(id, title) {
+  var modal = document.getElementById('newsletterModal');
+  var frame = document.getElementById('nlModalFrame');
+  var titleEl = document.getElementById('nlModalTitle');
+  if (!modal || !frame) return;
+  if (titleEl) titleEl.textContent = title || 'Newsletter';
+  frame.srcdoc = '<p style="text-align:center;padding:40px;font-family:Arial;color:#888;">Loading…</p>';
+  modal.style.display = 'block';
+  try {
+    var rows = await sbGet('newsletters', 'id=eq.' + encodeURIComponent(id) + '&select=html_content&limit=1', SUPABASE_ANON_KEY);
+    if (rows && rows.length && rows[0].html_content) {
+      frame.srcdoc = rows[0].html_content;
+    } else {
+      frame.srcdoc = '<p style="text-align:center;padding:40px;font-family:Arial;color:#888;">Content not available.</p>';
+    }
+  } catch(e) {
+    frame.srcdoc = '<p style="text-align:center;padding:40px;font-family:Arial;color:#888;">Could not load newsletter.</p>';
   }
 }
 

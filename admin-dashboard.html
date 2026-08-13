@@ -1993,8 +1993,10 @@
           <select id="nlTemplateSelect" onchange="nlLoadSelectedTemplate()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;max-width:180px;">
             <option value="">Load template…</option>
           </select>
-          <button class="btn-sm success" onclick="nlSaveTemplate()"><i class="fas fa-floppy-disk"></i> Save Template</button>
-          <button class="btn-sm edit" onclick="copyNewsletterHtml()"><i class="fas fa-copy"></i> Copy HTML</button>
+          <button class="btn-sm" onclick="nlRunPreview()" style="background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-300);"><i class="fas fa-eye"></i> Preview</button>
+          <button class="btn-sm success" onclick="nlSaveTemplate()"><i class="fas fa-floppy-disk"></i> Save Draft</button>
+          <button class="btn-sm edit" onclick="nlPublishNewsletter()"><i class="fas fa-paper-plane"></i> Publish</button>
+          <button class="btn-sm" onclick="nlSendToMembers()" style="background:#1a6b3c;color:#fff;border:none;padding:5px 12px;border-radius:5px;font-size:0.8rem;cursor:pointer;"><i class="fas fa-envelope"></i> Send to Members</button>
           <button class="btn-sm view" onclick="downloadNewsletterHtml()"><i class="fas fa-download"></i> Download</button>
         </div>
       </div>
@@ -7455,7 +7457,44 @@ function nlBlockCard(b, idx) {
     body = `<div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Heading <em style="color:var(--gray-400);font-style:normal;">(optional)</em></label>
       <input type="text" value="${escHtml(b.heading||'')}" oninput="nlSetField('${b.id}','heading',this.value)" placeholder="Section heading…" style="font-size:0.84rem;" /></div>
     <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Body</label>
-      <textarea rows="5" oninput="nlSetField('${b.id}','body',this.value)" placeholder="Write your content here. Basic HTML like &lt;b&gt;, &lt;a href=…&gt;, &lt;br&gt; is supported." style="font-size:0.84rem;resize:vertical;">${escHtml(b.body||'')}</textarea></div>`;
+      <div style="border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;">
+        <div style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;padding:4px 6px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);">
+          <button type="button" title="Bold" onclick="nlExec('bold')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-weight:700;font-size:0.85rem;">B</button>
+          <button type="button" title="Italic" onclick="nlExec('italic')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-style:italic;font-size:0.85rem;">I</button>
+          <button type="button" title="Underline" onclick="nlExec('underline')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;text-decoration:underline;font-size:0.85rem;">U</button>
+          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
+          <select title="Font size" onchange="nlExecFontSize(this.value);this.value=''" style="height:26px;border:1px solid var(--gray-200);border-radius:3px;font-size:0.75rem;padding:0 2px;background:var(--white);">
+            <option value="">Size</option>
+            <option value="11px">11</option>
+            <option value="13px">13</option>
+            <option value="15px">15</option>
+            <option value="17px">17</option>
+            <option value="20px">20</option>
+            <option value="24px">24</option>
+            <option value="28px">28</option>
+          </select>
+          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
+          <label title="Text color" style="position:relative;cursor:pointer;width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-font" style="font-size:0.75rem;color:#333;"></i>
+            <input type="color" value="#000000" onchange="nlExec('foreColor',this.value)" style="position:absolute;opacity:0;width:0;height:0;" />
+          </label>
+          <label title="Highlight color" style="position:relative;cursor:pointer;width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-highlighter" style="font-size:0.75rem;color:#333;"></i>
+            <input type="color" value="#ffff00" onchange="nlExec('hiliteColor',this.value)" style="position:absolute;opacity:0;width:0;height:0;" />
+          </label>
+          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
+          <button type="button" title="Align left" onclick="nlExec('justifyLeft')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;"><i class="fas fa-align-left"></i></button>
+          <button type="button" title="Align center" onclick="nlExec('justifyCenter')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;"><i class="fas fa-align-center"></i></button>
+          <button type="button" title="Align right" onclick="nlExec('justifyRight')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;"><i class="fas fa-align-right"></i></button>
+          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
+          <button type="button" title="Clear formatting" onclick="nlExec('removeFormat')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;" title="Clear formatting"><i class="fas fa-remove-format"></i></button>
+        </div>
+        <div id="nlbody-${b.id}" contenteditable="true"
+          oninput="nlSetField('${b.id}','body',document.getElementById('nlbody-${b.id}').innerHTML);nlSchedulePreview()"
+          style="min-height:100px;padding:10px 12px;font-size:0.88rem;line-height:1.6;outline:none;font-family:Arial,sans-serif;color:#2a2a2a;"
+        >${b.body||''}</div>
+      </div>
+    </div>`;
   } else if (b.type === 'image') {
     const hasImg = /^https?:\/\//.test(String(b.imageUrl||'').trim());
     body = `<div style="margin-bottom:10px;">
@@ -7690,7 +7729,97 @@ function downloadNewsletterHtml() {
   URL.revokeObjectURL(a.href);
 }
 
-function newsletterEsc(str) { return escHtml(str || ''); } // legacy alias
+function newsletterEsc(str) { return escHtml(str || ''); }
+
+// ── Rich text helpers ──
+function nlExec(cmd, val) {
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand(cmd, false, val || null);
+}
+
+function nlExecFontSize(px) {
+  if (!px) return;
+  // Insert a styled span around the current selection
+  var sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  var range = sel.getRangeAt(0);
+  if (range.collapsed) return;
+  var span = document.createElement('span');
+  span.style.fontSize = px;
+  try { range.surroundContents(span); } catch(e) {
+    // If selection spans multiple elements, use execCommand fallback
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand('fontSize', false, '4');
+    // Post-patch: replace font-size on the resulting element
+    var fontEls = document.querySelectorAll('[style*="font-size"]');
+    fontEls.forEach(function(el) { if (el.style.fontSize === 'medium') el.style.fontSize = px; });
+  }
+  // Sync block data
+  var ce = span.closest('[id^="nlbody-"]');
+  if (ce) { var bid = ce.id.replace('nlbody-',''); nlSetField(bid,'body',ce.innerHTML); nlSchedulePreview(); }
+}
+
+// ── Publish newsletter ──
+async function nlPublishNewsletter() {
+  var token = getAdminToken();
+  if (!token) { showToast('Sign in required.', 'error'); return; }
+  if (!nlBlocks.length) { showToast('Add at least one block before publishing.', 'error'); return; }
+  var title = (document.getElementById('nlCampaignName')||{}).value || '';
+  if (!title) { showToast('Enter a Campaign / Email Name before publishing.', 'error'); return; }
+  try {
+    showToast('Compiling newsletter…', 'info');
+    var html = await nlCompileHtml(nlBuildPayload());
+    latestNewsletterHtml = html;
+    var frame = document.getElementById('nlPreviewFrame');
+    if (frame) frame.srcdoc = html;
+    var payload = {
+      title:        title,
+      subject:      (document.getElementById('nlSubject')||{}).value || '',
+      html_content: html,
+      sections_json: nlBlocks,
+      status:       'published',
+      published_at: new Date().toISOString(),
+      updated_at:   new Date().toISOString()
+    };
+    // Check for existing newsletter with same title
+    var existing = await sbGet('newsletters', 'title=eq.'+encodeURIComponent(title)+'&select=id&limit=1', token);
+    if (Array.isArray(existing) && existing.length) {
+      await sbPatch('newsletters', 'id=eq.'+existing[0].id, payload, token);
+      showToast('Newsletter updated and published!');
+    } else {
+      payload.created_at = new Date().toISOString();
+      await sbPost('newsletters', payload, token);
+      showToast('Newsletter published! Members can now view it in the portal.');
+    }
+  } catch(err) {
+    showToast('Publish failed: '+(err.message||'unknown error'), 'error');
+  }
+}
+
+// ── Send to members ──
+async function nlSendToMembers() {
+  var token = getAdminToken();
+  if (!token) { showToast('Sign in required.', 'error'); return; }
+  if (!nlBlocks.length) { showToast('Build the newsletter first.', 'error'); return; }
+  var subject = (document.getElementById('nlSubject')||{}).value || '';
+  if (!subject) { showToast('Enter a Subject Line before sending.', 'error'); return; }
+  if (!confirm('Send this newsletter to all active members? This cannot be undone.')) return;
+  try {
+    showToast('Compiling and sending…', 'info');
+    var html = latestNewsletterHtml || await nlCompileHtml(nlBuildPayload());
+    latestNewsletterHtml = html;
+    var res = await fetch(SUPABASE_URL + '/functions/v1/send-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ subject: subject, html: html })
+    });
+    var data = await res.json().catch(function(){ return {}; });
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+    showToast('Newsletter sent to ' + (data.sent || 0) + ' members!');
+  } catch(err) {
+    showToast('Send failed: '+(err.message||'unknown'), 'error');
+  }
+} // legacy alias
 
 
 
