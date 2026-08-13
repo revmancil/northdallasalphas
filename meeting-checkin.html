@@ -78,7 +78,7 @@
   <div class="card" id="invalidScreen" style="display:none;">
     <div class="invalid-screen">
       <i class="fas fa-link-slash"></i>
-      <p>This check-in link is invalid or the meeting no longer exists.</p>
+      <p id="invalidMsg">This check-in link is invalid or the meeting no longer exists.</p>
     </div>
   </div>
 
@@ -216,6 +216,13 @@ async function init() {
 
     show('mainScreen');
   } catch(err) {
+    var msg = err && err.message ? err.message : String(err);
+    // Surface permission errors so they're diagnosable
+    if (msg && (msg.includes('permission') || msg.includes('policy') || msg.includes('JWT') || msg.includes('auth'))) {
+      document.getElementById('invalidMsg').textContent = 'Permission error loading meeting. Contact the admin. (' + msg + ')';
+    } else if (msg && msg.toLowerCase().includes('fetch')) {
+      document.getElementById('invalidMsg').textContent = 'Network error. Check your connection and try again.';
+    }
     show('invalidScreen');
   }
 }
