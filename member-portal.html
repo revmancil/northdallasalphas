@@ -1394,7 +1394,7 @@ async function submitRsvp(meetingId, response, btn) {
       var timeStr = mtg.start_time ? time24ToAmPm(mtg.start_time) + (mtg.end_time ? ' – ' + time24ToAmPm(mtg.end_time) : '') : '';
       fetch(SUPABASE_URL + '/functions/v1/send-rsvp-confirmation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY) },
         body: JSON.stringify({
           member_name:      memberName || emailTo,
           member_email:     emailTo,
