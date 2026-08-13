@@ -822,14 +822,15 @@ h1, h2, h3, h4, h5 {
 .president-photo-wrap {
   position: relative;
   width: 100%;
-  max-width: 760px;
+  max-width: 860px;
   margin-bottom: 40px;
 }
 .president-photo {
   width: 100%;
-  height: auto;
+  height: 480px;
   display: block;
-  object-fit: contain;
+  object-fit: cover;
+  object-position: center top;
   border-radius: 4px;
 }
 .president-badge-wrap {
