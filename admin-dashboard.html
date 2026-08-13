@@ -1171,7 +1171,7 @@
       <i class="fas fa-edit"></i> Page Editor
     </button>
     <button class="sidebar-link" data-section="members" onclick="showPanel('members')">
-      <i class="fas fa-user-check"></i> Member Requests
+      <i class="fas fa-user-check"></i> Member Requests <span id="navBadge-members" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
     <button class="sidebar-link" data-section="access" onclick="showPanel('access')">
       <i class="fas fa-user-shield"></i> Access &amp; Permissions
@@ -1189,7 +1189,7 @@
       <i class="fas fa-newspaper"></i> News Manager
     </button>
     <button class="sidebar-link" data-section="documents" onclick="showPanel('documents');loadAdminDocuments()">
-      <i class="fas fa-folder-open"></i> Documents
+      <i class="fas fa-folder-open"></i> Documents <span id="navBadge-documents" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
     <button class="sidebar-link" data-section="meetings" onclick="showPanel('meetings');loadMeetingsPanel()">
       <i class="fas fa-people-group"></i> Meetings
@@ -1198,10 +1198,10 @@
       <i class="fas fa-bullhorn"></i> Chapter News Feed
     </button>
     <button class="sidebar-link" data-section="store" onclick="showPanel('store');loadStorePanel()">
-      <i class="fas fa-store"></i> Chapter Store
+      <i class="fas fa-store"></i> Chapter Store <span id="navBadge-store" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
     <button class="sidebar-link" data-section="member-announcements" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
-      <i class="fas fa-bullhorn"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:var(--gold);color:#000;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;"></span>
+      <i class="fas fa-bullhorn"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
     <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
@@ -8238,6 +8238,36 @@ function isInvalidImageUrl(url) {
 // ══════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════
+function setNavBadge(id, count) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = count;
+  el.style.display = count > 0 ? 'inline' : 'none';
+}
+
+async function loadAllPendingCounts() {
+  var token = currentAdminSession ? currentAdminSession.access_token : null;
+  if (!token) return;
+  try {
+    var results = await Promise.allSettled([
+      sbGet('members', 'portal_access=eq.pending&select=id', token),
+      sbGet('visiting_brothers_requests', 'status=eq.pending&select=id', token),
+      sbGet('documents', 'status=eq.pending&select=id', token),
+      sbGet('store_orders', 'status=eq.pending&select=id', token),
+      sbGet('member_announcements', 'status=eq.pending&select=id', token),
+    ]);
+    var memberReqs  = results[0].status === 'fulfilled' ? (results[0].value || []) : [];
+    var visitingReqs= results[1].status === 'fulfilled' ? (results[1].value || []) : [];
+    var docs        = results[2].status === 'fulfilled' ? (results[2].value || []) : [];
+    var orders      = results[3].status === 'fulfilled' ? (results[3].value || []) : [];
+    var anns        = results[4].status === 'fulfilled' ? (results[4].value || []) : [];
+    setNavBadge('navBadge-members',   memberReqs.length + visitingReqs.length);
+    setNavBadge('navBadge-documents', docs.length);
+    setNavBadge('navBadge-store',     orders.length);
+    setNavBadge('annPendingBadge',    anns.length);
+  } catch(e) {}
+}
+
 (function init() {
   verifyChapterAdminAccess().then(function() {
     return loadCurrentAdminPermissions();
@@ -8247,6 +8277,7 @@ function isInvalidImageUrl(url) {
     updateDashboardStats();
     loadEventsList();
     loadPageSection('home');
+    loadAllPendingCounts();
     setTimeout(() => {
       const presPhotoEl = document.getElementById('presPhoto');
       if (presPhotoEl && presPhotoEl.value) updatePresPhotoPreview();
