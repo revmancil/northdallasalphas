@@ -1263,6 +1263,8 @@ function time24ToAmPm(t) {
   return h + ':' + m + ' ' + ampm;
 }
 
+var _meetingsCache = [];
+
 async function loadMeetingsPortal() {
   var el = document.getElementById('meetingsPortalList');
   if (!el) return;
@@ -1272,6 +1274,7 @@ async function loadMeetingsPortal() {
   el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>Loading meetings…</p></div>';
   try {
     var meetings = await sbGet('meetings', 'order=meeting_date.asc', token);
+    _meetingsCache = meetings || [];
     if (!meetings || !meetings.length) {
       el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>No meetings scheduled yet.</p></div>';
       return;
@@ -1383,6 +1386,25 @@ async function submitRsvp(meetingId, response, btn) {
       },
       body: JSON.stringify({ meeting_id: meetingId, member_id: memberId, member_email: memberEmail, member_name: memberName, response: response })
     });
+    // Send confirmation to member + admin notification (fire-and-forget)
+    if (memberEmail) {
+      var mtg = _meetingsCache.find(function(m) { return String(m.id) === String(meetingId); }) || {};
+      var dateStr = mtg.meeting_date ? new Date(mtg.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '';
+      var timeStr = mtg.start_time ? time24ToAmPm(mtg.start_time) + (mtg.end_time ? ' – ' + time24ToAmPm(mtg.end_time) : '') : '';
+      fetch(SUPABASE_URL + '/functions/v1/send-rsvp-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({
+          member_name:      memberName,
+          member_email:     memberEmail,
+          meeting_title:    mtg.title || 'Chapter Meeting',
+          meeting_date:     dateStr,
+          meeting_time:     timeStr,
+          meeting_location: mtg.location || '',
+          response:         response
+        })
+      }).catch(function() {}); // silent — email is non-blocking
+    }
   } catch(err) {
     // silent — UI already updated
   }
