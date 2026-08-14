@@ -90,7 +90,8 @@
     <div class="form-panel" id="panel-forgot">
       <div class="msg error" id="forgotError"><i class="fas fa-exclamation-circle"></i><span id="forgotErrorText">Email not found.</span></div>
       <div class="msg success" id="forgotSuccess"><i class="fas fa-check-circle"></i><span>Password reset email sent! Check your inbox.</span></div>
-      <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:20px;">Enter your email and we will send a password reset link.</p>
+      <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:8px;">Enter your email and we will send a password reset link.</p>
+      <p style="color:rgba(201,168,76,0.7);font-size:0.78rem;margin-bottom:20px;line-height:1.5;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>This only works if you have already created a portal account. If you are signing in for the first time, use the <a onclick="switchTab('signup')" style="color:var(--gold);cursor:pointer;text-decoration:underline;">Sign Up</a> tab instead.</p>
       <form id="forgotForm" novalidate>
         <div class="form-group"><label>Email Address</label><div class="input-wrap"><i class="fas fa-envelope"></i><input type="email" id="forgotEmail" placeholder="your@email.com" required /></div></div>
         <button type="submit" class="btn" id="forgotBtn"><i class="fas fa-paper-plane"></i> Send Reset Link</button>
