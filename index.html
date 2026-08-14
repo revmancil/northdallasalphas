@@ -13,10 +13,7 @@
 <body>
 
 <!-- Announcement Bar -->
-<div class="announce-bar">
-  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
-  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
-</div>
+<div class="announce-bar" style="display:none;"></div>
 
 <div id="pageShell">
 <!-- Navigation -->
@@ -728,12 +725,13 @@ function renderHomeEventsList(events) {
     if (!res.ok) throw new Error('announcement failed');
     const rows = await res.json();
     const row = rows && rows.length ? rows[0] : null;
-    if (row && row.text) {
-      const bar = document.querySelector('.announce-bar');
-      if (bar) bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
+    const bar = document.querySelector('.announce-bar');
+    if (bar && row && row.text) {
+      bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
+      bar.style.display = '';
     }
   } catch (err) {
-    // Keep default static announcement on failure.
+    // No announcement — bar stays hidden.
   }
 })();
 
