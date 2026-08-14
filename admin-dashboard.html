@@ -3048,22 +3048,23 @@ function showPanel(id) {
     }
   });
 
-  // Load panel data
+  // Load panel data — panels with a cache flag skip re-fetch unless invalidated
   if (id === 'events')         loadEventsList();
   if (id === 'registrations')  loadRegistrationsPanel();
-  if (id === 'news-manager')   loadNewsArticlesPanel();
-  if (id === 'members')       loadMemberRequests();
-  if (id === 'access')        loadAccessPanel();
-  if (id === 'officers')      loadOfficersPanel();
-  if (id === 'presidents')    loadPresidentsPanel();
-  if (id === 'announcements') loadAnnouncement();
-  if (id === 'newsletter')    nlInitPanel();
-  if (id === 'gallery')       loadEventGalleryPanel();
-  if (id === 'pages')         setPageEditorStorageNotice('', '');
-  if (id === 'meetings')      loadMeetingsPanel();
-  if (id === 'chapter-news') loadChapterNewsPanel();
-  if (id === 'settings')      loadSettings();
-  if (id === 'dashboard')     updateDashboardStats();
+  if (id === 'news-manager')   { if (!_panelLoaded.newsManager)   loadNewsArticlesPanel(); }
+  if (id === 'members')        loadMemberRequests();
+  if (id === 'access')         { if (!_panelLoaded.access)        loadAccessPanel(); }
+  if (id === 'officers')       { if (!_panelLoaded.officers)      loadOfficersPanel(); }
+  if (id === 'presidents')     { if (!_panelLoaded.presidents)    loadPresidentsPanel(); }
+  if (id === 'announcements')  loadAnnouncement();
+  if (id === 'newsletter')     nlInitPanel();
+  if (id === 'gallery')        { if (!_panelLoaded.gallery)       loadEventGalleryPanel(); }
+  if (id === 'pages')          setPageEditorStorageNotice('', '');
+  if (id === 'meetings')       loadMeetingsPanel();
+  if (id === 'chapter-news')   { if (!_panelLoaded.chapterNews)   loadChapterNewsPanel(); }
+  if (id === 'settings')       { if (!_panelLoaded.settings)      loadSettings(); }
+  if (id === 'dashboard')      updateDashboardStats();
+  if (id === 'dues-admin')     { if (!_panelLoaded.duesAdmin)     loadDuesAdminPanel(); }
 }
 
 function getAdminSession() {
@@ -3504,10 +3505,12 @@ async function loadAccessPanel() {
     ]);
     allAccessMembers = members || [];
     accessAdminEmails = new Set((admins || []).map(function(a) { return (a.email || '').toLowerCase(); }));
+    _panelLoaded.access = true;
     renderAccessTable();
     loadAccessAdminsList(token);
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;color:var(--red);">Could not load members: ' + escHtml(err.message || 'error') + '</td></tr>';
+    _panelLoaded.access = false;
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px;color:var(--red);">Could not load members. <button onclick="loadAccessPanel()" style="margin-left:10px;padding:4px 10px;border:1px solid var(--red);border-radius:5px;background:none;color:var(--red);cursor:pointer;font-size:0.8rem;">Retry</button></td></tr>';
   }
 }
 
@@ -3984,6 +3987,7 @@ async function loadChapterNewsPanel() {
       el.innerHTML = '<div class="hint-text">No posts yet. Use the form above to post the first update.</div>';
       return;
     }
+    _panelLoaded.chapterNews = true;
     el.innerHTML = posts.map(function(p) {
       const color = CN_CAT_COLORS[p.category] || 'var(--blue)';
       const date  = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
@@ -4004,7 +4008,8 @@ async function loadChapterNewsPanel() {
         '</div>';
     }).join('');
   } catch(err) {
-    el.innerHTML = '<div style="color:var(--red);">Could not load posts: ' + escHtml(err.message || 'error') + '</div>';
+    _panelLoaded.chapterNews = false;
+    el.innerHTML = '<div style="color:var(--red);">Could not load posts. <button onclick="loadChapterNewsPanel()" style="margin-left:10px;padding:4px 10px;border:1px solid var(--red);border-radius:5px;background:none;color:var(--red);cursor:pointer;font-size:0.8rem;">Retry</button></div>';
   }
 }
 
@@ -4085,9 +4090,12 @@ async function loadMeetingsPanel() {
       el.innerHTML = '<div class="hint-text">No meetings scheduled yet.</div>';
       return;
     }
-    // Fetch RSVP counts for all meetings
-    const rsvps = await sbGet('meeting_rsvps', 'select=meeting_id,response', token);
-    const attendance = await sbGet('meeting_attendance', 'select=meeting_id,id', token);
+    // Fetch RSVP counts, attendance, and docs in parallel
+    const [rsvps, attendance, allDocs] = await Promise.all([
+      sbGet('meeting_rsvps', 'select=meeting_id,response', token).catch(function() { return []; }),
+      sbGet('meeting_attendance', 'select=meeting_id,id', token).catch(function() { return []; }),
+      sbGet('documents', 'meeting_id=not.is.null&order=created_at.desc', token).catch(function() { return []; })
+    ]);
     const rsvpMap = {};
     (rsvps || []).forEach(function(r) {
       if (!rsvpMap[r.meeting_id]) rsvpMap[r.meeting_id] = { yes:0, no:0, maybe:0 };
@@ -4097,8 +4105,6 @@ async function loadMeetingsPanel() {
     (attendance || []).forEach(function(a) {
       attMap[a.meeting_id] = (attMap[a.meeting_id] || 0) + 1;
     });
-    // Fetch meeting docs
-    const allDocs = await sbGet('documents', 'meeting_id=not.is.null&order=created_at.desc', token);
     const docsByMtg = {};
     (allDocs || []).forEach(function(d) {
       if (!docsByMtg[d.meeting_id]) docsByMtg[d.meeting_id] = [];
@@ -6176,6 +6182,7 @@ async function loadNewsArticlesPanel() {
     ? raw.map(sanitizeNewsArticle).filter(function(a) { return a && a.title; })
     : getDefaultNewsArticles();
   if (!newsArticlesData.length) newsArticlesData = getDefaultNewsArticles();
+  _panelLoaded.newsManager = true;
   renderNewsArticlesList();
 }
 
@@ -6554,8 +6561,11 @@ function getPresidentData() {
 async function loadOfficersPanel() {
   let officers = getOfficerData();
   try {
-    const p = await getContentJson('president', getPresidentData());
-    officers = await getContentJson('officers', getOfficerData());
+    const [p, _officers] = await Promise.all([
+      getContentJson('president', getPresidentData()),
+      getContentJson('officers', getOfficerData())
+    ]);
+    officers = _officers;
 
     document.getElementById('presName').value  = (p && p.name)  || '';
     document.getElementById('presTitle').value = (p && p.title) || '';
@@ -6569,6 +6579,7 @@ async function loadOfficersPanel() {
     showToast('Could not load chapter president fields. Officer table loaded with defaults.', 'error');
   }
   officersData = resolveOfficersData(officers);
+  _panelLoaded.officers = true;
   renderOfficersTable();
 }
 
@@ -6760,6 +6771,7 @@ async function loadPresidentsPanel() {
     showToast('Could not load past presidents from Supabase. Showing default list.', 'error');
   }
   presidentsData = resolvePastPresidentsData(data);
+  _panelLoaded.presidents = true;
   renderPresidentsTable();
 }
 
@@ -7972,6 +7984,7 @@ function loadSettings() {
     if (saved.email)        document.getElementById('setEmail').value        = saved.email;
     if (saved.memberEmail)  document.getElementById('setMemberEmail').value  = saved.memberEmail;
   }
+  _panelLoaded.settings = true;
   void loadChapterAdminPanel();
 }
 
@@ -8005,9 +8018,11 @@ function changePassword() {
 // DASHBOARD STATS
 // ══════════════════════════════════════════════════
 async function updateDashboardStats() {
-  const eventRows = await sbGet('events', 'select=id', getAdminToken()).catch(function() { return []; });
-  const officers  = await getContentJson('officers', DEFAULT_OFFICERS);
-  const presidents = await getContentJson('past_presidents', DEFAULT_PAST_PRESIDENTS);
+  const [eventRows, officers, presidents] = await Promise.all([
+    sbGet('events', 'select=id', getAdminToken()).catch(function() { return []; }),
+    getContentJson('officers', DEFAULT_OFFICERS).catch(function() { return DEFAULT_OFFICERS; }),
+    getContentJson('past_presidents', DEFAULT_PAST_PRESIDENTS).catch(function() { return DEFAULT_PAST_PRESIDENTS; })
+  ]);
   document.getElementById('statEventCount').textContent     = eventRows.length || 0;
   document.getElementById('statOfficerCount').textContent   = ((Array.isArray(officers) && officers.length) ? officers.length : DEFAULT_OFFICERS.length) + 1;
   document.getElementById('statPresidentCount').textContent = (Array.isArray(presidents) && presidents.length) ? presidents.length : DEFAULT_PAST_PRESIDENTS.length;
@@ -8022,6 +8037,14 @@ const EVENT_GALLERY_IMAGE_BUCKET = 'chapter-media';
 /** Events Manager flyers only — separate bucket from gallery (see SUPABASE_CONTENT_SCHEMA.sql). */
 const EVENT_FLYER_STORAGE_BUCKET = 'event-flyer-uploads';
 let eventGalleryData = [];
+
+// Panel load cache flags — set to true after first successful load,
+// reset to false after a save so the next visit re-fetches fresh data.
+const _panelLoaded = {
+  newsManager: false, access: false, officers: false,
+  presidents: false, gallery: false, chapterNews: false,
+  settings: false, duesAdmin: false
+};
 let activeEventGalleryPhotoIndex = -1;
 
 function getStoragePathFromGalleryUrl(url) {
@@ -8048,6 +8071,7 @@ async function loadEventGalleryPanel() {
         };
       })
     : [];
+  _panelLoaded.gallery = true;
   renderEventGalleryList();
 }
 
@@ -9358,6 +9382,7 @@ async function loadDuesAdminPanel() {
     _fetchDuesMembersForSelect(),
     _loadDuesConfig()
   ]);
+  _panelLoaded.duesAdmin = true;
 }
 
 async function _fetchDuesPayments() {
