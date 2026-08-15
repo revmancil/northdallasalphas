@@ -1304,6 +1304,9 @@ h1, h2, h3, h4, h5 {
   }
   .impact-grid { grid-template-columns: repeat(2, 1fr); }
   .events-layout { grid-template-columns: 1fr; }
+  .events-section { padding: 60px 0; }
+  /* Prevent empty events list div from creating a gap before JS renders content */
+  #homeEventsList:empty { display: none; }
 }
 
 @media (max-width: 1220px) {
