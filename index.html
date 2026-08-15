@@ -571,10 +571,10 @@ async function homeGetEvents() {
     const res = await fetch(SUPABASE_URL + '/rest/v1/events?order=event_date.asc,sort_order.asc', { headers: sbHeaders() });
     if (!res.ok) throw new Error('events failed');
     const rows = await res.json();
-    if (!rows || !rows.length) return filterUpcoming(HOME_DEFAULT_EVENTS.map(homeMapEventRow));
+    if (!rows || !rows.length) return [];
     const mapped = rows.map(homeMapEventRow);
     const upcoming = filterUpcoming(mapped);
-    if (!upcoming.length) return filterUpcoming(HOME_DEFAULT_EVENTS.map(homeMapEventRow));
+    if (!upcoming.length) return [];
     // Sort ascending by event date (soonest first)
     upcoming.sort(function(a, b) {
       const da = (a.date || '').split(' ')[0] || '';
@@ -590,7 +590,7 @@ async function homeGetEvents() {
     });
     return upcoming;
   } catch (err) {
-    return filterUpcoming(HOME_DEFAULT_EVENTS.map(homeMapEventRow));
+    return [];
   }
 }
 
@@ -685,6 +685,9 @@ function renderHomeEventsList(events) {
   // Show upcoming events in sidebar — prefer non-featured, fall back to all if none exist
   const nonFeatured = events.filter(function(e) { return !e.featured; });
   const listEvents = (nonFeatured.length ? nonFeatured : events).slice(0, 4);
+
+  if (!listEvents.length) { list.style.display = 'none'; return; }
+  list.style.display = '';
 
   list.innerHTML = `
     <div style="margin-bottom:20px;">
