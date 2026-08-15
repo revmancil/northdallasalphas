@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Leadership Development Institute | North Dallas Alphas — Xi Tau Lambda</title>
+  <meta name="description" content="The Leadership Development Institute (LDI) is Alpha Phi Alpha's premier leadership training program. Learn how Xi Tau Lambda Chapter executes LDI in North Dallas County." />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .program-pillars { display: grid; grid-template-columns: repeat(2,1fr); gap: 24px; margin-top: 40px; }
+    .program-pillar { background: var(--white); border-radius: 8px; padding: 32px 28px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border-top: 4px solid var(--gold); }
+    .program-pillar i { font-size: 2rem; color: var(--gold); margin-bottom: 16px; display: block; }
+    .program-pillar h4 { font-size: 1.05rem; font-weight: 700; color: var(--gray-800); margin-bottom: 10px; }
+    .program-pillar p { font-size: 0.9rem; color: var(--gray-600); line-height: 1.65; }
+    .stat-card { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 6px; padding: 28px; }
+    .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.9rem; }
+    .stat-item:last-child { border-bottom: none; }
+    .stat-label { color: rgba(255,255,255,0.5); }
+    .stat-value { color: var(--gold); font-weight: 700; font-size: 1.05rem; }
+    .prog-layout { display: grid; grid-template-columns: 1fr 340px; gap: 56px; align-items: start; }
+    .prog-text p { color: var(--gray-600); font-size: 0.97rem; line-height: 1.8; margin-bottom: 18px; }
+    .ldi-tracks { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 40px; }
+    .ldi-track {
+      background: var(--black);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 8px;
+      padding: 28px 24px;
+      text-align: center;
+    }
+    .ldi-track-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--gold);
+      display: block;
+      margin-bottom: 8px;
+    }
+    .ldi-track h4 { color: var(--white); font-size: 0.97rem; font-weight: 700; margin-bottom: 10px; }
+    .ldi-track p { color: rgba(255,255,255,0.6); font-size: 0.85rem; line-height: 1.6; }
+    @media(max-width:900px) { .prog-layout { grid-template-columns: 1fr; } .program-pillars { grid-template-columns: 1fr; } .ldi-tracks { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar" style="display:none;"></div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav" role="navigation" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">
+      <img src="../images/xtl-logo.png" alt="Xi Tau Lambda Chapter Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links" role="menubar">
+      <a href="../index.html" role="menuitem">Home</a>
+      <div class="nav-item-dropdown" role="none">
+        <a href="../about.html" role="menuitem" aria-haspopup="true" aria-expanded="false">About</a>
+        <div class="nav-dropdown" role="menu" aria-label="About submenu">
+          <a href="../about.html" role="menuitem">Chapter History</a>
+          <div class="nav-dropdown-item" role="none">
+            <a href="../programs.html" role="menuitem" aria-haspopup="true" aria-expanded="false">National Programs</a>
+            <div class="nav-flyout" role="menu" aria-label="National Programs submenu">
+              <a href="../programs/voteless-people.html" role="menuitem">A Voteless People Is a Hopeless People</a>
+              <a href="../programs/go-to-high-school.html" role="menuitem">Go-to-High School, Go-to-College</a>
+              <a href="../programs/project-alpha.html" role="menuitem">Project Alpha</a>
+              <a href="../programs/brothers-keeper.html" role="menuitem">Brother's Keeper</a>
+              <a href="../programs/ldi.html" role="menuitem" class="active">Leadership Development Institute (LDI)</a>
+            </div>
+          </div>
+          <a href="../alpha-legacy-group.html" role="menuitem">Alpha Legacy Group</a>
+        </div>
+      </div>
+      <a href="../leadership.html" role="menuitem">Leadership</a>
+      <a href="../events.html" role="menuitem">Events</a>
+      <a href="../membership.html" role="menuitem">Membership</a>
+      <a href="../news.html" role="menuitem">News</a>
+      <a href="../gallery.html" role="menuitem">Gallery</a>
+      <a href="../contact.html" role="menuitem">Contact</a>
+      <a href="../visiting-brothers.html" class="nav-interested" role="menuitem">Visiting Brothers</a>
+      <a href="../member-login.html" class="nav-cta nav-login" role="menuitem"><i class="fas fa-user-circle" aria-hidden="true"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobileMenu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Mobile navigation" aria-modal="true">
+  <button class="mobile-close" id="mobileClose" aria-label="Close navigation menu">&times;</button>
+  <a href="../index.html">Home</a>
+  <div class="mobile-nav-group">
+    <button class="mobile-nav-group-toggle" aria-expanded="false" onclick="var g=this.closest('.mobile-nav-group'); g.classList.toggle('open'); this.setAttribute('aria-expanded', g.classList.contains('open'));">
+      About <span class="chevron" aria-hidden="true">⌄</span>
+    </button>
+    <div class="mobile-nav-sub">
+      <a href="../about.html">Chapter History</a>
+      <div class="mobile-nav-subsection">
+        <span class="mobile-nav-subsection-label">National Programs</span>
+        <a href="../programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+        <a href="../programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+        <a href="../programs/project-alpha.html">Project Alpha</a>
+        <a href="../programs/brothers-keeper.html">Brother's Keeper</a>
+        <a href="../programs/ldi.html">Leadership Development Institute (LDI)</a>
+      </div>
+      <a href="../alpha-legacy-group.html">Alpha Legacy Group</a>
+    </div>
+  </div>
+  <a href="../leadership.html">Leadership</a>
+  <a href="../events.html">Events</a>
+  <a href="../membership.html">Membership</a>
+  <a href="../news.html">News</a>
+  <a href="../gallery.html">Gallery</a>
+  <a href="../contact.html">Contact</a>
+  <a href="../visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+  <a href="../member-login.html" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<div id="pageContent">
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">National Program</span>
+    <h1>Leadership Development Institute</h1>
+    <p>Alpha Phi Alpha's premier leadership training program — equipping brothers and aspiring leaders with the skills, knowledge, and vision to serve at the highest levels of their communities.</p>
+  </div>
+</section>
+
+<!-- Overview -->
+<section style="padding: 90px 0; background: var(--white);">
+  <div class="container">
+    <div class="prog-layout">
+      <div class="prog-text fade-up">
+        <span class="section-label">National Program</span>
+        <h2 class="section-title">Developing Leaders Who Serve</h2>
+        <div class="gold-bar left"></div>
+        <p>The Leadership Development Institute (LDI) is Alpha Phi Alpha Fraternity's structured leadership education program, designed to develop the intellectual, organizational, and service capacity of fraternity members and community leaders alike. LDI equips participants with the tools to lead effectively in their chapters, their professions, and their communities — at the local, regional, and national level.</p>
+        <p>Rooted in Alpha's foundational belief that scholarship and service must be matched by capable, principled leadership, LDI addresses a simple truth: good intentions are not enough. The men who change communities are those who couple their commitment to service with the skills to organize, communicate, advocate, and execute. LDI is where that transformation happens.</p>
+        <p>Xi Tau Lambda Chapter participates in and promotes LDI programming at the district and national level, and delivers chapter-level leadership development sessions throughout the year. Our brothers invest in LDI because we believe the quality of our leadership determines the impact of our service — and North Dallas County deserves our very best.</p>
+      </div>
+      <div class="fade-up">
+        <div class="stat-card">
+          <div style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; margin-bottom: 16px;">Program Highlights</div>
+          <div class="stat-item"><span class="stat-label">Program Type</span><span class="stat-value">Leadership Training</span></div>
+          <div class="stat-item"><span class="stat-label">Format</span><span class="stat-value">Multi-Level Curriculum</span></div>
+          <div class="stat-item"><span class="stat-label">Delivery</span><span class="stat-value">District & Chapter</span></div>
+          <div class="stat-item"><span class="stat-label">Audience</span><span class="stat-value">Brothers & Community</span></div>
+          <div class="stat-item"><span class="stat-label">Certification</span><span class="stat-value">Yes — National Credential</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LDI Tracks -->
+<section style="padding: 90px 0; background: var(--black);">
+  <div class="container">
+    <div class="text-center fade-up" style="margin-bottom: 48px;">
+      <span class="section-label">Program Structure</span>
+      <h2 class="section-title light">Three Levels of Leadership</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub light" style="margin: 0 auto;">LDI is structured as a progressive curriculum — each level builds on the last, developing leaders from chapter service through national engagement.</p>
+    </div>
+    <div class="ldi-tracks">
+      <div class="ldi-track fade-up">
+        <span class="ldi-track-num">I</span>
+        <h4>Chapter Leadership</h4>
+        <p>Foundational leadership skills for chapter officers and active brothers — meeting facilitation, parliamentary procedure, project management, and chapter governance.</p>
+      </div>
+      <div class="ldi-track fade-up">
+        <span class="ldi-track-num">II</span>
+        <h4>District Leadership</h4>
+        <p>Expanded leadership competencies for brothers serving at the district level — coalition building, community advocacy, strategic planning, and multi-chapter coordination.</p>
+      </div>
+      <div class="ldi-track fade-up">
+        <span class="ldi-track-num">III</span>
+        <h4>National Leadership</h4>
+        <p>Advanced leadership development for brothers pursuing regional and national roles — organizational leadership, policy development, public representation, and legacy building.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pillars -->
+<section style="padding: 90px 0; background: var(--gray-100);">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">Core Competencies</span>
+      <h2 class="section-title">What LDI Develops</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub" style="margin: 0 auto;">Every LDI session addresses the competencies that define effective, principled leadership in fraternity, profession, and community.</p>
+    </div>
+    <div class="program-pillars">
+      <div class="program-pillar fade-up">
+        <i class="fas fa-microphone-alt" aria-hidden="true"></i>
+        <h4>Communication & Advocacy</h4>
+        <p>Public speaking, persuasive communication, media engagement, and the ability to articulate a vision and move people toward a shared goal.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-chess" aria-hidden="true"></i>
+        <h4>Strategic Planning</h4>
+        <p>Goal setting, program design, budget management, and the operational skills needed to move from vision to execution with measurable results.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-balance-scale" aria-hidden="true"></i>
+        <h4>Ethics & Integrity</h4>
+        <p>The values foundation of Alpha leadership — accountability, transparency, fairness, and the courage to lead with integrity when it is difficult.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-network-wired" aria-hidden="true"></i>
+        <h4>Coalition Building</h4>
+        <p>Building partnerships across organizations, sectors, and communities — the relational skills that multiply impact and sustain long-term change.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Xi Tau Lambda Implementation -->
+<section style="padding: 90px 0; background: var(--white);">
+  <div class="container">
+    <div class="prog-layout">
+      <div class="fade-up">
+        <span class="section-label">Xi Tau Lambda Chapter</span>
+        <h2 class="section-title">LDI in North Dallas</h2>
+        <div class="gold-bar left"></div>
+        <p style="color:var(--gray-600); font-size:0.97rem; line-height:1.8; margin-bottom:18px;">Xi Tau Lambda Chapter integrates LDI principles into every aspect of chapter life. From officer training at the start of each year to leadership workshops open to the broader North Dallas community, we believe developing capable leaders is itself an act of community service.</p>
+        <p style="color:var(--gray-600); font-size:0.97rem; line-height:1.8; margin-bottom:18px;">Our chapter actively encourages brothers to attend district-level LDI programming through the Texas Council of Alpha Chapters (TCAC) and to pursue national LDI certifications that strengthen their capacity to lead both inside and outside the fraternity.</p>
+        <p style="color:var(--gray-600); font-size:0.97rem; line-height:1.8; margin-bottom:18px;">The leadership skills developed through LDI show up in every program we run — from how we plan and execute voter registration drives, to how we structure the Alpha Legacy Group, to how we show up as partners and advocates in the North Dallas community.</p>
+      </div>
+      <div class="fade-up" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: var(--black); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 28px;">
+          <i class="fas fa-award" style="color:var(--gold); font-size:1.5rem; margin-bottom:12px; display:block;" aria-hidden="true"></i>
+          <h4 style="color:var(--white); font-size:1rem; font-weight:700; margin-bottom:8px;">LDI Certification</h4>
+          <p style="color:rgba(255,255,255,0.65); font-size:0.88rem; line-height:1.65;">Brothers who complete LDI programming earn national recognition from Alpha Phi Alpha Fraternity, Inc. — a credential that reflects demonstrated leadership competency at the chapter, district, or national level.</p>
+        </div>
+        <div style="background: var(--black); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 28px;">
+          <i class="fas fa-map-marked-alt" style="color:var(--gold); font-size:1.5rem; margin-bottom:12px; display:block;" aria-hidden="true"></i>
+          <h4 style="color:var(--white); font-size:1rem; font-weight:700; margin-bottom:8px;">TCAC District Programming</h4>
+          <p style="color:rgba(255,255,255,0.65); font-size:0.88rem; line-height:1.65;">Xi Tau Lambda participates in Texas Council of Alpha Chapters district conventions and leadership events, where LDI sessions bring together brothers from across the state for shared leadership development.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="background: var(--black); padding: 90px 0;">
+  <div class="container text-center fade-up">
+    <span class="section-label">Develop Your Leadership</span>
+    <h2 class="section-title light">Ready to Lead at a Higher Level?</h2>
+    <div class="gold-bar"></div>
+    <p class="section-sub light" style="margin: 0 auto 36px;">Whether you are an active brother seeking LDI certification or a community leader looking to strengthen your impact, Xi Tau Lambda Chapter wants to connect you with the resources and brotherhood that make great leaders.</p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <a href="../membership.html" class="btn btn-gold"><i class="fas fa-users" aria-hidden="true"></i> Membership Information</a>
+      <a href="../contact.html" class="btn btn-outline">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+</div><!-- #pageContent -->
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row">
+          <img src="../images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" />
+          <div>
+            <div class="footer-brand-name">North Dallas Alphas</div>
+            <div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div>
+          </div>
+        </div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter, seated in North Dallas County. Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f" aria-hidden="true"></i></a>
+          <a href="https://www.instagram.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+          <a href="https://www.youtube.com/@northdallasalphas6133" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube" aria-hidden="true"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../about.html">Chapter History</a></li>
+          <li><a href="../programs.html">National Programs</a></li>
+          <li><a href="../alpha-legacy-group.html">Alpha Legacy Group</a></li>
+          <li><a href="../events.html">Events</a></li>
+          <li><a href="../membership.html">Membership</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get Involved</h4>
+        <ul>
+          <li><a href="../visiting-brothers.html">Visiting Brothers</a></li>
+          <li><a href="../scholarship-gala.html">Scholarship Gala</a></li>
+          <li><a href="../membership.html">Membership</a></li>
+          <li><a href="https://apa1906.net" target="_blank" rel="noopener">National Fraternity</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="footer-contact-item">
+          <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+          <span>224 W. Campbell Road #443<br />Richardson, TX 75080</span>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-envelope" aria-hidden="true"></i>
+          <a href="mailto:Info@NorthDallasAlphas.org" style="color: rgba(255,255,255,0.55);">Info@NorthDallasAlphas.org</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. All rights reserved. &nbsp;|&nbsp; <a href="../admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;" aria-hidden="true"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="../js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+function sbHeaders() { return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }; }
+(async function() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
+    if (res.ok) {
+      const rows = await res.json();
+      const row = rows && rows.length ? rows[0] : null;
+      if (row && row.text) {
+        const bar = document.querySelector('.announce-bar');
+        if (bar) { bar.innerHTML = row.text + ' &nbsp; <a href="' + (row.link_url || '../events.html') + '">' + (row.link_text || 'Learn More →') + '</a>'; bar.style.display = ''; }
+      }
+    }
+  } catch(e) {}
+})();
+// Toggle aria-expanded on hamburger when mobile menu opens/closes
+(function() {
+  const btn = document.getElementById('hamburgerBtn');
+  const menu = document.getElementById('mobileMenu');
+  const close = document.getElementById('mobileClose');
+  if (btn && menu) {
+    btn.addEventListener('click', function() { btn.setAttribute('aria-expanded', 'true'); });
+    if (close) close.addEventListener('click', function() { btn.setAttribute('aria-expanded', 'false'); });
+  }
+})();
+</script>
+</body>
+</html>
