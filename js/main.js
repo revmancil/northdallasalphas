@@ -38,10 +38,13 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
   if (mobileMenu) {
-    mobileMenu.querySelectorAll('a').forEach(link => {
+    // Close menu on link click — exclude label spans inside subsections
+    mobileMenu.querySelectorAll('a:not(.mobile-nav-subsection-label)').forEach(link => {
       link.addEventListener('click', () => {
         mobileMenu.classList.remove('open');
         document.body.style.overflow = '';
+        const hamburger = document.getElementById('hamburgerBtn');
+        if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
       });
     });
   }
