@@ -708,6 +708,10 @@ h1, h2, h3, h4, h5 {
   gap: 40px;
   align-items: start;
 }
+/* When sidebar is hidden (no upcoming events), featured panel fills the row */
+.events-layout.no-sidebar {
+  grid-template-columns: 1fr;
+}
 .events-feature {
   position: relative;
   background: var(--black);

@@ -686,8 +686,14 @@ function renderHomeEventsList(events) {
   const nonFeatured = events.filter(function(e) { return !e.featured; });
   const listEvents = (nonFeatured.length ? nonFeatured : events).slice(0, 4);
 
-  if (!listEvents.length) { list.style.display = 'none'; return; }
+  const layout = list.parentElement;
+  if (!listEvents.length) {
+    list.style.display = 'none';
+    if (layout) layout.classList.add('no-sidebar');
+    return;
+  }
   list.style.display = '';
+  if (layout) layout.classList.remove('no-sidebar');
 
   list.innerHTML = `
     <div style="margin-bottom:20px;">
