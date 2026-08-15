@@ -699,7 +699,7 @@ function renderHomeEventsList(events) {
   listEvents.forEach(ev => {
     const parsed = homeParseDate(ev.datetime);
     const card   = document.createElement('div');
-    card.className = 'event-card fade-up';
+    card.className = 'event-card';
     card.innerHTML = `
       <div class="event-date-box">
         <div class="day">${homeEsc(parsed.day)}</div>
