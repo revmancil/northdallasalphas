@@ -1514,14 +1514,12 @@ async function submitCommitteeReport(e, meetingId) {
   }
 }
 
-function escapeHtml(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+var escapeHtml = escHtml; // alias — use escHtml everywhere
 
 function renderDocumentsPanel() {
   const c = document.getElementById('documentsList');
   const token = currentSession ? currentSession.access_token : null;
-  sbGet('documents', 'members_only=eq.true&order=created_at.desc', token)
+  sbGet('documents', 'members_only=eq.true&meeting_id=is.null&status=eq.approved&order=created_at.desc', token)
     .then(function(docs) {
       if (!docs || !docs.length) {
         c.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>No documents available yet.</p></div>';
