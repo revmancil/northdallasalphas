@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Alpha | North Dallas Alphas</title>
+  <meta name="description" content="Project Alpha is Alpha Phi Alpha's youth health and development program, delivered by Xi Tau Lambda Chapter in middle and high schools across North Dallas County." />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    /* Page-specific layout */
+    .program-pillars { display: grid; grid-template-columns: repeat(2,1fr); gap: 24px; margin-top: 40px; }
+    .program-pillar { background: var(--white); border-radius: 8px; padding: 32px 28px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border-top: 4px solid var(--gold); }
+    .program-pillar i { font-size: 2rem; color: var(--gold); margin-bottom: 16px; display: block; }
+    .program-pillar h4 { font-size: 1.05rem; font-weight: 700; color: var(--gray-800); margin-bottom: 10px; }
+    .program-pillar p { font-size: 0.9rem; color: var(--gray-600); line-height: 1.65; }
+    .stat-card { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); border-radius: 6px; padding: 28px; }
+    .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.9rem; }
+    .stat-item:last-child { border-bottom: none; }
+    .stat-label { color: rgba(255,255,255,0.5); }
+    .stat-value { color: var(--gold); font-weight: 700; font-size: 1.05rem; }
+    .prog-layout { display: grid; grid-template-columns: 1fr 340px; gap: 56px; align-items: start; }
+    @media(max-width:900px){ .prog-layout { grid-template-columns: 1fr; } .program-pillars { grid-template-columns: 1fr; } }
+    /* Section spacing */
+    .prog-section { padding: 90px 0; }
+    .prog-body p { color: var(--gray-600); font-size: 0.97rem; line-height: 1.78; margin-bottom: 20px; }
+    .prog-body p:last-child { margin-bottom: 0; }
+    .cta-section { background: var(--black); padding: 90px 0; text-align: center; }
+    .cta-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 36px; }
+    .pillars-section { background: var(--gray-100); padding: 90px 0; }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar" style="display:none;"></div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">
+      <img src="../images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <div class="nav-item-dropdown">
+        <a href="../about.html">About</a>
+        <div class="nav-dropdown">
+          <a href="../about.html">Chapter History</a>
+          <div class="nav-dropdown-item">
+            <a href="../programs.html">National Programs</a>
+            <div class="nav-flyout">
+              <a href="../programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+              <a href="../programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+              <a href="../programs/project-alpha.html">Project Alpha</a>
+              <a href="../programs/brothers-keeper.html">Brother's Keeper</a>
+            </div>
+          </div>
+          <a href="../alpha-legacy-group.html">Alpha Legacy Group</a>
+        </div>
+      </div>
+      <a href="../leadership.html">Leadership</a>
+      <a href="../events.html">Events</a>
+      <a href="../membership.html">Membership</a>
+      <a href="../news.html">News</a>
+      <a href="../gallery.html">Gallery</a>
+      <a href="../contact.html">Contact</a>
+      <a href="../visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+      <a href="../member-login.html" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose" aria-label="Close menu">&times;</button>
+  <a href="../index.html">Home</a>
+  <div class="mobile-nav-group">
+    <button class="mobile-nav-group-toggle" onclick="this.closest('.mobile-nav-group').classList.toggle('open')">
+      About <span class="chevron">⌄</span>
+    </button>
+    <div class="mobile-nav-sub">
+      <a href="../about.html">Chapter History</a>
+      <div class="mobile-nav-subsection">
+        <span class="mobile-nav-subsection-label">National Programs</span>
+        <a href="../programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+        <a href="../programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+        <a href="../programs/project-alpha.html">Project Alpha</a>
+        <a href="../programs/brothers-keeper.html">Brother's Keeper</a>
+      </div>
+      <a href="../alpha-legacy-group.html">Alpha Legacy Group</a>
+    </div>
+  </div>
+  <a href="../leadership.html">Leadership</a>
+  <a href="../events.html">Events</a>
+  <a href="../membership.html">Membership</a>
+  <a href="../news.html">News</a>
+  <a href="../gallery.html">Gallery</a>
+  <a href="../contact.html">Contact</a>
+  <a href="../visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+  <a href="../member-login.html" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<div id="pageContent">
+
+<!-- Page Header -->
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Youth Development Program</span>
+    <h1>Project Alpha</h1>
+    <p>Building healthy, responsible, and self-determined young men across North Dallas County.</p>
+  </div>
+</section>
+
+<!-- Section 1: Main Content + Stat Card -->
+<section class="prog-section" style="background: var(--white);">
+  <div class="container">
+    <div class="prog-layout">
+      <!-- Left: Text -->
+      <div class="prog-body fade-up">
+        <span class="section-label">National Program</span>
+        <h2 class="section-title">Developing the Whole Young Man</h2>
+        <div class="gold-bar left"></div>
+        <p>Project Alpha is one of Alpha Phi Alpha Fraternity's most widely recognized national programs, developed in partnership with the March of Dimes and focused on the health, personal development, and responsible decision-making of young men. Launched nationally in 1980, the program emerged in response to rising rates of teen pregnancy, substance use, and health disparities disproportionately affecting African American youth. Project Alpha addresses those challenges head-on through honest, brother-led conversations.</p>
+        <p>Xi Tau Lambda Chapter delivers Project Alpha workshops in middle and high schools throughout North Dallas County. Our brothers facilitate sessions covering sexual health and responsibility, substance awareness, peer pressure, mental health, and what it means to be a man of character and purpose. The program is designed to be relatable and real — brothers share their own experiences and journeys alongside evidence-based health education.</p>
+        <p>The impact is measurable. Young men who participate in Project Alpha consistently report greater confidence, clearer values, and a stronger sense of personal accountability. Xi Tau Lambda is committed to expanding the program's reach — because every young man in North Dallas deserves access to the kind of mentorship that changes the trajectory of a life.</p>
+      </div>
+      <!-- Right: Stat Card (black bg) -->
+      <div class="fade-up" style="background: var(--black); border-radius: 8px; padding: 36px 32px;">
+        <div style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 24px;">Program at a Glance</div>
+        <div class="stat-card">
+          <div class="stat-item">
+            <span class="stat-label">Schools Served</span>
+            <span class="stat-value">6+</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Students Reached</span>
+            <span class="stat-value">300+ annually</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Program Active Since</span>
+            <span class="stat-value">1990s</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Topics Covered</span>
+            <span class="stat-value">8 core modules</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: Four Pillars -->
+<section class="pillars-section">
+  <div class="container">
+    <div class="text-center fade-up" style="margin-bottom: 8px;">
+      <span class="section-label">Core Focus Areas</span>
+      <h2 class="section-title">What Project Alpha Teaches</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="program-pillars">
+      <div class="program-pillar fade-up">
+        <i class="fas fa-heartbeat"></i>
+        <h4>Health &amp; Wellness</h4>
+        <p>Evidence-based education on sexual health, STI prevention, and making responsible decisions about one's body.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-brain"></i>
+        <h4>Mental Health Awareness</h4>
+        <p>Open conversations about stress, anxiety, self-worth, and where to turn when you need support.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-shield-alt"></i>
+        <h4>Peer Pressure &amp; Substance Awareness</h4>
+        <p>Strategies for resisting negative peer influence and understanding the consequences of substance use.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-star"></i>
+        <h4>Character &amp; Leadership</h4>
+        <p>Defining what it means to be a man of integrity, accountability, and purpose in your family, school, and community.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="fade-up">
+      <span class="section-label">Get Involved</span>
+      <h2 class="section-title light">Invite Project Alpha to Your School</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub light" style="margin: 0 auto;">Xi Tau Lambda Chapter is available to present Project Alpha workshops at middle schools, high schools, and youth organizations throughout North Dallas County. All sessions are free of charge and facilitated by active chapter brothers. Contact us to schedule a session.</p>
+      <div class="cta-buttons">
+        <a href="../contact.html" class="btn btn-gold">Request a Workshop</a>
+        <a href="../membership.html" class="btn btn-outline">Learn About Membership</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- #pageContent -->
+</div><!-- #pageShell -->
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row">
+          <img src="../images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" />
+          <div>
+            <div class="footer-brand-name">North Dallas Alphas</div>
+            <div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div>
+          </div>
+        </div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter, seated in North Dallas County. Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.youtube.com/@northdallasalphas6133" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../about.html">Chapter History</a></li>
+          <li><a href="../programs.html">National Programs</a></li>
+          <li><a href="../alpha-legacy-group.html">Alpha Legacy Group</a></li>
+          <li><a href="../events.html">Events</a></li>
+          <li><a href="../membership.html">Membership</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get Involved</h4>
+        <ul>
+          <li><a href="../visiting-brothers.html">Visiting Brothers</a></li>
+          <li><a href="../scholarship-gala.html">Scholarship Gala</a></li>
+          <li><a href="../membership.html">Membership</a></li>
+          <li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="footer-contact-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>224 W. Campbell Road #443<br />Richardson, TX 75080</span>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-envelope"></i>
+          <a href="mailto:Info@NorthDallasAlphas.org" style="color: rgba(255,255,255,0.55);">Info@NorthDallasAlphas.org</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. All rights reserved.</p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+
+<script src="../js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+function sbHeaders() { return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }; }
+(async function() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
+    if (res.ok) {
+      const rows = await res.json();
+      const row = rows && rows.length ? rows[0] : null;
+      if (row && row.text) {
+        const bar = document.querySelector('.announce-bar');
+        if (bar) { bar.innerHTML = row.text + ' &nbsp; <a href="' + (row.link_url || '../events.html') + '">' + (row.link_text || 'Learn More →') + '</a>'; bar.style.display = ''; }
+      }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

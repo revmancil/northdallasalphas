@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alpha Legacy Group | North Dallas Alphas — Xi Tau Lambda</title>
+  <meta name="description" content="The Alpha Legacy Group is Xi Tau Lambda's structured youth development initiative building college-ready, service-oriented young men in North Dallas County." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .alg-intro { padding: 90px 0; background: var(--white); }
+    .alg-intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .alg-intro-text p { color: var(--gray-600); font-size: 0.97rem; line-height: 1.8; margin-bottom: 18px; }
+    .alg-mission { background: var(--black); padding: 90px 0; }
+    .alg-mission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .alg-mission h2 { font-size: 2.1rem; font-weight: 700; color: var(--white); margin-bottom: 20px; }
+    .alg-mission p { color: rgba(255,255,255,0.72); font-size: 0.97rem; line-height: 1.8; margin-bottom: 16px; }
+    .mission-statement {
+      background: rgba(201,168,76,0.08);
+      border-left: 4px solid var(--gold);
+      border-radius: 0 6px 6px 0;
+      padding: 24px 28px;
+      margin-top: 28px;
+    }
+    .mission-statement p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--gold) !important;
+      line-height: 1.6;
+      font-style: italic;
+      margin: 0;
+    }
+    .alg-pillars { padding: 90px 0; background: var(--gray-100); }
+    .pillars-grid-alg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
+    .pillar-card {
+      background: var(--white);
+      border-radius: 10px;
+      padding: 36px 28px;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+      border-top: 5px solid var(--gold);
+      text-align: center;
+    }
+    .pillar-card i { font-size: 2.2rem; color: var(--gold); margin-bottom: 18px; display: block; }
+    .pillar-card h4 { font-size: 1.1rem; font-weight: 700; color: var(--gray-800); margin-bottom: 12px; }
+    .pillar-card p { font-size: 0.88rem; color: var(--gray-600); line-height: 1.65; }
+    .alg-scholarship { padding: 90px 0; background: var(--white); }
+    .scholarship-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+    .scholarship-steps { display: flex; flex-direction: column; gap: 20px; margin-top: 32px; }
+    .scholarship-step {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    .step-num {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      background: var(--gold);
+      color: var(--black);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1rem;
+    }
+    .step-body h5 { font-size: 0.97rem; font-weight: 700; color: var(--gray-800); margin-bottom: 4px; }
+    .step-body p { font-size: 0.88rem; color: var(--gray-600); line-height: 1.6; }
+    .alg-requirements {
+      background: var(--black);
+      border-radius: 8px;
+      padding: 36px 32px;
+    }
+    .alg-req-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.9rem; }
+    .alg-req-item:last-child { border-bottom: none; }
+    .alg-req-label { color: rgba(255,255,255,0.5); }
+    .alg-req-value { color: var(--gold); font-weight: 700; }
+    .alg-community { padding: 90px 0; background: var(--gray-100); }
+    .alg-engage-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 40px; }
+    .engage-card {
+      background: var(--white);
+      border-radius: 8px;
+      padding: 28px 26px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border-left: 4px solid var(--gold);
+    }
+    .engage-card i { color: var(--gold); font-size: 1.4rem; margin-bottom: 12px; display: block; }
+    .engage-card h4 { font-size: 0.97rem; font-weight: 700; color: var(--gray-800); margin-bottom: 8px; }
+    .engage-card p { font-size: 0.87rem; color: var(--gray-600); line-height: 1.65; }
+    .alg-cta { background: var(--black); padding: 90px 0; }
+    @media (max-width: 900px) {
+      .alg-intro-grid, .alg-mission-grid, .scholarship-grid { grid-template-columns: 1fr; gap: 40px; }
+      .pillars-grid-alg { grid-template-columns: 1fr 1fr; }
+      .alg-engage-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .pillars-grid-alg { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar" style="display:none;"></div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <div class="nav-item-dropdown">
+        <a href="about.html">About</a>
+        <div class="nav-dropdown">
+          <a href="about.html">Chapter History</a>
+          <div class="nav-dropdown-item">
+            <a href="programs.html">National Programs</a>
+            <div class="nav-flyout">
+              <a href="programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+              <a href="programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+              <a href="programs/project-alpha.html">Project Alpha</a>
+              <a href="programs/brothers-keeper.html">Brother's Keeper</a>
+            </div>
+          </div>
+          <a href="alpha-legacy-group.html" class="active">Alpha Legacy Group</a>
+        </div>
+      </div>
+      <a href="leadership.html">Leadership</a>
+      <a href="events.html">Events</a>
+      <a href="membership.html">Membership</a>
+      <a href="news.html">News</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="contact.html">Contact</a>
+      <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+      <a href="member-login.html" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose" aria-label="Close menu">&times;</button>
+  <a href="index.html">Home</a>
+  <div class="mobile-nav-group">
+    <button class="mobile-nav-group-toggle" onclick="this.closest('.mobile-nav-group').classList.toggle('open')">
+      About <span class="chevron">⌄</span>
+    </button>
+    <div class="mobile-nav-sub">
+      <a href="about.html">Chapter History</a>
+      <div class="mobile-nav-subsection">
+        <span class="mobile-nav-subsection-label">National Programs</span>
+        <a href="programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+        <a href="programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+        <a href="programs/project-alpha.html">Project Alpha</a>
+        <a href="programs/brothers-keeper.html">Brother's Keeper</a>
+      </div>
+      <a href="alpha-legacy-group.html">Alpha Legacy Group</a>
+    </div>
+  </div>
+  <a href="leadership.html">Leadership</a>
+  <a href="events.html">Events</a>
+  <a href="membership.html">Membership</a>
+  <a href="news.html">News</a>
+  <a href="gallery.html">Gallery</a>
+  <a href="contact.html">Contact</a>
+  <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+  <a href="member-login.html" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<div id="pageContent">
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Xi Tau Lambda Chapter</span>
+    <h1>Alpha Legacy Group</h1>
+    <p>Developing the next generation of leaders, scholars, and servants — young men rooted in the values of Alpha Phi Alpha Fraternity, Inc.</p>
+  </div>
+</section>
+
+<!-- Overview -->
+<section class="alg-intro">
+  <div class="container">
+    <div class="alg-intro-grid">
+      <div class="alg-intro-text fade-up">
+        <span class="section-label">Overview</span>
+        <h2 class="section-title">Building Tomorrow's Leaders Today</h2>
+        <div class="gold-bar left"></div>
+        <p>The Alpha Legacy Group is Xi Tau Lambda Chapter's structured youth development initiative for young men in middle school through high school. Established as part of Xi Tau Lambda's broader community mission, the Alpha Legacy Group prepares young men to excel academically, lead with character, and serve their communities with purpose.</p>
+        <p>Modeled after Alpha Phi Alpha's longstanding commitment to mentoring the next generation, the program pairs each participant with an active chapter brother who serves as mentor, advisor, and role model. Through a structured curriculum of scholarship, leadership, service, brotherhood, and health and wellness, young men are equipped with the tools they need to succeed in college and in life.</p>
+        <p>The Alpha Legacy Group is not a club — it is a pipeline. Participants leave the program as college-ready young men with a network of brothers, a record of service, and a demonstrated commitment to excellence. Many go on to become members of Alpha Phi Alpha Fraternity, Inc., continuing the legacy they were taught.</p>
+      </div>
+      <div class="fade-up">
+        <div style="background: var(--black); border-radius: 8px; padding: 36px; border: 1px solid rgba(201,168,76,0.2);">
+          <div style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; margin-bottom: 20px;">Program At a Glance</div>
+          <div style="display: flex; flex-direction: column; gap: 0;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <span style="color:rgba(255,255,255,0.5);">Target Age Group</span>
+              <span style="color:var(--gold); font-weight:600;">Middle & High School</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <span style="color:rgba(255,255,255,0.5);">Program Duration</span>
+              <span style="color:var(--gold); font-weight:600;">Academic Year</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <span style="color:rgba(255,255,255,0.5);">Meeting Frequency</span>
+              <span style="color:var(--gold); font-weight:600;">Bi-Weekly</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <span style="color:rgba(255,255,255,0.5);">Service Hours Required</span>
+              <span style="color:var(--gold); font-weight:600;">20 hrs / Year</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.08);">
+              <span style="color:rgba(255,255,255,0.5);">GPA Requirement</span>
+              <span style="color:var(--gold); font-weight:600;">2.5 Minimum</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; padding: 14px 0;">
+              <span style="color:rgba(255,255,255,0.5);">Cost to Participants</span>
+              <span style="color:var(--gold); font-weight:600;">Free</span>
+            </div>
+          </div>
+          <a href="contact.html" class="btn btn-gold" style="margin-top: 28px; width: 100%; justify-content: center;">Apply / Inquire</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Mission -->
+<section class="alg-mission">
+  <div class="container">
+    <div class="alg-mission-grid">
+      <div class="fade-up">
+        <span class="section-label">Our Mission</span>
+        <h2>A Commitment to the Next Generation</h2>
+        <div class="gold-bar left" style="background:var(--gold);"></div>
+        <p>Xi Tau Lambda Chapter established the Alpha Legacy Group on the conviction that the greatest investment a chapter can make is in the young men who will one day lead our communities. Our brothers give their time, their wisdom, and their lived experience to ensure that every participant leaves the program prepared for what comes next.</p>
+        <p>The program's mission is inseparable from Alpha Phi Alpha's founding purpose: to promote scholarship, to provide for the intellectual development of youth, and to foster brotherhood and service. We carry that purpose into every meeting, every mentorship session, and every scholarship application we help a young man submit.</p>
+        <div class="mission-statement">
+          <p>"To develop young men of character, scholarship, and service — preparing them to lead with excellence and give back with purpose."</p>
+        </div>
+      </div>
+      <div class="fade-up" style="display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 28px;">
+          <i class="fas fa-star" style="color:var(--gold); font-size:1.4rem; margin-bottom:12px; display:block;"></i>
+          <h4 style="color:var(--white); font-size:1rem; font-weight:700; margin-bottom:8px;">Core Values</h4>
+          <ul style="list-style:none; padding:0; display:flex; flex-direction:column; gap:8px;">
+            <li style="color:rgba(255,255,255,0.65); font-size:0.88rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-check" style="color:var(--gold); font-size:0.75rem;"></i> Scholarship & Academic Excellence</li>
+            <li style="color:rgba(255,255,255,0.65); font-size:0.88rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-check" style="color:var(--gold); font-size:0.75rem;"></i> Servant Leadership</li>
+            <li style="color:rgba(255,255,255,0.65); font-size:0.88rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-check" style="color:var(--gold); font-size:0.75rem;"></i> Brotherhood & Accountability</li>
+            <li style="color:rgba(255,255,255,0.65); font-size:0.88rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-check" style="color:var(--gold); font-size:0.75rem;"></i> Community Impact</li>
+            <li style="color:rgba(255,255,255,0.65); font-size:0.88rem; display:flex; align-items:center; gap:8px;"><i class="fas fa-check" style="color:var(--gold); font-size:0.75rem;"></i> Personal Integrity & Character</li>
+          </ul>
+        </div>
+        <div style="background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 8px; padding: 28px;">
+          <i class="fas fa-link" style="color:var(--gold); font-size:1.4rem; margin-bottom:12px; display:block;"></i>
+          <h4 style="color:var(--white); font-size:1rem; font-weight:700; margin-bottom:8px;">Connection to Alpha Phi Alpha</h4>
+          <p style="color:rgba(255,255,255,0.65); font-size:0.88rem; line-height:1.65;">The Alpha Legacy Group is guided and overseen by active brothers of Xi Tau Lambda Chapter. Alumni brothers also participate as mentors and advisors, creating an intergenerational network of support for each young man in the program.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Program Pillars -->
+<section class="alg-pillars">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">Program Structure</span>
+      <h2 class="section-title">Five Pillars of Development</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub" style="margin: 0 auto;">Every participant in the Alpha Legacy Group is developed across five interconnected pillars — each one essential, none optional.</p>
+    </div>
+    <div class="pillars-grid-alg">
+      <div class="pillar-card fade-up">
+        <i class="fas fa-book-open"></i>
+        <h4>Scholarship</h4>
+        <p>Academic excellence is the foundation. Participants are held to GPA standards, receive tutoring support, and develop the study habits and discipline that will serve them throughout college and career.</p>
+      </div>
+      <div class="pillar-card fade-up">
+        <i class="fas fa-bullhorn"></i>
+        <h4>Leadership</h4>
+        <p>From public speaking to civic engagement, young men learn to lead in their schools, communities, and families. Leadership sessions challenge participants to find and use their voice.</p>
+      </div>
+      <div class="pillar-card fade-up">
+        <i class="fas fa-hands-helping"></i>
+        <h4>Service</h4>
+        <p>Participants complete a minimum of 20 community service hours per year, participating in chapter-led service days and independent volunteer projects that connect them to North Dallas County.</p>
+      </div>
+      <div class="pillar-card fade-up">
+        <i class="fas fa-users"></i>
+        <h4>Brotherhood</h4>
+        <p>One-on-one mentorship from a chapter brother, cohort bonding activities, and a culture of accountability build the brotherly relationships that sustain young men through challenges.</p>
+      </div>
+      <div class="pillar-card fade-up" style="grid-column: 1 / -1; max-width: 380px; margin: 0 auto;">
+        <i class="fas fa-heartbeat"></i>
+        <h4>Health & Wellness</h4>
+        <p>Physical fitness, mental health awareness, and healthy lifestyle education ensure that participants understand that a strong mind and body are the foundation of everything else they aspire to accomplish.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Scholarship Pipeline -->
+<section class="alg-scholarship">
+  <div class="container">
+    <div class="scholarship-grid">
+      <div class="fade-up">
+        <span class="section-label">College Access</span>
+        <h2 class="section-title">The Scholarship Pipeline</h2>
+        <div class="gold-bar left"></div>
+        <p style="color:var(--gray-600); font-size:0.97rem; line-height:1.8; margin-bottom:24px;">The Alpha Legacy Group is designed to be a scholarship pipeline — not a one-time program. Participants who demonstrate academic excellence and commitment to service become eligible for scholarship consideration through Xi Tau Lambda Chapter and Alpha Phi Alpha Fraternity, Inc.</p>
+        <div class="scholarship-steps">
+          <div class="scholarship-step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h5>Enrollment & Orientation</h5>
+              <p>Young men apply to the program through Xi Tau Lambda Chapter. Accepted participants and their families attend a program orientation and meet their assigned chapter mentor.</p>
+            </div>
+          </div>
+          <div class="scholarship-step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h5>Active Participation</h5>
+              <p>Participants attend bi-weekly meetings, complete service hours, maintain GPA standards, and engage with their mentor throughout the academic year.</p>
+            </div>
+          </div>
+          <div class="scholarship-step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h5>Scholarship Application Support</h5>
+              <p>Brothers assist participants in identifying scholarship opportunities, writing essays, completing applications, and preparing for college interviews.</p>
+            </div>
+          </div>
+          <div class="scholarship-step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h5>Xi Tau Lambda Scholarship Consideration</h5>
+              <p>Eligible seniors who have completed two or more years in the program are considered for chapter scholarship awards distributed annually through the Alpha Legacy Scholarship Gala.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="fade-up">
+        <div class="alg-requirements">
+          <div style="font-size: 0.72rem; font-weight: 700; letter-spacing: 0.15em; color: var(--gold); text-transform: uppercase; margin-bottom: 20px;">Scholarship Eligibility Requirements</div>
+          <div class="alg-req-item"><span class="alg-req-label">Minimum GPA</span><span class="alg-req-value">2.5 Cumulative</span></div>
+          <div class="alg-req-item"><span class="alg-req-label">Service Hours</span><span class="alg-req-value">20 hrs / Year</span></div>
+          <div class="alg-req-item"><span class="alg-req-label">Program Tenure</span><span class="alg-req-value">2+ Years</span></div>
+          <div class="alg-req-item"><span class="alg-req-label">Mentor Evaluation</span><span class="alg-req-value">Satisfactory</span></div>
+          <div class="alg-req-item"><span class="alg-req-label">College Enrollment</span><span class="alg-req-value">Confirmed Acceptance</span></div>
+          <div class="alg-req-item"><span class="alg-req-label">Essay Required</span><span class="alg-req-value">Yes</span></div>
+        </div>
+        <div style="background: var(--gray-100); border-radius: 8px; padding: 28px; margin-top: 20px;">
+          <h4 style="font-size: 0.97rem; font-weight: 700; color: var(--gray-800); margin-bottom: 12px;">Alpha Phi Alpha National Scholarships</h4>
+          <p style="font-size: 0.87rem; color: var(--gray-600); line-height: 1.65; margin-bottom: 16px;">In addition to chapter scholarships, Xi Tau Lambda brothers assist Legacy Group participants in applying for Alpha Phi Alpha Fraternity, Inc. national scholarship opportunities, including the Brother's Keeper Educational Fund.</p>
+          <a href="https://apa1906.net" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:0.78rem; padding:10px 20px;">Visit National Fraternity</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Community Engagement -->
+<section class="alg-community">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">Community Engagement</span>
+      <h2 class="section-title">Giving Back Starts Early</h2>
+      <div class="gold-bar"></div>
+      <p class="section-sub" style="margin: 0 auto;">Alpha Legacy Group members don't just receive mentorship — they learn to give back. Community engagement is woven into every aspect of the program.</p>
+    </div>
+    <div class="alg-engage-grid">
+      <div class="engage-card fade-up">
+        <i class="fas fa-calendar-check"></i>
+        <h4>Chapter-Hosted Events</h4>
+        <p>Alpha Legacy Group members participate in Xi Tau Lambda's signature chapter events — from the Alpha Legacy Scholarship Gala to voter registration drives — gaining real-world experience in service leadership.</p>
+      </div>
+      <div class="engage-card fade-up">
+        <i class="fas fa-tools"></i>
+        <h4>Joint Service Projects</h4>
+        <p>Alongside chapter brothers, ALG members complete service projects addressing real community needs — neighborhood beautification, food drives, school supply donations, and senior citizen outreach.</p>
+      </div>
+      <div class="engage-card fade-up">
+        <i class="fas fa-microphone-alt"></i>
+        <h4>Public Presentations</h4>
+        <p>Members are developed as public speakers who can represent themselves, their schools, and their community with confidence. ALG participants present at community forums, school assemblies, and chapter events.</p>
+      </div>
+      <div class="engage-card fade-up">
+        <i class="fas fa-handshake"></i>
+        <h4>Community Partnerships</h4>
+        <p>Xi Tau Lambda connects ALG members with community partners including school districts, faith organizations, and local nonprofits — building a network of support that extends beyond the chapter.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="alg-cta">
+  <div class="container text-center fade-up">
+    <span class="section-label">Join the Legacy</span>
+    <h2 class="section-title light">The Next Generation Starts Here</h2>
+    <div class="gold-bar"></div>
+    <p class="section-sub light" style="margin: 0 auto 36px;">If you are a young man between the ages of 11 and 17 in North Dallas County, or a parent seeking an exceptional development program, we want to hear from you. Space is limited — inquire today.</p>
+    <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+      <a href="contact.html" class="btn btn-gold"><i class="fas fa-envelope"></i> Apply / Inquire Now</a>
+      <a href="scholarship-gala.html" class="btn btn-outline">Support Our Scholarship</a>
+    </div>
+  </div>
+</section>
+
+</div><!-- #pageContent -->
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row">
+          <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" />
+          <div>
+            <div class="footer-brand-name">North Dallas Alphas</div>
+            <div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div>
+          </div>
+        </div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter, seated in North Dallas County. Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.youtube.com/@northdallasalphas6133" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">Chapter History</a></li>
+          <li><a href="programs.html">National Programs</a></li>
+          <li><a href="alpha-legacy-group.html">Alpha Legacy Group</a></li>
+          <li><a href="events.html">Events</a></li>
+          <li><a href="membership.html">Membership</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get Involved</h4>
+        <ul>
+          <li><a href="visiting-brothers.html">Visiting Brothers</a></li>
+          <li><a href="scholarship-gala.html">Scholarship Gala</a></li>
+          <li><a href="membership.html">Membership</a></li>
+          <li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="footer-contact-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>224 W. Campbell Road #443<br />Richardson, TX 75080</span>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-envelope"></i>
+          <a href="mailto:Info@NorthDallasAlphas.org" style="color: rgba(255,255,255,0.55);">Info@NorthDallasAlphas.org</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. All rights reserved. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+function sbHeaders() { return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }; }
+(async function() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
+    if (res.ok) {
+      const rows = await res.json();
+      const row = rows && rows.length ? rows[0] : null;
+      if (row && row.text) {
+        const bar = document.querySelector('.announce-bar');
+        if (bar) { bar.innerHTML = row.text + ' &nbsp; <a href="' + (row.link_url || 'events.html') + '">' + (row.link_text || 'Learn More →') + '</a>'; bar.style.display = ''; }
+      }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

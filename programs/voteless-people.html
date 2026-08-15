@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A Voteless People Is a Hopeless People | North Dallas Alphas</title>
+  <meta name="description" content="Xi Tau Lambda Chapter's civic engagement program empowering North Dallas communities through voter education, registration, and civic participation." />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    /* ── Page-level layout ── */
+    .program-intro { padding: 90px 0; background: var(--white); }
+    .program-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start; }
+    .program-text p { color: var(--gray-600); font-size: 0.97rem; line-height: 1.75; margin-bottom: 18px; }
+
+    /* ── Stat card (dark panel) ── */
+    .stat-card { background: var(--black); border: 1px solid rgba(201,168,76,0.2); border-radius: 6px; padding: 28px; }
+    .stat-card-heading { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 20px; }
+    .stat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); font-size: 0.9rem; }
+    .stat-item:last-child { border-bottom: none; }
+    .stat-label { color: rgba(255,255,255,0.5); }
+    .stat-value { color: var(--gold); font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+    /* ── Program pillars ── */
+    .pillars-section { padding: 90px 0; background: var(--gray-100); }
+    .program-pillars { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 40px; }
+    .program-pillar { background: var(--white); border-radius: 8px; padding: 32px 28px; box-shadow: 0 2px 16px rgba(0,0,0,0.07); border-top: 4px solid var(--gold); }
+    .program-pillar i { font-size: 2rem; color: var(--gold); margin-bottom: 16px; display: block; }
+    .program-pillar h4 { font-size: 1.05rem; font-weight: 700; color: var(--gray-800); margin-bottom: 10px; }
+    .program-pillar p { font-size: 0.9rem; color: var(--gray-600); line-height: 1.65; }
+
+    /* ── CTA section ── */
+    .program-cta { padding: 90px 0; background: var(--black); text-align: center; }
+    .program-cta h2 { color: var(--white); margin-bottom: 20px; }
+    .program-cta p { color: rgba(255,255,255,0.65); max-width: 620px; margin: 0 auto 36px; font-size: 0.97rem; line-height: 1.75; }
+    .cta-btn-row { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    @media (max-width: 768px) {
+      .program-layout { grid-template-columns: 1fr; gap: 32px; }
+      .program-pillars { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar" style="display:none;"></div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-brand">
+      <img src="../images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <div class="nav-item-dropdown">
+        <a href="../about.html">About <span style="font-size:0;"></span></a>
+        <div class="nav-dropdown">
+          <a href="../about.html">Chapter History</a>
+          <div class="nav-dropdown-item">
+            <a href="../programs.html">National Programs</a>
+            <div class="nav-flyout">
+              <a href="../programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+              <a href="../programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+              <a href="../programs/project-alpha.html">Project Alpha</a>
+              <a href="../programs/brothers-keeper.html">Brother's Keeper</a>
+            </div>
+          </div>
+          <a href="../alpha-legacy-group.html">Alpha Legacy Group</a>
+        </div>
+      </div>
+      <a href="../leadership.html">Leadership</a>
+      <a href="../events.html">Events</a>
+      <a href="../membership.html">Membership</a>
+      <a href="../news.html">News</a>
+      <a href="../gallery.html">Gallery</a>
+      <a href="../contact.html">Contact</a>
+      <a href="../visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+      <a href="../member-login.html" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="../index.html">Home</a>
+  <div class="mobile-nav-group">
+    <button class="mobile-nav-group-toggle" onclick="this.closest('.mobile-nav-group').classList.toggle('open')">
+      About <span class="chevron">⌄</span>
+    </button>
+    <div class="mobile-nav-sub">
+      <a href="../about.html">Chapter History</a>
+      <div class="mobile-nav-subsection">
+        <span class="mobile-nav-subsection-label">National Programs</span>
+        <a href="../programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+        <a href="../programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+        <a href="../programs/project-alpha.html">Project Alpha</a>
+        <a href="../programs/brothers-keeper.html">Brother's Keeper</a>
+      </div>
+      <a href="../alpha-legacy-group.html">Alpha Legacy Group</a>
+    </div>
+  </div>
+  <a href="../leadership.html">Leadership</a>
+  <a href="../events.html">Events</a>
+  <a href="../membership.html">Membership</a>
+  <a href="../news.html">News</a>
+  <a href="../gallery.html">Gallery</a>
+  <a href="../contact.html">Contact</a>
+  <a href="../visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+  <a href="../member-login.html" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<div id="pageContent">
+
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Civic Engagement Program</span>
+    <h1>A Voteless People Is a Hopeless People</h1>
+    <p>Empowering North Dallas communities through voter education, registration, and civic participation.</p>
+  </div>
+</section>
+
+<!-- Section 1: Overview -->
+<section class="program-intro">
+  <div class="container">
+    <div class="program-layout">
+      <div class="program-text fade-up">
+        <span class="section-label">National Program</span>
+        <h2 class="section-title">The Power of the Vote</h2>
+        <div class="gold-bar left"></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. launched "A Voteless People Is a Hopeless People" in 1990 as a national civic engagement initiative. Rooted in the Civil Rights legacy of Alpha brothers such as Thurgood Marshall, W.E.B. Du Bois, and Martin Luther King Jr., the program recognizes that the ballot is one of the most powerful tools for community advancement. The campaign reflects Alpha's enduring commitment to ensuring that every citizen, particularly African Americans and underrepresented communities, exercises their right to vote.</p>
+        <p>Xi Tau Lambda Chapter carries this mandate into North Dallas County. Our brothers partner with local schools, faith communities, and civic organizations to host voter registration drives, conduct know-your-rights workshops, and mobilize voters during local, state, and national elections. We believe civic literacy is foundational to generational progress.</p>
+        <p>Since its launch, Xi Tau Lambda's voter engagement initiatives have reached thousands of North Dallas residents. Our brothers show up at community events, college campuses, and neighborhood centers — registering voters, distributing information on candidates and ballot measures, and encouraging early and absentee voting participation.</p>
+      </div>
+      <div class="fade-up">
+        <div class="stat-card">
+          <div class="stat-card-heading">Program Impact</div>
+          <div class="stat-item">
+            <span class="stat-label">Voters Registered</span>
+            <span class="stat-value">500+</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Election Cycles Active</span>
+            <span class="stat-value">10+</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Community Partners</span>
+            <span class="stat-value">15+</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Precincts Served</span>
+            <span class="stat-value">All North Dallas County</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: Program Pillars -->
+<section class="pillars-section">
+  <div class="container">
+    <div class="text-center fade-up">
+      <span class="section-label">How We Serve</span>
+      <h2 class="section-title">Program Pillars</h2>
+      <div class="gold-bar"></div>
+    </div>
+    <div class="program-pillars">
+      <div class="program-pillar fade-up">
+        <i class="fas fa-vote-yea"></i>
+        <h4>Voter Registration</h4>
+        <p>On-site registration drives at schools, churches, and community events throughout the year.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-book-open"></i>
+        <h4>Civic Education</h4>
+        <p>Workshops on candidates, ballot measures, election procedures, and voter rights.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-users"></i>
+        <h4>Community Mobilization</h4>
+        <p>Coordinated get-out-the-vote efforts during every major election cycle.</p>
+      </div>
+      <div class="program-pillar fade-up">
+        <i class="fas fa-handshake"></i>
+        <h4>Civic Partnerships</h4>
+        <p>Collaborative relationships with school districts, faith organizations, and community nonprofits.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: CTA -->
+<section class="program-cta">
+  <div class="container">
+    <span class="section-label">Take Action</span>
+    <h2 class="section-title light">Make Your Voice Count</h2>
+    <div class="gold-bar"></div>
+    <p>Whether you need to register, update your registration, or learn about upcoming ballot measures, Xi Tau Lambda Chapter is here to help. Join us in honoring the legacy of those who fought for the right to vote.</p>
+    <div class="cta-btn-row">
+      <a href="https://www.votetexas.gov" target="_blank" rel="noopener" class="btn btn-gold">Register to Vote</a>
+      <a href="../contact.html" class="btn btn-outline">Contact Us</a>
+    </div>
+  </div>
+</section>
+
+</div><!-- #pageContent -->
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row">
+          <img src="../images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" />
+          <div>
+            <div class="footer-brand-name">North Dallas Alphas</div>
+            <div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div>
+          </div>
+        </div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter, seated in North Dallas County. Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.youtube.com/@northdallasalphas6133" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Navigate</h4>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../about.html">Chapter History</a></li>
+          <li><a href="../programs.html">National Programs</a></li>
+          <li><a href="../alpha-legacy-group.html">Alpha Legacy Group</a></li>
+          <li><a href="../events.html">Events</a></li>
+          <li><a href="../membership.html">Membership</a></li>
+          <li><a href="../contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Get Involved</h4>
+        <ul>
+          <li><a href="../visiting-brothers.html">Visiting Brothers</a></li>
+          <li><a href="../scholarship-gala.html">Scholarship Gala</a></li>
+          <li><a href="../membership.html">Membership</a></li>
+          <li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <div class="footer-contact-item">
+          <i class="fas fa-map-marker-alt"></i>
+          <span>224 W. Campbell Road #443<br />Richardson, TX 75080</span>
+        </div>
+        <div class="footer-contact-item">
+          <i class="fas fa-envelope"></i>
+          <a href="mailto:Info@NorthDallasAlphas.org" style="color: rgba(255,255,255,0.55);">Info@NorthDallasAlphas.org</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. All rights reserved. &nbsp;|&nbsp; <a href="../admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a> &nbsp;|&nbsp; <a href="https://mc3techlabs.com" style="color:rgba(255,255,255,0.35); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">Powered by MC3 Tech Labs</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+</div><!-- #pageShell -->
+
+<script src="../js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+function sbHeaders() { return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }; }
+(async function() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
+    if (res.ok) {
+      const rows = await res.json();
+      const row = rows && rows.length ? rows[0] : null;
+      if (row && row.text) {
+        const bar = document.querySelector('.announce-bar');
+        if (bar) { bar.innerHTML = row.text + ' &nbsp; <a href="' + (row.link_url || '../events.html') + '">' + (row.link_text || 'Learn More →') + '</a>'; bar.style.display = ''; }
+      }
+    }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
