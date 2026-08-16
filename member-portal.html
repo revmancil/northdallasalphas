@@ -267,6 +267,7 @@ backdrop-filter:blur(4px);}
     <div class="nav-section-label">Account</div>
     <button class="nav-item" onclick="showPanel('card');renderMemberCard()" id="nav-card"><i class="fas fa-id-card"></i> Membership Card</button>
     <button class="nav-item" onclick="showPanel('announcements-submit')" id="nav-announcements-submit"><i class="fas fa-bullhorn"></i> Submit Announcement</button>
+    <button class="nav-item" onclick="showPanel('news-submit');loadMyNewsSubmissions()" id="nav-news-submit"><i class="fas fa-newspaper"></i> Submit News Article</button>
     <button class="nav-item" onclick="showPanel('profile')" id="nav-profile"><i class="fas fa-user-circle"></i> My Profile</button>
   </nav>
   <div class="sidebar-footer">
@@ -625,6 +626,75 @@ backdrop-filter:blur(4px);}
           <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:22px;">
             <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Submissions</div>
             <div id="myAnnouncementsList"><div class="empty-state" style="padding:16px 0;"><i class="fas fa-bullhorn"></i><p>No submissions yet.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUBMIT NEWS ARTICLE -->
+    <div class="panel" id="panel-news-submit">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-newspaper" style="color:var(--gold);margin-right:8px;"></i>Submit a News Article</h3></div>
+        <div class="section-card-body">
+          <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;margin-bottom:18px;">Submit news articles and chapter updates for leadership to review. Once approved, your article will be published to the public news section.</p>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:640px;">
+            <div class="pfield">
+              <label>Headline <span style="color:var(--red);">*</span></label>
+              <input type="text" id="nsTitle" placeholder="e.g. Xi Tau Lambda Partners with Frisco ISD" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="pfield">
+                <label>Tag / Category <span style="color:var(--red);">*</span></label>
+                <select id="nsTag" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;">
+                  <option value="Community">Community</option>
+                  <option value="Scholarship">Scholarship</option>
+                  <option value="Service">Service</option>
+                  <option value="Brotherhood">Brotherhood</option>
+                  <option value="Recognition">Recognition</option>
+                  <option value="Program">Program</option>
+                  <option value="Milestone">Milestone</option>
+                  <option value="Civic">Civic</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="pfield">
+                <label>Placement</label>
+                <select id="nsPlacement" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;">
+                  <option value="main">Main (featured stories)</option>
+                  <option value="sidebar">Sidebar (brief news)</option>
+                </select>
+              </div>
+            </div>
+            <div class="pfield">
+              <label>Excerpt / Summary <span style="color:var(--red);">*</span></label>
+              <textarea id="nsExcerpt" rows="2" placeholder="One or two sentences summarizing the article..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div class="pfield">
+              <label>Full Article Body <span style="color:var(--red);">*</span></label>
+              <textarea id="nsBody" rows="8" placeholder="Write the full article here..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div class="pfield">
+              <label>Article Image <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional)</span></label>
+              <input type="file" id="nsImageInput" accept="image/*" style="display:none;" onchange="handleNewsImageSelect(event)" />
+              <div id="nsImageDropzone" onclick="document.getElementById('nsImageInput').click()"
+                style="border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:22px 16px;text-align:center;cursor:pointer;transition:border-color 0.2s;color:rgba(255,255,255,0.4);font-size:0.83rem;">
+                <i class="fas fa-image" style="font-size:1.4rem;margin-bottom:6px;display:block;color:var(--gold);"></i>
+                Click to upload an image for this article
+              </div>
+              <div id="nsImagePreviewWrap" style="display:none;margin-top:10px;position:relative;">
+                <img id="nsImagePreview" src="" alt="Image preview" style="max-width:100%;max-height:260px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);object-fit:contain;" />
+                <button type="button" onclick="clearNewsImage()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.7);border:none;color:#fff;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:0.75rem;"><i class="fas fa-times"></i></button>
+              </div>
+            </div>
+            <div id="nsErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
+            <div id="nsSuccess" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#4ade80;padding:12px 16px;border-radius:6px;font-size:0.85rem;">
+              <i class="fas fa-check-circle"></i> Your article has been submitted for review. Leadership will be notified.
+            </div>
+            <button onclick="submitNewsArticle()" id="nsSubmitBtn" class="btn-gold" style="align-self:flex-start;"><i class="fas fa-paper-plane"></i> Submit Article</button>
+          </div>
+          <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:22px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Submissions</div>
+            <div id="myNewsSubmissionsList"><div class="empty-state" style="padding:16px 0;"><i class="fas fa-newspaper"></i><p>No submissions yet.</p></div></div>
           </div>
         </div>
       </div>
@@ -2849,6 +2919,135 @@ function useAiResult() {
 document.getElementById('aiAssistOverlay').addEventListener('click', function(e) {
   if (e.target === this) closeAiAssist();
 });
+
+/* ═══════════════════════════════════════
+   NEWS ARTICLE SUBMISSION
+═══════════════════════════════════════ */
+var _nsImageFile = null;
+
+function handleNewsImageSelect(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  _nsImageFile = file;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('nsImagePreview').src = ev.target.result;
+    document.getElementById('nsImagePreviewWrap').style.display = '';
+    document.getElementById('nsImageDropzone').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearNewsImage() {
+  _nsImageFile = null;
+  document.getElementById('nsImageInput').value = '';
+  document.getElementById('nsImagePreview').src = '';
+  document.getElementById('nsImagePreviewWrap').style.display = 'none';
+  document.getElementById('nsImageDropzone').style.display = '';
+}
+
+async function uploadNewsArticleImage(file) {
+  var ext = file.name.split('.').pop() || 'jpg';
+  var path = 'news-submissions/' + Date.now() + '.' + ext;
+  var res = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Content-Type': file.type, 'x-upsert': 'true' },
+    body: file
+  });
+  if (!res.ok) throw new Error('Image upload failed');
+  return SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+}
+
+async function submitNewsArticle() {
+  var errEl     = document.getElementById('nsErr');
+  var successEl = document.getElementById('nsSuccess');
+  var btn       = document.getElementById('nsSubmitBtn');
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+  if (!currentMember || !currentSession) { errEl.textContent = 'Sign in to submit.'; errEl.style.display = ''; return; }
+  var title   = (document.getElementById('nsTitle').value   || '').trim();
+  var tag     = document.getElementById('nsTag').value      || 'Community';
+  var excerpt = (document.getElementById('nsExcerpt').value || '').trim();
+  var body    = (document.getElementById('nsBody').value    || '').trim();
+  var placement = document.getElementById('nsPlacement').value || 'main';
+  if (!title)   { errEl.textContent = 'Please enter a headline.';      errEl.style.display = ''; return; }
+  if (!excerpt) { errEl.textContent = 'Please enter a summary.';       errEl.style.display = ''; return; }
+  if (!body)    { errEl.textContent = 'Please enter the article body.'; errEl.style.display = ''; return; }
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  try {
+    var imageUrl = null;
+    if (_nsImageFile) {
+      try { imageUrl = await uploadNewsArticleImage(_nsImageFile); }
+      catch(fe) { errEl.textContent = 'Image upload failed: ' + (fe.message || 'error'); errEl.style.display = ''; btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Article'; return; }
+    }
+    await fetch(SUPABASE_URL + '/rest/v1/member_news_submissions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Prefer': 'return=minimal' },
+      body: JSON.stringify({
+        member_id:    currentMember.id,
+        member_name:  [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '),
+        member_email: currentMember.email,
+        title:        title,
+        tag:          tag,
+        excerpt:      excerpt,
+        body:         body,
+        image_url:    imageUrl,
+        placement:    placement,
+        status:       'pending',
+        submitted_at: new Date().toISOString()
+      })
+    });
+    // Notify admins (fire-and-forget)
+    fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+      body: JSON.stringify({ type: 'news_article', name: [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '), title: title, category: tag })
+    }).catch(function(){});
+    // Reset form
+    document.getElementById('nsTitle').value   = '';
+    document.getElementById('nsExcerpt').value = '';
+    document.getElementById('nsBody').value    = '';
+    document.getElementById('nsTag').selectedIndex = 0;
+    document.getElementById('nsPlacement').selectedIndex = 0;
+    clearNewsImage();
+    successEl.style.display = '';
+    loadMyNewsSubmissions();
+  } catch(e) {
+    errEl.textContent = 'Could not submit: ' + (e.message || 'error');
+    errEl.style.display = '';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Article';
+  }
+}
+
+async function loadMyNewsSubmissions() {
+  if (!currentMember || !currentSession) return;
+  var el = document.getElementById('myNewsSubmissionsList');
+  if (!el) return;
+  try {
+    var rows = await sbGet('member_news_submissions', 'member_id=eq.' + currentMember.id + '&order=submitted_at.desc', currentSession.access_token);
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-newspaper"></i><p>No submissions yet.</p></div>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      var statusColor = r.status==='approved'?'#4ade80':r.status==='rejected'?'#f87171':'#fbbf24';
+      var date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      var thumb = r.image_url ? '<img src="' + escHtml(r.image_url) + '" alt="" style="width:48px;height:48px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);flex-shrink:0;" />' : '';
+      return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div style="display:flex;align-items:center;gap:12px;">' + thumb +
+          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + escHtml(r.title) + '</div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.tag || 'News') + ' · ' + date + '</div>' +
+          '</div></div>' +
+          '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status || 'pending') + '</span>' +
+        '</div>' +
+        (r.admin_note ? '<div style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.45);font-style:italic;"><i class="fas fa-comment" style="margin-right:5px;color:var(--gold);"></i>' + escHtml(r.admin_note) + '</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-exclamation-circle"></i><p>Could not load submissions.</p></div>';
+  }
+}
 </script>
 
 </body>

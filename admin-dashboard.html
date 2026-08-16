@@ -1203,6 +1203,9 @@
     <button class="sidebar-link" data-section="member-announcements" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
       <i class="fas fa-bullhorn"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
+    <button class="sidebar-link" data-section="news-submissions" onclick="showPanel('news-submissions');loadNewsSubmissions()">
+      <i class="fas fa-newspaper"></i> News Submissions <span id="newsPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+    </button>
     <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2443,6 +2446,73 @@
       </div>
       <div id="annAdminList">
         <div class="empty-state"><i class="fas fa-bullhorn"></i><p>Loading announcements...</p></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         NEWS SUBMISSIONS PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-news-submissions">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:0.88rem;color:var(--gray-500);" id="newsSubAdminCount"></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sm active" id="newsSubFilterAll"      onclick="setNewsSubFilter('all',this)">All</button>
+          <button class="btn-sm"        id="newsSubFilterPending"  onclick="setNewsSubFilter('pending',this)">Pending</button>
+          <button class="btn-sm"        id="newsSubFilterApproved" onclick="setNewsSubFilter('approved',this)">Approved</button>
+          <button class="btn-sm"        id="newsSubFilterRejected" onclick="setNewsSubFilter('rejected',this)">Rejected</button>
+        </div>
+      </div>
+      <div id="newsSubAdminList">
+        <div class="empty-state"><i class="fas fa-newspaper"></i><p>Loading submissions...</p></div>
+      </div>
+
+      <!-- Edit / Review Modal -->
+      <div id="newsSubModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+        <div style="background:#fff;border-radius:12px;padding:28px;max-width:700px;width:100%;position:relative;margin:auto;">
+          <button onclick="closeNewsSubModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);">×</button>
+          <h3 style="margin:0 0 20px;font-size:1.05rem;color:var(--gray-800);"><i class="fas fa-newspaper" style="color:var(--gold);margin-right:8px;"></i>Review News Submission</h3>
+          <input type="hidden" id="nsModalId" />
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div class="field-group" style="margin:0;">
+              <label>Headline</label>
+              <input type="text" id="nsModalTitle" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" />
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="field-group" style="margin:0;">
+                <label>Tag</label>
+                <input type="text" id="nsModalTag" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" />
+              </div>
+              <div class="field-group" style="margin:0;">
+                <label>Placement</label>
+                <select id="nsModalPlacement" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+                  <option value="main">Main</option>
+                  <option value="sidebar">Sidebar</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Excerpt / Summary</label>
+              <textarea id="nsModalExcerpt" rows="2" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Article Body</label>
+              <textarea id="nsModalBody" rows="10" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
+            </div>
+            <div id="nsModalImageWrap" style="display:none;" class="field-group" style="margin:0;">
+              <label>Submitted Image</label>
+              <img id="nsModalImage" src="" alt="" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--gray-200);object-fit:contain;" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Admin Note <span style="font-weight:400;color:var(--gray-400);">(shown to submitter — optional)</span></label>
+              <input type="text" id="nsModalNote" placeholder="e.g. Approved with minor edits" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" />
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+            <button onclick="approveNewsSubmission()" class="btn-sm success" style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-check"></i> Approve &amp; Publish</button>
+            <button onclick="rejectNewsSubmission()" class="btn-sm danger"  style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-times"></i> Reject</button>
+            <button onclick="closeNewsSubModal()" class="btn-sm" style="padding:9px 20px;font-size:0.88rem;">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -9028,6 +9098,191 @@ async function addAnnouncementToEvents(id) {
     }
   } catch(e) { showToast('Could not create event: ' + (e.message||'error'), 'error'); }
 }
+
+/* ═══════════════════════════════════════════
+   NEWS SUBMISSIONS — ADMIN
+═══════════════════════════════════════════ */
+var _allNewsSubmissions = [];
+var _newsSubFilter = 'all';
+var _newsSubModalRow = null;
+
+async function loadNewsSubmissions() {
+  var token = getAdminToken();
+  var el = document.getElementById('newsSubAdminList');
+  if (!token) {
+    if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>Not logged in.</p></div>';
+    return;
+  }
+  try {
+    var rows = await sbGet('member_news_submissions', 'order=submitted_at.desc', token);
+    _allNewsSubmissions = rows || [];
+    var pending = _allNewsSubmissions.filter(function(r){ return r.status === 'pending'; }).length;
+    var badge = document.getElementById('newsPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderNewsSubmissions();
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--gold);"></i><p style="color:var(--gray-600);">Could not load news submissions.<br><small>' + escHtml(e.message||'Unknown error') + '</small></p></div>';
+  }
+}
+
+function setNewsSubFilter(f, btn) {
+  _newsSubFilter = f;
+  document.querySelectorAll('#panel-news-submissions .btn-sm').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderNewsSubmissions();
+}
+
+function renderNewsSubmissions() {
+  var list = _allNewsSubmissions.filter(function(r){ return _newsSubFilter === 'all' || r.status === _newsSubFilter; });
+  var countEl = document.getElementById('newsSubAdminCount');
+  if (countEl) countEl.textContent = list.length + ' submission' + (list.length !== 1 ? 's' : '');
+  var el = document.getElementById('newsSubAdminList');
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-newspaper"></i><p>No submissions' + (_newsSubFilter !== 'all' ? ' with status "' + _newsSubFilter + '"' : '') + '.</p></div>'; return; }
+  el.innerHTML = list.map(function(r) {
+    var statusColor = r.status==='approved'?'var(--green)':r.status==='rejected'?'var(--red)':'var(--gold)';
+    var date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    var id = escHtml(String(r.id));
+    var actions = '';
+    if (r.status === 'pending') {
+      actions = '<button class="btn-sm success" onclick="openNewsSubModal(\'' + id + '\')"><i class="fas fa-eye"></i> Review</button>';
+    } else {
+      actions = '<button class="btn-sm" onclick="resetNewsSubStatus(\'' + id + '\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
+    }
+    return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">' +
+        '<div style="flex:1;min-width:200px;">' +
+          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.title||'Untitled') + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' + escHtml(r.member_name||'Unknown') + ' · ' + escHtml(r.tag||'News') + ' · Submitted ' + date + '</div>' +
+        '</div>' +
+        '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
+      '</div>' +
+      '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.5;">' + escHtml((r.excerpt||'').substring(0,200)) + (r.excerpt && r.excerpt.length > 200 ? '…' : '') + '</p>' +
+      (r.image_url ? '<div style="margin-bottom:12px;"><img src="' + escHtml(r.image_url) + '" alt="" style="max-width:100%;max-height:200px;border-radius:8px;border:1px solid var(--gray-200);object-fit:contain;" /></div>' : '') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openNewsSubModal(id) {
+  var r = _allNewsSubmissions.find(function(x){ return String(x.id) === String(id); });
+  if (!r) return;
+  _newsSubModalRow = r;
+  document.getElementById('nsModalId').value       = String(r.id);
+  document.getElementById('nsModalTitle').value    = r.title    || '';
+  document.getElementById('nsModalTag').value      = r.tag      || 'Community';
+  document.getElementById('nsModalExcerpt').value  = r.excerpt  || '';
+  document.getElementById('nsModalBody').value     = r.body     || '';
+  document.getElementById('nsModalNote').value     = '';
+  var sel = document.getElementById('nsModalPlacement');
+  sel.value = r.placement || 'main';
+  var imgWrap = document.getElementById('nsModalImageWrap');
+  var imgEl   = document.getElementById('nsModalImage');
+  if (r.image_url) { imgEl.src = r.image_url; imgWrap.style.display = ''; }
+  else { imgWrap.style.display = 'none'; }
+  document.getElementById('newsSubModal').style.display = 'flex';
+}
+
+function closeNewsSubModal() {
+  document.getElementById('newsSubModal').style.display = 'none';
+  _newsSubModalRow = null;
+}
+
+async function approveNewsSubmission() {
+  var token = getAdminToken();
+  if (!token) return;
+  var id = (document.getElementById('nsModalId').value || '').trim();
+  if (!id) return;
+  var title     = (document.getElementById('nsModalTitle').value   || '').trim();
+  var tag       = (document.getElementById('nsModalTag').value     || '').trim();
+  var excerpt   = (document.getElementById('nsModalExcerpt').value || '').trim();
+  var body      = (document.getElementById('nsModalBody').value    || '').trim();
+  var placement = document.getElementById('nsModalPlacement').value || 'main';
+  var note      = (document.getElementById('nsModalNote').value    || '').trim();
+  var imageUrl  = _newsSubModalRow ? (_newsSubModalRow.image_url || '') : '';
+  if (!title)   { showToast('Headline is required.', 'error'); return; }
+  if (!excerpt) { showToast('Excerpt is required.',  'error'); return; }
+  if (!body)    { showToast('Article body is required.', 'error'); return; }
+  try {
+    // Build date string: "Month YYYY"
+    var now = new Date();
+    var months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    var dateStr = months[now.getMonth()] + ' ' + now.getFullYear();
+    // Fetch current news articles
+    var existing = await getContentJson(NEWS_ARTICLES_KEY, []);
+    if (!Array.isArray(existing)) existing = [];
+    // Build new article object and prepend
+    var newArticle = {
+      title:     title,
+      tag:       tag,
+      date:      dateStr,
+      image:     imageUrl,
+      excerpt:   excerpt,
+      body:      body,
+      placement: placement,
+      featured:  placement === 'main',
+      published: true
+    };
+    existing.unshift(newArticle);
+    await saveContentJson(NEWS_ARTICLES_KEY, existing);
+    // Mark submission approved
+    await sbPatch('member_news_submissions', 'id=eq.' + encodeURIComponent(id),
+      { status: 'approved', admin_note: note || null, reviewed_at: new Date().toISOString() }, token);
+    var r = _allNewsSubmissions.find(function(x){ return String(x.id) === String(id); });
+    if (r) { r.status = 'approved'; r.admin_note = note; }
+    var pending = _allNewsSubmissions.filter(function(x){ return x.status === 'pending'; }).length;
+    var badge = document.getElementById('newsPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderNewsSubmissions();
+    closeNewsSubModal();
+    showToast('Article approved and published to News section.');
+  } catch(e) {
+    showToast('Could not approve: ' + (e.message || 'error'), 'error');
+  }
+}
+
+async function rejectNewsSubmission() {
+  var token = getAdminToken();
+  if (!token) return;
+  var id   = (document.getElementById('nsModalId').value || '').trim();
+  var note = (document.getElementById('nsModalNote').value || '').trim();
+  if (!id) return;
+  try {
+    await sbPatch('member_news_submissions', 'id=eq.' + encodeURIComponent(id),
+      { status: 'rejected', admin_note: note || null, reviewed_at: new Date().toISOString() }, token);
+    var r = _allNewsSubmissions.find(function(x){ return String(x.id) === String(id); });
+    if (r) { r.status = 'rejected'; r.admin_note = note; }
+    var pending = _allNewsSubmissions.filter(function(x){ return x.status === 'pending'; }).length;
+    var badge = document.getElementById('newsPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderNewsSubmissions();
+    closeNewsSubModal();
+    showToast('Submission rejected.');
+  } catch(e) {
+    showToast('Could not reject: ' + (e.message || 'error'), 'error');
+  }
+}
+
+async function resetNewsSubStatus(id) {
+  var token = getAdminToken();
+  if (!token) return;
+  try {
+    await sbPatch('member_news_submissions', 'id=eq.' + encodeURIComponent(id),
+      { status: 'pending', admin_note: null, reviewed_at: null }, token);
+    var r = _allNewsSubmissions.find(function(x){ return String(x.id) === String(id); });
+    if (r) { r.status = 'pending'; r.admin_note = null; }
+    var pending = _allNewsSubmissions.filter(function(x){ return x.status === 'pending'; }).length;
+    var badge = document.getElementById('newsPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderNewsSubmissions();
+    showToast('Submission reset to pending.');
+  } catch(e) {
+    showToast('Could not reset: ' + (e.message || 'error'), 'error'); }
+}
+
+// Close modal on backdrop click
+document.getElementById('newsSubModal').addEventListener('click', function(e) {
+  if (e.target === this) closeNewsSubModal();
+});
 
 /* ═══════════════════════════════════════════
    CHAPTER STORE — ADMIN
