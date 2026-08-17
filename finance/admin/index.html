@@ -776,8 +776,9 @@
     return r.json();
   }
   function authToken() {
-    const s = SESSION || JSON.parse(localStorage.getItem('nda_member_session') || 'null');
-    return s?.access_token || SB_ANON;
+    const admin  = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+    const member = JSON.parse(localStorage.getItem('nda_member_session') || 'null');
+    return admin?.access_token || member?.access_token || SB_ANON;
   }
   async function getContentJson(key) {
     try {
@@ -1317,14 +1318,40 @@
      INIT
   ══════════════════════════════════════════ */
   async function init() {
+    // Accept site admin session (nda_sb_session) OR member session with finance role
+    const adminSession = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
     SESSION = JSON.parse(localStorage.getItem('nda_member_session') || 'null');
-    if (!SESSION) { window.location.href = '../../member-portal.html'; return; }
+
+    if (adminSession?.access_token) {
+      // Site admin always has full access — use their token
+      SESSION = adminSession;
+    } else if (SESSION) {
+      // Member session: verify they have a qualifying finance role
+      try {
+        const memberRows = await sbGet('members', {
+          select: 'finance_role',
+          auth_user_id: `eq.${SESSION.user.id}`,
+          limit: '1'
+        });
+        const role = memberRows[0]?.finance_role;
+        if (!['treasurer','financial_secretary','president'].includes(role)) {
+          window.location.href = '../../member-portal.html';
+          return;
+        }
+      } catch {
+        window.location.href = '../../member-portal.html';
+        return;
+      }
+    } else {
+      window.location.href = '../../member-portal.html';
+      return;
+    }
 
     const meta = SESSION.user?.user_metadata || {};
     const name = meta.full_name || SESSION.user?.email || 'Member';
     const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
     document.getElementById('sidebarName').textContent = name;
-    document.getElementById('sidebarRole').textContent = 'Finance Admin';
+    document.getElementById('sidebarRole').textContent = adminSession ? 'Site Admin' : 'Finance Admin';
     const av = document.getElementById('sidebarAvatar');
     if (meta.avatar_url) { av.innerHTML = `<img src="${meta.avatar_url}" alt="" />`; }
     else { av.textContent = initials; }
