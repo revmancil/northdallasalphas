@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pay Dues | Finance Portal | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="../images/xtl-logo.png" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black: #0a0a0a; --dark: #111; --dark2: #181818;
+      --gold: #C9A84C; --gold-light: #E8C97A;
+      --gold-pale: rgba(201,168,76,0.08); --gold-pale2: rgba(201,168,76,0.15);
+      --white: #ffffff;
+      --gray-400: #9ca3af; --gray-600: #4b5563;
+      --green: #22c55e; --green-pale: rgba(34,197,94,0.1);
+      --red: #ef4444; --red-pale: rgba(239,68,68,0.1);
+      --blue: #3b82f6; --blue-pale: rgba(59,130,246,0.1);
+      --amber: #f59e0b; --amber-pale: rgba(245,158,11,0.1);
+      --sidebar-w: 260px;
+    }
+    html, body { height: 100%; }
+    body { font-family: 'Inter', sans-serif; background: var(--dark); color: var(--white); display: flex; min-height: 100vh; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: var(--sidebar-w); background: var(--dark2); border-right: 1px solid rgba(201,168,76,0.12); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100; transition: transform 0.3s; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .sidebar-brand { padding: 22px 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .sidebar-brand img { width: 42px; height: 42px; border-radius: 50%; border: 1.5px solid rgba(201,168,76,0.4); object-fit: contain; }
+    .sidebar-brand-text .name { font-family: 'Playfair Display', serif; font-size: 0.88rem; font-weight: 700; color: var(--gold); line-height: 1.2; }
+    .sidebar-brand-text .sub  { font-size: 0.62rem; color: rgba(255,255,255,0.3); letter-spacing: 0.08em; text-transform: uppercase; }
+    .sidebar-user { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 34px; height: 34px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; color: var(--black); flex-shrink: 0; overflow: hidden; }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-info .uname  { font-size: 0.82rem; font-weight: 600; color: var(--white); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-info .urole  { font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-top: 2px; }
+    .sidebar-nav { padding: 10px 0; flex: 1; }
+    .nav-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.22); padding: 10px 20px 5px; }
+    .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 20px; color: rgba(255,255,255,0.5); font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; background: none; width: 100%; text-align: left; transition: color 0.2s, background 0.2s; border-left: 3px solid transparent; text-decoration: none; }
+    .nav-item i { width: 18px; text-align: center; font-size: 0.88rem; }
+    .nav-item:hover { color: var(--white); background: rgba(255,255,255,0.04); }
+    .nav-item.active { color: var(--gold); background: var(--gold-pale); border-left-color: var(--gold); }
+    .nav-divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 6px 0; }
+    .sidebar-footer { padding: 14px 20px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .logout-btn { display: flex; align-items: center; gap: 9px; color: rgba(255,255,255,0.4); font-size: 0.82rem; background: none; border: none; cursor: pointer; padding: 7px 0; transition: color 0.2s; width: 100%; }
+    .logout-btn:hover { color: var(--red); }
+
+    /* ── Main layout ── */
+    .main { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: var(--dark2); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 28px; height: 60px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .hamburger { display: none; background: none; border: none; color: var(--white); font-size: 1.1rem; cursor: pointer; padding: 6px; }
+    .page-title { font-size: 1rem; font-weight: 600; color: var(--white); }
+    .breadcrumb { font-size: 0.78rem; color: var(--gray-400); margin-left: 6px; }
+    .topbar-right a { display: flex; align-items: center; gap: 6px; color: var(--gray-400); text-decoration: none; font-size: 0.8rem; transition: color 0.2s; }
+    .topbar-right a:hover { color: var(--gold); }
+    .content { padding: 28px; flex: 1; max-width: 860px; }
+
+    /* ── Cards ── */
+    .card { background: var(--dark2); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+    .card-header { padding: 16px 22px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: space-between; }
+    .card-header h3 { font-size: 0.92rem; font-weight: 700; color: var(--white); display: flex; align-items: center; gap: 9px; }
+    .card-header h3 i { color: var(--gold); font-size: 0.88rem; }
+    .card-body { padding: 22px; }
+
+    /* ── Dues category radio tiles ── */
+    .dues-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+    .dues-tile { border: 2px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px 18px; cursor: pointer; transition: border-color 0.2s, background 0.2s; position: relative; }
+    .dues-tile:hover { border-color: rgba(201,168,76,0.4); background: rgba(201,168,76,0.04); }
+    .dues-tile.selected { border-color: var(--gold); background: var(--gold-pale); }
+    .dues-tile input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .dues-tile-label { font-size: 0.88rem; font-weight: 600; color: var(--white); margin-bottom: 4px; display: block; }
+    .dues-tile-amount { font-size: 1.3rem; font-weight: 800; color: var(--gold); line-height: 1; }
+    .dues-tile-note { font-size: 0.73rem; color: rgba(255,255,255,0.4); margin-top: 5px; line-height: 1.4; }
+    .dues-tile.disabled { opacity: 0.45; pointer-events: none; }
+    .selected-check { position: absolute; top: 10px; right: 12px; color: var(--gold); font-size: 1rem; display: none; }
+    .dues-tile.selected .selected-check { display: block; }
+
+    /* ── Add-ons ── */
+    .addon-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .addon-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .addon-toggle { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+    .addon-toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .addon-slider { position: absolute; inset: 0; background: rgba(255,255,255,0.1); border-radius: 24px; cursor: pointer; transition: background 0.2s; }
+    .addon-slider::before { content: ''; position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform 0.2s; }
+    .addon-toggle input:checked + .addon-slider { background: var(--gold); }
+    .addon-toggle input:checked + .addon-slider::before { transform: translateX(18px); }
+    .addon-info { flex: 1; }
+    .addon-name { font-size: 0.88rem; font-weight: 600; color: var(--white); }
+    .addon-desc { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .addon-price { font-size: 0.9rem; font-weight: 700; color: var(--gold); white-space: nowrap; }
+
+    /* ── Order summary ── */
+    .summary-line { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.88rem; }
+    .summary-line:last-of-type { border-bottom: none; }
+    .summary-label { color: rgba(255,255,255,0.55); }
+    .summary-value { color: var(--white); font-weight: 600; }
+    .summary-total { display: flex; justify-content: space-between; align-items: center; padding: 14px 0 0; border-top: 1px solid rgba(255,255,255,0.12); margin-top: 4px; }
+    .summary-total .label { font-size: 0.9rem; font-weight: 700; color: var(--white); }
+    .summary-total .amount { font-size: 1.4rem; font-weight: 800; color: var(--gold); }
+
+    /* ── Pay button ── */
+    .btn-pay { width: 100%; padding: 15px; background: var(--gold); color: var(--black); border: none; border-radius: 10px; font-size: 1rem; font-weight: 800; cursor: pointer; letter-spacing: 0.02em; transition: opacity 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .btn-pay:hover:not(:disabled) { opacity: 0.88; }
+    .btn-pay:active:not(:disabled) { transform: scale(0.99); }
+    .btn-pay:disabled { opacity: 0.45; cursor: not-allowed; }
+    .stripe-trust { display: flex; align-items: center; gap: 6px; justify-content: center; margin-top: 10px; font-size: 0.75rem; color: rgba(255,255,255,0.3); }
+    .stripe-trust i { color: rgba(255,255,255,0.4); }
+
+    /* ── Alert / notice boxes ── */
+    .notice { padding: 12px 16px; border-radius: 8px; font-size: 0.83rem; line-height: 1.5; margin-bottom: 16px; display: flex; gap: 10px; align-items: flex-start; }
+    .notice i { margin-top: 1px; flex-shrink: 0; }
+    .notice.amber { background: var(--amber-pale); border: 1px solid rgba(245,158,11,0.25); color: #fbbf24; }
+    .notice.blue  { background: var(--blue-pale);  border: 1px solid rgba(59,130,246,0.25);  color: #93c5fd; }
+    .notice.green { background: var(--green-pale); border: 1px solid rgba(34,197,94,0.25);   color: #4ade80; }
+    .notice.red   { background: var(--red-pale);   border: 1px solid rgba(239,68,68,0.3);    color: #f87171; }
+
+    /* ── Payment history table ── */
+    .pay-hist-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
+    .pay-hist-row:last-child { border-bottom: none; }
+    .pay-hist-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--green-pale); display: flex; align-items: center; justify-content: center; color: var(--green); font-size: 0.88rem; flex-shrink: 0; }
+    .pay-hist-icon.pending { background: var(--amber-pale); color: var(--amber); }
+    .pay-hist-icon.failed  { background: var(--red-pale);   color: var(--red); }
+    .pay-hist-info { flex: 1; min-width: 0; }
+    .pay-hist-title { font-weight: 600; color: var(--white); }
+    .pay-hist-meta  { font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .pay-hist-amount { font-weight: 700; color: var(--gold); white-space: nowrap; }
+    .status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 10px; text-transform: capitalize; }
+    .status-badge.paid     { background: var(--green-pale); color: var(--green); }
+    .status-badge.pending  { background: var(--amber-pale); color: var(--amber); }
+    .status-badge.failed   { background: var(--red-pale);   color: var(--red); }
+
+    /* ── Fiscal year selector ── */
+    .fy-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .fy-pill { padding: 7px 18px; border: 1.5px solid rgba(255,255,255,0.12); border-radius: 20px; font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.5); cursor: pointer; transition: all 0.2s; background: none; }
+    .fy-pill:hover { border-color: rgba(201,168,76,0.4); color: var(--white); }
+    .fy-pill.active { border-color: var(--gold); color: var(--gold); background: var(--gold-pale); }
+
+    /* ── Open question flag ── */
+    .open-q { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; color: var(--amber); background: var(--amber-pale); border: 1px solid rgba(245,158,11,0.3); border-radius: 4px; padding: 2px 8px; }
+
+    /* ── Empty state ── */
+    .empty-state { text-align: center; padding: 32px 16px; color: rgba(255,255,255,0.3); }
+    .empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; }
+    .empty-state p { font-size: 0.88rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; }
+      .hamburger { display: block; }
+      .content { padding: 20px 16px; }
+      .dues-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     SIDEBAR
+══════════════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="../images/xtl-logo.png" alt="Xi Tau Lambda" />
+    <div class="sidebar-brand-text">
+      <div class="name">Finance Portal</div>
+      <div class="sub">Xi Tau Lambda · Chapter 607</div>
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="sidebarAvatar">?</div>
+    <div class="user-info">
+      <div class="uname" id="sidebarName">Loading…</div>
+      <div class="urole" id="sidebarRole">Member</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Finance</div>
+    <a class="nav-item" href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+    <a class="nav-item active" href="pay-dues.html"><i class="fas fa-dollar-sign"></i> Pay Dues</a>
+    <a class="nav-item" href="merchandise.html"><i class="fas fa-store"></i> Merchandise</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Requests</div>
+    <a class="nav-item" href="requisition.html"><i class="fas fa-file-invoice-dollar"></i> Requisitions</a>
+    <a class="nav-item" href="reimbursement.html"><i class="fas fa-receipt"></i> Reimbursements</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Account</div>
+    <a class="nav-item" href="../member-portal.html"><i class="fas fa-arrow-left"></i> Member Portal</a>
+    <a class="nav-item" id="adminNavLink" href="admin/index.html" style="display:none;"><i class="fas fa-shield-halved"></i> Finance Admin</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════
+     TOPBAR
+══════════════════════════════════ -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <div>
+        <span class="page-title">Pay Dues</span>
+        <span class="breadcrumb">Finance Portal</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <a href="../index.html"><i class="fas fa-external-link-alt"></i> View Website</a>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════
+       PAGE CONTENT
+  ══════════════════════════════════ -->
+  <main class="content">
+
+    <!-- Auth gate -->
+    <div id="authGate" style="display:none;">
+      <div class="notice amber"><i class="fas fa-lock"></i><span>You must be signed in to pay dues. <a href="../member-login.html" style="color:inherit;font-weight:700;text-decoration:underline;">Sign In →</a></span></div>
+    </div>
+
+    <!-- Success banner (shown after Stripe redirect) -->
+    <div id="successBanner" style="display:none;" class="notice green">
+      <i class="fas fa-check-circle"></i>
+      <div><strong>Payment received!</strong> Your dues payment has been recorded and your roster status will be updated within one business day. A receipt has been sent to your email.</div>
+    </div>
+
+    <!-- Main payment UI -->
+    <div id="paymentUI">
+
+      <!-- Late fee notice (dynamic) -->
+      <div id="lateFeeNotice" style="display:none;" class="notice amber">
+        <i class="fas fa-clock"></i>
+        <span id="lateFeeNoticeText"></span>
+      </div>
+
+      <!-- Step 1: Select Category -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-tag"></i> Step 1 — Select Dues Category</h3>
+        </div>
+        <div class="card-body">
+          <div class="dues-grid" id="duesGrid">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading dues schedule…</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Fiscal Year -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-calendar-alt"></i> Step 2 — Fiscal Year</h3>
+        </div>
+        <div class="card-body">
+          <div class="fy-pills" id="fyPills"></div>
+          <!-- 2-year prepayment: OPEN QUESTION — see spec §10.1 -->
+          <div style="margin-top:18px;padding:14px 16px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.2);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.6);">2-Year Prepayment</span>
+              <span class="open-q"><i class="fas fa-circle-question"></i> Policy pending</span>
+            </div>
+            <p style="font-size:0.8rem;color:rgba(255,255,255,0.35);line-height:1.5;">The chapter is confirming whether 2-year prepayment is available to all members or new initiates only. This option will be enabled once the policy is finalized.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Add-ons -->
+      <div class="card" id="addonsCard">
+        <div class="card-header">
+          <h3><i class="fas fa-plus-circle"></i> Step 3 — Add-ons</h3>
+        </div>
+        <div class="card-body">
+          <div class="addon-row" id="lateFeeRow" style="display:none;">
+            <label class="addon-toggle">
+              <input type="checkbox" id="addLateFee" onchange="recalcTotal()" />
+              <span class="addon-slider"></span>
+            </label>
+            <div class="addon-info">
+              <div class="addon-name">Late Fee</div>
+              <div class="addon-desc" id="lateFeeDesc">Applied after the dues deadline</div>
+            </div>
+            <div class="addon-price" id="lateFeePriceLabel">$0.00</div>
+          </div>
+          <div class="addon-row">
+            <label class="addon-toggle">
+              <input type="checkbox" id="addBuildingFund" onchange="recalcTotal()" />
+              <span class="addon-slider"></span>
+            </label>
+            <div class="addon-info">
+              <div class="addon-name">Building Fund Contribution</div>
+              <div class="addon-desc" id="buildingFundDesc">Optional contribution to chapter building fund</div>
+            </div>
+            <div class="addon-price" id="buildingFundPriceLabel">$0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Summary + Pay -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-receipt"></i> Step 4 — Order Summary</h3>
+        </div>
+        <div class="card-body">
+          <div id="summaryLines"></div>
+          <div class="summary-total">
+            <span class="label">Total Due</span>
+            <span class="amount" id="summaryTotal">$0.00</span>
+          </div>
+          <div style="margin-top:20px;">
+            <div id="payErr" style="display:none;" class="notice red" style="margin-bottom:14px;"><i class="fas fa-exclamation-circle"></i><span id="payErrText"></span></div>
+            <button class="btn-pay" id="payBtn" onclick="startCheckout()" disabled>
+              <i class="fas fa-lock"></i> Pay with Card
+            </button>
+            <div class="stripe-trust"><i class="fab fa-stripe"></i> Secured by Stripe · PCI compliant</div>
+          </div>
+          <!-- Xero sync note: OPEN IMPLEMENTATION — see spec §4.6 -->
+          <!-- On successful payment: Stripe webhook → Supabase Edge Function → Xero invoice push -->
+          <!-- Manual non-Stripe sync (Check/Zelle) TBD per open question §10.3 -->
+        </div>
+      </div>
+
+    </div><!-- #paymentUI -->
+
+    <!-- Payment History -->
+    <div class="card">
+      <div class="card-header">
+        <h3><i class="fas fa-history"></i> My Payment History</h3>
+        <button onclick="loadPaymentHistory()" style="font-size:0.78rem;color:var(--gold);background:none;border:none;cursor:pointer;font-weight:500;"><i class="fas fa-rotate-right"></i> Refresh</button>
+      </div>
+      <div class="card-body" id="paymentHistory">
+        <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+const SUPABASE_URL     = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const STRIPE_FN_URL    = SUPABASE_URL + '/functions/v1/stripe-checkout';
+const FINANCE_DUES_KEY = 'finance_dues_config';
+
+/* ═══════════════════════════════════════════
+   DEFAULT DUES SCHEDULE (overridden by Supabase)
+   Amounts in cents.
+═══════════════════════════════════════════ */
+const DEFAULT_DUES_CONFIG = {
+  renewing:        { label: 'Renewing Member',           amount: 25000, note: 'Annual chapter dues' },
+  new_initiate:    { label: 'New Initiate',              amount: 15000, note: 'First-year chapter dues' },
+  legacy:          { label: 'Legacy / 50-Year Service',  amount: 0,     note: 'Complimentary — no charge' },
+  undergrad_1:     { label: 'Undergraduate (Year 1)',    amount: 10000, note: 'First year undergraduate rate' },
+  undergrad_2plus: { label: 'Undergraduate (Year 2+)',   amount: 7500,  note: 'Returning undergraduate rate' },
+  late_fee:        { label: 'Late Fee',                  amount: 5000,  note: 'Applied after dues deadline' },
+  building_fund:   { label: 'Building Fund',             amount: 5000,  note: 'Optional contribution' }
+};
+
+/* Dues deadline: July 31 each year (chapter policy) */
+const DUES_DEADLINE_MONTH = 7; // 1-indexed
+const DUES_DEADLINE_DAY   = 31;
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+var currentMember  = null;
+var currentSession = null;
+var duesConfig     = null;   // loaded from Supabase
+var selectedCategory = null; // key from duesConfig
+var selectedFY       = String(new Date().getFullYear());
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+function esc(s) { var d = document.createElement('div'); d.textContent = String(s||''); return d.innerHTML; }
+function fmt(cents) { return '$' + (cents / 100).toFixed(2); }
+function sbHeaders(tok) { return { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (tok || SUPABASE_ANON_KEY) }; }
+
+async function sbGet(table, query, tok) {
+  var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + query, { headers: sbHeaders(tok) });
+  if (!res.ok) throw new Error('sbGet ' + table + ': ' + res.status);
+  return res.json();
+}
+
+function isLate() {
+  var now = new Date();
+  return now.getMonth() + 1 > DUES_DEADLINE_MONTH ||
+    (now.getMonth() + 1 === DUES_DEADLINE_MONTH && now.getDate() > DUES_DEADLINE_DAY);
+}
+
+/* ═══════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════ */
+function logout() {
+  localStorage.removeItem('nda_member_session');
+  window.location.href = '../member-login.html';
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+async function init() {
+  // Check URL params for success/cancel
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('payment') === 'success') {
+    document.getElementById('successBanner').style.display = '';
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+
+  var raw = localStorage.getItem('nda_member_session');
+  if (!raw) { showAuthGate(); return; }
+  try {
+    var sess = JSON.parse(raw);
+    if (!sess || !sess.access_token) { showAuthGate(); return; }
+    currentSession = sess;
+  } catch(e) { showAuthGate(); return; }
+
+  // Load member profile
+  try {
+    var rows = await sbGet('members', 'id=eq.' + currentSession.user.id + '&limit=1', currentSession.access_token);
+    currentMember = rows && rows[0] ? rows[0] : null;
+  } catch(e) { currentMember = null; }
+
+  renderSidebarUser();
+  await loadDuesConfig();
+  renderDuesGrid();
+  renderFYPills();
+  renderLateFeeNotice();
+  loadPaymentHistory();
+  showAdminLinkIfEligible();
+}
+
+function showAuthGate() {
+  document.getElementById('authGate').style.display = '';
+  document.getElementById('paymentUI').style.display = 'none';
+}
+
+function renderSidebarUser() {
+  var name = currentMember
+    ? [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ')
+    : (currentSession && currentSession.user ? currentSession.user.email : 'Member');
+  document.getElementById('sidebarName').textContent = name || 'Member';
+  var initials = name ? name.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase() : '?';
+  var av = document.getElementById('sidebarAvatar');
+  if (currentMember && currentMember.photo_url) {
+    av.innerHTML = '<img src="' + esc(currentMember.photo_url) + '" alt="" />';
+  } else {
+    av.textContent = initials;
+  }
+  // Role
+  var role = (currentMember && currentMember.chapter_role) || 'Member';
+  document.getElementById('sidebarRole').textContent = role;
+}
+
+function showAdminLinkIfEligible() {
+  if (!currentMember) return;
+  var adminRoles = ['treasurer', 'financial_secretary', 'president'];
+  var r = (currentMember.chapter_role || '').toLowerCase().replace(/\s+/g, '_');
+  if (adminRoles.some(function(ar){ return r.includes(ar); })) {
+    document.getElementById('adminNavLink').style.display = '';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   DUES CONFIG
+═══════════════════════════════════════════ */
+async function loadDuesConfig() {
+  try {
+    var rows = await sbGet('site_content', 'content_key=eq.' + FINANCE_DUES_KEY + '&select=content_json&limit=1', SUPABASE_ANON_KEY);
+    if (rows && rows[0] && rows[0].content_json) {
+      duesConfig = Object.assign({}, DEFAULT_DUES_CONFIG, rows[0].content_json);
+      return;
+    }
+  } catch(e) {}
+  duesConfig = DEFAULT_DUES_CONFIG;
+}
+
+/* ═══════════════════════════════════════════
+   DUES GRID
+═══════════════════════════════════════════ */
+var CATEGORY_KEYS = ['renewing', 'new_initiate', 'legacy', 'undergrad_1', 'undergrad_2plus'];
+
+function renderDuesGrid() {
+  var grid = document.getElementById('duesGrid');
+  grid.innerHTML = CATEGORY_KEYS.map(function(key) {
+    var cfg = duesConfig[key] || {};
+    var isLegacy = key === 'legacy';
+    return '<label class="dues-tile" data-key="' + key + '" onclick="selectCategory(\'' + key + '\')">' +
+      '<input type="radio" name="duesCategory" value="' + key + '" />' +
+      '<i class="fas fa-check-circle selected-check"></i>' +
+      '<span class="dues-tile-label">' + esc(cfg.label || key) + '</span>' +
+      '<span class="dues-tile-amount">' + (isLegacy ? 'Free' : fmt(cfg.amount || 0)) + '</span>' +
+      (cfg.note ? '<span class="dues-tile-note">' + esc(cfg.note) + '</span>' : '') +
+    '</label>';
+  }).join('');
+
+  // Update building fund add-on label
+  var bf = duesConfig.building_fund || {};
+  document.getElementById('buildingFundPriceLabel').textContent = fmt(bf.amount || 0);
+  document.getElementById('buildingFundDesc').textContent = bf.note || 'Optional contribution';
+  var lf = duesConfig.late_fee || {};
+  document.getElementById('lateFeePriceLabel').textContent = fmt(lf.amount || 0);
+  document.getElementById('lateFeeDesc').textContent = lf.note || 'Applied after dues deadline';
+}
+
+function selectCategory(key) {
+  selectedCategory = key;
+  document.querySelectorAll('.dues-tile').forEach(function(t) {
+    t.classList.toggle('selected', t.getAttribute('data-key') === key);
+  });
+  // Show late fee add-on row if applicable
+  document.getElementById('lateFeeRow').style.display = isLate() ? '' : 'none';
+  if (isLate()) document.getElementById('addLateFee').checked = true;
+  recalcTotal();
+}
+
+/* ═══════════════════════════════════════════
+   FISCAL YEAR PILLS
+═══════════════════════════════════════════ */
+function renderFYPills() {
+  var cur = new Date().getFullYear();
+  var pills = document.getElementById('fyPills');
+  // Offer current year and previous (for late payers catching up)
+  var years = [String(cur - 1), String(cur)];
+  pills.innerHTML = years.map(function(y) {
+    return '<button class="fy-pill' + (y === selectedFY ? ' active' : '') + '" onclick="selectFY(\'' + y + '\')">' + y + '</button>';
+  }).join('');
+}
+
+function selectFY(y) {
+  selectedFY = y;
+  document.querySelectorAll('.fy-pill').forEach(function(p) {
+    p.classList.toggle('active', p.textContent.trim() === y);
+  });
+  recalcTotal();
+}
+
+/* ═══════════════════════════════════════════
+   LATE FEE NOTICE
+═══════════════════════════════════════════ */
+function renderLateFeeNotice() {
+  if (!isLate()) return;
+  var notice = document.getElementById('lateFeeNotice');
+  var lf = duesConfig.late_fee || {};
+  notice.style.display = '';
+  document.getElementById('lateFeeNoticeText').textContent =
+    'Dues deadline (July 31) has passed. A late fee of ' + fmt(lf.amount || 0) +
+    ' will be added to your payment.';
+}
+
+/* ═══════════════════════════════════════════
+   TOTAL CALCULATION
+═══════════════════════════════════════════ */
+function recalcTotal() {
+  if (!selectedCategory || !duesConfig) {
+    document.getElementById('payBtn').disabled = true;
+    document.getElementById('summaryLines').innerHTML = '';
+    document.getElementById('summaryTotal').textContent = '$0.00';
+    return;
+  }
+  var lines = [];
+  var total = 0;
+
+  var cat = duesConfig[selectedCategory] || {};
+  lines.push({ label: cat.label || selectedCategory, value: cat.amount || 0 });
+  total += cat.amount || 0;
+
+  if (document.getElementById('addLateFee') && document.getElementById('addLateFee').checked) {
+    var lf = duesConfig.late_fee || {};
+    lines.push({ label: lf.label || 'Late Fee', value: lf.amount || 0 });
+    total += lf.amount || 0;
+  }
+
+  if (document.getElementById('addBuildingFund') && document.getElementById('addBuildingFund').checked) {
+    var bf = duesConfig.building_fund || {};
+    lines.push({ label: bf.label || 'Building Fund', value: bf.amount || 0 });
+    total += bf.amount || 0;
+  }
+
+  lines.push({ label: 'Fiscal Year', value: null, text: selectedFY });
+
+  var summaryEl = document.getElementById('summaryLines');
+  summaryEl.innerHTML = lines.map(function(l) {
+    return '<div class="summary-line"><span class="summary-label">' + esc(l.label) + '</span>' +
+      '<span class="summary-value">' + (l.value !== null ? fmt(l.value) : esc(l.text)) + '</span></div>';
+  }).join('');
+
+  document.getElementById('summaryTotal').textContent = fmt(total);
+  document.getElementById('payBtn').disabled = total === 0 && selectedCategory !== 'legacy';
+
+  // Legacy is free — no payment needed
+  if (selectedCategory === 'legacy') {
+    document.getElementById('payBtn').textContent = 'Confirm (No Charge)';
+    document.getElementById('payBtn').disabled = false;
+  } else {
+    document.getElementById('payBtn').innerHTML = '<i class="fas fa-lock"></i> Pay ' + fmt(total) + ' with Card';
+    document.getElementById('payBtn').disabled = false;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   STRIPE CHECKOUT
+═══════════════════════════════════════════ */
+async function startCheckout() {
+  var errEl = document.getElementById('payErr');
+  var errTxt = document.getElementById('payErrText');
+  errEl.style.display = 'none';
+
+  if (!currentSession) { errTxt.textContent = 'Please sign in first.'; errEl.style.display = ''; return; }
+  if (!selectedCategory) { errTxt.textContent = 'Please select a dues category.'; errEl.style.display = ''; return; }
+
+  var cat      = duesConfig[selectedCategory] || {};
+  var lateFee  = !!(document.getElementById('addLateFee') && document.getElementById('addLateFee').checked);
+  var bldFund  = !!(document.getElementById('addBuildingFund') && document.getElementById('addBuildingFund').checked);
+  var total    = (cat.amount || 0) +
+                 (lateFee  ? (duesConfig.late_fee    || {}).amount || 0 : 0) +
+                 (bldFund  ? (duesConfig.building_fund || {}).amount || 0 : 0);
+
+  // Legacy: no charge — record directly
+  if (selectedCategory === 'legacy') {
+    await recordLegacyDues();
+    return;
+  }
+
+  var btn = document.getElementById('payBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to Stripe…';
+
+  try {
+    var memberName = currentMember
+      ? [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ')
+      : '';
+    var email = (currentMember && currentMember.email) || (currentSession.user && currentSession.user.email) || '';
+
+    /*
+      Payload sent to the stripe-checkout Edge Function.
+      The Edge Function must handle mode='finance_dues' and map
+      duesCategory + addons to the correct Stripe Price IDs or
+      build a one-time line_items array from amountCents.
+
+      SUCCESS URL: <this-page>?payment=success
+      CANCEL URL:  <this-page>?payment=cancelled
+    */
+    var res = await fetch(STRIPE_FN_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + currentSession.access_token
+      },
+      body: JSON.stringify({
+        mode:          'finance_dues',
+        duesCategory:  selectedCategory,
+        duesCategoryLabel: cat.label || selectedCategory,
+        fiscalYear:    selectedFY,
+        lateFee:       lateFee,
+        buildingFund:  bldFund,
+        amountCents:   total,
+        memberId:      (currentMember && currentMember.id) || currentSession.user.id,
+        memberName:    memberName,
+        email:         email,
+        successUrl:    window.location.origin + window.location.pathname + '?payment=success',
+        cancelUrl:     window.location.origin + window.location.pathname + '?payment=cancelled'
+      })
+    });
+
+    var data = null;
+    try { data = await res.json(); } catch(e) { data = { error: await res.text() }; }
+
+    if (!res.ok || !data.url) throw new Error((data && data.error) || 'Checkout unavailable.');
+    window.location.href = data.url;
+
+  } catch(e) {
+    errTxt.textContent = (e && e.message) || 'Could not start payment. Please try again.';
+    errEl.style.display = '';
+    btn.disabled = false;
+    recalcTotal();
+  }
+}
+
+async function recordLegacyDues() {
+  // For Legacy/50-Year — no payment, just log the record
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/finance_payments', {
+      method: 'POST',
+      headers: Object.assign(sbHeaders(currentSession.access_token), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify({
+        member_id:     (currentMember && currentMember.id) || currentSession.user.id,
+        member_name:   currentMember ? [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ') : '',
+        category:      'legacy',
+        category_label:'Legacy / 50-Year Service',
+        fiscal_year:   selectedFY,
+        amount_cents:  0,
+        method:        'waived',
+        status:        'paid',
+        xero_sync_status: 'na'
+      })
+    });
+    document.getElementById('successBanner').style.display = '';
+    document.getElementById('successBanner').querySelector('div').innerHTML =
+      '<strong>Recorded!</strong> Your Legacy dues status for ' + selectedFY + ' has been confirmed. No payment required.';
+    loadPaymentHistory();
+  } catch(e) {
+    var errEl = document.getElementById('payErr');
+    document.getElementById('payErrText').textContent = 'Could not record dues: ' + (e.message || 'error');
+    errEl.style.display = '';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   PAYMENT HISTORY
+═══════════════════════════════════════════ */
+async function loadPaymentHistory() {
+  var el = document.getElementById('paymentHistory');
+  if (!currentSession) { el.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>Sign in to view history.</p></div>'; return; }
+  var memberId = (currentMember && currentMember.id) || currentSession.user.id;
+  try {
+    var rows = await sbGet('finance_payments',
+      'member_id=eq.' + memberId + '&order=created_at.desc&limit=20',
+      currentSession.access_token);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>No payments on record yet.</p></div>';
+      return;
+    }
+    el.innerHTML = rows.map(function(r) {
+      var iconClass = r.status === 'paid' ? '' : r.status === 'pending' ? ' pending' : ' failed';
+      var iconSymbol = r.status === 'paid' ? 'check' : r.status === 'pending' ? 'clock' : 'times';
+      var dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+      var xeroIcon = r.xero_sync_status === 'synced'
+        ? ' <i class="fas fa-link" title="Synced to Xero" style="color:var(--green);font-size:0.7rem;"></i>'
+        : r.xero_sync_status === 'pending'
+        ? ' <i class="fas fa-clock" title="Xero sync pending" style="color:var(--amber);font-size:0.7rem;"></i>'
+        : '';
+      return '<div class="pay-hist-row">' +
+        '<div class="pay-hist-icon' + iconClass + '"><i class="fas fa-' + iconSymbol + '"></i></div>' +
+        '<div class="pay-hist-info">' +
+          '<div class="pay-hist-title">' + esc(r.category_label || r.category || 'Dues') + ' — FY ' + esc(r.fiscal_year || '—') + xeroIcon + '</div>' +
+          '<div class="pay-hist-meta">' + dateStr + ' · ' + esc(r.method || 'card') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;">' +
+          '<span class="pay-hist-amount">' + fmt(r.amount_cents || 0) + '</span>' +
+          '<span class="status-badge ' + esc(r.status || 'pending') + '">' + esc(r.status || 'pending') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    // Table may not exist yet
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>Payment history unavailable. Run the finance schema SQL to enable.</p></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+init();
+</script>
+</body>
+</html>
