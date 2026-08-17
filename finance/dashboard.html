@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance Dashboard | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="../images/xtl-logo.png" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:#0a0a0a; --dark:#111; --dark2:#181818;
+      --gold:#C9A84C; --gold-pale:rgba(201,168,76,0.08); --gold-pale2:rgba(201,168,76,0.15);
+      --white:#ffffff; --gray-400:#9ca3af;
+      --green:#22c55e; --green-pale:rgba(34,197,94,0.1);
+      --red:#ef4444;   --red-pale:rgba(239,68,68,0.1);
+      --blue:#3b82f6;  --blue-pale:rgba(59,130,246,0.1);
+      --amber:#f59e0b; --amber-pale:rgba(245,158,11,0.1);
+      --purple:#8b5cf6; --purple-pale:rgba(139,92,246,0.1);
+      --sidebar-w:260px;
+    }
+    html,body{height:100%;}
+    body{font-family:'Inter',sans-serif;background:var(--dark);color:var(--white);display:flex;min-height:100vh;}
+
+    /* ── Sidebar ── */
+    .sidebar{width:var(--sidebar-w);background:var(--dark2);border-right:1px solid rgba(201,168,76,0.12);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform 0.3s;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .sidebar-brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+    .sidebar-brand img{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(201,168,76,0.4);object-fit:contain;}
+    .sidebar-brand-text .name{font-family:'Playfair Display',serif;font-size:0.88rem;font-weight:700;color:var(--gold);line-height:1.2;}
+    .sidebar-brand-text .sub{font-size:0.62rem;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;}
+    .sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;}
+    .user-avatar{width:34px;height:34px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;color:var(--black);flex-shrink:0;overflow:hidden;}
+    .user-avatar img{width:100%;height:100%;object-fit:cover;}
+    .user-info .uname{font-size:0.82rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-info .urole{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:2px;}
+    .sidebar-nav{padding:10px 0;flex:1;}
+    .nav-label{font-size:0.62rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:10px 20px 5px;}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.5);font-size:0.85rem;font-weight:500;border:none;background:none;width:100%;text-align:left;transition:color 0.2s,background 0.2s;border-left:3px solid transparent;text-decoration:none;}
+    .nav-item i{width:18px;text-align:center;font-size:0.88rem;}
+    .nav-item:hover{color:var(--white);background:rgba(255,255,255,0.04);}
+    .nav-item.active{color:var(--gold);background:var(--gold-pale);border-left-color:var(--gold);}
+    .nav-divider{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;}
+    .sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);}
+    .logout-btn{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.4);font-size:0.82rem;background:none;border:none;cursor:pointer;padding:7px 0;transition:color 0.2s;width:100%;}
+    .logout-btn:hover{color:var(--red);}
+
+    /* ── Main ── */
+    .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .topbar{background:var(--dark2);border-bottom:1px solid rgba(255,255,255,0.06);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .topbar-left{display:flex;align-items:center;gap:12px;}
+    .hamburger{display:none;background:none;border:none;color:var(--white);font-size:1.1rem;cursor:pointer;padding:6px;}
+    .page-title{font-size:1rem;font-weight:600;color:var(--white);}
+    .breadcrumb{font-size:0.78rem;color:var(--gray-400);margin-left:6px;}
+    .topbar-right{display:flex;align-items:center;gap:16px;}
+    .topbar-right a{display:flex;align-items:center;gap:6px;color:var(--gray-400);text-decoration:none;font-size:0.8rem;transition:color 0.2s;}
+    .topbar-right a:hover{color:var(--gold);}
+    .as-of-badge{font-size:0.75rem;color:rgba(255,255,255,0.35);display:flex;align-items:center;gap:5px;}
+    .as-of-badge i{color:var(--gold);}
+    .content{padding:28px;flex:1;}
+
+    /* ── Page header ── */
+    .page-header{margin-bottom:28px;}
+    .page-header h1{font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:800;color:var(--white);line-height:1.2;}
+    .page-header p{font-size:0.85rem;color:rgba(255,255,255,0.4);margin-top:5px;}
+
+    /* ── Stat tiles ── */
+    .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px;}
+    .stat-tile{background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px;}
+    .stat-tile-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
+    .stat-tile-icon.gold  {background:var(--gold-pale);   color:var(--gold);}
+    .stat-tile-icon.green {background:var(--green-pale);  color:var(--green);}
+    .stat-tile-icon.amber {background:var(--amber-pale);  color:var(--amber);}
+    .stat-tile-icon.blue  {background:var(--blue-pale);   color:var(--blue);}
+    .stat-tile-icon.purple{background:var(--purple-pale); color:var(--purple);}
+    .stat-tile-info{}
+    .stat-tile-value{font-size:1.45rem;font-weight:800;color:var(--white);line-height:1;}
+    .stat-tile-label{font-size:0.74rem;color:rgba(255,255,255,0.4);margin-top:4px;}
+    .stat-tile-sub{font-size:0.72rem;margin-top:3px;}
+
+    /* ── Cards ── */
+    .card{background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:20px;overflow:hidden;}
+    .card-header{padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+    .card-header h3{font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;}
+    .card-header h3 i{color:var(--gold);font-size:0.88rem;}
+    .card-header-right{display:flex;align-items:center;gap:10px;}
+    .card-body{padding:22px;}
+    .snapshot-tag{font-size:0.7rem;font-weight:600;padding:3px 9px;border-radius:5px;background:rgba(201,168,76,0.12);color:var(--gold);display:inline-flex;align-items:center;gap:4px;}
+    .xero-tag{font-size:0.7rem;font-weight:600;padding:3px 9px;border-radius:5px;background:rgba(59,130,246,0.1);color:#93c5fd;display:inline-flex;align-items:center;gap:4px;}
+
+    /* ── Cash position ── */
+    .cash-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+    .cash-item{text-align:center;padding:18px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);}
+    .cash-item.featured{background:rgba(201,168,76,0.06);border-color:rgba(201,168,76,0.2);}
+    .cash-item-label{font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);margin-bottom:8px;}
+    .cash-item-amount{font-size:1.5rem;font-weight:800;color:var(--white);}
+    .cash-item.featured .cash-item-amount{color:var(--gold);}
+    .cash-item-sub{font-size:0.73rem;color:rgba(255,255,255,0.3);margin-top:5px;}
+    .cash-bar-wrap{background:rgba(255,255,255,0.06);border-radius:6px;height:10px;overflow:hidden;margin-top:16px;}
+    .cash-bar{height:100%;border-radius:6px;transition:width 0.8s ease;}
+    .cash-bar-labels{display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:rgba(255,255,255,0.3);}
+
+    /* ── Budget-to-actuals ── */
+    .budget-row{display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+    .budget-row:last-child{border-bottom:none;}
+    .budget-cat{width:180px;flex-shrink:0;font-size:0.84rem;font-weight:600;color:var(--white);}
+    .budget-bar-wrap{flex:1;background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;}
+    .budget-bar{height:100%;border-radius:4px;transition:width 0.8s ease;}
+    .budget-bar.under{background:var(--green);}
+    .budget-bar.near  {background:var(--amber);}
+    .budget-bar.over  {background:var(--red);}
+    .budget-amounts{width:160px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+    .budget-actual{font-size:0.85rem;font-weight:700;color:var(--white);}
+    .budget-of{font-size:0.73rem;color:rgba(255,255,255,0.35);}
+    .budget-pct{width:44px;text-align:right;font-size:0.78rem;font-weight:700;flex-shrink:0;}
+    .budget-pct.under{color:var(--green);}
+    .budget-pct.near {color:var(--amber);}
+    .budget-pct.over {color:var(--red);}
+    .budget-legend{display:flex;gap:16px;margin-bottom:16px;font-size:0.75rem;color:rgba(255,255,255,0.4);}
+    .budget-legend span{display:flex;align-items:center;gap:5px;}
+    .budget-legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+    /* ── Balance sheet ── */
+    .bs-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+    .bs-section-label{font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.3);margin-bottom:10px;}
+    .bs-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;}
+    .bs-row:last-child{border-bottom:none;}
+    .bs-row-label{color:rgba(255,255,255,0.55);}
+    .bs-row-value{font-weight:700;color:var(--white);}
+    .bs-total{display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;border-top:1px solid rgba(255,255,255,0.15);margin-top:4px;font-size:0.9rem;font-weight:800;}
+    .bs-total-label{color:var(--white);}
+    .bs-total-value{color:var(--gold);font-size:1.1rem;}
+    .bs-net{background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:9px;padding:16px 18px;text-align:center;}
+    .bs-net-label{font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:6px;}
+    .bs-net-value{font-size:1.8rem;font-weight:800;color:var(--gold);}
+
+    /* ── Pending items ── */
+    .pending-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;}
+    .pending-row:last-child{border-bottom:none;}
+    .pending-info{flex:1;min-width:0;}
+    .pending-title{font-size:0.85rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pending-meta{font-size:0.74rem;color:rgba(255,255,255,0.38);margin-top:2px;}
+    .pending-amount{font-size:0.9rem;font-weight:700;color:var(--gold);white-space:nowrap;}
+    .pending-type{font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;}
+    .pending-type.req  {background:var(--blue-pale);  color:#93c5fd;}
+    .pending-type.reimb{background:var(--purple-pale);color:#c4b5fd;}
+
+    /* ── Policy notice ── */
+    .policy-notice{padding:10px 14px;border-radius:7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);font-size:0.78rem;color:rgba(255,255,255,0.3);display:flex;gap:8px;align-items:flex-start;margin-top:16px;}
+    .policy-notice i{flex-shrink:0;margin-top:1px;color:rgba(255,255,255,0.25);}
+
+    /* ── No-data / loading ── */
+    .empty-state{text-align:center;padding:32px 16px;color:rgba(255,255,255,0.3);}
+    .empty-state i{font-size:1.8rem;display:block;margin-bottom:8px;}
+    .empty-state p{font-size:0.85rem;}
+    .snapshot-empty{padding:28px;text-align:center;}
+    .snapshot-empty i{font-size:1.6rem;color:rgba(255,255,255,0.2);display:block;margin-bottom:10px;}
+    .snapshot-empty p{font-size:0.84rem;color:rgba(255,255,255,0.3);line-height:1.5;}
+
+    /* ── Two-column layout ── */
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+
+    @media(max-width:900px){
+      .two-col{grid-template-columns:1fr;}
+      .cash-grid{grid-template-columns:1fr;}
+      .bs-grid{grid-template-columns:1fr;}
+      .budget-cat{width:120px;}
+      .budget-amounts{width:120px;}
+    }
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%);} .sidebar.open{transform:translateX(0);}
+      .main{margin-left:0;} .hamburger{display:block;}
+      .content{padding:18px 14px;}
+      .stat-grid{grid-template-columns:1fr 1fr;}
+      .as-of-badge{display:none;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="../images/xtl-logo.png" alt="Xi Tau Lambda" />
+    <div class="sidebar-brand-text">
+      <div class="name">Finance Portal</div>
+      <div class="sub">Xi Tau Lambda · Chapter 607</div>
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="sidebarAvatar">?</div>
+    <div class="user-info">
+      <div class="uname" id="sidebarName">Loading…</div>
+      <div class="urole" id="sidebarRole">Member</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Finance</div>
+    <a class="nav-item active" href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+    <a class="nav-item" href="pay-dues.html"><i class="fas fa-dollar-sign"></i> Pay Dues</a>
+    <a class="nav-item" href="merchandise.html"><i class="fas fa-store"></i> Merchandise</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Requests</div>
+    <a class="nav-item" href="requisition.html"><i class="fas fa-file-invoice-dollar"></i> Requisitions</a>
+    <a class="nav-item" href="reimbursement.html"><i class="fas fa-receipt"></i> Reimbursements</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Account</div>
+    <a class="nav-item" href="../member-portal.html"><i class="fas fa-arrow-left"></i> Member Portal</a>
+    <a class="nav-item" id="adminNavLink" href="admin/index.html" style="display:none;"><i class="fas fa-shield-halved"></i> Finance Admin</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <div>
+        <span class="page-title">Finance Dashboard</span>
+        <span class="breadcrumb">Finance Portal</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="as-of-badge" id="asOfBadge" style="display:none;">
+        <i class="fas fa-calendar-check"></i>
+        <span id="asOfLabel">—</span>
+      </div>
+      <a href="../index.html"><i class="fas fa-external-link-alt"></i> View Website</a>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <div id="authGate" style="display:none;">
+      <div style="padding:14px 18px;background:var(--amber-pale);border:1px solid rgba(245,158,11,0.25);border-radius:8px;font-size:0.85rem;color:#fbbf24;display:flex;gap:10px;align-items:center;">
+        <i class="fas fa-lock"></i>
+        <span>Sign in to view the Finance Dashboard. <a href="../member-login.html" style="color:inherit;font-weight:700;text-decoration:underline;">Sign In →</a></span>
+      </div>
+    </div>
+
+    <div id="mainUI">
+
+      <!-- Live stat tiles — pulled from Supabase tables -->
+      <div class="stat-grid" id="statGrid">
+        <div class="stat-tile"><div class="stat-tile-icon gold"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-tile-info"><div class="stat-tile-value">—</div><div class="stat-tile-label">Loading…</div></div></div>
+      </div>
+
+      <!-- Cash Position — from snapshot -->
+      <div class="card" id="cashCard">
+        <div class="card-header">
+          <h3><i class="fas fa-vault"></i> Cash Position</h3>
+          <div class="card-header-right">
+            <span class="snapshot-tag" id="cashSnapshotTag" style="display:none;"><i class="fas fa-calendar-check"></i> Month-end close</span>
+            <span class="xero-tag" style="display:none;" id="xeroTag"><i class="fas fa-link"></i> Xero sync pending</span>
+          </div>
+        </div>
+        <div class="card-body" id="cashBody">
+          <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>
+        </div>
+      </div>
+
+      <!-- Two-column: Budget-to-Actuals + Balance Sheet -->
+      <div class="two-col">
+
+        <!-- Budget-to-Actuals -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-chart-bar"></i> Budget-to-Actuals</h3>
+            <span class="snapshot-tag" id="budgetSnapshotTag" style="display:none;"><i class="fas fa-calendar-check"></i> Month-end close</span>
+          </div>
+          <div class="card-body" id="budgetBody">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>
+          </div>
+        </div>
+
+        <!-- Balance Sheet -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i class="fas fa-scale-balanced"></i> Balance Sheet</h3>
+            <span class="snapshot-tag" id="bsSnapshotTag" style="display:none;"><i class="fas fa-calendar-check"></i> Month-end close</span>
+          </div>
+          <div class="card-body" id="bsBody">
+            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pending items — live from tables -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-clock"></i> Pending Items</h3>
+          <span id="pendingCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span>
+        </div>
+        <div class="card-body" id="pendingBody">
+          <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const SNAPSHOT_KEY      = 'finance_dashboard_snapshot';
+
+var currentMember  = null;
+var currentSession = null;
+
+function esc(s){ var d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
+function fmt(c){ if(c==null)return '—'; return '$'+(c/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDollars(c){ if(c==null)return '—'; var neg=c<0; var abs=Math.abs(c); return (neg?'-':'')+('$'+(abs/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})); }
+function sbHeaders(tok){ return {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+(tok||SUPABASE_ANON_KEY)}; }
+async function sbGet(table,query,tok){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?'+query,{headers:sbHeaders(tok)}); if(!r.ok)throw new Error(r.status); return r.json(); }
+function logout(){ localStorage.removeItem('nda_member_session'); window.location.href='../member-login.html'; }
+
+/* ── Default snapshot (Treasurer replaces via Finance Admin in Phase 6) ── */
+const DEFAULT_SNAPSHOT = {
+  as_of:       null,
+  updated_by:  null,
+  cash_position: null,
+  balance_sheet: null,
+  budget_actuals: null
+};
+
+/* ── Init ── */
+async function init() {
+  var raw = localStorage.getItem('nda_member_session');
+  if (!raw) { showAuthGate(); return; }
+  try {
+    currentSession = JSON.parse(raw);
+    if (!currentSession || !currentSession.access_token) { showAuthGate(); return; }
+  } catch(e) { showAuthGate(); return; }
+
+  try {
+    var rows = await sbGet('members','id=eq.'+currentSession.user.id+'&limit=1',currentSession.access_token);
+    currentMember = rows && rows[0] ? rows[0] : null;
+  } catch(e) { currentMember = null; }
+
+  renderSidebarUser();
+  showAdminLinkIfEligible();
+
+  // Load all data in parallel
+  await Promise.all([
+    loadLiveStats(),
+    loadSnapshot(),
+    loadPendingItems()
+  ]);
+}
+
+function showAuthGate(){
+  document.getElementById('authGate').style.display='';
+  document.getElementById('mainUI').style.display='none';
+}
+
+function renderSidebarUser(){
+  var name=currentMember?[currentMember.first_name,currentMember.last_name].filter(Boolean).join(' '):(currentSession&&currentSession.user?currentSession.user.email:'Member');
+  document.getElementById('sidebarName').textContent=name||'Member';
+  var initials=name?name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase():'?';
+  var av=document.getElementById('sidebarAvatar');
+  if(currentMember&&currentMember.photo_url){av.innerHTML='<img src="'+esc(currentMember.photo_url)+'" alt="" />';}
+  else{av.textContent=initials;}
+  document.getElementById('sidebarRole').textContent=(currentMember&&currentMember.chapter_role)||'Member';
+}
+
+function showAdminLinkIfEligible(){
+  if(!currentMember)return;
+  var adminRoles=['treasurer','financial_secretary','president'];
+  var r=(currentMember.chapter_role||'').toLowerCase().replace(/\s+/g,'_');
+  if(adminRoles.some(function(ar){return r.includes(ar);})){
+    document.getElementById('adminNavLink').style.display='';
+  }
+}
+
+/* ── Live Stats (from Supabase tables) ── */
+async function loadLiveStats() {
+  var fy = String(new Date().getFullYear());
+  var grid = document.getElementById('statGrid');
+  try {
+    var results = await Promise.allSettled([
+      sbGet('finance_payments',     'fiscal_year=eq.'+fy+'&status=eq.paid&select=amount_cents',                    currentSession.access_token),
+      sbGet('finance_requisitions', 'status=eq.pending&select=id,amount_cents',                                    currentSession.access_token),
+      sbGet('finance_reimbursements','status=eq.pending&select=id,amount_cents',                                   currentSession.access_token),
+      sbGet('finance_reimbursements','status=eq.approved&select=amount_cents',                                     currentSession.access_token)
+    ]);
+
+    var payments     = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
+    var pendingReqs  = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
+    var pendingReimbs= results[2].status==='fulfilled' ? (results[2].value||[]) : [];
+    var paidReimbs   = results[3].status==='fulfilled' ? (results[3].value||[]) : [];
+
+    var duesCollected = payments.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var pendingReqAmt = pendingReqs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var pendingRembAmt= pendingReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var paidReimbAmt  = paidReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+
+    grid.innerHTML = [
+      { icon:'fas fa-dollar-sign',  cls:'gold',   value:fmt(duesCollected),    label:'Dues Collected — FY '+fy, sub:'Online payments via Stripe' },
+      { icon:'fas fa-file-invoice-dollar', cls:'blue', value:pendingReqs.length,  label:'Pending Requisitions',    sub:pendingReqs.length?'Total: '+fmt(pendingReqAmt):'No pending requests' },
+      { icon:'fas fa-receipt',      cls:'purple', value:pendingReimbs.length,   label:'Pending Reimbursements',  sub:pendingReimbs.length?'Total: '+fmt(pendingRembAmt):'No pending requests' },
+      { icon:'fas fa-money-bill-transfer', cls:'green', value:fmt(paidReimbAmt), label:'Reimbursements Paid',    sub:'Approved &amp; issued' }
+    ].map(function(t){
+      return '<div class="stat-tile">'+
+        '<div class="stat-tile-icon '+t.cls+'"><i class="'+t.icon+'"></i></div>'+
+        '<div class="stat-tile-info">'+
+          '<div class="stat-tile-value">'+t.value+'</div>'+
+          '<div class="stat-tile-label">'+t.label+'</div>'+
+          '<div class="stat-tile-sub" style="color:rgba(255,255,255,0.3);">'+t.sub+'</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div style="font-size:0.85rem;color:rgba(255,255,255,0.35);padding:8px 0;">Live stats unavailable — run the finance schema SQL to enable.</div>';
+  }
+}
+
+/* ── Snapshot (month-end close data from Treasurer) ── */
+async function loadSnapshot() {
+  var snapshot = DEFAULT_SNAPSHOT;
+  try {
+    var rows = await sbGet('site_content','content_key=eq.'+SNAPSHOT_KEY+'&select=content_json&limit=1',SUPABASE_ANON_KEY);
+    if (rows && rows[0] && rows[0].content_json) snapshot = rows[0].content_json;
+  } catch(e) {}
+
+  if (snapshot.as_of) {
+    var asOfEl = document.getElementById('asOfLabel');
+    if (asOfEl) asOfEl.textContent = 'Month-end: ' + snapshot.as_of;
+    document.getElementById('asOfBadge').style.display = '';
+  }
+
+  renderCash(snapshot.cash_position, snapshot.as_of, snapshot.updated_by);
+  renderBudget(snapshot.budget_actuals, snapshot.as_of);
+  renderBalanceSheet(snapshot.balance_sheet, snapshot.as_of);
+}
+
+/* ── Cash Position ── */
+function renderCash(cash, asOf, updatedBy) {
+  var el = document.getElementById('cashBody');
+  var tag = document.getElementById('cashSnapshotTag');
+  if (!cash) {
+    el.innerHTML = snapshotEmpty('Cash position will appear here once the Treasurer publishes a month-end snapshot.');
+    return;
+  }
+  if (asOf) { tag.style.display=''; tag.innerHTML='<i class="fas fa-calendar-check"></i> '+esc(asOf); }
+
+  var total     = cash.total_balance  || 0;
+  var reserved  = cash.reserved       || 0;
+  var available = cash.available      || (total - reserved);
+  var reservedPct = total > 0 ? Math.min(100, Math.round(reserved/total*100)) : 0;
+
+  el.innerHTML =
+    '<div class="cash-grid">'+
+      '<div class="cash-item">'+
+        '<div class="cash-item-label">Reserved Funds</div>'+
+        '<div class="cash-item-amount">'+fmtDollars(reserved)+'</div>'+
+        '<div class="cash-item-sub">Scholarship, programs &amp; commitments</div>'+
+      '</div>'+
+      '<div class="cash-item featured">'+
+        '<div class="cash-item-label">Total Balance</div>'+
+        '<div class="cash-item-amount">'+fmtDollars(total)+'</div>'+
+        '<div class="cash-item-sub">All chapter accounts</div>'+
+      '</div>'+
+      '<div class="cash-item">'+
+        '<div class="cash-item-label">Available</div>'+
+        '<div class="cash-item-amount">'+fmtDollars(available)+'</div>'+
+        '<div class="cash-item-sub">Unallocated &amp; operating</div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="cash-bar-wrap">'+
+      '<div class="cash-bar" style="width:'+reservedPct+'%;background:linear-gradient(90deg,var(--amber),var(--gold));"></div>'+
+    '</div>'+
+    '<div class="cash-bar-labels"><span>Reserved ('+reservedPct+'%)</span><span>Available ('+(100-reservedPct)+'%)</span></div>'+
+    (updatedBy?'<div class="policy-notice" style="margin-top:12px;"><i class="fas fa-user-tie"></i>Last updated by '+esc(updatedBy)+(asOf?' · '+esc(asOf):'')+'</div>':'')+
+    '<div class="policy-notice">'+
+      '<i class="fas fa-shield-halved"></i>'+
+      'Per chapter policy, detailed account balances and line-item transactions are available to the Treasurer and Financial Secretary only.'+
+    '</div>';
+}
+
+/* ── Budget-to-Actuals ── */
+function renderBudget(budgetActuals, asOf) {
+  var el  = document.getElementById('budgetBody');
+  var tag = document.getElementById('budgetSnapshotTag');
+  if (!budgetActuals || !budgetActuals.length) {
+    el.innerHTML = snapshotEmpty('Budget-to-Actuals will appear here once the Treasurer publishes a month-end snapshot.');
+    return;
+  }
+  if (asOf) { tag.style.display=''; tag.innerHTML='<i class="fas fa-calendar-check"></i> '+esc(asOf); }
+
+  var rows = budgetActuals.map(function(row) {
+    var pct = row.budget > 0 ? Math.min(110, Math.round(row.actual/row.budget*100)) : 0;
+    var cls = pct >= 100 ? 'over' : pct >= 80 ? 'near' : 'under';
+    return '<div class="budget-row">'+
+      '<div class="budget-cat">'+esc(row.category)+'</div>'+
+      '<div class="budget-bar-wrap"><div class="budget-bar '+cls+'" style="width:'+Math.min(100,pct)+'%;"></div></div>'+
+      '<div class="budget-amounts">'+
+        '<div class="budget-actual">'+fmtDollars(row.actual)+'</div>'+
+        '<div class="budget-of">of '+fmtDollars(row.budget)+'</div>'+
+      '</div>'+
+      '<div class="budget-pct '+cls+'">'+pct+'%</div>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="budget-legend">'+
+      '<span><span class="budget-legend-dot" style="background:var(--green);"></span>Under budget</span>'+
+      '<span><span class="budget-legend-dot" style="background:var(--amber);"></span>Near limit</span>'+
+      '<span><span class="budget-legend-dot" style="background:var(--red);"></span>Over budget</span>'+
+    '</div>'+
+    rows+
+    '<div class="policy-notice">'+
+      '<i class="fas fa-shield-halved"></i>'+
+      'Summary view only. Line-item detail is restricted per chapter policy.'+
+    '</div>';
+}
+
+/* ── Balance Sheet ── */
+function renderBalanceSheet(bs, asOf) {
+  var el  = document.getElementById('bsBody');
+  var tag = document.getElementById('bsSnapshotTag');
+  if (!bs) {
+    el.innerHTML = snapshotEmpty('Balance sheet will appear here once the Treasurer publishes a month-end snapshot.');
+    return;
+  }
+  if (asOf) { tag.style.display=''; tag.innerHTML='<i class="fas fa-calendar-check"></i> '+esc(asOf); }
+
+  var assets      = bs.assets      || [];
+  var liabilities = bs.liabilities || [];
+  var totalAssets = bs.total_assets      != null ? bs.total_assets      : assets.reduce(function(s,r){return s+(r.amount||0);},0);
+  var totalLiab   = bs.total_liabilities != null ? bs.total_liabilities : liabilities.reduce(function(s,r){return s+(r.amount||0);},0);
+  var netPosition = bs.net_position      != null ? bs.net_position      : totalAssets - totalLiab;
+
+  var assetRows = assets.map(function(r){
+    return '<div class="bs-row"><span class="bs-row-label">'+esc(r.label)+'</span><span class="bs-row-value">'+fmtDollars(r.amount)+'</span></div>';
+  }).join('');
+  var liabRows = liabilities.map(function(r){
+    return '<div class="bs-row"><span class="bs-row-label">'+esc(r.label)+'</span><span class="bs-row-value">'+fmtDollars(r.amount)+'</span></div>';
+  }).join('');
+
+  el.innerHTML =
+    '<div class="bs-grid">'+
+      '<div>'+
+        '<div class="bs-section-label">Assets</div>'+
+        (assetRows||'<div class="bs-row"><span class="bs-row-label" style="color:rgba(255,255,255,0.25);">No line items</span></div>')+
+        '<div class="bs-total"><span class="bs-total-label">Total Assets</span><span class="bs-total-value">'+fmtDollars(totalAssets)+'</span></div>'+
+      '</div>'+
+      '<div>'+
+        '<div class="bs-section-label">Liabilities</div>'+
+        (liabRows||'<div class="bs-row"><span class="bs-row-label" style="color:rgba(255,255,255,0.25);">No liabilities</span></div>')+
+        '<div class="bs-total"><span class="bs-total-label">Total Liabilities</span><span class="bs-total-value">'+fmtDollars(totalLiab)+'</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="bs-net" style="margin-top:18px;">'+
+      '<div class="bs-net-label">Net Position (Equity)</div>'+
+      '<div class="bs-net-value">'+fmtDollars(netPosition)+'</div>'+
+    '</div>'+
+    '<div class="policy-notice">'+
+      '<i class="fas fa-shield-halved"></i>'+
+      'Summary view. Detailed account schedules are available to the Treasurer and Financial Secretary.'+
+    '</div>';
+}
+
+/* ── Pending Items (live) ── */
+async function loadPendingItems() {
+  var el = document.getElementById('pendingBody');
+  try {
+    var results = await Promise.allSettled([
+      sbGet('finance_requisitions',  'status=eq.pending&order=submitted_at.asc&select=id,committee,description,amount_cents,method,submitted_at,member_name', currentSession.access_token),
+      sbGet('finance_reimbursements','status=eq.pending&order=submitted_at.asc&select=id,item_service,amount_cents,method,submitted_at,member_name',          currentSession.access_token)
+    ]);
+    var reqs   = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
+    var reimbs = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
+    var all    = [];
+    reqs.forEach(function(r){   all.push({type:'req',  data:r}); });
+    reimbs.forEach(function(r){ all.push({type:'reimb',data:r}); });
+    all.sort(function(a,b){ return new Date(a.data.submitted_at)-new Date(b.data.submitted_at); });
+
+    var countEl = document.getElementById('pendingCountBadge');
+    if (countEl) countEl.textContent = all.length ? all.length + ' item' + (all.length!==1?'s':'') + ' awaiting Treasurer review' : '';
+
+    if (!all.length) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-check-circle" style="color:var(--green);"></i><p>No pending items — all caught up.</p></div>';
+      return;
+    }
+
+    var overdueCutoff = Date.now() - 7*24*60*60*1000;
+    el.innerHTML = all.map(function(item) {
+      var r = item.data;
+      var isReq = item.type==='req';
+      var date  = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—';
+      var overdue = new Date(r.submitted_at).getTime() < overdueCutoff;
+      var title = isReq
+        ? esc(r.committee||'Requisition') + ' — ' + esc((r.description||'').substring(0,60)+(r.description&&r.description.length>60?'…':''))
+        : esc((r.item_service||'Reimbursement').substring(0,70));
+      return '<div class="pending-row">'+
+        '<div class="pending-info">'+
+          '<div class="pending-title">'+title+'</div>'+
+          '<div class="pending-meta">'+esc(r.member_name||'Unknown')+' · Submitted '+date+(overdue?' · <span style="color:var(--amber);font-weight:700;">7+ days</span>':'')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'+
+          '<span class="pending-type '+(isReq?'req':'reimb')+'">'+(isReq?'Requisition':'Reimbursement')+'</span>'+
+          '<span class="pending-amount">'+fmt(r.amount_cents)+'</span>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-circle-exclamation"></i><p>Could not load pending items.</p></div>';
+  }
+}
+
+/* ── Snapshot empty state ── */
+function snapshotEmpty(msg) {
+  return '<div class="snapshot-empty">'+
+    '<i class="fas fa-calendar-xmark"></i>'+
+    '<p>'+msg+'</p>'+
+    '<p style="margin-top:10px;font-size:0.78rem;color:rgba(255,255,255,0.2);">The Treasurer can publish snapshots from the Finance Admin panel.</p>'+
+  '</div>';
+}
+
+init();
+</script>
+</body>
+</html>
