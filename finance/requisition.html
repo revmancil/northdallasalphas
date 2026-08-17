@@ -570,7 +570,7 @@ function renderReqRow(r) {
   }).join('')+'</div>';
 
   var reimbLink = (r.status==='approved' && r.method==='personal_reimbursement' && r.reimbursement_id)
-    ? '<a class="btn-outline" href="reimbursement.html?id='+esc(String(r.reimbursement_id))+'" style="font-size:0.78rem;padding:5px 12px;"><i class="fas fa-receipt"></i> View Reimbursement</a>'
+    ? '<a class="btn-outline" href="reimbursement.html?id='+esc(String(r.reimbursement_id))+'&from=requisition" style="font-size:0.78rem;padding:5px 12px;"><i class="fas fa-receipt"></i> View Reimbursement</a>'
     : '';
   var docLink = r.doc_url
     ? '<a class="btn-outline" href="'+esc(r.doc_url)+'" target="_blank" rel="noopener" style="font-size:0.78rem;padding:5px 12px;"><i class="fas fa-paperclip"></i> Document</a>'

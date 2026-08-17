@@ -1209,6 +1209,9 @@
     <button class="sidebar-link" data-section="requisitions" onclick="showPanel('requisitions');loadRequisitionsAdmin()">
       <i class="fas fa-file-invoice-dollar"></i> Requisitions <span id="reqPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
+    <button class="sidebar-link" data-section="reimbursements" onclick="showPanel('reimbursements');loadReimbursementsAdmin()">
+      <i class="fas fa-receipt"></i> Reimbursements <span id="reimbPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+    </button>
     <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2563,6 +2566,69 @@
             <button onclick="closeReqModal()"      class="btn-sm"         style="padding:9px 20px;font-size:0.88rem;">Cancel</button>
           </div>
           <div id="reqModalSpinner" style="display:none;margin-top:12px;font-size:0.84rem;color:var(--gray-500);"><i class="fas fa-spinner fa-spin"></i> Processing…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         REIMBURSEMENTS — ADMIN PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-reimbursements">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:0.88rem;color:var(--gray-500);" id="reimbAdminCount"></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sm active" id="reimbFilterAll"      onclick="setReimbFilter('all',this)">All</button>
+          <button class="btn-sm"        id="reimbFilterPending"  onclick="setReimbFilter('pending',this)">Pending</button>
+          <button class="btn-sm"        id="reimbFilterApproved" onclick="setReimbFilter('approved',this)">Approved</button>
+          <button class="btn-sm"        id="reimbFilterDenied"   onclick="setReimbFilter('denied',this)">Denied</button>
+        </div>
+      </div>
+      <div id="reimbAdminList">
+        <div class="empty-state"><i class="fas fa-receipt"></i><p>Loading reimbursements...</p></div>
+      </div>
+
+      <!-- Review Modal -->
+      <div id="reimbModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+        <div style="background:#fff;border-radius:12px;padding:28px;max-width:660px;width:100%;position:relative;margin:auto;">
+          <button onclick="closeReimbModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);">×</button>
+          <h3 style="margin:0 0 6px;font-size:1.05rem;color:var(--gray-800);"><i class="fas fa-receipt" style="color:var(--gold);margin-right:8px;"></i>Review Reimbursement</h3>
+          <div id="reimbModalMeta" style="font-size:0.8rem;color:var(--gray-500);margin-bottom:20px;"></div>
+          <input type="hidden" id="reimbModalId" />
+
+          <!-- Request details -->
+          <div style="background:var(--gray-100);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-500);margin-bottom:8px;">Request Details</div>
+            <div id="reimbModalDetails" style="font-size:0.88rem;color:var(--gray-700);line-height:1.7;"></div>
+          </div>
+
+          <!-- Payment details -->
+          <div id="reimbModalPaymentWrap" style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#166534;margin-bottom:8px;"><i class="fas fa-money-bill-transfer" style="margin-right:5px;"></i>Payment Instructions</div>
+            <div id="reimbModalPaymentDetails" style="font-size:0.88rem;color:#166534;line-height:1.7;"></div>
+          </div>
+
+          <!-- Receipt link -->
+          <div id="reimbModalDocWrap" style="display:none;margin-bottom:16px;">
+            <a id="reimbModalDocLink" href="#" target="_blank" style="display:inline-flex;align-items:center;gap:7px;font-size:0.85rem;font-weight:600;color:var(--blue);"><i class="fas fa-receipt"></i> View Receipt / Invoice</a>
+          </div>
+
+          <!-- Overdue notice -->
+          <div id="reimbModalOverdue" style="display:none;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.83rem;color:#92400e;">
+            <i class="fas fa-clock" style="margin-right:6px;"></i>This request has been pending for more than 7 days.
+          </div>
+
+          <!-- Treasurer note -->
+          <div style="margin-bottom:14px;">
+            <label style="font-size:0.82rem;font-weight:600;color:var(--gray-700);display:block;margin-bottom:6px;">Treasurer Note <span style="font-weight:400;color:var(--gray-400);">(shown to member — optional)</span></label>
+            <textarea id="reimbModalNote" rows="3" placeholder="e.g. Approved — payment sent via Zelle" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button onclick="approveReimbursement()" class="btn-sm success" style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-check"></i> Approve &amp; Mark Paid</button>
+            <button onclick="denyReimbursement()"    class="btn-sm danger"  style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-times"></i> Deny</button>
+            <button onclick="closeReimbModal()"      class="btn-sm"         style="padding:9px 20px;font-size:0.88rem;">Cancel</button>
+          </div>
+          <div id="reimbModalSpinner" style="display:none;margin-top:12px;font-size:0.84rem;color:var(--gray-500);"><i class="fas fa-spinner fa-spin"></i> Processing…</div>
         </div>
       </div>
     </div>
@@ -9514,6 +9580,182 @@ async function resetReqStatus(id) {
 
 document.getElementById('reqModal').addEventListener('click', function(e) {
   if (e.target === this) closeReqModal();
+});
+
+/* ═══════════════════════════════════════════
+   REIMBURSEMENTS — ADMIN
+═══════════════════════════════════════════ */
+var _allReimbursements = [];
+var _reimbFilter = 'all';
+var _reimbModalRow = null;
+
+function isOverdueAdmin(submittedAt) {
+  if (!submittedAt) return false;
+  return Date.now() - new Date(submittedAt).getTime() > 7 * 24 * 60 * 60 * 1000;
+}
+
+async function loadReimbursementsAdmin() {
+  var token = getAdminToken();
+  var el = document.getElementById('reimbAdminList');
+  if (!token) { if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>Not logged in.</p></div>'; return; }
+  try {
+    var rows = await sbGet('finance_reimbursements', 'order=submitted_at.desc', token);
+    _allReimbursements = rows || [];
+    var pending = _allReimbursements.filter(function(r){ return r.status === 'pending'; }).length;
+    var badge = document.getElementById('reimbPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderReimbursementsAdmin();
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--gold);"></i><p style="color:var(--gray-600);">Could not load reimbursements. Run the finance schema SQL first.</p></div>';
+  }
+}
+
+function setReimbFilter(f, btn) {
+  _reimbFilter = f;
+  document.querySelectorAll('#panel-reimbursements .btn-sm').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderReimbursementsAdmin();
+}
+
+function renderReimbursementsAdmin() {
+  var list = _allReimbursements.filter(function(r){ return _reimbFilter === 'all' || r.status === _reimbFilter; });
+  var countEl = document.getElementById('reimbAdminCount');
+  if (countEl) countEl.textContent = list.length + ' reimbursement' + (list.length !== 1 ? 's' : '');
+  var el = document.getElementById('reimbAdminList');
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-receipt"></i><p>No reimbursements' + (_reimbFilter !== 'all' ? ' with status "' + _reimbFilter + '"' : '') + '.</p></div>'; return; }
+  el.innerHTML = list.map(function(r) {
+    var statusColor = r.status==='approved'?'var(--green)':r.status==='denied'?'var(--red)':'var(--gold)';
+    var date  = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    var id    = escHtml(String(r.id));
+    var amt   = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
+    var mLabel = r.method === 'zelle' ? 'Zelle' : r.method === 'check' ? 'Check' : (r.method || '—');
+    var overdue = r.status === 'pending' && isOverdueAdmin(r.submitted_at);
+    var actions = r.status === 'pending'
+      ? '<button class="btn-sm success" onclick="openReimbModal(\'' + id + '\')"><i class="fas fa-eye"></i> Review &amp; Pay</button>'
+      : '<button class="btn-sm" onclick="resetReimbStatus(\'' + id + '\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
+    return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;' + (overdue ? 'border-left:3px solid var(--gold);' : '') + '">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">' +
+        '<div style="flex:1;min-width:200px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
+            '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.member_name||'Unknown') + ' — ' + amt + '</div>' +
+            (overdue ? '<span style="font-size:0.7rem;font-weight:700;color:var(--gold);background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);padding:2px 7px;border-radius:5px;"><i class="fas fa-clock"></i> 7+ days pending</span>' : '') +
+            (r.auto_generated ? '<span style="font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#f3e8ff;color:#7c3aed;"><i class="fas fa-magic-wand-sparkles"></i> Auto-generated</span>' : '') +
+          '</div>' +
+          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' + escHtml(mLabel) + ' · Submitted ' + date + '</div>' +
+        '</div>' +
+        '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
+      '</div>' +
+      '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.5;">' + escHtml((r.item_service||'').substring(0,250)) + '</p>' +
+      (r.admin_note ? '<div style="font-size:0.82rem;color:var(--gray-500);font-style:italic;margin-bottom:10px;"><i class="fas fa-comment" style="color:var(--gold);margin-right:5px;"></i>' + escHtml(r.admin_note) + '</div>' : '') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + (r.doc_url ? '<a href="' + escHtml(r.doc_url) + '" target="_blank" class="btn-sm"><i class="fas fa-receipt"></i> Receipt</a>' : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openReimbModal(id) {
+  var r = _allReimbursements.find(function(x){ return String(x.id) === String(id); });
+  if (!r) return;
+  _reimbModalRow = r;
+  document.getElementById('reimbModalId').value = String(r.id);
+  document.getElementById('reimbModalNote').value = '';
+  var amt = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
+  var mLabel = r.method === 'zelle' ? 'Zelle' : r.method === 'check' ? 'Check' : (r.method || '—');
+  document.getElementById('reimbModalMeta').textContent =
+    'Submitted by ' + (r.member_name||'Unknown') + ' · ' +
+    (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '');
+  document.getElementById('reimbModalDetails').innerHTML =
+    '<strong>Item / Service:</strong> ' + escHtml(r.item_service||'—') + '<br>' +
+    '<strong>Amount:</strong> ' + escHtml(amt) + '<br>' +
+    '<strong>Payee / Vendor:</strong> ' + escHtml(r.payee_name||'—') + '<br>' +
+    '<strong>Payment Method:</strong> ' + escHtml(mLabel) +
+    (r.auto_generated ? ' <em style="color:#7c3aed;">(auto-generated from approved requisition)</em>' : '');
+
+  // Payment details
+  var pd = r.payment_details || {};
+  var pdHtml = '';
+  if (r.method === 'zelle') {
+    pdHtml = '<strong>Send Zelle to:</strong> ' + escHtml(pd.zelle_contact||r.member_email||'—') +
+             (pd.zelle_name ? '<br><strong>Account Name:</strong> ' + escHtml(pd.zelle_name) : '');
+  } else if (r.method === 'check') {
+    pdHtml = '<strong>Mail check to:</strong><br>' +
+             escHtml(r.member_name||'') + '<br>' +
+             escHtml(pd.check_street||'') + '<br>' +
+             escHtml((pd.check_city||'') + (pd.check_state_zip ? ', ' + pd.check_state_zip : ''));
+  } else {
+    pdHtml = r.member_email ? 'Contact: ' + escHtml(r.member_email) : 'No payment details provided.';
+  }
+  document.getElementById('reimbModalPaymentDetails').innerHTML = pdHtml;
+
+  // Receipt
+  var docWrap = document.getElementById('reimbModalDocWrap');
+  if (r.doc_url) { document.getElementById('reimbModalDocLink').href = r.doc_url; docWrap.style.display = ''; }
+  else { docWrap.style.display = 'none'; }
+
+  // Overdue
+  document.getElementById('reimbModalOverdue').style.display = isOverdueAdmin(r.submitted_at) ? '' : 'none';
+
+  document.getElementById('reimbModal').style.display = 'flex';
+}
+
+function closeReimbModal() { document.getElementById('reimbModal').style.display = 'none'; _reimbModalRow = null; }
+
+async function approveReimbursement() {
+  var token = getAdminToken(); if (!token) return;
+  var id   = (document.getElementById('reimbModalId').value||'').trim();
+  var note = (document.getElementById('reimbModalNote').value||'').trim();
+  if (!id) return;
+  document.getElementById('reimbModalSpinner').style.display = '';
+  try {
+    await sbPatch('finance_reimbursements', 'id=eq.'+encodeURIComponent(id),
+      { status:'approved', admin_note:note||null, reviewed_at:new Date().toISOString() }, token);
+    var r = _allReimbursements.find(function(x){ return String(x.id)===String(id); });
+    if (r) { r.status='approved'; r.admin_note=note; }
+    updateReimbBadge();
+    renderReimbursementsAdmin();
+    closeReimbModal();
+    showToast('Reimbursement approved. Issue payment per the member\'s instructions.');
+  } catch(e) { showToast('Could not approve: '+(e.message||'error'),'error'); }
+  finally { document.getElementById('reimbModalSpinner').style.display='none'; }
+}
+
+async function denyReimbursement() {
+  var token = getAdminToken(); if (!token) return;
+  var id   = (document.getElementById('reimbModalId').value||'').trim();
+  var note = (document.getElementById('reimbModalNote').value||'').trim();
+  if (!id) return;
+  document.getElementById('reimbModalSpinner').style.display = '';
+  try {
+    await sbPatch('finance_reimbursements', 'id=eq.'+encodeURIComponent(id),
+      { status:'denied', admin_note:note||null, reviewed_at:new Date().toISOString() }, token);
+    var r = _allReimbursements.find(function(x){ return String(x.id)===String(id); });
+    if (r) { r.status='denied'; r.admin_note=note; }
+    updateReimbBadge();
+    renderReimbursementsAdmin();
+    closeReimbModal();
+    showToast('Reimbursement denied.');
+  } catch(e) { showToast('Could not deny: '+(e.message||'error'),'error'); }
+  finally { document.getElementById('reimbModalSpinner').style.display='none'; }
+}
+
+async function resetReimbStatus(id) {
+  var token = getAdminToken(); if (!token) return;
+  try {
+    await sbPatch('finance_reimbursements','id=eq.'+encodeURIComponent(id),{status:'pending',admin_note:null,reviewed_at:null},token);
+    var r=_allReimbursements.find(function(x){return String(x.id)===String(id);});
+    if(r){r.status='pending';r.admin_note=null;}
+    updateReimbBadge(); renderReimbursementsAdmin();
+    showToast('Reset to pending.');
+  } catch(e){showToast('Could not reset: '+(e.message||'error'),'error');}
+}
+
+function updateReimbBadge() {
+  var pending=_allReimbursements.filter(function(x){return x.status==='pending';}).length;
+  var badge=document.getElementById('reimbPendingBadge');
+  if(badge){badge.textContent=pending;badge.style.display=pending?'inline':'none';}
+}
+
+document.getElementById('reimbModal').addEventListener('click', function(e) {
+  if (e.target === this) closeReimbModal();
 });
 
 /* ═══════════════════════════════════════════
