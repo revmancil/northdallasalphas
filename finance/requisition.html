@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Requisitions | Finance Portal | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="../images/xtl-logo.png" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:#0a0a0a; --dark:#111; --dark2:#181818;
+      --gold:#C9A84C; --gold-pale:rgba(201,168,76,0.08); --gold-pale2:rgba(201,168,76,0.15);
+      --white:#ffffff;
+      --gray-400:#9ca3af;
+      --green:#22c55e; --green-pale:rgba(34,197,94,0.1);
+      --red:#ef4444;   --red-pale:rgba(239,68,68,0.1);
+      --blue:#3b82f6;  --blue-pale:rgba(59,130,246,0.1);
+      --amber:#f59e0b; --amber-pale:rgba(245,158,11,0.1);
+      --sidebar-w:260px;
+    }
+    html,body{height:100%;}
+    body{font-family:'Inter',sans-serif;background:var(--dark);color:var(--white);display:flex;min-height:100vh;}
+
+    /* ── Sidebar ── */
+    .sidebar{width:var(--sidebar-w);background:var(--dark2);border-right:1px solid rgba(201,168,76,0.12);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform 0.3s;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .sidebar-brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+    .sidebar-brand img{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(201,168,76,0.4);object-fit:contain;}
+    .sidebar-brand-text .name{font-family:'Playfair Display',serif;font-size:0.88rem;font-weight:700;color:var(--gold);line-height:1.2;}
+    .sidebar-brand-text .sub{font-size:0.62rem;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;}
+    .sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;}
+    .user-avatar{width:34px;height:34px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;color:var(--black);flex-shrink:0;overflow:hidden;}
+    .user-avatar img{width:100%;height:100%;object-fit:cover;}
+    .user-info .uname{font-size:0.82rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-info .urole{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:2px;}
+    .sidebar-nav{padding:10px 0;flex:1;}
+    .nav-label{font-size:0.62rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:10px 20px 5px;}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.5);font-size:0.85rem;font-weight:500;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:color 0.2s,background 0.2s;border-left:3px solid transparent;text-decoration:none;}
+    .nav-item i{width:18px;text-align:center;font-size:0.88rem;}
+    .nav-item:hover{color:var(--white);background:rgba(255,255,255,0.04);}
+    .nav-item.active{color:var(--gold);background:var(--gold-pale);border-left-color:var(--gold);}
+    .nav-divider{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;}
+    .sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);}
+    .logout-btn{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.4);font-size:0.82rem;background:none;border:none;cursor:pointer;padding:7px 0;transition:color 0.2s;width:100%;}
+    .logout-btn:hover{color:var(--red);}
+
+    /* ── Main ── */
+    .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .topbar{background:var(--dark2);border-bottom:1px solid rgba(255,255,255,0.06);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .topbar-left{display:flex;align-items:center;gap:12px;}
+    .hamburger{display:none;background:none;border:none;color:var(--white);font-size:1.1rem;cursor:pointer;padding:6px;}
+    .page-title{font-size:1rem;font-weight:600;color:var(--white);}
+    .breadcrumb{font-size:0.78rem;color:var(--gray-400);margin-left:6px;}
+    .topbar-right a{display:flex;align-items:center;gap:6px;color:var(--gray-400);text-decoration:none;font-size:0.8rem;transition:color 0.2s;}
+    .topbar-right a:hover{color:var(--gold);}
+    .content{padding:28px;flex:1;max-width:860px;}
+
+    /* ── Cards ── */
+    .card{background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:20px;overflow:hidden;}
+    .card-header{padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;}
+    .card-header h3{font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;}
+    .card-header h3 i{color:var(--gold);font-size:0.88rem;}
+    .card-body{padding:22px;}
+
+    /* ── Step indicator ── */
+    .steps{display:flex;align-items:center;margin-bottom:28px;gap:0;}
+    .step{display:flex;align-items:center;gap:8px;font-size:0.8rem;font-weight:600;}
+    .step-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}
+    .step.done   .step-num{background:var(--green);color:#fff;}
+    .step.active .step-num{background:var(--gold);color:var(--black);}
+    .step.idle   .step-num{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.4);}
+    .step.done   .step-label{color:var(--green);}
+    .step.active .step-label{color:var(--white);}
+    .step.idle   .step-label{color:rgba(255,255,255,0.35);}
+    .step-connector{flex:1;height:2px;background:rgba(255,255,255,0.1);margin:0 8px;min-width:16px;}
+    .step-connector.done{background:var(--green);}
+
+    /* ── Form fields ── */
+    .field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px;}
+    .field label{font-size:0.8rem;font-weight:600;color:rgba(255,255,255,0.65);}
+    .field label .req{color:var(--red);margin-left:2px;}
+    .field input,.field textarea,.field select{width:100%;padding:10px 13px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:7px;color:var(--white);font-size:0.88rem;font-family:inherit;transition:border-color 0.2s;}
+    .field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:rgba(201,168,76,0.5);}
+    .field select option{background:var(--dark2);color:var(--white);}
+    .field textarea{resize:vertical;min-height:90px;}
+    .field-hint{font-size:0.74rem;color:rgba(255,255,255,0.35);margin-top:3px;}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+    /* ── Method tiles ── */
+    .method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px;}
+    .method-tile{border:2px solid rgba(255,255,255,0.1);border-radius:9px;padding:14px 12px;cursor:pointer;transition:border-color 0.2s,background 0.2s;text-align:center;position:relative;}
+    .method-tile:hover{border-color:rgba(201,168,76,0.4);}
+    .method-tile.selected{border-color:var(--gold);background:var(--gold-pale);}
+    .method-tile input[type="radio"]{position:absolute;opacity:0;width:0;height:0;}
+    .method-tile i{font-size:1.3rem;color:var(--gold);display:block;margin-bottom:7px;}
+    .method-tile .mt-label{font-size:0.82rem;font-weight:700;color:var(--white);display:block;}
+    .method-tile .mt-note{font-size:0.71rem;color:rgba(255,255,255,0.4);margin-top:4px;display:block;line-height:1.3;}
+    .method-tile .mt-check{position:absolute;top:8px;right:9px;color:var(--gold);font-size:0.82rem;display:none;}
+    .method-tile.selected .mt-check{display:block;}
+
+    /* ── Reimbursement auto-notice ── */
+    .reimb-notice{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:8px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start;margin-top:14px;}
+    .reimb-notice i{color:#93c5fd;margin-top:2px;flex-shrink:0;}
+    .reimb-notice-text{font-size:0.83rem;color:#93c5fd;line-height:1.5;}
+
+    /* ── File upload ── */
+    .upload-zone{border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:22px;text-align:center;cursor:pointer;transition:border-color 0.2s;color:rgba(255,255,255,0.4);font-size:0.83rem;}
+    .upload-zone:hover{border-color:rgba(201,168,76,0.4);}
+    .upload-zone i{font-size:1.5rem;display:block;margin-bottom:6px;color:var(--gold);}
+    .upload-preview{display:none;margin-top:10px;padding:10px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:7px;display:none;align-items:center;gap:10px;font-size:0.83rem;}
+    .upload-preview i{color:var(--gold);}
+    .upload-preview .fname{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--white);}
+    .upload-preview .fsize{color:rgba(255,255,255,0.35);font-size:0.75rem;white-space:nowrap;}
+    .upload-clear{background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1rem;padding:0;}
+    .upload-clear:hover{color:var(--red);}
+
+    /* ── Buttons ── */
+    .btn-submit{padding:12px 28px;background:var(--gold);color:var(--black);border:none;border-radius:8px;font-size:0.92rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:9px;transition:opacity 0.2s;}
+    .btn-submit:hover:not(:disabled){opacity:0.85;}
+    .btn-submit:disabled{opacity:0.45;cursor:not-allowed;}
+    .btn-outline{padding:10px 18px;background:none;color:var(--gold);border:1px solid rgba(201,168,76,0.35);border-radius:8px;font-size:0.85rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s;text-decoration:none;}
+    .btn-outline:hover{background:var(--gold-pale);}
+
+    /* ── Notices ── */
+    .notice{padding:12px 16px;border-radius:8px;font-size:0.83rem;line-height:1.5;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
+    .notice i{margin-top:1px;flex-shrink:0;}
+    .notice.amber{background:var(--amber-pale);border:1px solid rgba(245,158,11,0.25);color:#fbbf24;}
+    .notice.green{background:var(--green-pale);border:1px solid rgba(34,197,94,0.25);color:#4ade80;}
+    .notice.red  {background:var(--red-pale);  border:1px solid rgba(239,68,68,0.3);  color:#f87171;}
+    .notice.blue {background:var(--blue-pale); border:1px solid rgba(59,130,246,0.25);color:#93c5fd;}
+
+    /* ── History rows ── */
+    .req-row{border:1px solid rgba(255,255,255,0.07);border-radius:9px;padding:16px 18px;margin-bottom:12px;background:rgba(255,255,255,0.015);}
+    .req-row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+    .req-title{font-size:0.92rem;font-weight:700;color:var(--white);}
+    .req-meta{font-size:0.76rem;color:rgba(255,255,255,0.38);margin-top:3px;}
+    .req-body{font-size:0.84rem;color:rgba(255,255,255,0.55);line-height:1.55;margin-bottom:12px;}
+    .req-footer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+    .badge{display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;text-transform:capitalize;}
+    .badge.pending  {background:var(--amber-pale);color:var(--amber);}
+    .badge.approved {background:var(--green-pale);color:var(--green);}
+    .badge.denied   {background:var(--red-pale);  color:var(--red);}
+    .method-badge{font-size:0.72rem;padding:3px 9px;border-radius:6px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.5);font-weight:600;}
+    .admin-note{font-size:0.8rem;color:rgba(255,255,255,0.45);font-style:italic;display:flex;align-items:flex-start;gap:5px;margin-top:8px;}
+    .admin-note i{color:var(--gold);margin-top:1px;flex-shrink:0;}
+
+    /* ── Audit trail ── */
+    .audit-trail{margin-top:10px;padding:10px 14px;background:rgba(255,255,255,0.025);border-radius:7px;border:1px solid rgba(255,255,255,0.06);}
+    .audit-event{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.78rem;}
+    .audit-event:last-child{border-bottom:none;padding-bottom:0;}
+    .audit-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+    .audit-dot.submitted{background:var(--amber);}
+    .audit-dot.approved {background:var(--green);}
+    .audit-dot.denied   {background:var(--red);}
+    .audit-text{color:rgba(255,255,255,0.5);}
+    .audit-time{margin-left:auto;color:rgba(255,255,255,0.25);white-space:nowrap;padding-left:8px;}
+
+    /* ── Empty state ── */
+    .empty-state{text-align:center;padding:36px 16px;color:rgba(255,255,255,0.3);}
+    .empty-state i{font-size:2rem;display:block;margin-bottom:10px;}
+    .empty-state p{font-size:0.88rem;}
+
+    /* ── Responsive ── */
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%);}
+      .sidebar.open{transform:translateX(0);}
+      .main{margin-left:0;}
+      .hamburger{display:block;}
+      .content{padding:18px 14px;}
+      .method-grid{grid-template-columns:1fr;}
+      .field-row{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="../images/xtl-logo.png" alt="Xi Tau Lambda" />
+    <div class="sidebar-brand-text">
+      <div class="name">Finance Portal</div>
+      <div class="sub">Xi Tau Lambda · Chapter 607</div>
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="sidebarAvatar">?</div>
+    <div class="user-info">
+      <div class="uname" id="sidebarName">Loading…</div>
+      <div class="urole" id="sidebarRole">Member</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Finance</div>
+    <a class="nav-item" href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
+    <a class="nav-item" href="pay-dues.html"><i class="fas fa-dollar-sign"></i> Pay Dues</a>
+    <a class="nav-item" href="merchandise.html"><i class="fas fa-store"></i> Merchandise</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Requests</div>
+    <a class="nav-item active" href="requisition.html"><i class="fas fa-file-invoice-dollar"></i> Requisitions</a>
+    <a class="nav-item" href="reimbursement.html"><i class="fas fa-receipt"></i> Reimbursements</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Account</div>
+    <a class="nav-item" href="../member-portal.html"><i class="fas fa-arrow-left"></i> Member Portal</a>
+    <a class="nav-item" id="adminNavLink" href="admin/index.html" style="display:none;"><i class="fas fa-shield-halved"></i> Finance Admin</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+  </div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menu"><i class="fas fa-bars"></i></button>
+      <div>
+        <span class="page-title">Payment Requisition</span>
+        <span class="breadcrumb">Finance Portal</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <a href="../index.html"><i class="fas fa-external-link-alt"></i> View Website</a>
+    </div>
+  </header>
+
+  <main class="content">
+
+    <!-- Auth gate -->
+    <div id="authGate" style="display:none;">
+      <div class="notice amber"><i class="fas fa-lock"></i><span>You must be signed in to submit a requisition. <a href="../member-login.html" style="color:inherit;font-weight:700;text-decoration:underline;">Sign In →</a></span></div>
+    </div>
+
+    <div id="mainUI">
+
+      <!-- Workflow steps indicator -->
+      <div class="steps">
+        <div class="step active">
+          <div class="step-num">1</div>
+          <span class="step-label">Submit Request</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step idle">
+          <div class="step-num">2</div>
+          <span class="step-label">Treasurer Review</span>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step idle">
+          <div class="step-num">3</div>
+          <span class="step-label">Approved / Paid</span>
+        </div>
+      </div>
+
+      <!-- Info notice -->
+      <div class="notice blue">
+        <i class="fas fa-info-circle"></i>
+        <span>Committee Chairmen submit requisitions to request chapter funds. The Treasurer reviews and approves or denies each request. If you are requesting personal reimbursement, a reimbursement form will be auto-generated upon approval.</span>
+      </div>
+
+      <!-- Submit form -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-file-invoice-dollar"></i> New Requisition</h3>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Committee / Program <span class="req">*</span></label>
+            <input type="text" id="rqCommittee" placeholder="e.g. Community Service, Project Alpha" />
+          </div>
+          <div class="field">
+            <label>Description of Request <span class="req">*</span></label>
+            <textarea id="rqDescription" placeholder="Describe what these funds are needed for and how they will be used…"></textarea>
+          </div>
+          <div class="field-row">
+            <div class="field" style="margin-bottom:0;">
+              <label>Amount Requested <span class="req">*</span></label>
+              <input type="number" id="rqAmount" min="0.01" step="0.01" placeholder="0.00" oninput="recalcSummary()" />
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <label>Payee / Vendor Name <span class="req">*</span></label>
+              <input type="text" id="rqPayee" placeholder="e.g. Office Depot, John Smith" />
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:18px;">
+            <label>Payment Method <span class="req">*</span></label>
+            <div class="method-grid">
+              <label class="method-tile" onclick="selectMethod('chapter_card')">
+                <input type="radio" name="rqMethod" value="chapter_card" />
+                <i class="fas fa-check mt-check"></i>
+                <i class="fas fa-credit-card"></i>
+                <span class="mt-label">Chapter Card</span>
+                <span class="mt-note">Charged to chapter debit/credit card</span>
+              </label>
+              <label class="method-tile" onclick="selectMethod('check')">
+                <input type="radio" name="rqMethod" value="check" />
+                <i class="fas fa-check mt-check"></i>
+                <i class="fas fa-money-check-alt"></i>
+                <span class="mt-label">Check</span>
+                <span class="mt-note">Chapter check made to payee</span>
+              </label>
+              <label class="method-tile" onclick="selectMethod('personal_reimbursement')">
+                <input type="radio" name="rqMethod" value="personal_reimbursement" />
+                <i class="fas fa-check mt-check"></i>
+                <i class="fas fa-hand-holding-dollar"></i>
+                <span class="mt-label">Personal Reimbursement</span>
+                <span class="mt-note">You paid out of pocket; chapter repays you</span>
+              </label>
+            </div>
+            <div id="reimbNotice" class="reimb-notice" style="display:none;">
+              <i class="fas fa-magic-wand-sparkles"></i>
+              <div class="reimb-notice-text">A pre-filled reimbursement request will be auto-generated for you when the Treasurer approves this requisition. You will see it in your <a href="reimbursement.html" style="color:inherit;font-weight:700;">Reimbursements</a> page.</div>
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:6px;">
+            <label>Supporting Documentation <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — invoices, quotes, receipts)</span></label>
+            <input type="file" id="rqDocInput" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none;" onchange="handleDocSelect(event)" />
+            <div class="upload-zone" onclick="document.getElementById('rqDocInput').click()">
+              <i class="fas fa-paperclip"></i>
+              Click to attach a document (PDF or image)
+            </div>
+            <div class="upload-preview" id="uploadPreview">
+              <i class="fas fa-file"></i>
+              <span class="fname" id="uploadFname">—</span>
+              <span class="fsize" id="uploadFsize">—</span>
+              <button class="upload-clear" onclick="clearDoc()" title="Remove"><i class="fas fa-times"></i></button>
+            </div>
+          </div>
+
+          <div id="rqErr" class="notice red" style="display:none;margin-bottom:0;margin-top:4px;"><i class="fas fa-exclamation-circle"></i><span id="rqErrText"></span></div>
+          <div id="rqSuccess" class="notice green" style="display:none;margin-top:12px;margin-bottom:0;"><i class="fas fa-check-circle"></i><span>Requisition submitted. The Treasurer will be notified and will review your request.</span></div>
+
+          <div style="margin-top:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <button class="btn-submit" id="rqSubmitBtn" onclick="submitRequisition()"><i class="fas fa-paper-plane"></i> Submit Requisition</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Requisitions -->
+      <div class="card">
+        <div class="card-header">
+          <h3><i class="fas fa-list-check"></i> My Requisitions</h3>
+          <button onclick="loadMyRequisitions()" style="font-size:0.78rem;color:var(--gold);background:none;border:none;cursor:pointer;font-weight:500;"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="card-body" id="myRequisitionsList">
+          <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading…</p></div>
+        </div>
+      </div>
+
+    </div><!-- #mainUI -->
+  </main>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+
+var currentMember  = null;
+var currentSession = null;
+var selectedMethod = null;
+var _docFile       = null;
+
+function esc(s){ var d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
+function sbHeaders(tok){ return {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+(tok||SUPABASE_ANON_KEY)}; }
+async function sbGet(table,query,tok){ var r=await fetch(SUPABASE_URL+'/rest/v1/'+table+'?'+query,{headers:sbHeaders(tok)}); if(!r.ok)throw new Error(r.status); return r.json(); }
+
+function logout(){ localStorage.removeItem('nda_member_session'); window.location.href='../member-login.html'; }
+
+/* ── Auth + init ── */
+async function init() {
+  var raw = localStorage.getItem('nda_member_session');
+  if (!raw) { showAuthGate(); return; }
+  try {
+    currentSession = JSON.parse(raw);
+    if (!currentSession || !currentSession.access_token) { showAuthGate(); return; }
+  } catch(e) { showAuthGate(); return; }
+
+  try {
+    var rows = await sbGet('members', 'id=eq.'+currentSession.user.id+'&limit=1', currentSession.access_token);
+    currentMember = rows && rows[0] ? rows[0] : null;
+  } catch(e) { currentMember = null; }
+
+  renderSidebarUser();
+  showAdminLinkIfEligible();
+  loadMyRequisitions();
+}
+
+function showAuthGate(){
+  document.getElementById('authGate').style.display='';
+  document.getElementById('mainUI').style.display='none';
+}
+
+function renderSidebarUser(){
+  var name = currentMember
+    ? [currentMember.first_name,currentMember.last_name].filter(Boolean).join(' ')
+    : (currentSession&&currentSession.user?currentSession.user.email:'Member');
+  document.getElementById('sidebarName').textContent = name||'Member';
+  var initials = name?name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase():'?';
+  var av = document.getElementById('sidebarAvatar');
+  if(currentMember&&currentMember.photo_url){ av.innerHTML='<img src="'+esc(currentMember.photo_url)+'" alt="" />'; }
+  else { av.textContent=initials; }
+  document.getElementById('sidebarRole').textContent=(currentMember&&currentMember.chapter_role)||'Member';
+}
+
+function showAdminLinkIfEligible(){
+  if(!currentMember) return;
+  var adminRoles=['treasurer','financial_secretary','president'];
+  var r=(currentMember.chapter_role||'').toLowerCase().replace(/\s+/g,'_');
+  if(adminRoles.some(function(ar){return r.includes(ar);})){
+    document.getElementById('adminNavLink').style.display='';
+  }
+}
+
+/* ── Method selection ── */
+function selectMethod(m) {
+  selectedMethod = m;
+  document.querySelectorAll('.method-tile').forEach(function(t){
+    t.classList.toggle('selected', t.querySelector('input').value === m);
+  });
+  document.getElementById('reimbNotice').style.display = m==='personal_reimbursement' ? '' : 'none';
+}
+
+/* ── File handling ── */
+function handleDocSelect(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  _docFile = file;
+  document.getElementById('uploadFname').textContent = file.name;
+  document.getElementById('uploadFsize').textContent = formatBytes(file.size);
+  document.getElementById('uploadPreview').style.display = 'flex';
+}
+
+function clearDoc(){
+  _docFile = null;
+  document.getElementById('rqDocInput').value='';
+  document.getElementById('uploadPreview').style.display='none';
+}
+
+function formatBytes(b){
+  if(b<1024) return b+' B';
+  if(b<1048576) return (b/1024).toFixed(1)+' KB';
+  return (b/1048576).toFixed(1)+' MB';
+}
+
+async function uploadDoc(file) {
+  var ext = file.name.split('.').pop() || 'pdf';
+  var path = 'requisitions/'+Date.now()+'.'+ext;
+  var res = await fetch(SUPABASE_URL+'/storage/v1/object/chapter-media/'+path, {
+    method:'POST',
+    headers:{ 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+currentSession.access_token, 'Content-Type':file.type, 'x-upsert':'true' },
+    body: file
+  });
+  if(!res.ok) throw new Error('Document upload failed');
+  return SUPABASE_URL+'/storage/v1/object/public/chapter-media/'+path;
+}
+
+/* ── Summary update ── */
+function recalcSummary(){}  // placeholder; amount shown in submit button
+
+/* ── Submit ── */
+async function submitRequisition() {
+  var errEl  = document.getElementById('rqErr');
+  var errTxt = document.getElementById('rqErrText');
+  var sucEl  = document.getElementById('rqSuccess');
+  errEl.style.display='none'; sucEl.style.display='none';
+
+  if(!currentMember||!currentSession){ errTxt.textContent='Sign in to submit.'; errEl.style.display=''; return; }
+
+  var committee   = (document.getElementById('rqCommittee').value||'').trim();
+  var description = (document.getElementById('rqDescription').value||'').trim();
+  var amountRaw   = parseFloat(document.getElementById('rqAmount').value||'0');
+  var payee       = (document.getElementById('rqPayee').value||'').trim();
+
+  if(!committee)  { errTxt.textContent='Enter the committee or program name.';  errEl.style.display=''; return; }
+  if(!description){ errTxt.textContent='Describe the request.';                 errEl.style.display=''; return; }
+  if(isNaN(amountRaw)||amountRaw<=0){ errTxt.textContent='Enter a valid amount.'; errEl.style.display=''; return; }
+  if(!payee)      { errTxt.textContent='Enter a payee or vendor name.';          errEl.style.display=''; return; }
+  if(!selectedMethod){ errTxt.textContent='Select a payment method.';           errEl.style.display=''; return; }
+
+  var btn=document.getElementById('rqSubmitBtn');
+  btn.disabled=true;
+  btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+  try {
+    var docUrl = null;
+    if(_docFile){
+      try { docUrl=await uploadDoc(_docFile); }
+      catch(fe){ errTxt.textContent='Document upload failed: '+(fe.message||'error'); errEl.style.display=''; btn.disabled=false; btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Requisition'; return; }
+    }
+
+    var memberName=[currentMember.first_name,currentMember.last_name].filter(Boolean).join(' ');
+
+    await fetch(SUPABASE_URL+'/rest/v1/finance_requisitions',{
+      method:'POST',
+      headers:Object.assign(sbHeaders(currentSession.access_token),{'Prefer':'return=minimal'}),
+      body:JSON.stringify({
+        member_id:    currentMember.id,
+        member_name:  memberName,
+        member_email: currentMember.email||(currentSession.user&&currentSession.user.email)||'',
+        committee:    committee,
+        description:  description,
+        amount_cents: Math.round(amountRaw*100),
+        payee_name:   payee,
+        method:       selectedMethod,
+        doc_url:      docUrl,
+        status:       'pending',
+        submitted_at: new Date().toISOString()
+      })
+    });
+
+    // Notify Treasurer (fire-and-forget)
+    fetch(SUPABASE_URL+'/functions/v1/send-admin-notification',{
+      method:'POST',
+      headers:sbHeaders(currentSession.access_token),
+      body:JSON.stringify({ type:'requisition', name:memberName, committee:committee, amount:'$'+amountRaw.toFixed(2), method:selectedMethod })
+    }).catch(function(){});
+
+    // Reset form
+    document.getElementById('rqCommittee').value='';
+    document.getElementById('rqDescription').value='';
+    document.getElementById('rqAmount').value='';
+    document.getElementById('rqPayee').value='';
+    document.querySelectorAll('.method-tile').forEach(function(t){t.classList.remove('selected');});
+    selectedMethod=null;
+    document.getElementById('reimbNotice').style.display='none';
+    clearDoc();
+    sucEl.style.display='';
+    loadMyRequisitions();
+  } catch(e){
+    errTxt.textContent='Could not submit: '+(e.message||'error');
+    errEl.style.display='';
+  } finally {
+    btn.disabled=false;
+    btn.innerHTML='<i class="fas fa-paper-plane"></i> Submit Requisition';
+  }
+}
+
+/* ── Load history ── */
+async function loadMyRequisitions() {
+  if(!currentMember||!currentSession) return;
+  var el=document.getElementById('myRequisitionsList');
+  try {
+    var rows=await sbGet('finance_requisitions',
+      'member_id=eq.'+currentMember.id+'&order=submitted_at.desc',
+      currentSession.access_token);
+    if(!rows||!rows.length){ el.innerHTML='<div class="empty-state"><i class="fas fa-file-invoice-dollar"></i><p>No requisitions submitted yet.</p></div>'; return; }
+    el.innerHTML=rows.map(renderReqRow).join('');
+  } catch(e){
+    el.innerHTML='<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Could not load requisitions. Run the finance schema SQL to enable.</p></div>';
+  }
+}
+
+function renderReqRow(r) {
+  var subDate  = r.submitted_at  ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+  var revDate  = r.reviewed_at   ? new Date(r.reviewed_at).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : null;
+  var methodLabel = {chapter_card:'Chapter Card',check:'Check',personal_reimbursement:'Personal Reimbursement'}[r.method]||r.method||'—';
+  var amount   = r.amount_cents!=null ? '$'+(r.amount_cents/100).toFixed(2) : '—';
+
+  // Audit events
+  var auditEvents = [
+    {dot:'submitted',text:'Submitted by '+esc(r.member_name||'you'),time:subDate}
+  ];
+  if(r.status==='approved' && revDate) auditEvents.push({dot:'approved',text:'Approved by Treasurer',time:revDate});
+  if(r.status==='denied'   && revDate) auditEvents.push({dot:'denied',  text:'Denied by Treasurer',  time:revDate});
+
+  var auditHtml='<div class="audit-trail">'+auditEvents.map(function(ev){
+    return '<div class="audit-event"><div class="audit-dot '+ev.dot+'"></div><span class="audit-text">'+ev.text+'</span><span class="audit-time">'+ev.time+'</span></div>';
+  }).join('')+'</div>';
+
+  var reimbLink = (r.status==='approved' && r.method==='personal_reimbursement' && r.reimbursement_id)
+    ? '<a class="btn-outline" href="reimbursement.html?id='+esc(String(r.reimbursement_id))+'" style="font-size:0.78rem;padding:5px 12px;"><i class="fas fa-receipt"></i> View Reimbursement</a>'
+    : '';
+  var docLink = r.doc_url
+    ? '<a class="btn-outline" href="'+esc(r.doc_url)+'" target="_blank" rel="noopener" style="font-size:0.78rem;padding:5px 12px;"><i class="fas fa-paperclip"></i> Document</a>'
+    : '';
+
+  return '<div class="req-row">'+
+    '<div class="req-row-top">'+
+      '<div>'+
+        '<div class="req-title">'+esc(r.committee||'Requisition')+' — '+amount+'</div>'+
+        '<div class="req-meta">'+esc(methodLabel)+' · Submitted '+subDate+'</div>'+
+      '</div>'+
+      '<span class="badge '+(r.status||'pending')+'">'+esc(r.status||'pending')+'</span>'+
+    '</div>'+
+    '<div class="req-body">'+esc(r.description||'')+'</div>'+
+    (r.admin_note?'<div class="admin-note"><i class="fas fa-comment"></i>'+esc(r.admin_note)+'</div>':'')+
+    auditHtml+
+    '<div class="req-footer" style="margin-top:10px;">'+docLink+reimbLink+'</div>'+
+  '</div>';
+}
+
+init();
+</script>
+</body>
+</html>

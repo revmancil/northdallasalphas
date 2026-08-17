@@ -1206,6 +1206,9 @@
     <button class="sidebar-link" data-section="news-submissions" onclick="showPanel('news-submissions');loadNewsSubmissions()">
       <i class="fas fa-newspaper"></i> News Submissions <span id="newsPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
     </button>
+    <button class="sidebar-link" data-section="requisitions" onclick="showPanel('requisitions');loadRequisitionsAdmin()">
+      <i class="fas fa-file-invoice-dollar"></i> Requisitions <span id="reqPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+    </button>
     <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
       <i class="fas fa-camera-retro"></i> Event Photos
     </button>
@@ -2512,6 +2515,54 @@
             <button onclick="rejectNewsSubmission()" class="btn-sm danger"  style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-times"></i> Reject</button>
             <button onclick="closeNewsSubModal()" class="btn-sm" style="padding:9px 20px;font-size:0.88rem;">Cancel</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         REQUISITIONS — ADMIN PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-requisitions">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+        <div style="font-size:0.88rem;color:var(--gray-500);" id="reqAdminCount"></div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn-sm active" id="reqFilterAll"      onclick="setReqFilter('all',this)">All</button>
+          <button class="btn-sm"        id="reqFilterPending"  onclick="setReqFilter('pending',this)">Pending</button>
+          <button class="btn-sm"        id="reqFilterApproved" onclick="setReqFilter('approved',this)">Approved</button>
+          <button class="btn-sm"        id="reqFilterDenied"   onclick="setReqFilter('denied',this)">Denied</button>
+        </div>
+      </div>
+      <div id="reqAdminList">
+        <div class="empty-state"><i class="fas fa-file-invoice-dollar"></i><p>Loading requisitions...</p></div>
+      </div>
+
+      <!-- Review Modal -->
+      <div id="reqModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px;">
+        <div style="background:#fff;border-radius:12px;padding:28px;max-width:640px;width:100%;position:relative;margin:auto;">
+          <button onclick="closeReqModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray-400);">×</button>
+          <h3 style="margin:0 0 6px;font-size:1.05rem;color:var(--gray-800);"><i class="fas fa-file-invoice-dollar" style="color:var(--gold);margin-right:8px;"></i>Review Requisition</h3>
+          <div id="reqModalMeta" style="font-size:0.8rem;color:var(--gray-500);margin-bottom:20px;"></div>
+          <input type="hidden" id="reqModalId" />
+          <input type="hidden" id="reqModalMethod" />
+
+          <div style="background:var(--gray-100);border-radius:8px;padding:14px 16px;margin-bottom:18px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gray-500);margin-bottom:8px;">Request Details</div>
+            <div id="reqModalDetails" style="font-size:0.88rem;color:var(--gray-700);line-height:1.6;"></div>
+          </div>
+
+          <div style="margin-bottom:14px;">
+            <label style="font-size:0.82rem;font-weight:600;color:var(--gray-700);display:block;margin-bottom:6px;">Treasurer Note <span style="font-weight:400;color:var(--gray-400);">(shown to submitter — optional)</span></label>
+            <textarea id="reqModalNote" rows="3" placeholder="e.g. Approved — please submit receipts within 30 days" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+
+          <div id="reqModalDocLink" style="display:none;margin-bottom:16px;"></div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button onclick="approveRequisition()" class="btn-sm success" style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-check"></i> Approve</button>
+            <button onclick="denyRequisition()"    class="btn-sm danger"  style="padding:9px 20px;font-size:0.88rem;"><i class="fas fa-times"></i> Deny</button>
+            <button onclick="closeReqModal()"      class="btn-sm"         style="padding:9px 20px;font-size:0.88rem;">Cancel</button>
+          </div>
+          <div id="reqModalSpinner" style="display:none;margin-top:12px;font-size:0.84rem;color:var(--gray-500);"><i class="fas fa-spinner fa-spin"></i> Processing…</div>
         </div>
       </div>
     </div>
@@ -9282,6 +9333,187 @@ async function resetNewsSubStatus(id) {
 // Close modal on backdrop click
 document.getElementById('newsSubModal').addEventListener('click', function(e) {
   if (e.target === this) closeNewsSubModal();
+});
+
+/* ═══════════════════════════════════════════
+   REQUISITIONS — ADMIN
+═══════════════════════════════════════════ */
+var _allRequisitions = [];
+var _reqFilter = 'all';
+var _reqModalRow = null;
+
+async function loadRequisitionsAdmin() {
+  var token = getAdminToken();
+  var el = document.getElementById('reqAdminList');
+  if (!token) { if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-lock"></i><p>Not logged in.</p></div>'; return; }
+  try {
+    var rows = await sbGet('finance_requisitions', 'order=submitted_at.desc', token);
+    _allRequisitions = rows || [];
+    var pending = _allRequisitions.filter(function(r){ return r.status === 'pending'; }).length;
+    var badge = document.getElementById('reqPendingBadge');
+    if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
+    renderRequisitionsAdmin();
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle" style="color:var(--gold);"></i><p style="color:var(--gray-600);">Could not load requisitions. Run the finance schema SQL first.<br><small>' + escHtml(e.message||'') + '</small></p></div>';
+  }
+}
+
+function setReqFilter(f, btn) {
+  _reqFilter = f;
+  document.querySelectorAll('#panel-requisitions .btn-sm').forEach(function(b){ b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  renderRequisitionsAdmin();
+}
+
+var REQ_METHOD_LABEL = { chapter_card:'Chapter Card', check:'Check', personal_reimbursement:'Personal Reimbursement' };
+
+function renderRequisitionsAdmin() {
+  var list = _allRequisitions.filter(function(r){ return _reqFilter === 'all' || r.status === _reqFilter; });
+  var countEl = document.getElementById('reqAdminCount');
+  if (countEl) countEl.textContent = list.length + ' requisition' + (list.length !== 1 ? 's' : '');
+  var el = document.getElementById('reqAdminList');
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><i class="fas fa-file-invoice-dollar"></i><p>No requisitions' + (_reqFilter !== 'all' ? ' with status "' + _reqFilter + '"' : '') + '.</p></div>'; return; }
+  el.innerHTML = list.map(function(r) {
+    var statusColor = r.status==='approved'?'var(--green)':r.status==='denied'?'var(--red)':'var(--gold)';
+    var date  = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+    var id    = escHtml(String(r.id));
+    var amt   = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
+    var mLabel = escHtml(REQ_METHOD_LABEL[r.method] || r.method || '—');
+    var actions = r.status === 'pending'
+      ? '<button class="btn-sm success" onclick="openReqModal(\'' + id + '\')"><i class="fas fa-eye"></i> Review</button>'
+      : '<button class="btn-sm" onclick="resetReqStatus(\'' + id + '\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
+    return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">' +
+        '<div style="flex:1;min-width:200px;">' +
+          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.committee||'Requisition') + ' — ' + amt + '</div>' +
+          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' + escHtml(r.member_name||'Unknown') + ' · ' + mLabel + ' · ' + date + '</div>' +
+        '</div>' +
+        '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
+      '</div>' +
+      '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.55;">' + escHtml((r.description||'').substring(0,300)) + '</p>' +
+      (r.admin_note ? '<div style="font-size:0.82rem;color:var(--gray-500);font-style:italic;margin-bottom:10px;"><i class="fas fa-comment" style="color:var(--gold);margin-right:5px;"></i>' + escHtml(r.admin_note) + '</div>' : '') +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + (r.doc_url ? '<a href="' + escHtml(r.doc_url) + '" target="_blank" class="btn-sm"><i class="fas fa-paperclip"></i> Document</a>' : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openReqModal(id) {
+  var r = _allRequisitions.find(function(x){ return String(x.id) === String(id); });
+  if (!r) return;
+  _reqModalRow = r;
+  document.getElementById('reqModalId').value = String(r.id);
+  document.getElementById('reqModalMethod').value = r.method || '';
+  document.getElementById('reqModalNote').value = '';
+  var amt = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
+  var mLabel = REQ_METHOD_LABEL[r.method] || r.method || '—';
+  document.getElementById('reqModalMeta').textContent = 'Submitted by ' + (r.member_name||'Unknown') + ' · ' + (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '');
+  document.getElementById('reqModalDetails').innerHTML =
+    '<strong>Committee:</strong> ' + escHtml(r.committee||'—') + '<br>' +
+    '<strong>Description:</strong> ' + escHtml(r.description||'—') + '<br>' +
+    '<strong>Payee / Vendor:</strong> ' + escHtml(r.payee_name||'—') + '<br>' +
+    '<strong>Amount:</strong> ' + amt + '<br>' +
+    '<strong>Payment Method:</strong> ' + escHtml(mLabel) +
+    (r.method==='personal_reimbursement' ? ' <em style="color:#e67e22;">(A reimbursement form will be auto-created on approval)</em>' : '');
+  var docWrap = document.getElementById('reqModalDocLink');
+  if (r.doc_url) {
+    docWrap.style.display = '';
+    docWrap.innerHTML = '<a href="' + escHtml(r.doc_url) + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--blue);"><i class="fas fa-paperclip"></i> View Supporting Document</a>';
+  } else { docWrap.style.display = 'none'; }
+  document.getElementById('reqModal').style.display = 'flex';
+}
+
+function closeReqModal() { document.getElementById('reqModal').style.display = 'none'; _reqModalRow = null; }
+
+async function approveRequisition() {
+  var token = getAdminToken(); if (!token) return;
+  var id     = (document.getElementById('reqModalId').value||'').trim();
+  var method = (document.getElementById('reqModalMethod').value||'');
+  var note   = (document.getElementById('reqModalNote').value||'').trim();
+  if (!id) return;
+  document.getElementById('reqModalSpinner').style.display = '';
+  try {
+    var updatePayload = { status:'approved', admin_note:note||null, reviewed_at:new Date().toISOString() };
+    await sbPatch('finance_requisitions', 'id=eq.'+encodeURIComponent(id), updatePayload, token);
+    // If personal reimbursement: auto-create a reimbursement record
+    if (method === 'personal_reimbursement' && _reqModalRow) {
+      var r = _reqModalRow;
+      try {
+        var reimbRes = await fetch(SUPABASE_URL + '/rest/v1/finance_reimbursements', {
+          method: 'POST',
+          headers: Object.assign(sbHeaders(token), { 'Prefer': 'return=representation' }),
+          body: JSON.stringify({
+            member_id:       r.member_id,
+            member_name:     r.member_name,
+            member_email:    r.member_email,
+            item_service:    r.committee + ': ' + (r.description||'').substring(0,200),
+            amount_cents:    r.amount_cents,
+            payee_name:      r.payee_name,
+            requisition_id:  r.id,
+            method:          'zelle',  // default — member can update in reimbursement form
+            doc_url:         r.doc_url || null,
+            status:          'pending',
+            submitted_at:    new Date().toISOString(),
+            auto_generated:  true
+          })
+        });
+        if (reimbRes.ok) {
+          var reimbData = await reimbRes.json();
+          var reimbId = reimbData && reimbData[0] && reimbData[0].id;
+          if (reimbId) {
+            await sbPatch('finance_requisitions', 'id=eq.'+encodeURIComponent(id), { reimbursement_id: reimbId }, token);
+          }
+        }
+      } catch(re) { console.warn('Auto-reimbursement creation failed:', re.message); }
+    }
+    var r = _allRequisitions.find(function(x){ return String(x.id)===String(id); });
+    if (r) { r.status='approved'; r.admin_note=note; }
+    var pending = _allRequisitions.filter(function(x){ return x.status==='pending'; }).length;
+    var badge = document.getElementById('reqPendingBadge');
+    if (badge) { badge.textContent=pending; badge.style.display=pending?'inline':'none'; }
+    renderRequisitionsAdmin();
+    closeReqModal();
+    showToast('Requisition approved.' + (method==='personal_reimbursement' ? ' Reimbursement form auto-created.' : ''));
+  } catch(e) { showToast('Could not approve: '+(e.message||'error'),'error'); }
+  finally { document.getElementById('reqModalSpinner').style.display='none'; }
+}
+
+async function denyRequisition() {
+  var token = getAdminToken(); if (!token) return;
+  var id   = (document.getElementById('reqModalId').value||'').trim();
+  var note = (document.getElementById('reqModalNote').value||'').trim();
+  if (!id) return;
+  document.getElementById('reqModalSpinner').style.display = '';
+  try {
+    await sbPatch('finance_requisitions', 'id=eq.'+encodeURIComponent(id),
+      { status:'denied', admin_note:note||null, reviewed_at:new Date().toISOString() }, token);
+    var r = _allRequisitions.find(function(x){ return String(x.id)===String(id); });
+    if (r) { r.status='denied'; r.admin_note=note; }
+    var pending = _allRequisitions.filter(function(x){ return x.status==='pending'; }).length;
+    var badge = document.getElementById('reqPendingBadge');
+    if (badge) { badge.textContent=pending; badge.style.display=pending?'inline':'none'; }
+    renderRequisitionsAdmin();
+    closeReqModal();
+    showToast('Requisition denied.');
+  } catch(e) { showToast('Could not deny: '+(e.message||'error'),'error'); }
+  finally { document.getElementById('reqModalSpinner').style.display='none'; }
+}
+
+async function resetReqStatus(id) {
+  var token = getAdminToken(); if (!token) return;
+  try {
+    await sbPatch('finance_requisitions','id=eq.'+encodeURIComponent(id),{status:'pending',admin_note:null,reviewed_at:null},token);
+    var r=_allRequisitions.find(function(x){return String(x.id)===String(id);});
+    if(r){r.status='pending';r.admin_note=null;}
+    var pending=_allRequisitions.filter(function(x){return x.status==='pending';}).length;
+    var badge=document.getElementById('reqPendingBadge');
+    if(badge){badge.textContent=pending;badge.style.display=pending?'inline':'none';}
+    renderRequisitionsAdmin();
+    showToast('Reset to pending.');
+  } catch(e){showToast('Could not reset: '+(e.message||'error'),'error');}
+}
+
+document.getElementById('reqModal').addEventListener('click', function(e) {
+  if (e.target === this) closeReqModal();
 });
 
 /* ═══════════════════════════════════════════
