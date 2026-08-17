@@ -86,7 +86,7 @@
       text-transform: uppercase;
     }
     .sidebar-section {
-      padding: 8px 0;
+      padding: 4px 0;
       border-bottom: 1px solid rgba(255,255,255,0.04);
       flex-shrink: 0;
     }
@@ -98,6 +98,30 @@
       color: rgba(255,255,255,0.22);
       padding: 8px 18px 4px;
     }
+
+    /* ── Collapsible nav groups ── */
+    .nav-group { border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .nav-group-toggle {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 9px 18px; background: none; border: none;
+      color: rgba(255,255,255,0.38); font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.13em; text-transform: uppercase; cursor: pointer;
+      transition: color 0.2s; text-align: left;
+    }
+    .nav-group-toggle:hover { color: rgba(255,255,255,0.65); }
+    .nav-group-toggle i.group-icon { font-size: 0.78rem; width: 16px; text-align: center; flex-shrink: 0; }
+    .nav-group-toggle .group-caret {
+      margin-left: auto; font-size: 0.65rem; transition: transform 0.25s;
+      color: rgba(255,255,255,0.2);
+    }
+    .nav-group-toggle.open .group-caret { transform: rotate(180deg); }
+    .nav-group-toggle .group-badges { display: flex; gap: 4px; margin-left: auto; align-items: center; }
+    .nav-group-toggle.open .group-badges { display: none; }
+    .nav-group-body { display: none; }
+    .nav-group-body.open { display: block; }
+    .nav-group-toggle.open { color: var(--gold); }
+    .nav-group.has-active .nav-group-toggle { color: rgba(255,255,255,0.55); }
+    .nav-group.has-active .nav-group-toggle.open { color: var(--gold); }
     .sidebar-link {
       display: flex;
       align-items: center;
@@ -1155,8 +1179,8 @@
     </div>
   </div>
 
+  <!-- Overview (always visible, no dropdown) -->
   <div class="sidebar-section">
-    <div class="sidebar-label">Overview</div>
     <button class="sidebar-link active" onclick="showPanel('dashboard')">
       <i class="fas fa-th-large"></i> Dashboard
     </button>
@@ -1165,109 +1189,186 @@
     </a>
   </div>
 
-  <div class="sidebar-section">
-    <div class="sidebar-label">Content</div>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages')">
-      <i class="fas fa-edit"></i> Page Editor
+  <!-- Finance -->
+  <div class="nav-group" id="navgroup-finance">
+    <button class="nav-group-toggle open" onclick="toggleNavGroup('finance')">
+      <i class="fas fa-landmark group-icon"></i> Finance
+      <span class="group-badges">
+        <span id="grpBadge-finance" style="display:none;background:#e74c3c;color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:8px;font-weight:700;"></span>
+      </span>
+      <i class="fas fa-chevron-down group-caret"></i>
     </button>
-    <button class="sidebar-link" data-section="members" onclick="showPanel('members')">
-      <i class="fas fa-user-check"></i> Member Requests <span id="navBadge-members" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="access" onclick="showPanel('access')">
-      <i class="fas fa-user-shield"></i> Access &amp; Permissions
-    </button>
-    <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
-      <i class="fas fa-calendar-alt"></i> Events Manager
-    </button>
-    <button class="sidebar-link" data-section="gala" onclick="showPanel('gala');loadGalaPanel()">
-      <i class="fas fa-graduation-cap"></i> Scholarship Gala
-    </button>
-    <button class="sidebar-link" data-section="registrations" onclick="showPanel('registrations')">
-      <i class="fas fa-clipboard-list"></i> Event Registrations
-    </button>
-    <button class="sidebar-link" data-section="news-manager" onclick="showPanel('news-manager')">
-      <i class="fas fa-newspaper"></i> News Manager
-    </button>
-    <button class="sidebar-link" data-section="documents" onclick="showPanel('documents');loadAdminDocuments()">
-      <i class="fas fa-folder-open"></i> Documents <span id="navBadge-documents" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="meetings" onclick="showPanel('meetings');loadMeetingsPanel()">
-      <i class="fas fa-people-group"></i> Meetings
-    </button>
-    <button class="sidebar-link" data-section="chapter-news" onclick="showPanel('chapter-news');loadChapterNewsPanel()">
-      <i class="fas fa-bullhorn"></i> Chapter News Feed
-    </button>
-    <button class="sidebar-link" data-section="store" onclick="showPanel('store');loadStorePanel()">
-      <i class="fas fa-store"></i> Chapter Store <span id="navBadge-store" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="member-announcements" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
-      <i class="fas fa-bullhorn"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="news-submissions" onclick="showPanel('news-submissions');loadNewsSubmissions()">
-      <i class="fas fa-newspaper"></i> News Submissions <span id="newsPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="requisitions" onclick="showPanel('requisitions');loadRequisitionsAdmin()">
-      <i class="fas fa-file-invoice-dollar"></i> Requisitions <span id="reqPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="reimbursements" onclick="showPanel('reimbursements');loadReimbursementsAdmin()">
-      <i class="fas fa-receipt"></i> Reimbursements <span id="reimbPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
-    </button>
-    <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
-      <i class="fas fa-camera-retro"></i> Event Photos
-    </button>
-    <button class="sidebar-link" data-section="officers" onclick="showPanel('officers')">
-      <i class="fas fa-users"></i> Officers Manager
-    </button>
-    <button class="sidebar-link" data-section="presidents" onclick="showPanel('presidents')">
-      <i class="fas fa-crown"></i> Past Presidents
-    </button>
-    <button class="sidebar-link" data-section="announcements" onclick="showPanel('announcements')">
-      <i class="fas fa-bullhorn"></i> Announcement Bar
-    </button>
-    <button class="sidebar-link" data-section="newsletter" onclick="showPanel('newsletter')">
-      <i class="fas fa-envelope-open-text"></i> Newsletter Generator
-    </button>
-    <button class="sidebar-link" data-section="dues-admin" onclick="showPanel('dues-admin');loadDuesAdminPanel()">
-      <i class="fas fa-dollar-sign"></i> Dues &amp; Payments <span id="navBadge-dues-admin" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle;"></span>
-    </button>
+    <div class="nav-group-body open" id="navbody-finance">
+      <button class="sidebar-link" data-section="dues-admin" onclick="showPanel('dues-admin');loadDuesAdminPanel()">
+        <i class="fas fa-dollar-sign"></i> Dues &amp; Payments <span id="navBadge-dues-admin" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle;"></span>
+      </button>
+      <button class="sidebar-link" data-section="requisitions" onclick="showPanel('requisitions');loadRequisitionsAdmin()">
+        <i class="fas fa-file-invoice-dollar"></i> Requisitions <span id="reqPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+      <button class="sidebar-link" data-section="reimbursements" onclick="showPanel('reimbursements');loadReimbursementsAdmin()">
+        <i class="fas fa-receipt"></i> Reimbursements <span id="reimbPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+    </div>
   </div>
 
-  <div class="sidebar-section" id="sidebarSitePagesSection">
-    <div class="sidebar-label">Site Pages (Edit)</div>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('home')">
-      <i class="fas fa-home"></i> Home
+  <!-- Membership -->
+  <div class="nav-group" id="navgroup-membership">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('membership')">
+      <i class="fas fa-users group-icon"></i> Membership
+      <span class="group-badges">
+        <span id="grpBadge-membership" style="display:none;background:#e74c3c;color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:8px;font-weight:700;"></span>
+      </span>
+      <i class="fas fa-chevron-down group-caret"></i>
     </button>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('about')">
-      <i class="fas fa-book"></i> Chapter History
-    </button>
-    <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
-      <i class="fas fa-calendar"></i> Events
-    </button>
-    <button class="sidebar-link" data-section="officers" onclick="showPanel('officers')">
-      <i class="fas fa-id-badge"></i> Leadership
-    </button>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('membership')">
-      <i class="fas fa-user-plus"></i> Membership
-    </button>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('news')">
-      <i class="fas fa-newspaper"></i> News
-    </button>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('gallery')">
-      <i class="fas fa-images"></i> Photo Gallery
-    </button>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('contact')">
-      <i class="fas fa-envelope"></i> Contact
-    </button>
-    <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('visiting')">
-      <i class="fas fa-plane-arrival"></i> Visiting Brothers
-    </button>
+    <div class="nav-group-body" id="navbody-membership">
+      <button class="sidebar-link" data-section="members" onclick="showPanel('members')">
+        <i class="fas fa-user-check"></i> Member Requests <span id="navBadge-members" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+      <button class="sidebar-link" data-section="access" onclick="showPanel('access')">
+        <i class="fas fa-user-shield"></i> Access &amp; Permissions
+      </button>
+    </div>
   </div>
 
-  <div class="sidebar-section">
-    <div class="sidebar-label">Account</div>
-    <button class="sidebar-link" data-section="settings" onclick="showPanel('settings')">
-      <i class="fas fa-cog"></i> Settings
+  <!-- Events & Programs -->
+  <div class="nav-group" id="navgroup-events">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('events')">
+      <i class="fas fa-calendar-alt group-icon"></i> Events &amp; Programs
+      <i class="fas fa-chevron-down group-caret"></i>
     </button>
+    <div class="nav-group-body" id="navbody-events">
+      <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
+        <i class="fas fa-calendar-alt"></i> Events Manager
+      </button>
+      <button class="sidebar-link" data-section="gala" onclick="showPanel('gala');loadGalaPanel()">
+        <i class="fas fa-graduation-cap"></i> Scholarship Gala
+      </button>
+      <button class="sidebar-link" data-section="registrations" onclick="showPanel('registrations')">
+        <i class="fas fa-clipboard-list"></i> Event Registrations
+      </button>
+      <button class="sidebar-link" data-section="meetings" onclick="showPanel('meetings');loadMeetingsPanel()">
+        <i class="fas fa-people-group"></i> Meetings
+      </button>
+    </div>
+  </div>
+
+  <!-- Communications -->
+  <div class="nav-group" id="navgroup-comms">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('comms')">
+      <i class="fas fa-bullhorn group-icon"></i> Communications
+      <span class="group-badges">
+        <span id="grpBadge-comms" style="display:none;background:#e74c3c;color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:8px;font-weight:700;"></span>
+      </span>
+      <i class="fas fa-chevron-down group-caret"></i>
+    </button>
+    <div class="nav-group-body" id="navbody-comms">
+      <button class="sidebar-link" data-section="announcements" onclick="showPanel('announcements')">
+        <i class="fas fa-bullhorn"></i> Announcement Bar
+      </button>
+      <button class="sidebar-link" data-section="member-announcements" onclick="showPanel('member-announcements');loadMemberAnnouncements()">
+        <i class="fas fa-comment-dots"></i> Member Announcements <span id="annPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+      <button class="sidebar-link" data-section="news-submissions" onclick="showPanel('news-submissions');loadNewsSubmissions()">
+        <i class="fas fa-newspaper"></i> News Submissions <span id="newsPendingBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+      <button class="sidebar-link" data-section="chapter-news" onclick="showPanel('chapter-news');loadChapterNewsPanel()">
+        <i class="fas fa-rss"></i> Chapter News Feed
+      </button>
+      <button class="sidebar-link" data-section="newsletter" onclick="showPanel('newsletter')">
+        <i class="fas fa-envelope-open-text"></i> Newsletter Generator
+      </button>
+    </div>
+  </div>
+
+  <!-- Content & Media -->
+  <div class="nav-group" id="navgroup-content">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('content')">
+      <i class="fas fa-photo-video group-icon"></i> Content &amp; Media
+      <span class="group-badges">
+        <span id="grpBadge-content" style="display:none;background:#e74c3c;color:#fff;font-size:0.6rem;padding:1px 5px;border-radius:8px;font-weight:700;"></span>
+      </span>
+      <i class="fas fa-chevron-down group-caret"></i>
+    </button>
+    <div class="nav-group-body" id="navbody-content">
+      <button class="sidebar-link" data-section="news-manager" onclick="showPanel('news-manager')">
+        <i class="fas fa-newspaper"></i> News Manager
+      </button>
+      <button class="sidebar-link" data-section="documents" onclick="showPanel('documents');loadAdminDocuments()">
+        <i class="fas fa-folder-open"></i> Documents <span id="navBadge-documents" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+      <button class="sidebar-link" data-section="gallery" onclick="showPanel('gallery')">
+        <i class="fas fa-camera-retro"></i> Event Photos
+      </button>
+      <button class="sidebar-link" data-section="store" onclick="showPanel('store');loadStorePanel()">
+        <i class="fas fa-store"></i> Chapter Store <span id="navBadge-store" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Chapter Leadership -->
+  <div class="nav-group" id="navgroup-leadership">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('leadership')">
+      <i class="fas fa-crown group-icon"></i> Chapter Leadership
+      <i class="fas fa-chevron-down group-caret"></i>
+    </button>
+    <div class="nav-group-body" id="navbody-leadership">
+      <button class="sidebar-link" data-section="officers" onclick="showPanel('officers')">
+        <i class="fas fa-users"></i> Officers Manager
+      </button>
+      <button class="sidebar-link" data-section="presidents" onclick="showPanel('presidents')">
+        <i class="fas fa-crown"></i> Past Presidents
+      </button>
+    </div>
+  </div>
+
+  <!-- Website Pages -->
+  <div class="nav-group" id="navgroup-site" id="sidebarSitePagesSection">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('site')">
+      <i class="fas fa-globe group-icon"></i> Website Pages
+      <i class="fas fa-chevron-down group-caret"></i>
+    </button>
+    <div class="nav-group-body" id="navbody-site">
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('home')">
+        <i class="fas fa-home"></i> Home
+      </button>
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('about')">
+        <i class="fas fa-book"></i> Chapter History
+      </button>
+      <button class="sidebar-link" data-section="events" onclick="showPanel('events')">
+        <i class="fas fa-calendar"></i> Events
+      </button>
+      <button class="sidebar-link" data-section="officers" onclick="showPanel('officers')">
+        <i class="fas fa-id-badge"></i> Leadership
+      </button>
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('membership')">
+        <i class="fas fa-user-plus"></i> Membership
+      </button>
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('news')">
+        <i class="fas fa-newspaper"></i> News
+      </button>
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('gallery')">
+        <i class="fas fa-images"></i> Photo Gallery
+      </button>
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('contact')">
+        <i class="fas fa-envelope"></i> Contact
+      </button>
+      <button class="sidebar-link" data-section="pages" onclick="showPanel('pages'); loadPageSection('visiting')">
+        <i class="fas fa-plane-arrival"></i> Visiting Brothers
+      </button>
+    </div>
+  </div>
+
+  <!-- Account -->
+  <div class="nav-group" id="navgroup-account">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('account')">
+      <i class="fas fa-cog group-icon"></i> Account
+      <i class="fas fa-chevron-down group-caret"></i>
+    </button>
+    <div class="nav-group-body" id="navbody-account">
+      <button class="sidebar-link" data-section="settings" onclick="showPanel('settings')">
+        <i class="fas fa-cog"></i> Settings
+      </button>
+    </div>
   </div>
 
   <div class="sidebar-footer">
@@ -3198,11 +3299,19 @@ function applySidebarPermissions() {
   document.querySelectorAll('.sidebar-link[data-section]').forEach(function(link) {
     link.style.display = canAccessSection(link.getAttribute('data-section')) ? '' : 'none';
   });
+  // Hide entire sidebar-section blocks with no visible links
   document.querySelectorAll('.sidebar-section').forEach(function(section) {
     const links = section.querySelectorAll('.sidebar-link[data-section]');
     if (!links.length) return;
     const anyVisible = Array.prototype.some.call(links, function(l) { return l.style.display !== 'none'; });
     section.style.display = anyVisible ? '' : 'none';
+  });
+  // Hide nav-group blocks with no visible links
+  document.querySelectorAll('.nav-group').forEach(function(group) {
+    const links = group.querySelectorAll('.sidebar-link[data-section]');
+    if (!links.length) return;
+    const anyVisible = Array.prototype.some.call(links, function(l) { return l.style.display !== 'none'; });
+    group.style.display = anyVisible ? '' : 'none';
   });
   const roleEl = document.getElementById('userRoleDisplay');
   if (roleEl) {
@@ -3210,6 +3319,31 @@ function applySidebarPermissions() {
       ? 'Full Admin'
       : 'Limited Admin';
   }
+}
+
+function toggleNavGroup(id) {
+  var toggle = document.querySelector('#navgroup-' + id + ' .nav-group-toggle');
+  var body   = document.getElementById('navbody-' + id);
+  if (!toggle || !body) return;
+  var isOpen = body.classList.contains('open');
+  toggle.classList.toggle('open', !isOpen);
+  body.classList.toggle('open', !isOpen);
+}
+
+function openNavGroupForSection(section) {
+  // Find which nav-group contains a sidebar-link for this section and open it
+  document.querySelectorAll('.nav-group').forEach(function(group) {
+    var match = group.querySelector('.sidebar-link[data-section="' + section + '"]');
+    if (match) {
+      var id = group.id.replace('navgroup-', '');
+      var toggle = group.querySelector('.nav-group-toggle');
+      var body   = document.getElementById('navbody-' + id);
+      if (toggle && body) {
+        toggle.classList.add('open');
+        body.classList.add('open');
+      }
+    }
+  });
 }
 
 function showPanel(id) {
@@ -3226,6 +3360,9 @@ function showPanel(id) {
   const meta = PANEL_META[id] || [id, ''];
   document.getElementById('panelTitle').textContent = meta[0];
   document.getElementById('panelBreadcrumb').textContent = meta[1];
+
+  // Auto-open the nav group containing this section
+  openNavGroupForSection(id);
 
   // Highlight matching sidebar button
   document.querySelectorAll('.sidebar-link').forEach(l => {
@@ -8721,6 +8858,25 @@ function setNavBadge(id, count) {
   if (!el) return;
   el.textContent = count;
   el.style.display = count > 0 ? 'inline' : 'none';
+  rollupGroupBadges();
+}
+
+// Roll up child badge counts into group-level badges
+function rollupGroupBadges() {
+  var groups = {
+    finance:    ['navBadge-dues-admin', 'reqPendingBadge', 'reimbPendingBadge'],
+    membership: ['navBadge-members'],
+    comms:      ['annPendingBadge', 'newsPendingBadge'],
+    content:    ['navBadge-documents', 'navBadge-store'],
+  };
+  Object.keys(groups).forEach(function(grp) {
+    var total = groups[grp].reduce(function(sum, bid) {
+      var el = document.getElementById(bid);
+      return sum + (el && el.style.display !== 'none' ? (parseInt(el.textContent) || 0) : 0);
+    }, 0);
+    var grpEl = document.getElementById('grpBadge-' + grp);
+    if (grpEl) { grpEl.textContent = total; grpEl.style.display = total > 0 ? 'inline' : 'none'; }
+  });
 }
 
 async function loadAllPendingCounts() {
@@ -8733,16 +8889,25 @@ async function loadAllPendingCounts() {
       sbGet('documents', 'status=eq.pending&select=id', token),
       sbGet('store_orders', 'status=eq.pending&select=id', token),
       sbGet('member_announcements', 'status=eq.pending&select=id', token),
+      sbGet('member_news_submissions', 'status=eq.pending&select=id', token),
+      sbGet('finance_requisitions', 'status=eq.pending&select=id', token),
+      sbGet('finance_reimbursements', 'status=eq.pending&select=id', token),
     ]);
-    var memberReqs  = results[0].status === 'fulfilled' ? (results[0].value || []) : [];
-    var visitingReqs= results[1].status === 'fulfilled' ? (results[1].value || []) : [];
-    var docs        = results[2].status === 'fulfilled' ? (results[2].value || []) : [];
-    var orders      = results[3].status === 'fulfilled' ? (results[3].value || []) : [];
-    var anns        = results[4].status === 'fulfilled' ? (results[4].value || []) : [];
+    var memberReqs   = results[0].status === 'fulfilled' ? (results[0].value || []) : [];
+    var visitingReqs = results[1].status === 'fulfilled' ? (results[1].value || []) : [];
+    var docs         = results[2].status === 'fulfilled' ? (results[2].value || []) : [];
+    var orders       = results[3].status === 'fulfilled' ? (results[3].value || []) : [];
+    var anns         = results[4].status === 'fulfilled' ? (results[4].value || []) : [];
+    var newsSubs     = results[5].status === 'fulfilled' ? (results[5].value || []) : [];
+    var reqs         = results[6].status === 'fulfilled' ? (results[6].value || []) : [];
+    var reimbs       = results[7].status === 'fulfilled' ? (results[7].value || []) : [];
     setNavBadge('navBadge-members',   memberReqs.length + visitingReqs.length);
     setNavBadge('navBadge-documents', docs.length);
     setNavBadge('navBadge-store',     orders.length);
     setNavBadge('annPendingBadge',    anns.length);
+    setNavBadge('newsPendingBadge',   newsSubs.length);
+    setNavBadge('reqPendingBadge',    reqs.length);
+    setNavBadge('reimbPendingBadge',  reimbs.length);
   } catch(e) {}
 }
 
