@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finance Admin | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="../../images/xtl-logo.png" type="image/png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --black:#0a0a0a; --dark:#111; --dark2:#181818;
+      --gold:#C9A84C; --gold-pale:rgba(201,168,76,0.08); --gold-pale2:rgba(201,168,76,0.15);
+      --white:#ffffff; --gray-400:#9ca3af;
+      --green:#22c55e; --green-pale:rgba(34,197,94,0.1);
+      --red:#ef4444;   --red-pale:rgba(239,68,68,0.1);
+      --blue:#3b82f6;  --blue-pale:rgba(59,130,246,0.1);
+      --amber:#f59e0b; --amber-pale:rgba(245,158,11,0.1);
+      --purple:#8b5cf6; --purple-pale:rgba(139,92,246,0.1);
+      --sidebar-w:260px;
+    }
+    html,body{height:100%;}
+    body{font-family:'Inter',sans-serif;background:var(--dark);color:var(--white);display:flex;min-height:100vh;}
+
+    /* ── Sidebar ── */
+    .sidebar{width:var(--sidebar-w);background:var(--dark2);border-right:1px solid rgba(201,168,76,0.12);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform 0.3s;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+    .sidebar-brand{padding:22px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+    .sidebar-brand img{width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(201,168,76,0.4);object-fit:contain;}
+    .sidebar-brand-text .name{font-family:'Playfair Display',serif;font-size:0.88rem;font-weight:700;color:var(--gold);line-height:1.2;}
+    .sidebar-brand-text .sub{font-size:0.62rem;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;}
+    .sidebar-user{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:12px;}
+    .user-avatar{width:34px;height:34px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;color:var(--black);flex-shrink:0;overflow:hidden;}
+    .user-avatar img{width:100%;height:100%;object-fit:cover;}
+    .user-info .uname{font-size:0.82rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-info .urole{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-top:2px;}
+    .sidebar-nav{padding:10px 0;flex:1;}
+    .nav-label{font-size:0.62rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.22);padding:10px 20px 5px;}
+    .nav-item{display:flex;align-items:center;gap:11px;padding:10px 20px;color:rgba(255,255,255,0.5);font-size:0.85rem;font-weight:500;border:none;background:none;width:100%;text-align:left;transition:color 0.2s,background 0.2s;border-left:3px solid transparent;text-decoration:none;cursor:pointer;}
+    .nav-item i{width:18px;text-align:center;font-size:0.88rem;}
+    .nav-item:hover{color:var(--white);background:rgba(255,255,255,0.04);}
+    .nav-item.active{color:var(--gold);background:var(--gold-pale);border-left-color:var(--gold);}
+    .nav-divider{border:none;border-top:1px solid rgba(255,255,255,0.06);margin:6px 0;}
+    .sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);}
+    .logout-btn{display:flex;align-items:center;gap:9px;color:rgba(255,255,255,0.4);font-size:0.82rem;background:none;border:none;cursor:pointer;padding:7px 0;transition:color 0.2s;width:100%;}
+    .logout-btn:hover{color:var(--red);}
+
+    /* ── Main ── */
+    .main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+    .topbar{background:var(--dark2);border-bottom:1px solid rgba(255,255,255,0.06);padding:0 28px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+    .topbar-left{display:flex;align-items:center;gap:12px;}
+    .hamburger{display:none;background:none;border:none;color:var(--white);font-size:1.1rem;cursor:pointer;padding:6px;}
+    .page-title{font-size:1rem;font-weight:600;color:var(--white);}
+    .breadcrumb{font-size:0.78rem;color:var(--gray-400);margin-left:6px;}
+    .topbar-right a{display:flex;align-items:center;gap:6px;color:var(--gray-400);text-decoration:none;font-size:0.8rem;transition:color 0.2s;}
+    .topbar-right a:hover{color:var(--gold);}
+
+    .content{padding:28px;flex:1;}
+
+    /* ── Tool Tabs ── */
+    .tool-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:28px;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:0;}
+    .tool-tab{padding:10px 18px;border-radius:8px 8px 0 0;font-size:0.84rem;font-weight:600;border:none;background:none;color:rgba(255,255,255,0.4);cursor:pointer;transition:color 0.2s,background 0.2s;display:flex;align-items:center;gap:7px;margin-bottom:-1px;border:1px solid transparent;border-bottom:none;}
+    .tool-tab:hover{color:var(--white);background:rgba(255,255,255,0.04);}
+    .tool-tab.active{color:var(--gold);background:var(--dark2);border-color:rgba(201,168,76,0.2);border-bottom-color:var(--dark);}
+    .tool-tab i{font-size:0.8rem;}
+
+    /* ── Tool Panel ── */
+    .tool-panel{display:none;}
+    .tool-panel.active{display:block;}
+
+    /* ── Cards ── */
+    .card{background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:24px;margin-bottom:20px;}
+    .card-title{font-size:0.95rem;font-weight:700;color:var(--white);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+    .card-title i{color:var(--gold);}
+    .card-sub{font-size:0.78rem;color:var(--gray-400);margin-bottom:20px;}
+
+    /* ── Form elements ── */
+    .form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+    .form-row.three{grid-template-columns:1fr 1fr 1fr;}
+    .form-row.single{grid-template-columns:1fr;}
+    .field{display:flex;flex-direction:column;gap:6px;}
+    .field label{font-size:0.78rem;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;}
+    .field input,.field select,.field textarea{background:#0f0f0f;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;color:var(--white);font-size:0.88rem;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+    .field textarea{resize:vertical;min-height:80px;}
+    .field select option{background:#1a1a1a;color:var(--white);}
+    .field-note{font-size:0.73rem;color:var(--gray-400);margin-top:2px;}
+
+    /* ── Amount grid for dues config ── */
+    .dues-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .dues-item{background:#0f0f0f;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:16px;}
+    .dues-item-label{font-size:0.78rem;font-weight:600;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;}
+    .dues-item-desc{font-size:0.72rem;color:rgba(255,255,255,0.3);margin-bottom:12px;}
+    .dues-input-wrap{position:relative;display:flex;align-items:center;}
+    .dues-input-wrap span{position:absolute;left:12px;color:var(--gray-400);font-size:0.88rem;pointer-events:none;}
+    .dues-input-wrap input{padding-left:26px;width:100%;background:#141414;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px 9px 26px;color:var(--white);font-size:0.92rem;font-weight:600;outline:none;transition:border-color 0.2s;}
+    .dues-input-wrap input:focus{border-color:var(--gold);}
+
+    /* ── Buttons ── */
+    .btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;border-radius:8px;font-size:0.85rem;font-weight:600;border:none;cursor:pointer;transition:all 0.2s;}
+    .btn-gold{background:var(--gold);color:var(--black);}
+    .btn-gold:hover{background:#d4a84c;transform:translateY(-1px);}
+    .btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--white);}
+    .btn-outline:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.3);}
+    .btn-green{background:var(--green);color:var(--black);}
+    .btn-green:hover{background:#16a34a;}
+    .btn-red{background:var(--red);color:var(--white);}
+    .btn-red:hover{background:#dc2626;}
+    .btn-blue{background:var(--blue);color:var(--white);}
+    .btn-blue:hover{background:#2563eb;}
+    .btn:disabled{opacity:0.5;pointer-events:none;}
+    .btn-row{display:flex;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap;}
+
+    /* ── Toast ── */
+    .toast{position:fixed;bottom:28px;right:28px;background:#1f1f1f;border:1px solid rgba(255,255,255,0.12);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:0.85rem;z-index:9999;transform:translateY(80px);opacity:0;transition:all 0.35s;pointer-events:none;max-width:340px;}
+    .toast.show{transform:translateY(0);opacity:1;}
+    .toast i{font-size:1rem;}
+    .toast.success i{color:var(--green);}
+    .toast.error i{color:var(--red);}
+    .toast.info i{color:var(--blue);}
+
+    /* ── Policy notice ── */
+    .policy-notice{background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:12px 16px;font-size:0.78rem;color:rgba(255,255,255,0.6);display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;}
+    .policy-notice i{color:var(--amber);margin-top:2px;flex-shrink:0;}
+
+    /* ── Table ── */
+    .data-table{width:100%;border-collapse:collapse;}
+    .data-table th{text-align:left;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-400);padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.07);}
+    .data-table td{padding:12px 12px;font-size:0.84rem;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle;}
+    .data-table tr:last-child td{border-bottom:none;}
+    .data-table tr:hover td{background:rgba(255,255,255,0.02);}
+    .table-wrap{overflow-x:auto;}
+
+    /* ── Badges ── */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:0.72rem;font-weight:600;}
+    .badge-gold{background:var(--gold-pale2);color:var(--gold);}
+    .badge-green{background:var(--green-pale);color:var(--green);}
+    .badge-red{background:var(--red-pale);color:var(--red);}
+    .badge-blue{background:var(--blue-pale);color:var(--blue);}
+    .badge-amber{background:var(--amber-pale);color:var(--amber);}
+    .badge-gray{background:rgba(255,255,255,0.07);color:var(--gray-400);}
+    .badge-purple{background:var(--purple-pale);color:var(--purple);}
+
+    /* ── Snapshot editor ── */
+    .snapshot-section{margin-bottom:24px;}
+    .snapshot-section-title{font-size:0.8rem;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid rgba(201,168,76,0.15);}
+    .line-items{display:flex;flex-direction:column;gap:8px;}
+    .line-item-row{display:grid;grid-template-columns:1fr 140px 36px;gap:8px;align-items:center;}
+    .line-item-row input{background:#0f0f0f;border:1px solid rgba(255,255,255,0.1);border-radius:7px;padding:8px 10px;color:var(--white);font-size:0.84rem;font-family:'Inter',sans-serif;outline:none;transition:border-color 0.2s;}
+    .line-item-row input:focus{border-color:var(--gold);}
+    .line-item-row .amt{text-align:right;}
+    .remove-row-btn{background:none;border:none;color:var(--red);cursor:pointer;font-size:0.88rem;opacity:0.6;padding:6px;border-radius:6px;transition:opacity 0.2s;}
+    .remove-row-btn:hover{opacity:1;}
+    .add-row-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:7px;font-size:0.78rem;font-weight:600;color:var(--gold);background:var(--gold-pale);border:none;cursor:pointer;margin-top:8px;transition:background 0.2s;}
+    .add-row-btn:hover{background:var(--gold-pale2);}
+
+    /* ── Manual payment ── */
+    .method-tiles{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+    .method-tile{flex:1;min-width:120px;background:#0f0f0f;border:1.5px solid rgba(255,255,255,0.1);border-radius:10px;padding:14px 12px;cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;}
+    .method-tile i{font-size:1.2rem;color:var(--gray-400);}
+    .method-tile span{font-size:0.78rem;font-weight:600;color:var(--gray-400);}
+    .method-tile.active{border-color:var(--gold);background:var(--gold-pale);}
+    .method-tile.active i,.method-tile.active span{color:var(--gold);}
+    .payment-history-wrap{margin-top:20px;}
+    .ph-title{font-size:0.8rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:12px;}
+
+    /* ── Member search autocomplete ── */
+    .member-search-wrap{position:relative;}
+    .member-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#1a1a1a;border:1px solid rgba(255,255,255,0.12);border-radius:10px;z-index:200;max-height:200px;overflow-y:auto;display:none;}
+    .member-dropdown.open{display:block;}
+    .member-option{padding:10px 14px;cursor:pointer;font-size:0.84rem;display:flex;flex-direction:column;gap:2px;transition:background 0.15s;}
+    .member-option:hover{background:rgba(255,255,255,0.05);}
+    .member-option .mo-name{color:var(--white);font-weight:600;}
+    .member-option .mo-email{color:var(--gray-400);font-size:0.75rem;}
+
+    /* ── Divider ── */
+    .section-divider{border:none;border-top:1px solid rgba(255,255,255,0.07);margin:24px 0;}
+
+    /* ── Mobile overlay ── */
+    .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
+    @media(max-width:768px){
+      .sidebar{transform:translateX(-100%);}
+      .sidebar.open{transform:translateX(0);}
+      .sidebar-overlay.show{display:block;}
+      .main{margin-left:0;}
+      .hamburger{display:flex;}
+      .form-row,.form-row.three{grid-template-columns:1fr;}
+      .dues-grid{grid-template-columns:1fr;}
+      .method-tiles{flex-direction:column;}
+      .content{padding:16px;}
+    }
+
+    /* ── Fiscal year toggle ── */
+    .fy-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .fy-pill{padding:7px 14px;border-radius:20px;font-size:0.8rem;font-weight:600;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);cursor:pointer;transition:all 0.2s;}
+    .fy-pill.active{background:var(--gold-pale2);border-color:var(--gold);color:var(--gold);}
+
+    /* ── Catalog ── */
+    .merch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-bottom:16px;}
+    .merch-card{background:#0f0f0f;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;position:relative;}
+    .merch-card-img{width:100%;height:130px;object-fit:cover;border-radius:8px;margin-bottom:12px;background:rgba(255,255,255,0.04);}
+    .merch-card-img-placeholder{width:100%;height:130px;border-radius:8px;margin-bottom:12px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.15);font-size:2rem;}
+    .merch-card-name{font-weight:700;font-size:0.9rem;margin-bottom:4px;}
+    .merch-card-price{color:var(--gold);font-size:0.88rem;font-weight:600;margin-bottom:8px;}
+    .merch-card-actions{display:flex;gap:6px;}
+    .merch-card-actions button{flex:1;padding:7px;border-radius:7px;font-size:0.75rem;font-weight:600;border:none;cursor:pointer;}
+    .btn-edit-sm{background:rgba(255,255,255,0.08);color:var(--white);}
+    .btn-delete-sm{background:var(--red-pale);color:var(--red);}
+    .merch-inactive{opacity:0.5;}
+    .merch-inactive::after{content:'Inactive';position:absolute;top:10px;right:10px;background:var(--red-pale);color:var(--red);font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;}
+
+    /* ── Roster ── */
+    .roster-search{display:flex;gap:8px;margin-bottom:16px;}
+    .roster-search input{flex:1;background:#0f0f0f;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:9px 12px;color:var(--white);font-size:0.85rem;outline:none;}
+    .roster-search input:focus{border-color:var(--gold);}
+    .member-row{display:flex;align-items:center;gap:12px;padding:12px;background:#0f0f0f;border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:8px;}
+    .member-row-avatar{width:36px;height:36px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.82rem;color:var(--black);flex-shrink:0;overflow:hidden;}
+    .member-row-avatar img{width:100%;height:100%;object-fit:cover;}
+    .member-row-info{flex:1;min-width:0;}
+    .member-row-name{font-weight:600;font-size:0.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .member-row-meta{font-size:0.73rem;color:var(--gray-400);margin-top:2px;}
+    .member-row-actions{display:flex;gap:6px;flex-shrink:0;}
+
+    /* ── Modal ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
+    .modal-overlay.open{display:flex;}
+    .modal{background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:28px;}
+    .modal-title{font-size:1rem;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:8px;}
+    .modal-title i{color:var(--gold);}
+    .modal-close{background:none;border:none;color:var(--gray-400);font-size:1rem;cursor:pointer;margin-left:auto;padding:4px;}
+    .modal-close:hover{color:var(--white);}
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <img src="../../images/xtl-logo.png" alt="NDA" />
+    <div class="sidebar-brand-text">
+      <div class="name">North Dallas Alphas</div>
+      <div class="sub">Finance Portal</div>
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="sidebarAvatar"></div>
+    <div class="user-info">
+      <div class="uname" id="sidebarName">Loading…</div>
+      <div class="urole" id="sidebarRole"></div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Finance</div>
+    <a class="nav-item" href="../dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+    <a class="nav-item" href="../pay-dues.html"><i class="fas fa-credit-card"></i> Pay Dues</a>
+    <a class="nav-item" href="../requisition.html"><i class="fas fa-file-invoice-dollar"></i> Requisitions</a>
+    <a class="nav-item" href="../reimbursement.html"><i class="fas fa-receipt"></i> Reimbursements</a>
+    <hr class="nav-divider" />
+    <div class="nav-label">Admin</div>
+    <a class="nav-item active" href="index.html"><i class="fas fa-tools"></i> Finance Admin</a>
+    <hr class="nav-divider" />
+    <a class="nav-item" href="../../member-portal.html"><i class="fas fa-arrow-left"></i> Member Portal</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openSidebar()"><i class="fas fa-bars"></i></button>
+      <span class="page-title">Finance Admin</span>
+      <span class="breadcrumb">/ Treasurer Tools</span>
+    </div>
+    <div class="topbar-right">
+      <a href="../dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Tool Tabs -->
+    <div class="tool-tabs">
+      <button class="tool-tab active" data-tab="dues-config" onclick="switchTab('dues-config')">
+        <i class="fas fa-sliders-h"></i> Dues Configuration
+      </button>
+      <button class="tool-tab" data-tab="manual-payment" onclick="switchTab('manual-payment')">
+        <i class="fas fa-hand-holding-usd"></i> Log Payment
+      </button>
+      <button class="tool-tab" data-tab="snapshot" onclick="switchTab('snapshot')">
+        <i class="fas fa-camera"></i> Dashboard Snapshot
+      </button>
+      <button class="tool-tab" data-tab="roster" onclick="switchTab('roster')">
+        <i class="fas fa-users"></i> Roster
+      </button>
+      <button class="tool-tab" data-tab="catalog" onclick="switchTab('catalog')">
+        <i class="fas fa-store"></i> Merchandise
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: Dues Configuration
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel active" id="tab-dues-config">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-sliders-h"></i> Dues Amounts</div>
+        <div class="card-sub">Set the dollar amounts members pay for each dues category. Changes take effect immediately for new payments.</div>
+
+        <div class="policy-notice">
+          <i class="fas fa-info-circle"></i>
+          <span>Amounts shown in dollars. They are stored in cents internally. The Late Fee and Building Fund amounts are add-ons applied on top of the base category amount.</span>
+        </div>
+
+        <div class="dues-grid" id="duesGrid">
+          <!-- populated by JS -->
+        </div>
+
+        <hr class="section-divider" />
+
+        <div class="card-title" style="margin-bottom:4px;"><i class="fas fa-calendar-alt"></i> Fiscal Year Settings</div>
+        <div class="card-sub">Controls the active fiscal year displayed on the Pay Dues page and which year dues are recorded against.</div>
+        <div class="form-row">
+          <div class="field">
+            <label>Current Fiscal Year</label>
+            <input type="text" id="fyInput" placeholder="e.g. 2025-2026" />
+            <div class="field-note">Format: YYYY-YYYY (e.g. 2025-2026)</div>
+          </div>
+          <div class="field">
+            <label>Late Fee Deadline (MM/DD)</label>
+            <input type="text" id="lateFeeDeadlineInput" placeholder="07/31" />
+            <div class="field-note">Late fee auto-applied after this date each year</div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="saveDuesConfig()"><i class="fas fa-save"></i> Save Dues Configuration</button>
+          <button class="btn btn-outline" onclick="loadDuesConfig()"><i class="fas fa-undo"></i> Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: Manual Payment Log
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="tab-manual-payment">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-hand-holding-usd"></i> Log Manual Payment</div>
+        <div class="card-sub">Record a dues payment made by check, Zelle, or cash — or mark a member's dues as waived. These payments are not processed through Stripe.</div>
+
+        <div class="policy-notice">
+          <i class="fas fa-info-circle"></i>
+          <span>Manual payments recorded here will not automatically sync to Xero. The Financial Secretary should record them in Xero separately. A future update will add manual Xero sync.</span>
+        </div>
+
+        <div class="field" style="margin-bottom:16px;">
+          <label>Member</label>
+          <div class="member-search-wrap">
+            <input type="text" id="mpMemberSearch" placeholder="Search by name or email…" oninput="searchMembers(this.value)" autocomplete="off" />
+            <div class="member-dropdown" id="memberDropdown"></div>
+          </div>
+          <input type="hidden" id="mpMemberId" />
+          <input type="hidden" id="mpMemberEmail" />
+          <input type="hidden" id="mpMemberName" />
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Dues Category</label>
+            <select id="mpCategory">
+              <option value="renewing">Renewing Member</option>
+              <option value="new_initiate">New Initiate</option>
+              <option value="legacy">Legacy / Life Member</option>
+              <option value="undergrad_1">Undergrad — First Year</option>
+              <option value="undergrad_2plus">Undergrad — 2nd Year +</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Fiscal Year</label>
+            <input type="text" id="mpFiscalYear" placeholder="e.g. 2025-2026" />
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:16px;">
+          <label>Payment Method</label>
+          <div class="method-tiles">
+            <div class="method-tile active" data-method="check" onclick="selectPayMethod(this,'check')">
+              <i class="fas fa-money-check-alt"></i><span>Check</span>
+            </div>
+            <div class="method-tile" data-method="zelle" onclick="selectPayMethod(this,'zelle')">
+              <i class="fas fa-mobile-alt"></i><span>Zelle</span>
+            </div>
+            <div class="method-tile" data-method="cash" onclick="selectPayMethod(this,'cash')">
+              <i class="fas fa-money-bill-wave"></i><span>Cash</span>
+            </div>
+            <div class="method-tile" data-method="waived" onclick="selectPayMethod(this,'waived')">
+              <i class="fas fa-star"></i><span>Waived</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Amount ($)</label>
+            <input type="number" id="mpAmount" placeholder="0.00" step="0.01" min="0" />
+            <div class="field-note">Leave blank or 0 for waived</div>
+          </div>
+          <div class="field">
+            <label>Check / Reference #</label>
+            <input type="text" id="mpReference" placeholder="Check number or Zelle confirmation" />
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="field">
+            <label>Add-ons</label>
+            <div style="display:flex;gap:12px;margin-top:4px;">
+              <label style="display:flex;align-items:center;gap:7px;font-size:0.85rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;color:var(--white);">
+                <input type="checkbox" id="mpLateFee" style="accent-color:var(--gold);" /> Late Fee
+              </label>
+              <label style="display:flex;align-items:center;gap:7px;font-size:0.85rem;cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;color:var(--white);">
+                <input type="checkbox" id="mpBuildingFund" style="accent-color:var(--gold);" /> Building Fund
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row single">
+          <div class="field">
+            <label>Notes (optional)</label>
+            <textarea id="mpNotes" placeholder="Any notes about this payment…"></textarea>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="logManualPayment()"><i class="fas fa-plus-circle"></i> Log Payment</button>
+          <button class="btn btn-outline" onclick="clearPaymentForm()"><i class="fas fa-times"></i> Clear</button>
+        </div>
+      </div>
+
+      <!-- Recent manual payments -->
+      <div class="card">
+        <div class="card-title"><i class="fas fa-history"></i> Recent Manual Payments</div>
+        <div class="card-sub">Last 20 payments logged via this tool (excludes Stripe payments).</div>
+        <div class="table-wrap">
+          <table class="data-table" id="manualPayTable">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Category</th>
+                <th>FY</th>
+                <th>Method</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Ref #</th>
+              </tr>
+            </thead>
+            <tbody id="manualPayTbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:24px;">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: Dashboard Snapshot
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="tab-snapshot">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-camera"></i> Publish Financial Snapshot</div>
+        <div class="card-sub">Update the month-end financial data displayed on the Finance Dashboard. Members see summary figures only — no line-item detail per chapter policy.</div>
+
+        <div class="policy-notice">
+          <i class="fas fa-info-circle"></i>
+          <span>This snapshot represents the chapter's financial position as of the "As of" date you set below. Publish after reconciling with Xero each month. A future update will auto-populate from Xero.</span>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>As of Date</label>
+            <input type="text" id="snapAsOf" placeholder="e.g. July 31, 2026" />
+          </div>
+          <div class="field">
+            <label>Updated By</label>
+            <input type="text" id="snapUpdatedBy" placeholder="Bro. Smith" />
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Cash Position -->
+        <div class="snapshot-section">
+          <div class="snapshot-section-title"><i class="fas fa-university"></i> Cash Position</div>
+          <div class="form-row three">
+            <div class="field">
+              <label>Total Balance ($)</label>
+              <input type="number" id="snapCashTotal" placeholder="0.00" step="0.01" min="0" />
+            </div>
+            <div class="field">
+              <label>Reserved ($)</label>
+              <input type="number" id="snapCashReserved" placeholder="0.00" step="0.01" min="0" />
+              <div class="field-note">Restricted funds, grants, earmarks</div>
+            </div>
+            <div class="field">
+              <label>Available ($)</label>
+              <input type="number" id="snapCashAvailable" placeholder="Auto-calculated" step="0.01" min="0" readonly style="opacity:0.6;" />
+              <div class="field-note">Total minus Reserved</div>
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Balance Sheet -->
+        <div class="snapshot-section">
+          <div class="snapshot-section-title"><i class="fas fa-balance-scale"></i> Balance Sheet</div>
+
+          <div style="margin-bottom:12px;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--gray-400);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">Assets</div>
+            <div class="line-items" id="assetsContainer"></div>
+            <button class="add-row-btn" onclick="addLineItem('assets')"><i class="fas fa-plus"></i> Add Asset Line</button>
+          </div>
+
+          <div style="margin-top:16px;">
+            <div style="font-size:0.78rem;font-weight:600;color:var(--gray-400);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em;">Liabilities</div>
+            <div class="line-items" id="liabilitiesContainer"></div>
+            <button class="add-row-btn" onclick="addLineItem('liabilities')"><i class="fas fa-plus"></i> Add Liability Line</button>
+          </div>
+
+          <div class="form-row" style="margin-top:16px;">
+            <div class="field">
+              <label>Total Assets ($)</label>
+              <input type="number" id="snapTotalAssets" placeholder="0.00" step="0.01" />
+            </div>
+            <div class="field">
+              <label>Total Liabilities ($)</label>
+              <input type="number" id="snapTotalLiabilities" placeholder="0.00" step="0.01" />
+            </div>
+          </div>
+          <div class="form-row single">
+            <div class="field">
+              <label>Net Position / Equity ($)</label>
+              <input type="number" id="snapNetPosition" placeholder="Auto-calculated (Assets − Liabilities)" step="0.01" readonly style="opacity:0.6;" />
+            </div>
+          </div>
+        </div>
+
+        <hr class="section-divider" />
+
+        <!-- Budget vs Actuals -->
+        <div class="snapshot-section">
+          <div class="snapshot-section-title"><i class="fas fa-chart-bar"></i> Budget vs. Actuals</div>
+          <div class="line-items" id="budgetContainer"></div>
+          <button class="add-row-btn" onclick="addBudgetRow()"><i class="fas fa-plus"></i> Add Category</button>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="publishSnapshot()"><i class="fas fa-cloud-upload-alt"></i> Publish Snapshot</button>
+          <button class="btn btn-outline" onclick="loadSnapshot()"><i class="fas fa-undo"></i> Reload Current</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: Roster
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="tab-roster">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-users"></i> Member Roster</div>
+        <div class="card-sub">View and manage chapter member records. Financial roles (Treasurer, Financial Secretary) are set here.</div>
+
+        <div class="roster-search">
+          <input type="text" id="rosterSearch" placeholder="Search by name or email…" oninput="filterRoster(this.value)" />
+          <button class="btn btn-gold" onclick="openAddMemberModal()"><i class="fas fa-user-plus"></i> Add Member</button>
+        </div>
+
+        <div id="rosterList">
+          <div style="text-align:center;color:var(--gray-400);padding:32px;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         TAB: Merchandise Catalog
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="tab-catalog">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-store"></i> Merchandise Catalog</div>
+        <div class="card-sub">Manage items available for purchase in the member portal. Toggle active/inactive to control visibility.</div>
+
+        <div class="btn-row" style="margin-bottom:20px;margin-top:0;">
+          <button class="btn btn-gold" onclick="openMerchModal(null)"><i class="fas fa-plus"></i> Add Item</button>
+        </div>
+
+        <div class="merch-grid" id="merchGrid">
+          <div style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:32px;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
+
+<!-- ── Add/Edit Member Modal ── -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal">
+    <div class="modal-title"><i class="fas fa-user-edit"></i> <span id="memberModalTitle">Add Member</span> <button class="modal-close" onclick="closeMemberModal()"><i class="fas fa-times"></i></button></div>
+    <div class="form-row">
+      <div class="field">
+        <label>First Name</label>
+        <input type="text" id="mmFirst" />
+      </div>
+      <div class="field">
+        <label>Last Name</label>
+        <input type="text" id="mmLast" />
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="mmEmail" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="mmPhone" placeholder="(555) 000-0000" />
+      </div>
+      <div class="field">
+        <label>Member Type</label>
+        <select id="mmType">
+          <option value="active">Active</option>
+          <option value="financial">Financial</option>
+          <option value="non-financial">Non-Financial</option>
+          <option value="life">Life</option>
+          <option value="honorary">Honorary</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="field">
+        <label>Finance Role (optional)</label>
+        <select id="mmFinanceRole">
+          <option value="">None</option>
+          <option value="treasurer">Treasurer</option>
+          <option value="financial_secretary">Financial Secretary</option>
+          <option value="president">President</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="saveMember()"><i class="fas fa-save"></i> Save</button>
+      <button class="btn btn-outline" onclick="closeMemberModal()">Cancel</button>
+    </div>
+    <input type="hidden" id="mmMemberId" />
+  </div>
+</div>
+
+<!-- ── Add/Edit Merch Modal ── -->
+<div class="modal-overlay" id="merchModal">
+  <div class="modal">
+    <div class="modal-title"><i class="fas fa-box"></i> <span id="merchModalTitle">Add Item</span> <button class="modal-close" onclick="closeMerchModal()"><i class="fas fa-times"></i></button></div>
+    <div class="form-row single">
+      <div class="field">
+        <label>Item Name</label>
+        <input type="text" id="miName" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Price ($)</label>
+        <input type="number" id="miPrice" step="0.01" min="0" />
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="miCategory">
+          <option value="apparel">Apparel</option>
+          <option value="accessories">Accessories</option>
+          <option value="books">Books / Guides</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="field">
+        <label>Description</label>
+        <textarea id="miDesc" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="field">
+        <label>Image URL (optional)</label>
+        <input type="url" id="miImage" placeholder="https://…" />
+      </div>
+    </div>
+    <div class="form-row single">
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-weight:600;font-size:0.84rem;cursor:pointer;">
+          <input type="checkbox" id="miActive" style="accent-color:var(--gold);" checked /> Active (visible to members)
+        </label>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-gold" onclick="saveMerchItem()"><i class="fas fa-save"></i> Save Item</button>
+      <button class="btn btn-outline" onclick="closeMerchModal()">Cancel</button>
+    </div>
+    <input type="hidden" id="miId" />
+  </div>
+</div>
+
+<script>
+  /* ── Config ── */
+  const SB_URL = 'https://bqkpoqyzmweawbmbpetl.supabase.co';
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxa3BvcXl6bXdlYXdibWJwZXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MTg3NTQsImV4cCI6MjA1OTI5NDc1NH0.2orvVmMHqxCXfSsBARJWHTuGVVyCeC-qBkT71lWP2Ds';
+  const DUES_CONFIG_KEY = 'finance_dues_config';
+  const SNAPSHOT_KEY    = 'finance_dashboard_snapshot';
+  const CATALOG_KEY     = 'finance_merch_catalog';
+
+  const DEFAULT_DUES = {
+    renewing:      { label:'Renewing Member',        desc:'Active member renewing annual dues',         amount:12500 },
+    new_initiate:  { label:'New Initiate',            desc:'Brother initiated this fiscal year',         amount:12500 },
+    legacy:        { label:'Legacy / Life Member',    desc:'Life membership or waived per BOD decision', amount:0    },
+    undergrad_1:   { label:'Undergrad — 1st Year',   desc:'Undergraduate, first year of membership',    amount:5000 },
+    undergrad_2plus:{ label:'Undergrad — 2nd Year+', desc:'Undergraduate, second year or beyond',       amount:7500 },
+    late_fee:      { label:'Late Fee',               desc:'Applied after deadline each year',           amount:2500 },
+    building_fund: { label:'Building Fund',          desc:'Optional contribution to building fund',     amount:5000 },
+  };
+
+  let SESSION = null;
+  let allMembers = [];
+  let currentMerch = [];
+  let editingMemberId = null;
+  let editingMerchId = null;
+  let selectedPayMethod = 'check';
+
+  /* ── Supabase helpers ── */
+  async function sbGet(path, params = {}) {
+    const url = new URL(`${SB_URL}/rest/v1/${path}`);
+    Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+    const r = await fetch(url, { headers: { apikey: SB_ANON, Authorization: `Bearer ${authToken()}`, Accept: 'application/json' } });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  async function sbPost(path, body) {
+    const r = await fetch(`${SB_URL}/rest/v1/${path}`, {
+      method:'POST', headers:{ apikey:SB_ANON, Authorization:`Bearer ${authToken()}`, 'Content-Type':'application/json', Prefer:'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  async function sbPatch(path, match, body) {
+    const url = new URL(`${SB_URL}/rest/v1/${path}`);
+    Object.entries(match).forEach(([k,v]) => url.searchParams.set(k, `eq.${v}`));
+    const r = await fetch(url, {
+      method:'PATCH', headers:{ apikey:SB_ANON, Authorization:`Bearer ${authToken()}`, 'Content-Type':'application/json', Prefer:'return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  async function sbUpsert(path, body, onConflict) {
+    const url = new URL(`${SB_URL}/rest/v1/${path}`);
+    if (onConflict) url.searchParams.set('on_conflict', onConflict);
+    const r = await fetch(url, {
+      method:'POST', headers:{ apikey:SB_ANON, Authorization:`Bearer ${authToken()}`, 'Content-Type':'application/json', Prefer:'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(body)
+    });
+    if (!r.ok) throw new Error(await r.text());
+    return r.json();
+  }
+  function authToken() {
+    const s = SESSION || JSON.parse(localStorage.getItem('nda_member_session') || 'null');
+    return s?.access_token || SB_ANON;
+  }
+  async function getContentJson(key) {
+    try {
+      const rows = await sbGet('site_content', { content_key:`eq.${key}`, select:'content_value' });
+      return rows.length ? rows[0].content_value : null;
+    } catch { return null; }
+  }
+  async function saveContentJson(key, value) {
+    await sbUpsert('site_content', { content_key: key, content_value: value, updated_at: new Date().toISOString() }, 'content_key');
+  }
+
+  /* ── Auth ── */
+  function logout() {
+    localStorage.removeItem('nda_member_session');
+    window.location.href = '../../member-portal.html';
+  }
+
+  /* ── UI helpers ── */
+  function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.className = `toast ${type}`;
+    el.querySelector('i').className = type === 'success' ? 'fas fa-check-circle' : type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-info-circle';
+    document.getElementById('toastMsg').textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3500);
+  }
+  function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebarOverlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebarOverlay').classList.remove('show'); }
+
+  function switchTab(id) {
+    document.querySelectorAll('.tool-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+    document.querySelectorAll('.tool-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${id}`));
+    if (id === 'manual-payment') loadManualPayments();
+    if (id === 'snapshot') loadSnapshot();
+    if (id === 'roster') loadRoster();
+    if (id === 'catalog') loadCatalog();
+  }
+
+  function fmt$(cents) {
+    return '$' + (cents / 100).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+  }
+  function dollars(cents) { return (cents / 100).toFixed(2); }
+  function cents(dollars)  { return Math.round(parseFloat(dollars || 0) * 100); }
+
+  /* ══════════════════════════════════════════
+     DUES CONFIG
+  ══════════════════════════════════════════ */
+  let duesConfig = null;
+
+  function buildDuesGrid(cfg) {
+    const keys = ['renewing','new_initiate','legacy','undergrad_1','undergrad_2plus','late_fee','building_fund'];
+    const grid = document.getElementById('duesGrid');
+    grid.innerHTML = keys.map(k => {
+      const def = DEFAULT_DUES[k];
+      const val = cfg && cfg[k] ? dollars(cfg[k].amount) : dollars(def.amount);
+      return `
+        <div class="dues-item">
+          <div class="dues-item-label">${def.label}</div>
+          <div class="dues-item-desc">${def.desc}</div>
+          <div class="dues-input-wrap"><span>$</span><input type="number" id="dc_${k}" value="${val}" step="0.01" min="0" /></div>
+        </div>`;
+    }).join('');
+  }
+
+  async function loadDuesConfig() {
+    const cfg = await getContentJson(DUES_CONFIG_KEY);
+    duesConfig = cfg;
+    buildDuesGrid(cfg);
+    if (cfg && cfg.fiscal_year) document.getElementById('fyInput').value = cfg.fiscal_year;
+    if (cfg && cfg.late_fee_deadline) document.getElementById('lateFeeDeadlineInput').value = cfg.late_fee_deadline;
+    else document.getElementById('lateFeeDeadlineInput').value = '07/31';
+  }
+
+  async function saveDuesConfig() {
+    const keys = ['renewing','new_initiate','legacy','undergrad_1','undergrad_2plus','late_fee','building_fund'];
+    const cfg = {};
+    keys.forEach(k => {
+      const def = DEFAULT_DUES[k];
+      cfg[k] = { label: def.label, desc: def.desc, amount: cents(document.getElementById(`dc_${k}`).value) };
+    });
+    cfg.fiscal_year = document.getElementById('fyInput').value.trim();
+    cfg.late_fee_deadline = document.getElementById('lateFeeDeadlineInput').value.trim();
+
+    try {
+      await saveContentJson(DUES_CONFIG_KEY, cfg);
+      toast('Dues configuration saved.');
+    } catch(e) {
+      toast('Error saving: ' + e.message, 'error');
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     MANUAL PAYMENT
+  ══════════════════════════════════════════ */
+  function selectPayMethod(el, method) {
+    document.querySelectorAll('.method-tile').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    selectedPayMethod = method;
+    if (method === 'waived') {
+      document.getElementById('mpAmount').value = '0';
+      document.getElementById('mpAmount').disabled = true;
+    } else {
+      document.getElementById('mpAmount').disabled = false;
+    }
+  }
+
+  async function searchMembers(q) {
+    const dd = document.getElementById('memberDropdown');
+    if (q.length < 2) { dd.classList.remove('open'); return; }
+    const filtered = allMembers.filter(m =>
+      (`${m.first_name} ${m.last_name}`).toLowerCase().includes(q.toLowerCase()) ||
+      (m.email || '').toLowerCase().includes(q.toLowerCase())
+    ).slice(0, 8);
+    if (!filtered.length) { dd.classList.remove('open'); return; }
+    dd.innerHTML = filtered.map(m => `
+      <div class="member-option" onclick="selectMember(${m.id},'${m.first_name} ${m.last_name}','${m.email || ''}')">
+        <span class="mo-name">${m.first_name} ${m.last_name}</span>
+        <span class="mo-email">${m.email || ''}</span>
+      </div>`).join('');
+    dd.classList.add('open');
+  }
+
+  function selectMember(id, name, email) {
+    document.getElementById('mpMemberSearch').value = name;
+    document.getElementById('mpMemberId').value = id;
+    document.getElementById('mpMemberEmail').value = email;
+    document.getElementById('mpMemberName').value = name;
+    document.getElementById('memberDropdown').classList.remove('open');
+  }
+
+  async function logManualPayment() {
+    const memberId = document.getElementById('mpMemberId').value;
+    if (!memberId) { toast('Please select a member.', 'error'); return; }
+    const category = document.getElementById('mpCategory').value;
+    const fiscalYear = document.getElementById('mpFiscalYear').value.trim();
+    if (!fiscalYear) { toast('Please enter a fiscal year.', 'error'); return; }
+    const amountCents = cents(document.getElementById('mpAmount').value);
+    const lateFee    = document.getElementById('mpLateFee').checked;
+    const buildingFund = document.getElementById('mpBuildingFund').checked;
+    const refNum = document.getElementById('mpReference').value.trim();
+    const notes  = document.getElementById('mpNotes').value.trim();
+
+    const catLabel = document.getElementById('mpCategory').selectedOptions[0].text;
+
+    try {
+      await sbPost('finance_payments', {
+        member_id: parseInt(memberId),
+        dues_category: category,
+        dues_category_label: catLabel,
+        fiscal_year: fiscalYear,
+        method: selectedPayMethod,
+        amount_cents: amountCents,
+        late_fee: lateFee,
+        building_fund: buildingFund,
+        reference_number: refNum || null,
+        notes: notes || null,
+        status: 'paid',
+        paid_at: new Date().toISOString(),
+        logged_by: SESSION?.user?.id || null,
+        xero_sync_status: 'pending_manual',
+      });
+      toast('Payment logged successfully.');
+      clearPaymentForm();
+      loadManualPayments();
+    } catch(e) {
+      toast('Error logging payment: ' + e.message, 'error');
+    }
+  }
+
+  function clearPaymentForm() {
+    document.getElementById('mpMemberSearch').value = '';
+    document.getElementById('mpMemberId').value = '';
+    document.getElementById('mpMemberEmail').value = '';
+    document.getElementById('mpMemberName').value = '';
+    document.getElementById('mpFiscalYear').value = '';
+    document.getElementById('mpAmount').value = '';
+    document.getElementById('mpReference').value = '';
+    document.getElementById('mpNotes').value = '';
+    document.getElementById('mpLateFee').checked = false;
+    document.getElementById('mpBuildingFund').checked = false;
+    document.getElementById('mpAmount').disabled = false;
+    document.querySelectorAll('.method-tile').forEach((t,i) => t.classList.toggle('active', i === 0));
+    selectedPayMethod = 'check';
+  }
+
+  async function loadManualPayments() {
+    const tbody = document.getElementById('manualPayTbody');
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:16px;">Loading…</td></tr>';
+    try {
+      const rows = await sbGet('finance_payments', {
+        select: 'id,member_id,dues_category_label,fiscal_year,method,amount_cents,paid_at,reference_number',
+        method: 'neq.stripe',
+        order: 'paid_at.desc',
+        limit: '20'
+      });
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray-400);padding:16px;">No manual payments yet.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map(r => {
+        const member = allMembers.find(m => m.id === r.member_id);
+        const name = member ? `${member.first_name} ${member.last_name}` : `Member #${r.member_id}`;
+        const methodBadge = {check:'badge-blue',zelle:'badge-gold',cash:'badge-green',waived:'badge-purple'}[r.method] || 'badge-gray';
+        return `<tr>
+          <td>${name}</td>
+          <td style="font-size:0.78rem;">${r.dues_category_label || r.dues_category || '—'}</td>
+          <td>${r.fiscal_year || '—'}</td>
+          <td><span class="badge ${methodBadge}">${r.method}</span></td>
+          <td>${r.amount_cents > 0 ? fmt$(r.amount_cents) : '<span class="badge badge-purple">Waived</span>'}</td>
+          <td style="white-space:nowrap;">${fmtDate(r.paid_at)}</td>
+          <td style="color:var(--gray-400);font-size:0.78rem;">${r.reference_number || '—'}</td>
+        </tr>`;
+      }).join('');
+    } catch(e) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:16px;">${e.message}</td></tr>`;
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     SNAPSHOT
+  ══════════════════════════════════════════ */
+  function addLineItem(section) {
+    const container = document.getElementById(section + 'Container');
+    const row = document.createElement('div');
+    row.className = 'line-item-row';
+    row.innerHTML = `
+      <input type="text" placeholder="Label (e.g. Checking Account)" />
+      <input type="number" class="amt" placeholder="0.00" step="0.01" min="0" oninput="recalcBalance()" />
+      <button class="remove-row-btn" onclick="this.parentElement.remove();recalcBalance();"><i class="fas fa-times"></i></button>`;
+    container.appendChild(row);
+  }
+
+  function addBudgetRow(label = '', budget = '', actual = '') {
+    const container = document.getElementById('budgetContainer');
+    const row = document.createElement('div');
+    row.className = 'line-item-row';
+    row.style.gridTemplateColumns = '1fr 120px 120px 36px';
+    row.innerHTML = `
+      <input type="text" placeholder="Category (e.g. Scholarship Fund)" value="${label}" />
+      <input type="number" class="amt" placeholder="Budget $" step="0.01" min="0" value="${budget}" />
+      <input type="number" class="amt" placeholder="Actual $" step="0.01" min="0" value="${actual}" />
+      <button class="remove-row-btn" onclick="this.parentElement.remove();"><i class="fas fa-times"></i></button>`;
+    container.appendChild(row);
+  }
+
+  function getLineItems(section) {
+    const rows = document.getElementById(section + 'Container').querySelectorAll('.line-item-row');
+    return Array.from(rows).map(r => {
+      const inputs = r.querySelectorAll('input[type=text],input[type=number]');
+      return { label: inputs[0].value.trim(), amount: cents(inputs[1].value) };
+    }).filter(i => i.label);
+  }
+
+  function getBudgetRows() {
+    const rows = document.getElementById('budgetContainer').querySelectorAll('.line-item-row');
+    return Array.from(rows).map(r => {
+      const inputs = r.querySelectorAll('input');
+      return { category: inputs[0].value.trim(), budget: cents(inputs[1].value), actual: cents(inputs[2].value) };
+    }).filter(r => r.category);
+  }
+
+  function recalcBalance() {
+    const total = parseFloat(document.getElementById('snapTotalAssets').value || 0);
+    const liab  = parseFloat(document.getElementById('snapTotalLiabilities').value || 0);
+    document.getElementById('snapNetPosition').value = (total - liab).toFixed(2);
+    // also update cash available
+    const cashTotal    = parseFloat(document.getElementById('snapCashTotal').value || 0);
+    const cashReserved = parseFloat(document.getElementById('snapCashReserved').value || 0);
+    document.getElementById('snapCashAvailable').value = Math.max(0, cashTotal - cashReserved).toFixed(2);
+  }
+
+  document.addEventListener('input', e => {
+    if (['snapTotalAssets','snapTotalLiabilities','snapCashTotal','snapCashReserved'].includes(e.target.id)) recalcBalance();
+  });
+
+  async function loadSnapshot() {
+    const snap = await getContentJson(SNAPSHOT_KEY);
+    if (!snap) return;
+    document.getElementById('snapAsOf').value = snap.as_of || '';
+    document.getElementById('snapUpdatedBy').value = snap.updated_by || '';
+    // Cash
+    if (snap.cash_position) {
+      const cp = snap.cash_position;
+      document.getElementById('snapCashTotal').value    = dollars(cp.total_balance || 0);
+      document.getElementById('snapCashReserved').value = dollars(cp.reserved || 0);
+      document.getElementById('snapCashAvailable').value = dollars(cp.available || 0);
+    }
+    // Balance sheet
+    document.getElementById('assetsContainer').innerHTML = '';
+    document.getElementById('liabilitiesContainer').innerHTML = '';
+    if (snap.balance_sheet) {
+      const bs = snap.balance_sheet;
+      (bs.assets || []).forEach(a => {
+        addLineItem('assets');
+        const rows = document.getElementById('assetsContainer').querySelectorAll('.line-item-row');
+        const last = rows[rows.length - 1];
+        last.querySelectorAll('input')[0].value = a.label;
+        last.querySelectorAll('input')[1].value = dollars(a.amount);
+      });
+      (bs.liabilities || []).forEach(l => {
+        addLineItem('liabilities');
+        const rows = document.getElementById('liabilitiesContainer').querySelectorAll('.line-item-row');
+        const last = rows[rows.length - 1];
+        last.querySelectorAll('input')[0].value = l.label;
+        last.querySelectorAll('input')[1].value = dollars(l.amount);
+      });
+      document.getElementById('snapTotalAssets').value      = dollars(bs.total_assets || 0);
+      document.getElementById('snapTotalLiabilities').value = dollars(bs.total_liabilities || 0);
+      document.getElementById('snapNetPosition').value      = dollars(bs.net_position || 0);
+    }
+    // Budget
+    document.getElementById('budgetContainer').innerHTML = '';
+    (snap.budget_actuals || []).forEach(b => addBudgetRow(b.category, dollars(b.budget), dollars(b.actual)));
+  }
+
+  async function publishSnapshot() {
+    const asOf = document.getElementById('snapAsOf').value.trim();
+    if (!asOf) { toast('Please enter an "As of" date.', 'error'); return; }
+    const cashTotal    = cents(document.getElementById('snapCashTotal').value);
+    const cashReserved = cents(document.getElementById('snapCashReserved').value);
+    const snap = {
+      as_of: asOf,
+      updated_by: document.getElementById('snapUpdatedBy').value.trim() || SESSION?.user?.user_metadata?.full_name || 'Treasurer',
+      published_at: new Date().toISOString(),
+      cash_position: {
+        total_balance: cashTotal,
+        reserved: cashReserved,
+        available: cashTotal - cashReserved,
+      },
+      balance_sheet: {
+        assets: getLineItems('assets'),
+        liabilities: getLineItems('liabilities'),
+        total_assets:      cents(document.getElementById('snapTotalAssets').value),
+        total_liabilities: cents(document.getElementById('snapTotalLiabilities').value),
+        net_position:      cents(document.getElementById('snapNetPosition').value),
+      },
+      budget_actuals: getBudgetRows(),
+    };
+
+    try {
+      await saveContentJson(SNAPSHOT_KEY, snap);
+      toast('Snapshot published. Dashboard updated.');
+    } catch(e) {
+      toast('Error publishing: ' + e.message, 'error');
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     ROSTER
+  ══════════════════════════════════════════ */
+  async function loadRoster() {
+    const list = document.getElementById('rosterList');
+    list.innerHTML = '<div style="text-align:center;color:var(--gray-400);padding:32px;">Loading…</div>';
+    try {
+      allMembers = await sbGet('members', { select:'*', order:'last_name.asc' });
+      renderRoster(allMembers);
+    } catch(e) {
+      list.innerHTML = `<div style="color:var(--red);padding:16px;">${e.message}</div>`;
+    }
+  }
+
+  function filterRoster(q) {
+    if (!q) { renderRoster(allMembers); return; }
+    const filtered = allMembers.filter(m =>
+      (`${m.first_name} ${m.last_name}`).toLowerCase().includes(q.toLowerCase()) ||
+      (m.email || '').toLowerCase().includes(q.toLowerCase())
+    );
+    renderRoster(filtered);
+  }
+
+  function renderRoster(members) {
+    const list = document.getElementById('rosterList');
+    if (!members.length) { list.innerHTML = '<div style="text-align:center;color:var(--gray-400);padding:24px;">No members found.</div>'; return; }
+    list.innerHTML = members.map(m => {
+      const initials = `${(m.first_name||'?')[0]}${(m.last_name||'?')[0]}`.toUpperCase();
+      const roleMap = { treasurer:'Treasurer', financial_secretary:'Financial Secretary', president:'President' };
+      const roleBadge = m.finance_role ? `<span class="badge badge-gold">${roleMap[m.finance_role] || m.finance_role}</span>` : '';
+      const typeBadge = `<span class="badge badge-gray">${m.member_type || 'active'}</span>`;
+      return `
+        <div class="member-row">
+          <div class="member-row-avatar">${m.avatar_url ? `<img src="${m.avatar_url}" alt="">` : initials}</div>
+          <div class="member-row-info">
+            <div class="member-row-name">${m.first_name} ${m.last_name}</div>
+            <div class="member-row-meta">${m.email || ''} &nbsp; ${typeBadge} ${roleBadge}</div>
+          </div>
+          <div class="member-row-actions">
+            <button class="btn btn-outline" style="padding:6px 12px;font-size:0.75rem;" onclick="openEditMemberModal(${m.id})"><i class="fas fa-edit"></i></button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function openAddMemberModal() {
+    editingMemberId = null;
+    document.getElementById('memberModalTitle').textContent = 'Add Member';
+    ['mmFirst','mmLast','mmEmail','mmPhone'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('mmType').value = 'active';
+    document.getElementById('mmFinanceRole').value = '';
+    document.getElementById('mmMemberId').value = '';
+    document.getElementById('memberModal').classList.add('open');
+  }
+
+  function openEditMemberModal(id) {
+    const m = allMembers.find(x => x.id === id);
+    if (!m) return;
+    editingMemberId = id;
+    document.getElementById('memberModalTitle').textContent = 'Edit Member';
+    document.getElementById('mmFirst').value = m.first_name || '';
+    document.getElementById('mmLast').value  = m.last_name  || '';
+    document.getElementById('mmEmail').value = m.email      || '';
+    document.getElementById('mmPhone').value = m.phone      || '';
+    document.getElementById('mmType').value  = m.member_type || 'active';
+    document.getElementById('mmFinanceRole').value = m.finance_role || '';
+    document.getElementById('mmMemberId').value = id;
+    document.getElementById('memberModal').classList.add('open');
+  }
+
+  function closeMemberModal() { document.getElementById('memberModal').classList.remove('open'); }
+
+  async function saveMember() {
+    const body = {
+      first_name:   document.getElementById('mmFirst').value.trim(),
+      last_name:    document.getElementById('mmLast').value.trim(),
+      email:        document.getElementById('mmEmail').value.trim() || null,
+      phone:        document.getElementById('mmPhone').value.trim() || null,
+      member_type:  document.getElementById('mmType').value,
+      finance_role: document.getElementById('mmFinanceRole').value || null,
+    };
+    if (!body.first_name || !body.last_name) { toast('First and last name required.', 'error'); return; }
+    try {
+      if (editingMemberId) {
+        await sbPatch('members', { id: editingMemberId }, body);
+        toast('Member updated.');
+      } else {
+        await sbPost('members', body);
+        toast('Member added.');
+      }
+      closeMemberModal();
+      loadRoster();
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     MERCHANDISE CATALOG
+  ══════════════════════════════════════════ */
+  async function loadCatalog() {
+    const grid = document.getElementById('merchGrid');
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:32px;">Loading…</div>';
+    const catalog = await getContentJson(CATALOG_KEY);
+    currentMerch = catalog || [];
+    renderMerch();
+  }
+
+  function renderMerch() {
+    const grid = document.getElementById('merchGrid');
+    if (!currentMerch.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray-400);padding:32px;">No items yet. Add your first item.</div>';
+      return;
+    }
+    grid.innerHTML = currentMerch.map((item, idx) => `
+      <div class="merch-card ${item.active ? '' : 'merch-inactive'}">
+        ${item.image_url
+          ? `<img class="merch-card-img" src="${item.image_url}" alt="${item.name}" />`
+          : `<div class="merch-card-img-placeholder"><i class="fas fa-box-open"></i></div>`}
+        <div class="merch-card-name">${item.name}</div>
+        <div class="merch-card-price">${item.price_cents > 0 ? fmt$(item.price_cents) : 'Free'}</div>
+        <div style="font-size:0.75rem;color:var(--gray-400);margin-bottom:10px;">${item.category || ''}</div>
+        <div class="merch-card-actions">
+          <button class="btn-edit-sm" onclick="openMerchModal(${idx})"><i class="fas fa-edit"></i> Edit</button>
+          <button class="btn-delete-sm" onclick="deleteMerchItem(${idx})"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`).join('');
+  }
+
+  function openMerchModal(idx) {
+    editingMerchId = idx;
+    const item = idx !== null ? currentMerch[idx] : null;
+    document.getElementById('merchModalTitle').textContent = item ? 'Edit Item' : 'Add Item';
+    document.getElementById('miName').value     = item ? item.name : '';
+    document.getElementById('miPrice').value    = item ? dollars(item.price_cents) : '';
+    document.getElementById('miCategory').value = item ? (item.category || 'apparel') : 'apparel';
+    document.getElementById('miDesc').value     = item ? (item.description || '') : '';
+    document.getElementById('miImage').value    = item ? (item.image_url || '') : '';
+    document.getElementById('miActive').checked = item ? !!item.active : true;
+    document.getElementById('miId').value       = idx !== null ? idx : '';
+    document.getElementById('merchModal').classList.add('open');
+  }
+
+  function closeMerchModal() { document.getElementById('merchModal').classList.remove('open'); }
+
+  async function saveMerchItem() {
+    const name = document.getElementById('miName').value.trim();
+    if (!name) { toast('Item name required.', 'error'); return; }
+    const item = {
+      id:          editingMerchId !== null ? (currentMerch[editingMerchId]?.id || crypto.randomUUID()) : crypto.randomUUID(),
+      name,
+      price_cents: cents(document.getElementById('miPrice').value),
+      category:    document.getElementById('miCategory').value,
+      description: document.getElementById('miDesc').value.trim() || null,
+      image_url:   document.getElementById('miImage').value.trim() || null,
+      active:      document.getElementById('miActive').checked,
+    };
+    if (editingMerchId !== null) {
+      currentMerch[editingMerchId] = item;
+    } else {
+      currentMerch.push(item);
+    }
+    try {
+      await saveContentJson(CATALOG_KEY, currentMerch);
+      toast(editingMerchId !== null ? 'Item updated.' : 'Item added.');
+      closeMerchModal();
+      renderMerch();
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    }
+  }
+
+  async function deleteMerchItem(idx) {
+    if (!confirm(`Remove "${currentMerch[idx].name}" from the catalog?`)) return;
+    currentMerch.splice(idx, 1);
+    try {
+      await saveContentJson(CATALOG_KEY, currentMerch);
+      toast('Item removed.');
+      renderMerch();
+    } catch(e) {
+      toast('Error: ' + e.message, 'error');
+    }
+  }
+
+  /* ══════════════════════════════════════════
+     INIT
+  ══════════════════════════════════════════ */
+  async function init() {
+    SESSION = JSON.parse(localStorage.getItem('nda_member_session') || 'null');
+    if (!SESSION) { window.location.href = '../../member-portal.html'; return; }
+
+    const meta = SESSION.user?.user_metadata || {};
+    const name = meta.full_name || SESSION.user?.email || 'Member';
+    const initials = name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
+    document.getElementById('sidebarName').textContent = name;
+    document.getElementById('sidebarRole').textContent = 'Finance Admin';
+    const av = document.getElementById('sidebarAvatar');
+    if (meta.avatar_url) { av.innerHTML = `<img src="${meta.avatar_url}" alt="" />`; }
+    else { av.textContent = initials; }
+
+    // pre-load members for search
+    try { allMembers = await sbGet('members', { select:'id,first_name,last_name,email,member_type,finance_role,avatar_url', order:'last_name.asc' }); }
+    catch { allMembers = []; }
+
+    // set default fiscal year in manual payment
+    const cfg = await getContentJson(DUES_CONFIG_KEY);
+    if (cfg?.fiscal_year) document.getElementById('mpFiscalYear').value = cfg.fiscal_year;
+
+    await loadDuesConfig();
+  }
+
+  init();
+</script>
+</body>
+</html>
