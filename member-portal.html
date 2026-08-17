@@ -269,6 +269,8 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('card');renderMemberCard()" id="nav-card"><i class="fas fa-id-card"></i> Membership Card</button>
     <button class="nav-item" onclick="showPanel('announcements-submit')" id="nav-announcements-submit"><i class="fas fa-bullhorn"></i> Submit Announcement</button>
     <button class="nav-item" onclick="showPanel('news-submit');loadMyNewsSubmissions()" id="nav-news-submit"><i class="fas fa-newspaper"></i> Submit News Article</button>
+    <button class="nav-item" onclick="showPanel('requisition');loadMyRequisitions()" id="nav-requisition"><i class="fas fa-file-invoice-dollar"></i> Submit Requisition</button>
+    <button class="nav-item" onclick="showPanel('reimbursement');loadMyReimbursements()" id="nav-reimbursement"><i class="fas fa-receipt"></i> Request Reimbursement</button>
     <button class="nav-item" onclick="showPanel('profile')" id="nav-profile"><i class="fas fa-user-circle"></i> My Profile</button>
   </nav>
   <div class="sidebar-footer">
@@ -696,6 +698,165 @@ backdrop-filter:blur(4px);}
           <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:22px;">
             <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Submissions</div>
             <div id="myNewsSubmissionsList"><div class="empty-state" style="padding:16px 0;"><i class="fas fa-newspaper"></i><p>No submissions yet.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Requisition Panel ── -->
+    <div class="panel" id="panel-requisition">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-file-invoice-dollar"></i> Submit a Requisition</h3></div>
+        <div class="section-card-body">
+          <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;margin-bottom:18px;">Request chapter funds for committee expenses, events, or programs. All requests are reviewed by the Treasurer before payment is processed.</p>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:640px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="pfield">
+                <label>Committee / Program <span style="color:var(--red);">*</span></label>
+                <select id="rqCommittee" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;">
+                  <option value="Scholarship">Scholarship</option>
+                  <option value="Community Service">Community Service</option>
+                  <option value="Programs">Programs</option>
+                  <option value="Membership">Membership</option>
+                  <option value="Social">Social</option>
+                  <option value="Chapter Operations">Chapter Operations</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="pfield">
+                <label>Amount Requested <span style="color:var(--red);">*</span></label>
+                <input type="number" id="rqAmount" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+              </div>
+            </div>
+            <div class="pfield">
+              <label>Description / Purpose <span style="color:var(--red);">*</span></label>
+              <textarea id="rqDescription" rows="3" placeholder="Describe what the funds will be used for..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div class="pfield">
+                <label>Payable To (Payee)</label>
+                <input type="text" id="rqPayee" placeholder="Vendor or person name" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+              </div>
+              <div class="pfield">
+                <label>Payment Method</label>
+                <select id="rqMethod" onchange="toggleRqMethodNotice()" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;">
+                  <option value="check">Chapter Check</option>
+                  <option value="chapter_card">Chapter Card</option>
+                  <option value="personal_reimbursement">Personal Reimbursement</option>
+                </select>
+              </div>
+            </div>
+            <div id="rqReimbNotice" style="display:none;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);color:#93c5fd;padding:12px 14px;border-radius:8px;font-size:0.82rem;line-height:1.5;">
+              <i class="fas fa-info-circle"></i> Selecting <strong>Personal Reimbursement</strong> means you paid out of pocket. Once this requisition is approved, a reimbursement request will be automatically created for you to add your receipt and payment details.
+            </div>
+            <div class="pfield">
+              <label>Supporting Document <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — quote, invoice, or receipt)</span></label>
+              <input type="file" id="rqDocInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleRqDocSelect(event)" />
+              <div id="rqDocDropzone" onclick="document.getElementById('rqDocInput').click()"
+                style="border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.83rem;">
+                <i class="fas fa-paperclip" style="font-size:1.2rem;margin-bottom:5px;display:block;color:var(--gold);"></i>
+                Click to attach a document
+              </div>
+              <div id="rqDocPreview" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--gold);"></div>
+            </div>
+            <div id="rqErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
+            <div id="rqSuccess" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#4ade80;padding:12px 16px;border-radius:6px;font-size:0.85rem;">
+              <i class="fas fa-check-circle"></i> Requisition submitted. The Treasurer will review your request.
+            </div>
+            <button onclick="submitPortalRequisition()" id="rqSubmitBtn" class="btn-gold" style="align-self:flex-start;"><i class="fas fa-paper-plane"></i> Submit Request</button>
+          </div>
+
+          <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:22px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Requisitions</div>
+            <div id="myRequisitionsList"><div class="empty-state" style="padding:16px 0;"><i class="fas fa-file-invoice-dollar"></i><p>No requisitions yet.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Reimbursement Panel ── -->
+    <div class="panel" id="panel-reimbursement">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-receipt"></i> Request Reimbursement</h3></div>
+        <div class="section-card-body">
+          <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;margin-bottom:18px;">Submit a reimbursement request if you paid for a chapter expense out of pocket. Attach your receipt and provide payment details so the Treasurer can issue payment.</p>
+          <div style="display:flex;flex-direction:column;gap:14px;max-width:640px;">
+            <div class="pfield">
+              <label>Description / What was purchased <span style="color:var(--red);">*</span></label>
+              <textarea id="rbDescription" rows="3" placeholder="e.g. Supplies for scholarship banquet decoration..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+            </div>
+            <div class="pfield">
+              <label>Amount <span style="color:var(--red);">*</span></label>
+              <input type="number" id="rbAmount" placeholder="0.00" step="0.01" min="0" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+            </div>
+
+            <div class="pfield">
+              <label>How should we pay you? <span style="color:var(--red);">*</span></label>
+              <div style="display:flex;gap:10px;margin-top:4px;flex-wrap:wrap;">
+                <div id="rb-zelle-tile" onclick="selectRbMethod('zelle')"
+                  style="flex:1;min-width:120px;background:rgba(255,255,255,0.04);border:1.5px solid var(--gold);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center;">
+                  <i class="fas fa-mobile-alt" style="font-size:1.1rem;color:var(--gold);display:block;margin-bottom:5px;"></i>
+                  <span style="font-size:0.78rem;font-weight:600;color:var(--gold);">Zelle</span>
+                </div>
+                <div id="rb-check-tile" onclick="selectRbMethod('check')"
+                  style="flex:1;min-width:120px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:14px 12px;cursor:pointer;text-align:center;">
+                  <i class="fas fa-money-check-alt" style="font-size:1.1rem;color:var(--gray-400);display:block;margin-bottom:5px;"></i>
+                  <span style="font-size:0.78rem;font-weight:600;color:var(--gray-400);">Check</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="rb-zelle-fields">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="pfield">
+                  <label>Zelle Phone or Email <span style="color:var(--red);">*</span></label>
+                  <input type="text" id="rbZelleContact" placeholder="phone or email" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+                </div>
+                <div class="pfield">
+                  <label>Name on Zelle Account <span style="color:var(--red);">*</span></label>
+                  <input type="text" id="rbZelleName" placeholder="Full name" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+                </div>
+              </div>
+            </div>
+
+            <div id="rb-check-fields" style="display:none;">
+              <div class="pfield" style="margin-bottom:10px;">
+                <label>Street Address <span style="color:var(--red);">*</span></label>
+                <input type="text" id="rbCheckStreet" placeholder="123 Main St" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div class="pfield">
+                  <label>City <span style="color:var(--red);">*</span></label>
+                  <input type="text" id="rbCheckCity" placeholder="Dallas" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+                </div>
+                <div class="pfield">
+                  <label>State & ZIP <span style="color:var(--red);">*</span></label>
+                  <input type="text" id="rbCheckStateZip" placeholder="TX 75001" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;" />
+                </div>
+              </div>
+            </div>
+
+            <div class="pfield">
+              <label>Receipt <span style="color:var(--red);">*</span></label>
+              <input type="file" id="rbReceiptInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleRbReceiptSelect(event)" />
+              <div id="rbReceiptDropzone" onclick="document.getElementById('rbReceiptInput').click()"
+                style="border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.83rem;">
+                <i class="fas fa-receipt" style="font-size:1.2rem;margin-bottom:5px;display:block;color:var(--gold);"></i>
+                Click to upload your receipt (PDF or image)
+              </div>
+              <div id="rbReceiptPreview" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--gold);"></div>
+            </div>
+
+            <div id="rbErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
+            <div id="rbSuccess" style="display:none;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);color:#4ade80;padding:12px 16px;border-radius:6px;font-size:0.85rem;">
+              <i class="fas fa-check-circle"></i> Reimbursement request submitted. The Treasurer will review and issue payment.
+            </div>
+            <button onclick="submitPortalReimbursement()" id="rbSubmitBtn" class="btn-gold" style="align-self:flex-start;"><i class="fas fa-paper-plane"></i> Submit Request</button>
+          </div>
+
+          <div style="margin-top:32px;border-top:1px solid rgba(255,255,255,0.07);padding-top:22px;">
+            <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gray-400);margin-bottom:14px;">My Reimbursements</div>
+            <div id="myReimbursementsList"><div class="empty-state" style="padding:16px 0;"><i class="fas fa-receipt"></i><p>No reimbursement requests yet.</p></div></div>
           </div>
         </div>
       </div>
@@ -3047,6 +3208,254 @@ async function loadMyNewsSubmissions() {
     }).join('');
   } catch(e) {
     el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-exclamation-circle"></i><p>Could not load submissions.</p></div>';
+  }
+}
+
+/* ══════════════════════════════════════════
+   REQUISITION — portal inline form
+══════════════════════════════════════════ */
+var rqDocFile = null;
+
+function toggleRqMethodNotice() {
+  var method = document.getElementById('rqMethod').value;
+  document.getElementById('rqReimbNotice').style.display = method === 'personal_reimbursement' ? '' : 'none';
+}
+
+function handleRqDocSelect(e) {
+  rqDocFile = e.target.files[0] || null;
+  var preview = document.getElementById('rqDocPreview');
+  if (rqDocFile) {
+    preview.style.display = '';
+    preview.innerHTML = '<i class="fas fa-paperclip"></i> ' + escHtml(rqDocFile.name);
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function submitPortalRequisition() {
+  if (!currentMember || !currentSession) return;
+  var errEl = document.getElementById('rqErr');
+  var sucEl = document.getElementById('rqSuccess');
+  var btn   = document.getElementById('rqSubmitBtn');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  var description = (document.getElementById('rqDescription').value || '').trim();
+  var amountRaw   = parseFloat(document.getElementById('rqAmount').value || '0');
+  if (!description) { errEl.textContent = 'Please enter a description.'; errEl.style.display = ''; return; }
+  if (!amountRaw || amountRaw <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = ''; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+  try {
+    var docUrl = null;
+    if (rqDocFile) {
+      var ext = rqDocFile.name.split('.').pop();
+      var path = 'requisitions/' + currentMember.id + '_' + Date.now() + '.' + ext;
+      var upRes = await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/chapter-media/' + path, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rqDocFile.type, 'x-upsert': 'true' },
+        body: rqDocFile
+      });
+      if (upRes.ok) docUrl = 'https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/public/chapter-media/' + path;
+    }
+
+    var payload = {
+      member_id:   currentMember.id,
+      committee:   document.getElementById('rqCommittee').value,
+      description: description,
+      amount_cents: Math.round(amountRaw * 100),
+      payee:       (document.getElementById('rqPayee').value || '').trim() || null,
+      method:      document.getElementById('rqMethod').value,
+      doc_url:     docUrl,
+      status:      'pending',
+      submitted_at: new Date().toISOString()
+    };
+
+    await sbPost('finance_requisitions', payload, currentSession.access_token);
+
+    // notify admin
+    try {
+      await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/functions/v1/send-admin-notification', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'requisition', memberName: currentMember.first_name + ' ' + currentMember.last_name, amount: amountRaw, description: description })
+      });
+    } catch(_) {}
+
+    sucEl.style.display = '';
+    document.getElementById('rqDescription').value = '';
+    document.getElementById('rqAmount').value = '';
+    document.getElementById('rqPayee').value = '';
+    document.getElementById('rqDocPreview').style.display = 'none';
+    rqDocFile = null;
+    loadMyRequisitions();
+  } catch(e) {
+    errEl.textContent = 'Error submitting: ' + (e.message || 'Unknown error');
+    errEl.style.display = '';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Request';
+}
+
+async function loadMyRequisitions() {
+  if (!currentMember || !currentSession) return;
+  var el = document.getElementById('myRequisitionsList');
+  if (!el) return;
+  try {
+    var rows = await sbGet('finance_requisitions', 'member_id=eq.' + currentMember.id + '&order=submitted_at.desc', currentSession.access_token);
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-file-invoice-dollar"></i><p>No requisitions yet.</p></div>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      var statusColor = r.status==='approved'?'#4ade80':r.status==='denied'?'#f87171':'#fbbf24';
+      var date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      var amt = '$' + ((r.amount_cents||0)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + escHtml(r.committee||'Requisition') + ' — ' + amt + '</div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.description||'').substring(0,80) + (r.description&&r.description.length>80?'…':'') + ' · ' + date + '</div></div>' +
+          '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
+        '</div>' +
+        (r.admin_note ? '<div style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.45);font-style:italic;"><i class="fas fa-comment" style="margin-right:5px;color:var(--gold);"></i>' + escHtml(r.admin_note) + '</div>' : '') +
+        (r.reimbursement_id ? '<div style="margin-top:8px;"><a href="finance/reimbursement.html?id=' + r.reimbursement_id + '&from=requisition" style="font-size:0.78rem;color:var(--gold);text-decoration:none;"><i class="fas fa-receipt"></i> View Auto-Generated Reimbursement</a></div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-exclamation-circle"></i><p>Could not load requisitions.</p></div>';
+  }
+}
+
+/* ══════════════════════════════════════════
+   REIMBURSEMENT — portal inline form
+══════════════════════════════════════════ */
+var rbReceiptFile = null;
+var rbPayMethod = 'zelle';
+
+function selectRbMethod(method) {
+  rbPayMethod = method;
+  var zelleActive = method === 'zelle';
+  var zTile = document.getElementById('rb-zelle-tile');
+  var cTile = document.getElementById('rb-check-tile');
+  zTile.style.borderColor  = zelleActive ? 'var(--gold)' : 'rgba(255,255,255,0.12)';
+  zTile.style.background   = zelleActive ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.04)';
+  zTile.querySelector('i').style.color    = zelleActive ? 'var(--gold)' : 'var(--gray-400)';
+  zTile.querySelector('span').style.color = zelleActive ? 'var(--gold)' : 'var(--gray-400)';
+  cTile.style.borderColor  = !zelleActive ? 'var(--gold)' : 'rgba(255,255,255,0.12)';
+  cTile.querySelector('i').style.color    = !zelleActive ? 'var(--gold)' : 'var(--gray-400)';
+  cTile.querySelector('span').style.color = !zelleActive ? 'var(--gold)' : 'var(--gray-400)';
+  document.getElementById('rb-zelle-fields').style.display = zelleActive ? '' : 'none';
+  document.getElementById('rb-check-fields').style.display = !zelleActive ? '' : 'none';
+}
+
+function handleRbReceiptSelect(e) {
+  rbReceiptFile = e.target.files[0] || null;
+  var preview = document.getElementById('rbReceiptPreview');
+  if (rbReceiptFile) {
+    preview.style.display = '';
+    preview.innerHTML = '<i class="fas fa-receipt"></i> ' + escHtml(rbReceiptFile.name);
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+async function submitPortalReimbursement() {
+  if (!currentMember || !currentSession) return;
+  var errEl = document.getElementById('rbErr');
+  var sucEl = document.getElementById('rbSuccess');
+  var btn   = document.getElementById('rbSubmitBtn');
+  errEl.style.display = 'none'; sucEl.style.display = 'none';
+
+  var description = (document.getElementById('rbDescription').value || '').trim();
+  var amountRaw   = parseFloat(document.getElementById('rbAmount').value || '0');
+  if (!description) { errEl.textContent = 'Please enter a description.'; errEl.style.display = ''; return; }
+  if (!amountRaw || amountRaw <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = ''; return; }
+  if (!rbReceiptFile) { errEl.textContent = 'Please attach your receipt.'; errEl.style.display = ''; return; }
+
+  var paymentDetails = {};
+  if (rbPayMethod === 'zelle') {
+    var zContact = (document.getElementById('rbZelleContact').value || '').trim();
+    var zName    = (document.getElementById('rbZelleName').value || '').trim();
+    if (!zContact || !zName) { errEl.textContent = 'Please enter your Zelle contact and name.'; errEl.style.display = ''; return; }
+    paymentDetails = { zelle_contact: zContact, zelle_name: zName };
+  } else {
+    var street   = (document.getElementById('rbCheckStreet').value || '').trim();
+    var city     = (document.getElementById('rbCheckCity').value || '').trim();
+    var stateZip = (document.getElementById('rbCheckStateZip').value || '').trim();
+    if (!street || !city || !stateZip) { errEl.textContent = 'Please enter your full mailing address.'; errEl.style.display = ''; return; }
+    paymentDetails = { check_street: street, check_city: city, check_state_zip: stateZip };
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+
+  try {
+    var ext = rbReceiptFile.name.split('.').pop();
+    var path = 'reimbursements/' + currentMember.id + '_' + Date.now() + '.' + ext;
+    var upRes = await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/chapter-media/' + path, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rbReceiptFile.type, 'x-upsert': 'true' },
+      body: rbReceiptFile
+    });
+    if (!upRes.ok) throw new Error('Receipt upload failed.');
+    var receiptUrl = 'https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/public/chapter-media/' + path;
+
+    await sbPost('finance_reimbursements', {
+      member_id:      currentMember.id,
+      description:    description,
+      amount_cents:   Math.round(amountRaw * 100),
+      receipt_url:    receiptUrl,
+      payment_method: rbPayMethod,
+      payment_details: paymentDetails,
+      status:         'pending',
+      submitted_at:   new Date().toISOString()
+    }, currentSession.access_token);
+
+    try {
+      await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/functions/v1/send-admin-notification', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'reimbursement', memberName: currentMember.first_name + ' ' + currentMember.last_name, amount: amountRaw, description: description })
+      });
+    } catch(_) {}
+
+    sucEl.style.display = '';
+    document.getElementById('rbDescription').value = '';
+    document.getElementById('rbAmount').value = '';
+    document.getElementById('rbZelleContact').value = '';
+    document.getElementById('rbZelleName').value = '';
+    document.getElementById('rbReceiptPreview').style.display = 'none';
+    rbReceiptFile = null;
+    loadMyReimbursements();
+  } catch(e) {
+    errEl.textContent = 'Error submitting: ' + (e.message || 'Unknown error');
+    errEl.style.display = '';
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Request';
+}
+
+async function loadMyReimbursements() {
+  if (!currentMember || !currentSession) return;
+  var el = document.getElementById('myReimbursementsList');
+  if (!el) return;
+  try {
+    var rows = await sbGet('finance_reimbursements', 'member_id=eq.' + currentMember.id + '&order=submitted_at.desc', currentSession.access_token);
+    if (!rows || !rows.length) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-receipt"></i><p>No reimbursement requests yet.</p></div>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      var statusColor = r.status==='approved'?'#4ade80':r.status==='denied'?'#f87171':r.status==='paid'?'#4ade80':'#fbbf24';
+      var date = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      var amt = '$' + ((r.amount_cents||0)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+      var autoBadge = r.auto_generated ? '<span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:#a78bfa;margin-left:6px;">Auto-generated</span>' : '';
+      return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
+          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + amt + autoBadge + '</div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml((r.description||'').substring(0,80)) + ' · ' + date + '</div></div>' +
+          '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
+        '</div>' +
+        (r.admin_note ? '<div style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.45);font-style:italic;"><i class="fas fa-comment" style="margin-right:5px;color:var(--gold);"></i>' + escHtml(r.admin_note) + '</div>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-exclamation-circle"></i><p>Could not load reimbursements.</p></div>';
   }
 }
 </script>
