@@ -454,7 +454,7 @@
     /* Officer rows table */
     /* ── Two-Row Roster Table (SPEC §4 rewrite) ── */
     .roster-group { border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
-    .roster-row1 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; background: #fff; }
+    .roster-row1 { display: grid; grid-template-columns: 160px minmax(200px,2fr) 130px 160px 130px; gap: 0; background: #fff; flex-wrap: wrap; }
     .roster-row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; background: #f9fafb; border-top: 1px dashed var(--gray-200); }
     .roster-row-label {
       grid-column: 1 / -1;
@@ -476,8 +476,13 @@
     .roster-badge-no       { background: #fef3c7; color: #92400e; }
     .roster-name-bar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px 6px; border-bottom: 1px solid var(--gray-200); }
     .roster-name { font-size: 0.95rem; font-weight: 700; color: var(--gray-800); }
+    .roster-badge-life { background: rgba(201,168,76,0.18); color: #7a5c00; border: 1px solid rgba(201,168,76,0.45); }
+    .bd-member-col { transition: opacity 0.2s; }
+    .bd-member-col.bd-hidden { display: none; }
+    .bd-contact-input { min-width: 160px; }
     @media (max-width: 640px) {
-      .roster-row1, .roster-row2 { grid-template-columns: 1fr 1fr; }
+      .roster-row1 { grid-template-columns: 1fr 1fr; }
+      .roster-row2 { grid-template-columns: 1fr 1fr; }
     }
 
     .officers-table { width: 100%; border-collapse: collapse; }
@@ -2290,11 +2295,15 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">Maintain your chapter brother directory and mass upload records by CSV. Saving syncs matched records to the <strong>member portal directory</strong> (matched by email, then Alpha ID). Brothers without an email on file stay in this list only until an email is added.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
             <button class="btn-sm edit" onclick="openBrothersDirectoryUpload()"><i class="fas fa-file-upload"></i> Mass Upload CSV</button>
             <button class="btn-sm success" onclick="addBrotherDirectoryRow()"><i class="fas fa-user-plus"></i> Add Brother</button>
             <button class="btn-sm view" onclick="loadBrothersDirectory()"><i class="fas fa-rotate-right"></i> Refresh</button>
             <button class="btn-save" style="padding:6px 14px;font-size:0.8rem;" onclick="saveBrothersDirectory()"><i class="fas fa-save"></i> Save Directory</button>
+          </div>
+          <div style="margin-bottom:12px;">
+            <button id="bdToggleMemberBtn" class="btn-sm" onclick="toggleBdMemberCols()" style="font-size:0.8rem;">👁 Show Member Info</button>
+            <span style="font-size:0.78rem;color:var(--gray-400);margin-left:10px;">Contact info always visible. Toggle to edit status, initiation, life member, IMDP, and risk mgmt fields.</span>
           </div>
           <p class="hint-text" style="margin-top:0;">CSV headers: <code>alpha_id,first_name,middle_name,last_name,suffix,email,phone,status,initiation_chapter,initiation_date,birthday,life_member_date,life_member_number,imdp_certified,risk_mgmt_certified</code> (minimum required: <code>alpha_id</code>). Re-uploading merges by <strong>Alpha ID</strong> — filled CSV cells update existing rows; empty cells keep current values (no duplicates).</p>
           <div class="brothers-dir-search-wrap">
@@ -4919,42 +4928,57 @@ function rosterCell(key, val, fallback) {
 }
 
 function renderRosterGroup(m) {
-  const name   = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown Member';
+  const name     = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown Member';
   const isActive = rosterComputeActive(m);
-  const badgeHtml = isActive
+  const lifeMem  = String(m.life_member || '').toLowerCase();
+  const isLife   = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
+
+  const activeBadge = isActive
     ? '<span class="roster-badge roster-badge-active">Active</span>'
     : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
-  const lifeMem = String(m.life_member || '').toLowerCase();
-  const isLife  = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
+  const lifeBadge = isLife
+    ? ' <span class="roster-badge roster-badge-life"><i class="fas fa-star" style="font-size:0.6rem;margin-right:3px;"></i>Life Member</span>'
+    : '';
+
+  // Alpha ID cell: gold badge for life members
+  const alphaIdCell = '<div class="roster-cell"><div class="roster-cell-key">Alpha ID</div>' +
+    '<div style="display:flex;align-items:center;gap:6px;">' +
+    rosterVal(m.alpha_id) +
+    (isLife ? '<span class="roster-badge roster-badge-life" style="font-size:0.65rem;padding:1px 6px;"><i class="fas fa-star" style="font-size:0.55rem;"></i></span>' : '') +
+    '</div></div>';
+
+  // Life member extra fields (only shown if life member)
+  const lifeFields = isLife ? (
+    '<div class="roster-cell"><div class="roster-cell-key">Life Member #</div>' + rosterVal(m.life_member_number, 'N/A') + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Life Member Date</div>' + rosterVal(m.life_member_date, 'N/A') + '</div>'
+  ) : '';
 
   return '' +
     '<div class="roster-group">' +
     // Name bar
     '<div class="roster-name-bar">' +
     '<span class="roster-name">' + escHtml(name) + '</span>' +
-    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
-    badgeHtml +
-    (isLife ? '<span class="roster-badge" style="background:#dbeafe;color:#1e40af;">Life Member</span>' : '') +
-    '</div>' +
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' + activeBadge + lifeBadge + '</div>' +
     '</div>' +
     // Row 1 — Identity & Membership
     '<div class="roster-row1">' +
     '<div class="roster-row-label">Membership Info</div>' +
-    rosterCell('Alpha ID',   m.alpha_id,   'Not Provided') +
-    rosterCell('Email',      m.email,      'Not Provided') +
-    rosterCell('Phone',      m.phone,      'Not Provided') +
-    rosterCell('Chapter',    m.initiation_chapter, 'Not Provided') +
-    rosterCell('Member Since', m.member_since, 'Not Provided') +
+    alphaIdCell +
+    '<div class="roster-cell" style="grid-column:span 1;"><div class="roster-cell-key">Email</div>' + rosterVal(m.email) + '</div>' +
+    rosterCell('Phone',              m.phone,              'Not Provided') +
+    rosterCell('Initiation Chapter', m.initiation_chapter, 'Not Provided') +
+    rosterCell('Initiation Date',    m.initiation_date,    'Not Provided') +
+    lifeFields +
     '</div>' +
     // Row 2 — Compliance & Certifications
     '<div class="roster-row2">' +
     '<div class="roster-row-label">Compliance &amp; Certifications</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Certified</div>' + rosterVal(normalizeOptionalDateValue(m.risk_mgmt_certified)) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Certified</div>'  + rosterVal(normalizeOptionalDateValue(m.risk_mgmt_certified)) + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Expiration</div>' + rosterVal(m.risk_mgmt_expiration, 'N/A') + '</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">IMDP Certified</div>' + rosterVal(normalizeOptionalDateValue(m.imdp_certified)) + '</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">IMDP Expiration</div>' + rosterVal(m.imdp_expiration, 'N/A') + '</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>' + rosterYesNo(m.grand_tax_paid) + '</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>' + rosterYesNo(m.dues_current) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">IMDP Certified</div>'       + rosterVal(normalizeOptionalDateValue(m.imdp_certified))      + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">IMDP Expiration</div>'      + rosterVal(m.imdp_expiration, 'N/A')                          + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + rosterYesNo(m.grand_tax_paid)                                + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>'    + rosterYesNo(m.dues_current)                                  + '</div>' +
     '</div>' +
     '</div>';
 }
@@ -5175,23 +5199,25 @@ async function updateVisitingRequestStatus(requestId, status) {
 // ══════════════════════════════════════════════════
 const BROTHERS_DIRECTORY_KEY = 'brothers_directory';
 const BROTHERS_DIRECTORY_COL_COUNT = 17;
+// contact:true = always visible; member:true = toggled by "Show Member Info"
 const BROTHERS_DIRECTORY_FIELDS = [
-  { key: 'alpha_id', label: 'Alpha ID', width: '120px' },
-  { key: 'first_name', label: 'First Name', width: '120px' },
-  { key: 'middle_name', label: 'Middle Name', width: '110px' },
-  { key: 'last_name', label: 'Last Name', width: '120px' },
-  { key: 'suffix', label: 'Suffix', width: '70px' },
-  { key: 'email', label: 'Email', width: '180px' },
-  { key: 'phone', label: 'Phone', width: '120px' },
-  { key: 'status', label: 'Status', width: '90px' },
-  { key: 'initiation_chapter', label: 'Initiation Chapter', width: '150px' },
-  { key: 'initiation_date', label: 'Initiation Date', width: '120px' },
-  { key: 'birthday', label: 'Birthday', width: '120px' },
-  { key: 'life_member_date', label: 'Life Member Date', width: '120px' },
-  { key: 'life_member_number', label: 'Life Member #', width: '130px' },
-  { key: 'imdp_certified', label: 'IMDP Cert. Date', width: '120px' },
-  { key: 'risk_mgmt_certified', label: 'Risk Mgmt Date', width: '120px' }
+  { key: 'alpha_id',            label: 'Alpha ID',           width: '120px', contact: true  },
+  { key: 'first_name',          label: 'First Name',         width: '150px', contact: true  },
+  { key: 'middle_name',         label: 'Middle Name',        width: '130px', contact: true  },
+  { key: 'last_name',           label: 'Last Name',          width: '150px', contact: true  },
+  { key: 'suffix',              label: 'Suffix',             width: '70px',  contact: true  },
+  { key: 'email',               label: 'Email',              width: '220px', contact: true  },
+  { key: 'phone',               label: 'Phone',              width: '140px', contact: true  },
+  { key: 'status',              label: 'Status',             width: '100px', member: true   },
+  { key: 'initiation_chapter',  label: 'Initiation Chapter', width: '160px', member: true   },
+  { key: 'initiation_date',     label: 'Initiation Date',    width: '130px', member: true   },
+  { key: 'birthday',            label: 'Birthday',           width: '120px', contact: true  },
+  { key: 'life_member_date',    label: 'Life Member Date',   width: '130px', member: true   },
+  { key: 'life_member_number',  label: 'Life Member #',      width: '130px', member: true   },
+  { key: 'imdp_certified',      label: 'IMDP Cert. Date',    width: '130px', member: true   },
+  { key: 'risk_mgmt_certified', label: 'Risk Mgmt Date',     width: '130px', member: true   }
 ];
+let bdShowMemberCols = false; // default: contact info only
 let brothersDirectoryData = [];
 let brothersDirectorySearch = '';
 let brothersDirectorySortKey = 'last_name';
@@ -5310,22 +5336,42 @@ function setBrotherDirectoryField(alphaId, field, value) {
   }
 }
 
-function brotherDirectoryInput(value, field, alphaId) {
+function bdVisibleFields() {
+  return BROTHERS_DIRECTORY_FIELDS.filter(function(col) {
+    return col.contact || (col.member && bdShowMemberCols);
+  });
+}
+
+function toggleBdMemberCols() {
+  bdShowMemberCols = !bdShowMemberCols;
+  var btn = document.getElementById('bdToggleMemberBtn');
+  if (btn) {
+    btn.textContent = bdShowMemberCols ? '👁 Hide Member Info' : '👁 Show Member Info';
+    btn.style.background = bdShowMemberCols ? 'rgba(201,168,76,0.15)' : '';
+    btn.style.borderColor = bdShowMemberCols ? 'rgba(201,168,76,0.5)' : '';
+    btn.style.color = bdShowMemberCols ? 'var(--gold)' : '';
+  }
+  renderBrothersDirectoryTable();
+}
+
+function brotherDirectoryInput(value, field, alphaId, isContact) {
   const id = escHtml(alphaId || '');
-  return '<input type="text" value="' + escHtml(value || '') + '" onchange="setBrotherDirectoryField(\'' + id + '\',\'' + field + '\',this.value)" />';
+  var extra = isContact ? ' class="bd-contact-input"' : '';
+  return '<input type="text" value="' + escHtml(value || '') + '"' + extra + ' onchange="setBrotherDirectoryField(\'' + id + '\',\'' + field + '\',this.value)" />';
 }
 
 function renderBrothersDirectoryHead() {
   const head = document.getElementById('brothersDirectoryHeadRow');
   if (!head) return;
-  head.innerHTML = BROTHERS_DIRECTORY_FIELDS.map(function(col) {
+  const visible = bdVisibleFields();
+  head.innerHTML = visible.map(function(col) {
     const active = brothersDirectorySortKey === col.key;
     const icon = !active ? '<i class="fas fa-sort sort-icon"></i>' : (
       brothersDirectorySortDir === 'desc'
         ? '<i class="fas fa-sort-down sort-icon"></i>'
         : '<i class="fas fa-sort-up sort-icon"></i>'
     );
-    return '<th class="sortable-th' + (active ? ' active' : '') + '" style="width:' + col.width + ';" onclick="sortBrothersDirectory(\'' + col.key + '\')">' +
+    return '<th class="sortable-th' + (active ? ' active' : '') + '" style="width:' + col.width + ';min-width:' + col.width + ';" onclick="sortBrothersDirectory(\'' + col.key + '\')">' +
       escHtml(col.label) + icon + '</th>';
   }).join('') + '<th style="width:40px;"></th>';
 }
@@ -5368,37 +5414,29 @@ function renderBrothersDirectoryTable() {
   if (!body) return;
   renderBrothersDirectoryHead();
   body.innerHTML = '';
+  const _colCount = bdVisibleFields().length + 1;
   if (!brothersDirectoryData.length) {
-    body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--gray-500);">No brothers in directory yet. Upload a CSV or add rows manually.</td></tr>';
+    body.innerHTML = '<tr><td colspan="' + _colCount + '" style="padding:10px;color:var(--gray-500);">No brothers in directory yet. Upload a CSV or add rows manually.</td></tr>';
     updateBrothersDirectoryCount();
     return;
   }
   const viewRows = getBrothersDirectoryViewRows();
   if (!viewRows.length) {
-    body.innerHTML = '<tr><td colspan="' + BROTHERS_DIRECTORY_COL_COUNT + '" style="padding:10px;color:var(--gray-500);">No brothers match your search.</td></tr>';
+    body.innerHTML = '<tr><td colspan="' + _colCount + '" style="padding:10px;color:var(--gray-500);">No brothers match your search.</td></tr>';
     updateBrothersDirectoryCount();
     return;
   }
+  const visible = bdVisibleFields();
+  const colCount = visible.length + 1;
   viewRows.forEach(function(rec) {
     const rowId = rec.alpha_id || '';
+    const isLife = !!(rec.life_member_date || rec.life_member_number);
     const tr = document.createElement('tr');
-    tr.innerHTML = '' +
-      '<td' + (rec.life_member_date ? ' style="background:rgba(212,175,55,0.18);" title="Life Member"' : '') + '>' + brotherDirectoryInput(rec.alpha_id, 'alpha_id', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.first_name, 'first_name', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.middle_name, 'middle_name', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.last_name, 'last_name', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.suffix, 'suffix', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.email, 'email', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.phone, 'phone', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.status, 'status', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.initiation_chapter, 'initiation_chapter', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.initiation_date, 'initiation_date', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.birthday, 'birthday', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.life_member_date, 'life_member_date', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.life_member_number, 'life_member_number', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.imdp_certified, 'imdp_certified', rowId) + '</td>' +
-      '<td>' + brotherDirectoryInput(rec.risk_mgmt_certified, 'risk_mgmt_certified', rowId) + '</td>' +
-      '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(\'' + escHtml(rowId) + '\')" title="Remove"><i class="fas fa-trash"></i></button></td>';
+    var cells = visible.map(function(col) {
+      var tdStyle = (col.key === 'alpha_id' && isLife) ? ' style="background:rgba(212,175,55,0.12);" title="Life Member"' : '';
+      return '<td' + tdStyle + '>' + brotherDirectoryInput(rec[col.key], col.key, rowId, !!col.contact) + '</td>';
+    }).join('');
+    tr.innerHTML = cells + '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(\'' + escHtml(rowId) + '\')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
   });
   updateBrothersDirectoryCount();
