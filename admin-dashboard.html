@@ -452,6 +452,34 @@
     .field-group.span2 { grid-column: span 2; }
 
     /* Officer rows table */
+    /* ── Two-Row Roster Table (SPEC §4 rewrite) ── */
+    .roster-group { border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+    .roster-row1 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; background: #fff; }
+    .roster-row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; background: #f9fafb; border-top: 1px dashed var(--gray-200); }
+    .roster-row-label {
+      grid-column: 1 / -1;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      padding: 6px 14px 2px;
+    }
+    .roster-cell { padding: 6px 14px 10px; }
+    .roster-cell-key { font-size: 0.67rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 2px; }
+    .roster-cell-val { font-size: 0.85rem; color: var(--gray-800); font-weight: 500; word-break: break-word; }
+    .roster-cell-val.missing { color: var(--gray-400); font-style: italic; font-weight: 400; }
+    .roster-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
+    .roster-badge-active   { background: #d1fae5; color: #065f46; }
+    .roster-badge-inactive { background: #fee2e2; color: #991b1b; }
+    .roster-badge-yes      { background: #d1fae5; color: #065f46; }
+    .roster-badge-no       { background: #fef3c7; color: #92400e; }
+    .roster-name-bar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px 6px; border-bottom: 1px solid var(--gray-200); }
+    .roster-name { font-size: 0.95rem; font-weight: 700; color: var(--gray-800); }
+    @media (max-width: 640px) {
+      .roster-row1, .roster-row2 { grid-template-columns: 1fr 1fr; }
+    }
+
     .officers-table { width: 100%; border-collapse: collapse; }
     .officers-table th {
       font-size: 0.68rem;
@@ -2201,19 +2229,42 @@
         </div>
         <div id="complianceAccordionBody" style="display:none;">
           <div class="section-card-body">
-            <p class="hint-text">Set chapter active date, IMDP certification, and Risk Management certification. These values are read-only in the member portal.</p>
-            <div style="margin-bottom:12px;">
-              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                <button class="btn-sm edit" onclick="event.stopPropagation();document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
-                <button class="btn-sm" onclick="event.stopPropagation();exportRosterCsv()" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);"><i class="fas fa-download"></i> Export Roster</button>
+            <!-- Toolbar -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+              <button class="btn-sm edit" onclick="event.stopPropagation();document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
+              <button class="btn-sm" onclick="event.stopPropagation();exportRosterCsv()" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);"><i class="fas fa-download"></i> Export Roster</button>
+            </div>
+            <p class="hint-text" style="margin:0 0 12px;">Active status rule: chapter dues paid AND (grand tax paid OR life member). Members matched by <strong>Alpha ID</strong> first, then <strong>email</strong>.</p>
+
+            <!-- Search + Sort toolbar -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+              <div style="position:relative;flex:1;min-width:180px;max-width:320px;">
+                <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.8rem;pointer-events:none;"></i>
+                <input id="complianceSearch" type="text" placeholder="Search by name, Alpha ID, email…" oninput="filterRosterTable()" style="width:100%;padding:6px 10px 6px 28px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;background:var(--white);color:var(--gray-800);" />
               </div>
-              <p class="hint-text" style="margin:8px 0 4px;">Export the member compliance report from AlphaMX and upload it here. Updates IMDP, Risk Management, Grand Tax, Life Member status, and determines active/inactive status. Members matched by <strong>Alpha ID</strong> first, then <strong>email</strong>.</p>
-              <p class="hint-text" style="margin:0;">Expected CSV columns: <code>alpha_id, email, chapter_active_date, imdp_certified, imdp_expiration, risk_mgmt_certified, risk_mgmt_expiration, grand_tax_paid, life_member</code>. Column names are flexible. Only columns present are updated; empty cells are skipped. Active status requires: dues paid AND (grand tax paid OR life member).</p>
+              <select id="rosterSortSelect" onchange="filterRosterTable()" style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;background:var(--white);color:var(--gray-800);">
+                <option value="last_name">Sort: Last Name</option>
+                <option value="first_name">Sort: First Name</option>
+                <option value="alpha_id">Sort: Alpha ID</option>
+                <option value="status">Sort: Status</option>
+              </select>
+              <select id="rosterFilterStatus" onchange="filterRosterTable()" style="padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;background:var(--white);color:var(--gray-800);">
+                <option value="all">All Members</option>
+                <option value="active">Active Only</option>
+                <option value="inactive">Inactive Only</option>
+              </select>
             </div>
-            <div style="position:relative;max-width:320px;margin-bottom:14px;">
-              <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.8rem;pointer-events:none;"></i>
-              <input id="complianceSearch" type="text" placeholder="Search by name…" oninput="filterComplianceList()" style="width:100%;padding:6px 10px 6px 28px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;background:var(--white);color:var(--gray-800);" />
+
+            <!-- Pagination info -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:0.8rem;color:var(--gray-500);">
+              <span id="rosterPageInfo"></span>
+              <div style="display:flex;gap:6px;">
+                <button id="rosterPrevBtn" class="btn-sm" onclick="rosterPageNav(-1)" style="padding:4px 10px;"><i class="fas fa-chevron-left"></i></button>
+                <button id="rosterNextBtn" class="btn-sm" onclick="rosterPageNav(1)"  style="padding:4px 10px;"><i class="fas fa-chevron-right"></i></button>
+              </div>
             </div>
+
+            <!-- Two-row roster table -->
             <div id="memberComplianceList">
               <div class="hint-text" style="margin:0;">Loading compliance records...</div>
             </div>
@@ -4832,54 +4883,149 @@ async function loadMemberRequests() {
   }
 }
 
+// ══════════════════════════════════════════════════════════════
+// ROSTER TABLE — Two-Row Layout (SPEC §4 Rewrite)
+// Separate from Brothers Directory. Never modify brothersDirectory* functions.
+// ══════════════════════════════════════════════════════════════
 let allComplianceMembers = [];
+let rosterCurrentPage    = 1;
+const ROSTER_PAGE_SIZE   = 25;
 
-function filterComplianceList() {
-  const q = ((document.getElementById('complianceSearch') || {}).value || '').trim().toLowerCase();
-  const filtered = q ? allComplianceMembers.filter(function(m) {
-    return ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase().includes(q);
-  }) : allComplianceMembers;
-  renderComplianceRows(filtered);
+function rosterComputeActive(m) {
+  const duesCurrent = m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
+  const grandTax    = String(m.grand_tax_paid  || '').toLowerCase();
+  const lifeMem     = String(m.life_member      || '').toLowerCase();
+  const grandOk = grandTax === 'yes' || grandTax === 'y' || grandTax === 'true' || grandTax === '1';
+  const lifeOk  = lifeMem  === 'yes' || lifeMem  === 'y' || lifeMem  === 'true' || lifeMem  === '1';
+  if (lifeOk) return duesCurrent; // life member — ignore grand tax
+  return duesCurrent && grandOk;
+}
+
+function rosterYesNo(val) {
+  const v = String(val || '').toLowerCase();
+  if (v === 'yes' || v === 'y' || v === 'true' || v === '1') return '<span class="roster-badge roster-badge-yes">Yes</span>';
+  if (v === 'no'  || v === 'n' || v === 'false'|| v === '0') return '<span class="roster-badge roster-badge-no">No</span>';
+  return '<span class="roster-cell-val missing">Not Provided</span>';
+}
+
+function rosterVal(val, fallback) {
+  var v = (val || '').trim();
+  if (!v) return '<span class="roster-cell-val missing">' + escHtml(fallback || 'Not Provided') + '</span>';
+  return '<span class="roster-cell-val">' + escHtml(v) + '</span>';
+}
+
+function rosterCell(key, val, fallback) {
+  return '<div class="roster-cell"><div class="roster-cell-key">' + escHtml(key) + '</div>' + rosterVal(val, fallback) + '</div>';
+}
+
+function renderRosterGroup(m) {
+  const name   = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown Member';
+  const isActive = rosterComputeActive(m);
+  const badgeHtml = isActive
+    ? '<span class="roster-badge roster-badge-active">Active</span>'
+    : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
+  const lifeMem = String(m.life_member || '').toLowerCase();
+  const isLife  = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
+
+  return '' +
+    '<div class="roster-group">' +
+    // Name bar
+    '<div class="roster-name-bar">' +
+    '<span class="roster-name">' + escHtml(name) + '</span>' +
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' +
+    badgeHtml +
+    (isLife ? '<span class="roster-badge" style="background:#dbeafe;color:#1e40af;">Life Member</span>' : '') +
+    '</div>' +
+    '</div>' +
+    // Row 1 — Identity & Membership
+    '<div class="roster-row1">' +
+    '<div class="roster-row-label">Membership Info</div>' +
+    rosterCell('Alpha ID',   m.alpha_id,   'Not Provided') +
+    rosterCell('Email',      m.email,      'Not Provided') +
+    rosterCell('Phone',      m.phone,      'Not Provided') +
+    rosterCell('Chapter',    m.initiation_chapter, 'Not Provided') +
+    rosterCell('Member Since', m.member_since, 'Not Provided') +
+    '</div>' +
+    // Row 2 — Compliance & Certifications
+    '<div class="roster-row2">' +
+    '<div class="roster-row-label">Compliance &amp; Certifications</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Certified</div>' + rosterVal(normalizeOptionalDateValue(m.risk_mgmt_certified)) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Expiration</div>' + rosterVal(m.risk_mgmt_expiration, 'N/A') + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">IMDP Certified</div>' + rosterVal(normalizeOptionalDateValue(m.imdp_certified)) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">IMDP Expiration</div>' + rosterVal(m.imdp_expiration, 'N/A') + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>' + rosterYesNo(m.grand_tax_paid) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>' + rosterYesNo(m.dues_current) + '</div>' +
+    '</div>' +
+    '</div>';
+}
+
+function rosterGetFiltered() {
+  const q      = ((document.getElementById('complianceSearch')    || {}).value || '').trim().toLowerCase();
+  const sort   = ((document.getElementById('rosterSortSelect')    || {}).value || 'last_name');
+  const filter = ((document.getElementById('rosterFilterStatus')  || {}).value || 'all');
+  let rows = (allComplianceMembers || []).slice();
+  if (q) {
+    rows = rows.filter(function(m) {
+      return (
+        ((m.first_name  || '') + ' ' + (m.last_name || '')).toLowerCase().includes(q) ||
+        (m.alpha_id || '').toLowerCase().includes(q) ||
+        (m.email    || '').toLowerCase().includes(q)
+      );
+    });
+  }
+  if (filter === 'active')   rows = rows.filter(function(m) { return  rosterComputeActive(m); });
+  if (filter === 'inactive') rows = rows.filter(function(m) { return !rosterComputeActive(m); });
+  rows.sort(function(a, b) {
+    var av = String(a[sort] || '').toLowerCase();
+    var bv = String(b[sort] || '').toLowerCase();
+    return av < bv ? -1 : av > bv ? 1 : 0;
+  });
+  return rows;
+}
+
+function filterRosterTable() {
+  rosterCurrentPage = 1;
+  renderRosterPage();
+}
+
+// Keep old name as alias so existing callers don't break
+function filterComplianceList() { filterRosterTable(); }
+
+function rosterPageNav(delta) {
+  const filtered = rosterGetFiltered();
+  const maxPage  = Math.max(1, Math.ceil(filtered.length / ROSTER_PAGE_SIZE));
+  rosterCurrentPage = Math.min(maxPage, Math.max(1, rosterCurrentPage + delta));
+  renderRosterPage();
+}
+
+function renderRosterPage() {
+  const container = document.getElementById('memberComplianceList');
+  if (!container) return;
+  const filtered = rosterGetFiltered();
+  const total    = filtered.length;
+  const maxPage  = Math.max(1, Math.ceil(total / ROSTER_PAGE_SIZE));
+  rosterCurrentPage = Math.min(rosterCurrentPage, maxPage);
+  const start = (rosterCurrentPage - 1) * ROSTER_PAGE_SIZE;
+  const page  = filtered.slice(start, start + ROSTER_PAGE_SIZE);
+  const infoEl = document.getElementById('rosterPageInfo');
+  const prevBtn = document.getElementById('rosterPrevBtn');
+  const nextBtn = document.getElementById('rosterNextBtn');
+  if (infoEl) infoEl.textContent = total
+    ? 'Showing ' + (start + 1) + '–' + Math.min(start + ROSTER_PAGE_SIZE, total) + ' of ' + total + ' brothers'
+    : '0 brothers';
+  if (prevBtn) prevBtn.disabled = rosterCurrentPage <= 1;
+  if (nextBtn) nextBtn.disabled = rosterCurrentPage >= maxPage;
+  if (!page.length) {
+    container.innerHTML = '<div class="hint-text" style="margin:0;">No members match the current filter.</div>';
+    return;
+  }
+  container.innerHTML = page.map(renderRosterGroup).join('');
 }
 
 function renderMemberComplianceList(members) {
   allComplianceMembers = members || [];
-  const q = ((document.getElementById('complianceSearch') || {}).value || '').trim().toLowerCase();
-  const filtered = q ? allComplianceMembers.filter(function(m) {
-    return ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase().includes(q);
-  }) : allComplianceMembers;
-  renderComplianceRows(filtered);
-}
-
-function renderComplianceRows(members) {
-  const container = document.getElementById('memberComplianceList');
-  if (!container) return;
-  if (!members || !members.length) {
-    container.innerHTML = '<div class="hint-text" style="margin:0;">No active members found.</div>';
-    return;
-  }
-  container.innerHTML = members.map(function(m) {
-    const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
-    const id = String(m.id || '');
-    const activeDate = m.chapter_active_date || '';
-    const imdp = normalizeOptionalDateValue(m.imdp_certified);
-    const risk = normalizeOptionalDateValue(m.risk_mgmt_certified);
-    return '' +
-      '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:12px;margin-bottom:10px;background:#fff;">' +
-      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;">' +
-      '<div>' +
-      '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
-      '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:2px;">' + (m.email ? escHtml(m.email) : '') + '</div>' +
-      '</div>' +
-      '<button class="btn-sm success" onclick="saveMemberCompliance(\'' + escHtml(id) + '\')"><i class="fas fa-save"></i> Save</button>' +
-      '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:10px;">' +
-      '<div class="field-group" style="margin:0;"><label>Chapter Active Date</label><input type="date" id="member-active-date-' + escHtml(id) + '" value="' + escHtml(activeDate) + '" /></div>' +
-      '<div class="field-group" style="margin:0;"><label>IMDP Certification Date</label><input type="text" id="member-imdp-' + escHtml(id) + '" value="' + escHtml(imdp) + '" /></div>' +
-      '<div class="field-group" style="margin:0;"><label>Risk Management Certification Date</label><input type="text" id="member-risk-' + escHtml(id) + '" value="' + escHtml(risk) + '" /></div>' +
-      '</div>' +
-      '</div>';
-  }).join('');
+  rosterCurrentPage    = 1;
+  renderRosterPage();
 }
 
 async function updateMemberStatus(memberId, portalAccess) {
@@ -4901,30 +5047,9 @@ async function updateMemberStatus(memberId, portalAccess) {
   }
 }
 
-async function saveMemberCompliance(memberId) {
-  if (!memberId) return;
-  const token = getAdminToken();
-  if (!token) {
-    showToast('Admin session expired. Please sign in again.', 'error');
-    return;
-  }
-  const activeDateEl = document.getElementById('member-active-date-' + memberId);
-  const imdpEl = document.getElementById('member-imdp-' + memberId);
-  const riskEl = document.getElementById('member-risk-' + memberId);
-  if (!activeDateEl || !imdpEl || !riskEl) return;
-  const payload = {
-    chapter_active_date: (activeDateEl.value || '').trim() || null,
-    imdp_certified: (imdpEl.value || '').trim(),
-    risk_mgmt_certified: (riskEl.value || '').trim(),
-    updated_at: new Date().toISOString()
-  };
-  try {
-    await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
-    showToast('Compliance fields saved successfully.');
-  } catch (err) {
-    showToast('Could not save compliance fields: ' + (err.message || 'unknown error'), 'error');
-  }
-}
+// saveMemberCompliance — retired with two-row roster rewrite.
+// Compliance is now updated exclusively via AlphaMX CSV upload.
+function saveMemberCompliance(memberId) { /* no-op — superseded by two-row roster */ }
 
 async function loadVisitingBrotherRequests(token) {
   const container = document.getElementById('visitingRequestsList');
@@ -5537,28 +5662,29 @@ async function handleAlphaMxCsvUpload(event) {
   }
 }
 
-// SPEC §4 — Export Roster as CSV
+// SPEC §4 — Export Roster as CSV (one row per brother, all fields)
 async function exportRosterCsv() {
   var token = getAdminToken();
   try {
     var members = await sbGet('members', 'order=last_name.asc,first_name.asc', token);
     if (!members || !members.length) { showToast('No members to export.', 'info'); return; }
-    var header = ['Alpha ID','First Name','Last Name','Email','Status','Dues Current','Grand Tax Paid','Life Member','Risk Mgmt Certified','Risk Mgmt Expiration','IMDP Certified','IMDP Expiration','Chapter Active Date'];
+    function q(v) { return '"' + String(v != null ? v : '').replace(/"/g,'""') + '"'; }
+    var header = [
+      'Alpha ID','First Name','Last Name','Email','Phone','Chapter',
+      'Member Since','Status','Dues Current','Grand Tax Paid','Life Member',
+      'Risk Mgmt Certified','Risk Mgmt Expiration',
+      'IMDP Certified','IMDP Expiration',
+      'Chapter Active Date','Computed Active'
+    ];
     var rows = members.map(function(m) {
       return [
-        '"' + (m.alpha_id || '').replace(/"/g,'""') + '"',
-        '"' + (m.first_name || '').replace(/"/g,'""') + '"',
-        '"' + (m.last_name || '').replace(/"/g,'""') + '"',
-        '"' + (m.email || '').replace(/"/g,'""') + '"',
-        '"' + (m.status || '').replace(/"/g,'""') + '"',
-        '"' + (m.dues_current != null ? m.dues_current : '').toString().replace(/"/g,'""') + '"',
-        '"' + (m.grand_tax_paid || '').replace(/"/g,'""') + '"',
-        '"' + (m.life_member || '').replace(/"/g,'""') + '"',
-        '"' + (m.risk_mgmt_certified || '').replace(/"/g,'""') + '"',
-        '"' + (m.risk_mgmt_expiration || '').replace(/"/g,'""') + '"',
-        '"' + (m.imdp_certified || '').replace(/"/g,'""') + '"',
-        '"' + (m.imdp_expiration || '').replace(/"/g,'""') + '"',
-        '"' + (m.chapter_active_date || '').replace(/"/g,'""') + '"'
+        q(m.alpha_id), q(m.first_name), q(m.last_name), q(m.email), q(m.phone),
+        q(m.initiation_chapter), q(m.member_since),
+        q(m.status), q(m.dues_current), q(m.grand_tax_paid), q(m.life_member),
+        q(m.risk_mgmt_certified), q(m.risk_mgmt_expiration),
+        q(m.imdp_certified),      q(m.imdp_expiration),
+        q(m.chapter_active_date),
+        q(rosterComputeActive(m) ? 'Yes' : 'No')
       ].join(',');
     });
     var csv = [header.join(',')].concat(rows).join('\n');
