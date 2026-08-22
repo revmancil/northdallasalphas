@@ -454,7 +454,7 @@
     /* Officer rows table */
     /* ── Two-Row Roster Table (SPEC §4 rewrite) ── */
     .roster-group { border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
-    .roster-row1 { display: grid; grid-template-columns: 160px minmax(200px,2fr) 130px 160px 130px; gap: 0; background: #fff; flex-wrap: wrap; }
+    .roster-row1 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0; background: #fff; }
     .roster-row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0; background: #f9fafb; border-top: 1px dashed var(--gray-200); }
     .roster-row-label {
       grid-column: 1 / -1;
@@ -4964,7 +4964,7 @@ function renderRosterGroup(m) {
     '<div class="roster-row1">' +
     '<div class="roster-row-label">Membership Info</div>' +
     alphaIdCell +
-    '<div class="roster-cell" style="grid-column:span 1;"><div class="roster-cell-key">Email</div>' + rosterVal(m.email) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Email</div>' + rosterVal(m.email) + '</div>' +
     rosterCell('Phone',              m.phone,              'Not Provided') +
     rosterCell('Initiation Chapter', m.initiation_chapter, 'Not Provided') +
     rosterCell('Initiation Date',    m.initiation_date,    'Not Provided') +
