@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visiting Brothers | North Dallas Alphas — Xi Tau Lambda</title>
+  <meta name="description" content="Visiting brothers can submit their information to connect with Xi Tau Lambda and request chapter approval while in the North Dallas area." />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <style>
+    .vb-section { padding: 90px 0; }
+    .vb-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; align-items: start; }
+    .vb-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 26px; }
+    .vb-intro { background: var(--black); color: var(--white); border: 1px solid rgba(201,168,76,0.2); }
+    .vb-intro p { color: rgba(255,255,255,0.65); line-height: 1.7; }
+    .vb-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .vb-field.full { grid-column: span 2; }
+    .vb-field label { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-600); margin-bottom: 6px; }
+    .vb-field input, .vb-field textarea, .vb-field select {
+      width: 100%; border: 1px solid var(--gray-300); border-radius: 6px; padding: 10px 12px;
+      font-family: 'Inter', sans-serif; font-size: 0.9rem; color: var(--gray-800); background: #fff;
+    }
+    .vb-field textarea { min-height: 90px; resize: vertical; }
+    .vb-field input:focus, .vb-field textarea:focus, .vb-field select:focus { border-color: var(--gold); outline: none; }
+    .vb-msg { margin-top: 12px; font-size: 0.84rem; display: none; padding: 10px 12px; border-radius: 6px; }
+    .vb-msg.show { display: block; }
+    .vb-msg.ok { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); color: #15803d; }
+    .vb-msg.err { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25); color: #b91c1c; }
+    @media (max-width: 980px) {
+      .vb-grid, .vb-form-grid { grid-template-columns: 1fr; }
+      .vb-field.full { grid-column: span 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="announce-bar">
+  🎓 Tickets Now Available — <strong>14th Annual Alpha Legacy Scholarship Gala</strong> | June 13, 2026 · Frisco Hall &nbsp;
+  <a href="https://www.zeffy.com/en-US/ticketing/2026-alpha-legacy-scholarship-gala" target="_blank">Get Your Tickets →</a>
+</div>
+
+<div id="pageShell">
+<nav class="site-nav" id="siteNav">
+  <div class="nav-inner">
+    <a href="index.html" class="nav-brand">
+      <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="nav-logo" />
+      <div class="nav-brand-text">
+        <span class="chapter">North Dallas Alphas</span>
+        <span class="tagline">Xi Tau Lambda · Est. 1984</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">Home</a><div class="nav-item-dropdown">
+  <a href="about.html" aria-haspopup="true" aria-expanded="false">About</a>
+  <div class="nav-dropdown">
+    <a href="about.html">Chapter History</a>
+    <div class="nav-dropdown-item">
+      <a href="programs.html" aria-haspopup="true" aria-expanded="false">National Programs</a>
+      <div class="nav-flyout">
+        <a href="programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+        <a href="programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+        <a href="programs/project-alpha.html">Project Alpha</a>
+        <a href="programs/brothers-keeper.html">Brother's Keeper</a>
+        <a href="programs/ldi.html">Leadership Development Institute (LDI)</a>
+      </div>
+    </div>
+    <a href="alpha-legacy-group.html">Alpha Legacy Group</a>
+  </div>
+</div><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+      <a href="membership.html">Membership</a><a href="news.html">News</a>
+      <a href="gallery.html">Gallery</a>
+      <a href="contact.html">Contact</a>
+      <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+      <a href="member-login.html" class="nav-cta nav-login"><i class="fas fa-user-circle"></i> Members Login</a>
+    </div>
+    <button class="hamburger" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <button class="mobile-close" id="mobileClose">&times;</button>
+  <a href="index.html">Home</a><div class="mobile-nav-group">
+  <button class="mobile-nav-group-toggle" onclick="this.closest('.mobile-nav-group').classList.toggle('open')">
+    About <span class="chevron">⌄</span>
+  </button>
+  <div class="mobile-nav-sub">
+    <a href="about.html">Chapter History</a>
+    <div class="mobile-nav-subsection">
+      <span class="mobile-nav-subsection-label">National Programs</span>
+      <a href="programs/voteless-people.html">A Voteless People Is a Hopeless People</a>
+      <a href="programs/go-to-high-school.html">Go-to-High School, Go-to-College</a>
+      <a href="programs/project-alpha.html">Project Alpha</a>
+      <a href="programs/brothers-keeper.html">Brother's Keeper</a>
+      <a href="programs/ldi.html">Leadership Development Institute (LDI)</a>
+    </div>
+    <a href="alpha-legacy-group.html">Alpha Legacy Group</a>
+  </div>
+</div><a href="leadership.html">Leadership</a><a href="events.html">Events</a>
+  <a href="membership.html">Membership</a><a href="news.html">News</a><a href="gallery.html">Gallery</a><a href="contact.html">Contact</a>
+  <a href="visiting-brothers.html" class="nav-interested">Visiting Brothers</a>
+  <a href="member-login.html" class="nav-login-mobile">🔒 Members Login</a>
+</div>
+
+<div id="pageContent">
+<section class="page-header">
+  <div class="container">
+    <span class="section-label">Brotherhood Connection</span>
+    <h1>Visiting Brothers</h1>
+    <p>Visiting the North Dallas area? Submit your profile details and our admin team will review your request.</p>
+  </div>
+</section>
+
+<section class="vb-section">
+  <div class="container">
+    <div class="vb-grid">
+      <div class="vb-card vb-intro">
+        <span class="section-label">Welcome, Brother</span>
+        <h2 class="section-title light" style="font-size:1.9rem;">Submit Your Information</h2>
+        <div class="gold-bar left"></div>
+        <p style="margin-bottom:16px;">Use this form to share the same profile information we maintain in the member portal. After submission, the chapter administrator will verify and approve or reject your request.</p>
+        <p style="margin-bottom:16px;">Once submitted, we also prepare an email notification to the admin team so they can process your request quickly.</p>
+        <p style="font-size:0.85rem;color:rgba(255,255,255,0.55);margin:0;">Fields marked with * are required.</p>
+      </div>
+      <div class="vb-card">
+        <form id="visitingForm" novalidate>
+          <div class="vb-form-grid">
+            <div class="vb-field"><label>First Name *</label><input type="text" id="vbFirstName" required /></div>
+            <div class="vb-field"><label>Last Name *</label><input type="text" id="vbLastName" required /></div>
+            <div class="vb-field"><label>Email *</label><input type="email" id="vbEmail" required /></div>
+            <div class="vb-field"><label>Phone</label><input type="tel" id="vbPhone" /></div>
+            <div class="vb-field"><label>City</label><input type="text" id="vbCity" /></div>
+            <div class="vb-field"><label>State</label><input type="text" id="vbState" maxlength="2" /></div>
+            <div class="vb-field"><label>Member Since</label><input type="text" id="vbMemberSince" placeholder="e.g. 2019" /></div>
+            <div class="vb-field"><label>Alpha ID *</label><input type="text" id="vbAlphaId" required /></div>
+            <div class="vb-field"><label>Initiation Date</label><input type="text" id="vbInitiationDate" placeholder="MM/DD/YYYY" /></div>
+            <div class="vb-field"><label>Initiation Chapter</label><input type="text" id="vbInitiationChapter" /></div>
+            <div class="vb-field"><label>College / University</label><input type="text" id="vbCollege" /></div>
+            <div class="vb-field full"><label>Photo URL</label><input type="url" id="vbPhoto" /></div>
+            <div class="vb-field full"><label>Short Bio</label><textarea id="vbBio" placeholder="Share anything helpful for chapter verification."></textarea></div>
+          </div>
+          <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-gold" id="vbSubmitBtn"><i class="fas fa-paper-plane"></i> Submit Visiting Request</button>
+          </div>
+          <div id="vbMsg" class="vb-msg"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="reactivation" style="padding: 90px 0; background: var(--gray-100);">
+  <div class="container">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;" class="fade-up">
+      <div>
+        <span class="section-label">Returning Brothers</span>
+        <h2 class="section-title" style="font-size: 2rem;">Interested in Reactivating?</h2>
+        <div class="gold-bar left"></div>
+        <p style="color:var(--gray-600); margin-bottom:16px;">If you are an Alpha brother who has been inactive and would like to reactivate your membership with Xi Tau Lambda Chapter, we welcome your return.</p>
+        <p style="color:var(--gray-600); margin-bottom:28px;">Reactivation gives you the opportunity to reconnect with brotherhood, contribute to our community programs, and resume your journey in Alpha Phi Alpha.</p>
+        <a href="contact.html?subject=reactivation" class="btn btn-gold"><i class="fas fa-redo"></i> Inquire About Reactivation</a>
+      </div>
+      <div style="background: var(--black); border-radius: 8px; padding: 36px;">
+        <div style="font-size:0.72rem; font-weight:700; letter-spacing:0.15em; color:var(--gold); text-transform:uppercase; margin-bottom:16px;">Need Assistance?</div>
+        <p style="color:rgba(255,255,255,0.6); font-size:0.9rem; margin-bottom:20px;">If you have questions before submitting your visiting brother request, contact the chapter via the contact page.</p>
+        <a href="contact.html" class="btn btn-outline">Contact Chapter</a>
+      </div>
+    </div>
+  </div>
+</section>
+</div>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="footer-logo-row"><img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" class="footer-logo" /><div><div class="footer-brand-name">North Dallas Alphas</div><div class="footer-brand-sub">Xi Tau Lambda Chapter · Est. 1984</div></div></div>
+        <p>Alpha Phi Alpha Fraternity, Inc. — Xi Tau Lambda Chapter #607, chartered March 3, 1984.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="https://www.instagram.com/northdallasalphas" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="https://www.youtube.com/@northdallasalphas6133" target="_blank" rel="noopener" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="footer-col"><h4>Navigate</h4><ul><li><a href="index.html">Home</a></li><li><a href="about.html">About</a></li><li><a href="events.html">Events</a></li><li><a href="membership.html">Membership</a></li><li><a href="news.html">News</a></li><li><a href="gallery.html">Gallery</a></li><li><a href="contact.html">Contact</a></li></ul></div>
+      <div class="footer-col"><h4>Get Involved</h4><ul><li><a href="visiting-brothers.html">Visiting Brothers</a></li><li><a href="visiting-brothers.html#reactivation">Reactivation</a></li><li><a href="https://apa1906.net" target="_blank">National Fraternity</a></li></ul></div>
+      <div class="footer-col"><h4>Contact</h4><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="mailto:Membership@NorthDallasAlphas.org" style="color:rgba(255,255,255,0.55); font-size:0.82rem;">Membership@NorthDallasAlphas.org</a></div><div class="footer-contact-item"><i class="fas fa-envelope"></i><a href="mailto:Info@NorthDallasAlphas.org" style="color:rgba(255,255,255,0.55);">Info@NorthDallasAlphas.org</a></div></div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Xi Tau Lambda Chapter of Alpha Phi Alpha Fraternity, Inc. &nbsp;|&nbsp; <a href="admin.html" style="color:rgba(255,255,255,0.25); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.25)'"><i class="fas fa-lock" style="margin-right:4px;"></i>Admin Login</a> &nbsp;|&nbsp; <a href="https://mc3techlabs.com" style="color:rgba(255,255,255,0.35); font-size:0.75rem; text-decoration:none;" onmouseover="this.style.color='#C9A84C'" onmouseout="this.style.color='rgba(255,255,255,0.35)'">Powered by MC3 Tech Labs</a></p>
+      <p class="footer-creed">"First of All, Servants of All, We Shall Transcend All"</p>
+    </div>
+  </div>
+</footer>
+</div>
+<script src="js/main.js"></script>
+<script>
+const SUPABASE_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+const ADMIN_EMAIL = 'membership@northdallasalphas.org';
+
+function vbHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+  };
+}
+function rebindSiteShellInteractions() {
+  const nav = document.getElementById('siteNav');
+  if (nav) {
+    const onScroll = function() {
+      if (window.scrollY > 40) nav.classList.add('scrolled');
+      else nav.classList.remove('scrolled');
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll);
+  }
+  const hamburger = document.getElementById('hamburgerBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  const mobileClose = document.getElementById('mobileClose');
+  if (hamburger && mobileMenu) hamburger.onclick = function() { mobileMenu.classList.add('open'); document.body.style.overflow = 'hidden'; };
+  if (mobileClose && mobileMenu) mobileClose.onclick = function() { mobileMenu.classList.remove('open'); document.body.style.overflow = ''; };
+  if (mobileMenu) mobileMenu.querySelectorAll('a').forEach(function(link) { link.onclick = function() { mobileMenu.classList.remove('open'); document.body.style.overflow = ''; }; });
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-links a, .mobile-menu a').forEach(function(link) {
+    const href = link.getAttribute('href');
+    if (href === currentPage || (currentPage === '' && href === 'index.html')) link.classList.add('active');
+    else link.classList.remove('active');
+  });
+}
+
+function vbVal(id) {
+  const el = document.getElementById(id);
+  return el ? el.value.trim() : '';
+}
+function normalizeAlphaId(value) {
+  return String(value || '').trim();
+}
+function verifyAlphaId(alphaId) {
+  const normalized = normalizeAlphaId(alphaId);
+  if (!normalized) return { ok: false, reason: 'Alpha ID is required.' };
+  if (!/^\d{4,}$/.test(normalized)) {
+    return { ok: false, reason: 'Alpha ID must be numeric and at least 4 digits.' };
+  }
+  return { ok: true, normalized: normalized };
+}
+
+function showVbMsg(ok, text) {
+  const msg = document.getElementById('vbMsg');
+  msg.className = 'vb-msg show ' + (ok ? 'ok' : 'err');
+  msg.textContent = text;
+}
+
+document.getElementById('visitingForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const firstName = vbVal('vbFirstName');
+  const lastName = vbVal('vbLastName');
+  const email = vbVal('vbEmail');
+  const alphaIdRaw = vbVal('vbAlphaId');
+  if (!firstName || !lastName || !email || !alphaIdRaw) {
+    showVbMsg(false, 'Please complete First Name, Last Name, Email, and Alpha ID.');
+    return;
+  }
+  const btn = document.getElementById('vbSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+  const alphaCheck = verifyAlphaId(alphaIdRaw);
+  if (!alphaCheck.ok) {
+    showVbMsg(false, alphaCheck.reason);
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Visiting Request';
+    return;
+  }
+  const alphaId = alphaCheck.normalized;
+  const payload = {
+    status: 'pending',
+    first_name: firstName,
+    last_name: lastName,
+    email: email,
+    phone: vbVal('vbPhone'),
+    city: vbVal('vbCity'),
+    state: vbVal('vbState'),
+    member_since: vbVal('vbMemberSince'),
+    alpha_id: alphaId,
+    initiation_date: vbVal('vbInitiationDate'),
+    initiation_chapter: vbVal('vbInitiationChapter'),
+    college: vbVal('vbCollege'),
+    photo: vbVal('vbPhoto'),
+    bio: vbVal('vbBio'),
+    submitted_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/visiting_brothers_requests', {
+      method: 'POST',
+      headers: Object.assign({}, vbHeaders(), { 'Prefer': 'return=representation' }),
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const rows = await res.json();
+    const requestId = rows && rows.length ? rows[0].id : '';
+    fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({
+        type: 'visitor_request',
+        name: firstName + ' ' + lastName,
+        email: email,
+        chapter: payload.initiation_chapter
+      })
+    }).catch(() => {});
+    showVbMsg(true, 'Request submitted successfully. Chapter leadership will be in touch shortly.');
+    document.getElementById('visitingForm').reset();
+  } catch (err) {
+    showVbMsg(false, 'Could not submit request: ' + (err.message || 'unknown error'));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Visiting Request';
+  }
+});
+
+(async function loadDynamicAnnouncement() {
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: vbHeaders() });
+    if (!res.ok) return;
+    const rows = await res.json();
+    const row = rows && rows.length ? rows[0] : null;
+    if (!row || !row.text) return;
+    const bar = document.querySelector('.announce-bar');
+    if (bar) bar.innerHTML = row.text + ' &nbsp; <a href="' + (row.link_url || 'events.html') + '">' + (row.link_text || 'Learn More →') + '</a>';
+  } catch (e) {}
+})();
+
+(async function initDynamicVisitingPage() {
+  try {
+    const secRes = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.visiting&select=section_key,content_html', { headers: vbHeaders() });
+    if (!secRes.ok) return;
+    const sections = await secRes.json();
+    const byKey = {};
+    sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
+    if (byKey['full_shell']) {
+      const shellWrap = document.getElementById('pageShell');
+      if (shellWrap) {
+        shellWrap.innerHTML = byKey['full_shell'];
+        rebindSiteShellInteractions();
+        return;
+      }
+    }
+    if (byKey['full_page']) {
+      const fullPageWrap = document.getElementById('pageContent');
+      if (fullPageWrap) {
+        fullPageWrap.innerHTML = byKey['full_page'];
+        rebindSiteShellInteractions();
+        return;
+      }
+    }
+    if (byKey['visiting-hero']) {
+      const target = document.querySelector('.page-header p');
+      if (target) {
+        const tmp = document.createElement('div');
+        tmp.innerHTML = byKey['visiting-hero'];
+        const pNode = tmp.querySelector('p');
+        target.innerHTML = pNode ? pNode.innerHTML : byKey['visiting-hero'];
+      }
+    }
+  } catch (e) {
+    // Keep static defaults on failure.
+  }
+})();
+</script>
+</body>
+</html>

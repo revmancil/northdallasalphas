@@ -287,6 +287,25 @@ backdrop-filter:blur(4px);}
       <a href="index.html" class="topbar-site-link"><i class="fas fa-external-link-alt"></i> View Website</a>
     </div>
   </header>
+
+  <!-- ── SPEC §1: Profile Picture Required Modal ── -->
+  <div id="profilePicRequiredModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:10000;align-items:center;justify-content:center;">
+    <div style="background:#1a1a2e;border:2px solid var(--gold);border-radius:12px;padding:40px 36px;max-width:420px;width:90%;text-align:center;">
+      <div style="font-size:2.6rem;margin-bottom:14px;">📸</div>
+      <h2 style="color:var(--gold);margin:0 0 10px;font-size:1.2rem;">Profile Photo Required</h2>
+      <p style="color:#ccc;margin:0 0 24px;font-size:0.92rem;">Brother, please upload your profile picture to continue.</p>
+      <div id="ppModalPreview" style="width:100px;height:100px;border-radius:50%;background:#2a2a4a;border:2px solid rgba(201,168,76,0.35);margin:0 auto 20px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#888;">?</div>
+      <input type="file" id="ppModalFileInput" accept="image/*" style="display:none;" onchange="handlePpModalSelect(event)">
+      <button onclick="document.getElementById('ppModalFileInput').click()" style="width:100%;background:var(--gold);color:#000;border:none;padding:12px;border-radius:6px;font-weight:700;cursor:pointer;font-size:0.95rem;margin-bottom:10px;">
+        <i class="fas fa-camera"></i> Choose Photo
+      </button>
+      <div id="ppModalStatus" style="color:#888;font-size:0.82rem;min-height:18px;margin-bottom:10px;"></div>
+      <button id="ppModalSaveBtn" onclick="savePpModal()" style="display:none;width:100%;background:#166534;color:#fff;border:none;padding:12px;border-radius:6px;font-weight:700;cursor:pointer;font-size:0.95rem;">
+        <i class="fas fa-check"></i> Save & Continue
+      </button>
+    </div>
+  </div>
+
   <main class="content">
     <!-- DASHBOARD -->
     <div class="panel active" id="panel-dashboard">
@@ -296,6 +315,16 @@ backdrop-filter:blur(4px);}
         <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-file-alt"></i></div><div class="stat-info"><div class="stat-value" id="statDocCount">--</div><div class="stat-label">Documents</div></div></div>
         <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6;"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-value" id="statMemberCount">--</div><div class="stat-label">Active Brothers</div></div></div>
       </div>
+      <!-- SPEC §2 Step 4 — Visiting Brother Access Request card (hidden for non-visiting) -->
+      <div id="vbAccessRequestCard" style="display:none;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px 24px;margin-bottom:20px;">
+        <h3 style="margin:0 0 8px;font-size:1rem;color:var(--gold);"><i class="fas fa-user-check"></i> Request Full Chapter Access</h3>
+        <p style="margin:0 0 14px;font-size:0.88rem;color:var(--gray-400);line-height:1.55;">You are currently registered as a Visiting Brother. If you would like to become a full chapter member, click below to submit an access request. A membership admin will follow up with you.</p>
+        <button onclick="submitVbAccessRequest()" style="background:var(--gold);color:#000;border:none;padding:10px 22px;border-radius:6px;font-weight:700;cursor:pointer;font-size:0.88rem;">
+          <i class="fas fa-paper-plane"></i> Request Full Access
+        </button>
+        <div id="vbAccessRequestStatus" style="margin-top:10px;font-size:0.82rem;color:#888;"></div>
+      </div>
+
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-star"></i> Welcome Back, Bro. <span id="welcomeName">Brother</span></h3></div>
         <div class="section-card-body">
@@ -2150,6 +2179,10 @@ async function init() {
   if (communityLabel) communityLabel.style.display = isVisiting ? 'none' : '';
   if (accountLabel)   accountLabel.style.display   = isVisiting ? 'none' : '';
   document.getElementById('sidebarName').textContent = fullName;
+  // SPEC §2 Step 4 — visiting brother "Request Full Access" card
+  var vbAccessCard = document.getElementById('vbAccessRequestCard');
+  if (vbAccessCard) vbAccessCard.style.display = isVisiting ? '' : 'none';
+
   document.getElementById('statusText').textContent  = hasAccess ? 'Active Member' : (isVisiting ? 'Visiting Brother' : 'Pending Approval');
   document.getElementById('statusDot').className = 'status-dot' + ((!hasAccess && !isVisiting) ? ' pending' : '');
   const avEl = document.getElementById('sidebarAvatar');
@@ -2188,6 +2221,9 @@ async function init() {
       history.replaceState({}, '', 'member-portal.html');
     }
   })();
+  // SPEC §1 — block until profile picture is uploaded
+  checkProfilePicRequired();
+
   const overlay = document.getElementById('loadingOverlay');
   overlay.style.opacity = '0';
   overlay.style.transition = 'opacity 0.4s';
@@ -3456,6 +3492,85 @@ async function loadMyReimbursements() {
     }).join('');
   } catch(e) {
     el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><i class="fas fa-exclamation-circle"></i><p>Could not load reimbursements.</p></div>';
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SPEC §1 — Profile Picture Required Modal
+═══════════════════════════════════════════ */
+function checkProfilePicRequired() {
+  if (!currentMember) return;
+  if (currentMember.photo && currentMember.photo.trim()) return;
+  var modal = document.getElementById('profilePicRequiredModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+var _ppModalFile = null;
+function handlePpModalSelect(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  _ppModalFile = file;
+  var preview = document.getElementById('ppModalPreview');
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    preview.innerHTML = '<img src="' + ev.target.result + '" style="width:100%;height:100%;object-fit:cover;">';
+  };
+  reader.readAsDataURL(file);
+  document.getElementById('ppModalSaveBtn').style.display = '';
+  document.getElementById('ppModalStatus').textContent = file.name;
+}
+
+async function savePpModal() {
+  if (!_ppModalFile || !currentMember) return;
+  var statusEl = document.getElementById('ppModalStatus');
+  statusEl.textContent = 'Uploading…';
+  try {
+    var ext = _ppModalFile.name.split('.').pop().split('?')[0] || 'jpg';
+    var path = 'member-photos/' + currentMember.id + '.' + ext;
+    var token = currentSession ? currentSession.access_token : SUPABASE_ANON_KEY;
+    var uploadRes = await fetch(
+      SUPABASE_URL + '/storage/v1/object/chapter-media/' + path,
+      { method: 'POST', headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': _ppModalFile.type, 'x-upsert': 'true' }, body: _ppModalFile }
+    );
+    if (!uploadRes.ok) throw new Error('Upload failed (' + uploadRes.status + ')');
+    var photoUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+    await sbPatch('members', 'email=eq.' + encodeURIComponent(currentMember.email), { photo: photoUrl }, token);
+    currentMember.photo = photoUrl;
+    var avEl = document.getElementById('sidebarAvatar');
+    if (avEl) avEl.innerHTML = '<img src="' + escHtml(photoUrl) + '" alt="Avatar" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">';
+    var pAv = document.getElementById('profileAvatarLarge');
+    if (pAv) pAv.innerHTML = '<img src="' + escHtml(photoUrl) + '" alt="Avatar" />';
+    document.getElementById('profilePicRequiredModal').style.display = 'none';
+    showToast('Profile photo saved. Welcome, Brother!', 'success');
+  } catch(err) {
+    statusEl.textContent = 'Error: ' + (err.message || 'unknown error');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SPEC §2 Step 4 — Visiting Brother Access Request
+═══════════════════════════════════════════ */
+async function submitVbAccessRequest() {
+  if (!currentMember || !currentSession) return;
+  var statusEl = document.getElementById('vbAccessRequestStatus');
+  statusEl.textContent = 'Submitting…';
+  var name = ((currentMember.first_name || '') + ' ' + (currentMember.last_name || '')).trim();
+  try {
+    await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+      body: JSON.stringify({
+        type: 'visiting_access_request',
+        name: name || currentMember.email,
+        email: currentMember.email,
+        subject: 'Visiting Brother Access Request',
+        body: 'Visiting Brother ' + (name || currentMember.email) + ' has requested full chapter access. Please review and activate their visiting brother status in the admin dashboard.'
+      })
+    });
+    statusEl.textContent = '✓ Request submitted. A membership admin will follow up with you.';
+    document.querySelector('#vbAccessRequestCard button').disabled = true;
+  } catch(err) {
+    statusEl.textContent = 'Error submitting request. Please try again.';
   }
 }
 </script>

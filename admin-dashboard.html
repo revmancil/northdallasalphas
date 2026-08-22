@@ -2203,9 +2203,12 @@
           <div class="section-card-body">
             <p class="hint-text">Set chapter active date, IMDP certification, and Risk Management certification. These values are read-only in the member portal.</p>
             <div style="margin-bottom:12px;">
-              <button class="btn-sm edit" onclick="event.stopPropagation();document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
-              <p class="hint-text" style="margin:8px 0 4px;">Export the member compliance report from AlphaMX and upload it here to bulk-update IMDP, Risk Management, and chapter active date for matched members. Members are matched by <strong>Alpha ID</strong> first, then <strong>email</strong> as a fallback.</p>
-              <p class="hint-text" style="margin:0;">Expected CSV columns: <code>alpha_id, first_name, last_name, email, chapter_active_date, imdp_certified, risk_mgmt_certified</code>. Column names are flexible — common AlphaMX variations (e.g. <code>Member ID</code>, <code>IMDP Certification</code>, <code>Risk Management</code>) are recognized automatically. Only columns present in the file are updated; empty cells are skipped.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button class="btn-sm edit" onclick="event.stopPropagation();document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
+                <button class="btn-sm" onclick="event.stopPropagation();exportRosterCsv()" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);"><i class="fas fa-download"></i> Export Roster</button>
+              </div>
+              <p class="hint-text" style="margin:8px 0 4px;">Export the member compliance report from AlphaMX and upload it here. Updates IMDP, Risk Management, Grand Tax, Life Member status, and determines active/inactive status. Members matched by <strong>Alpha ID</strong> first, then <strong>email</strong>.</p>
+              <p class="hint-text" style="margin:0;">Expected CSV columns: <code>alpha_id, email, chapter_active_date, imdp_certified, imdp_expiration, risk_mgmt_certified, risk_mgmt_expiration, grand_tax_paid, life_member</code>. Column names are flexible. Only columns present are updated; empty cells are skipped. Active status requires: dues paid AND (grand tax paid OR life member).</p>
             </div>
             <div style="position:relative;max-width:320px;margin-bottom:14px;">
               <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.8rem;pointer-events:none;"></i>
@@ -2747,6 +2750,10 @@
         <button id="storeTabOrders" onclick="switchStoreTab('orders')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
           <i class="fas fa-receipt"></i> Orders <span id="storePendingBadge" style="display:none;background:var(--gold);color:#000;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;"></span>
         </button>
+        <!-- SPEC §6 — Inventory tab -->
+        <button id="storeTabInventory" onclick="switchStoreTab('inventory')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
+          <i class="fas fa-warehouse"></i> Inventory
+        </button>
       </div>
 
       <!-- Items tab -->
@@ -2770,6 +2777,34 @@
         </div>
         <div id="storeOrdersList">
           <div class="empty-state"><i class="fas fa-receipt"></i><p>No orders yet.</p></div>
+        </div>
+      </div>
+
+      <!-- SPEC §6 — Inventory tab pane -->
+      <div id="storeTabPaneInventory" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div style="font-size:0.88rem;color:var(--gray-500);">Inventory levels for all store items. Items at or below reorder threshold are highlighted.</div>
+          <button class="btn-sm" onclick="exportInventoryCsv()" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);">
+            <i class="fas fa-download"></i> Export CSV
+          </button>
+        </div>
+        <div id="storeInventoryWarnings" style="margin-bottom:14px;"></div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--gray-200);text-align:left;">
+                <th style="padding:8px 12px;color:var(--gray-600);">Item Name</th>
+                <th style="padding:8px 12px;color:var(--gray-600);">SKU</th>
+                <th style="padding:8px 12px;color:var(--gray-600);text-align:right;">Qty on Hand</th>
+                <th style="padding:8px 12px;color:var(--gray-600);text-align:right;">Qty Sold</th>
+                <th style="padding:8px 12px;color:var(--gray-600);text-align:right;">Reorder Threshold</th>
+                <th style="padding:8px 12px;color:var(--gray-600);">Status</th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody">
+              <tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -4989,6 +5024,20 @@ async function updateVisitingRequestStatus(requestId, status) {
         await sbPost('members', Object.assign({}, memberPayload, { created_at: new Date().toISOString() }), token);
       }
     }
+    // SPEC §2 Step 3 — email visiting brother on approval
+    if (approve && req.email) {
+      fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          type: 'visiting_brother_approved',
+          to: req.email,
+          name: [req.first_name, req.last_name].filter(Boolean).join(' ') || req.email,
+          subject: 'Your Visiting Brother Request Has Been Approved',
+          body: 'Your visiting brother request for Xi Tau Lambda Chapter 607 has been approved. You may now log in to the Member Portal to request full access: ' + window.location.origin + '/member-portal.html'
+        })
+      }).catch(function(){});
+    }
     showToast(approve ? 'Visiting brother approved and member record updated.' : 'Visiting brother request rejected.', approve ? 'success' : 'info');
     await loadMemberRequests();
   } catch (err) {
@@ -5398,13 +5447,18 @@ function mapAlphaMxHeaders(headers) {
     if (k) idx[k] = i;
   });
   return {
-    alpha_id:          idx.alphaid         != null ? idx.alphaid         : (idx.memberid != null ? idx.memberid : idx.membernumber),
-    first_name:        idx.firstname       != null ? idx.firstname       : idx.first,
-    last_name:         idx.lastname        != null ? idx.lastname        : idx.last,
-    email:             idx.email,
+    alpha_id:            idx.alphaid         != null ? idx.alphaid         : (idx.memberid != null ? idx.memberid : idx.membernumber),
+    first_name:          idx.firstname       != null ? idx.firstname       : idx.first,
+    last_name:           idx.lastname        != null ? idx.lastname        : idx.last,
+    email:               idx.email,
     chapter_active_date: idx.chapteractivedate != null ? idx.chapteractivedate : (idx.activedate != null ? idx.activedate : idx.chapteractive),
-    imdp_certified:    idx.imdpcertified   != null ? idx.imdpcertified   : (idx.imdp != null ? idx.imdp : (idx.imdpcertification != null ? idx.imdpcertification : idx.imdpdate)),
-    risk_mgmt_certified: idx.riskmgmtcertified != null ? idx.riskmgmtcertified : (idx.riskmgmt != null ? idx.riskmgmt : (idx.riskmanagement != null ? idx.riskmanagement : idx.riskmanagementcertification))
+    imdp_certified:      idx.imdpcertified   != null ? idx.imdpcertified   : (idx.imdp != null ? idx.imdp : (idx.imdpcertification != null ? idx.imdpcertification : idx.imdpdate)),
+    risk_mgmt_certified: idx.riskmgmtcertified != null ? idx.riskmgmtcertified : (idx.riskmgmt != null ? idx.riskmgmt : (idx.riskmanagement != null ? idx.riskmanagement : idx.riskmanagementcertification)),
+    // SPEC §4 — new AlphaMX columns
+    risk_mgmt_expiration: idx.riskmgmtexpiration != null ? idx.riskmgmtexpiration : (idx.riskmanagementexpiration != null ? idx.riskmanagementexpiration : (idx.riskexpiration != null ? idx.riskexpiration : idx.riskexp)),
+    imdp_expiration:      idx.imdpexpiration    != null ? idx.imdpexpiration    : (idx.imdpexp != null ? idx.imdpexp : idx.imdpexpirationdate),
+    grand_tax_paid:       idx.grandtaxpaid      != null ? idx.grandtaxpaid      : (idx.grandtax != null ? idx.grandtax : (idx.taxpaid != null ? idx.taxpaid : idx.tax)),
+    life_member:          idx.lifemember        != null ? idx.lifemember        : (idx.lifememberstatus != null ? idx.lifememberstatus : idx.life)
   };
 }
 
@@ -5426,11 +5480,15 @@ async function handleAlphaMxCsvUpload(event) {
     for (let i = 1; i < lines.length; i++) {
       const cells = parseCsvLine(lines[i]);
       rows.push({
-        alpha_id:            csvCell(cells, mapped.alpha_id).toUpperCase(),
-        email:               csvCell(cells, mapped.email).toLowerCase(),
-        chapter_active_date: csvCell(cells, mapped.chapter_active_date),
-        imdp_certified:      csvCell(cells, mapped.imdp_certified),
-        risk_mgmt_certified: csvCell(cells, mapped.risk_mgmt_certified)
+        alpha_id:             csvCell(cells, mapped.alpha_id).toUpperCase(),
+        email:                csvCell(cells, mapped.email).toLowerCase(),
+        chapter_active_date:  csvCell(cells, mapped.chapter_active_date),
+        imdp_certified:       csvCell(cells, mapped.imdp_certified),
+        risk_mgmt_certified:  csvCell(cells, mapped.risk_mgmt_certified),
+        risk_mgmt_expiration: csvCell(cells, mapped.risk_mgmt_expiration),
+        imdp_expiration:      csvCell(cells, mapped.imdp_expiration),
+        grand_tax_paid:       csvCell(cells, mapped.grand_tax_paid),
+        life_member:          csvCell(cells, mapped.life_member)
       });
     }
     // Fetch current active members to match against
@@ -5449,9 +5507,22 @@ async function handleAlphaMxCsvUpload(event) {
       const member = byAlphaId[row.alpha_id] || byEmail[row.email];
       if (!member) { skipped++; continue; }
       const payload = { updated_at: new Date().toISOString() };
-      if (row.chapter_active_date) payload.chapter_active_date = row.chapter_active_date;
-      if (row.imdp_certified)      payload.imdp_certified = row.imdp_certified;
-      if (row.risk_mgmt_certified) payload.risk_mgmt_certified = row.risk_mgmt_certified;
+      if (row.chapter_active_date)  payload.chapter_active_date  = row.chapter_active_date;
+      if (row.imdp_certified)       payload.imdp_certified       = row.imdp_certified;
+      if (row.risk_mgmt_certified)  payload.risk_mgmt_certified  = row.risk_mgmt_certified;
+      if (row.risk_mgmt_expiration) payload.risk_mgmt_expiration = row.risk_mgmt_expiration;
+      if (row.imdp_expiration)      payload.imdp_expiration      = row.imdp_expiration;
+      if (row.grand_tax_paid)       payload.grand_tax_paid       = row.grand_tax_paid;
+      if (row.life_member)          payload.life_member          = row.life_member;
+      // SPEC §4 — active/inactive: dues paid AND (grand tax paid OR life member)
+      const duesPaid = member.dues_current === true || member.dues_current === 'true' || member.dues_current === 'yes';
+      const grandTax = (row.grand_tax_paid || '').toLowerCase();
+      const lifeMem  = (row.life_member    || '').toLowerCase();
+      const isGrandTaxOk = grandTax === 'yes' || grandTax === 'y' || grandTax === 'true' || grandTax === '1';
+      const isLifeMember  = lifeMem  === 'yes' || lifeMem  === 'y' || lifeMem  === 'true' || lifeMem  === '1';
+      if (row.grand_tax_paid || row.life_member) {
+        payload.status = (duesPaid && (isGrandTaxOk || isLifeMember)) ? 'active' : 'inactive';
+      }
       if (Object.keys(payload).length === 1) { skipped++; continue; }
       await sbPatch('members', 'id=eq.' + encodeURIComponent(String(member.id)), payload, token);
       matched++;
@@ -5463,6 +5534,42 @@ async function handleAlphaMxCsvUpload(event) {
     showToast('Could not process AlphaMX CSV: ' + (err.message || 'unknown error'), 'error');
   } finally {
     if (event && event.target) event.target.value = '';
+  }
+}
+
+// SPEC §4 — Export Roster as CSV
+async function exportRosterCsv() {
+  var token = getAdminToken();
+  try {
+    var members = await sbGet('members', 'order=last_name.asc,first_name.asc', token);
+    if (!members || !members.length) { showToast('No members to export.', 'info'); return; }
+    var header = ['Alpha ID','First Name','Last Name','Email','Status','Dues Current','Grand Tax Paid','Life Member','Risk Mgmt Certified','Risk Mgmt Expiration','IMDP Certified','IMDP Expiration','Chapter Active Date'];
+    var rows = members.map(function(m) {
+      return [
+        '"' + (m.alpha_id || '').replace(/"/g,'""') + '"',
+        '"' + (m.first_name || '').replace(/"/g,'""') + '"',
+        '"' + (m.last_name || '').replace(/"/g,'""') + '"',
+        '"' + (m.email || '').replace(/"/g,'""') + '"',
+        '"' + (m.status || '').replace(/"/g,'""') + '"',
+        '"' + (m.dues_current != null ? m.dues_current : '').toString().replace(/"/g,'""') + '"',
+        '"' + (m.grand_tax_paid || '').replace(/"/g,'""') + '"',
+        '"' + (m.life_member || '').replace(/"/g,'""') + '"',
+        '"' + (m.risk_mgmt_certified || '').replace(/"/g,'""') + '"',
+        '"' + (m.risk_mgmt_expiration || '').replace(/"/g,'""') + '"',
+        '"' + (m.imdp_certified || '').replace(/"/g,'""') + '"',
+        '"' + (m.imdp_expiration || '').replace(/"/g,'""') + '"',
+        '"' + (m.chapter_active_date || '').replace(/"/g,'""') + '"'
+      ].join(',');
+    });
+    var csv = [header.join(',')].concat(rows).join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'roster-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  } catch(err) {
+    showToast('Export failed: ' + (err.message || 'unknown error'), 'error');
   }
 }
 
@@ -9949,12 +10056,85 @@ async function loadStorePanel() {
 }
 
 function switchStoreTab(tab) {
-  document.getElementById('storeTabPaneItems').style.display  = tab === 'items'  ? '' : 'none';
-  document.getElementById('storeTabPaneOrders').style.display = tab === 'orders' ? '' : 'none';
-  document.getElementById('storeTabItems').style.borderBottomColor  = tab === 'items'  ? 'var(--gold)' : 'transparent';
-  document.getElementById('storeTabOrders').style.borderBottomColor = tab === 'orders' ? 'var(--gold)' : 'transparent';
-  document.getElementById('storeTabItems').style.color  = tab === 'items'  ? 'var(--gold)' : 'var(--gray-400)';
-  document.getElementById('storeTabOrders').style.color = tab === 'orders' ? 'var(--gold)' : 'var(--gray-400)';
+  document.getElementById('storeTabPaneItems').style.display     = tab === 'items'     ? '' : 'none';
+  document.getElementById('storeTabPaneOrders').style.display    = tab === 'orders'    ? '' : 'none';
+  document.getElementById('storeTabPaneInventory').style.display = tab === 'inventory' ? '' : 'none';
+  ['items','orders','inventory'].forEach(function(t) {
+    var btn = document.getElementById('storeTab' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) {
+      btn.style.borderBottomColor = tab === t ? 'var(--gold)' : 'transparent';
+      btn.style.color             = tab === t ? 'var(--gold)' : 'var(--gray-400)';
+    }
+  });
+  if (tab === 'inventory') loadInventoryReport();
+}
+
+// SPEC §6 — Chapter Store Inventory Report
+async function loadInventoryReport() {
+  var tbody = document.getElementById('inventoryTableBody');
+  var warningsEl = document.getElementById('storeInventoryWarnings');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</td></tr>';
+  try {
+    var token = getAdminToken();
+    var items = await sbGet('store_items', 'order=sort_order.asc,created_at.desc', token);
+    if (!items || !items.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--gray-400);">No store items found.</td></tr>';
+      return;
+    }
+    var lowItems = [];
+    tbody.innerHTML = items.map(function(item) {
+      var qtyHand = item.qty_on_hand != null ? Number(item.qty_on_hand) : null;
+      var qtySold = item.qty_sold    != null ? Number(item.qty_sold)    : null;
+      var reorder = item.reorder_threshold != null ? Number(item.reorder_threshold) : null;
+      var isLow   = qtyHand != null && reorder != null && qtyHand <= reorder;
+      if (isLow) lowItems.push(escHtml(item.name || 'Unknown'));
+      var statusHtml = isLow
+        ? '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:700;">⚠ Low</span>'
+        : '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:10px;font-size:0.75rem;font-weight:700;">OK</span>';
+      return '<tr style="border-bottom:1px solid var(--gray-200);">' +
+        '<td style="padding:10px 12px;font-weight:600;">' + escHtml(item.name || '—') + '</td>' +
+        '<td style="padding:10px 12px;color:var(--gray-500);font-family:monospace;">' + escHtml(item.sku || '—') + '</td>' +
+        '<td style="padding:10px 12px;text-align:right;">' + (qtyHand != null ? qtyHand : '—') + '</td>' +
+        '<td style="padding:10px 12px;text-align:right;">' + (qtySold != null ? qtySold : '—') + '</td>' +
+        '<td style="padding:10px 12px;text-align:right;">' + (reorder != null ? reorder : '—') + '</td>' +
+        '<td style="padding:10px 12px;">' + (qtyHand != null ? statusHtml : '<span style="color:var(--gray-400);">—</span>') + '</td>' +
+        '</tr>';
+    }).join('');
+    if (lowItems.length) {
+      warningsEl.innerHTML = '<div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 16px;margin-bottom:4px;">' +
+        '<strong style="color:#92400e;"><i class="fas fa-exclamation-triangle"></i> Low Inventory Warning</strong>' +
+        '<p style="margin:6px 0 0;color:#92400e;font-size:0.85rem;">The following items are at or below their reorder threshold: ' + lowItems.join(', ') + '</p></div>';
+    } else {
+      warningsEl.innerHTML = '';
+    }
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:var(--red);">Error: ' + escHtml(err.message || 'unknown') + '</td></tr>';
+  }
+}
+
+function exportInventoryCsv() {
+  var items = _storeItems;
+  if (!items || !items.length) { showToast('No items to export.', 'info'); return; }
+  var header = ['Name','SKU','Qty on Hand','Qty Sold','Reorder Threshold','Category','Price'];
+  var rows = items.map(function(item) {
+    return [
+      '"' + (item.name || '').replace(/"/g, '""') + '"',
+      '"' + (item.sku  || '').replace(/"/g, '""') + '"',
+      item.qty_on_hand != null ? item.qty_on_hand : '',
+      item.qty_sold    != null ? item.qty_sold    : '',
+      item.reorder_threshold != null ? item.reorder_threshold : '',
+      '"' + (item.category || '').replace(/"/g, '""') + '"',
+      item.price != null ? (item.price / 100).toFixed(2) : ''
+    ].join(',');
+  });
+  var csv = [header.join(',')].concat(rows).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = 'store-inventory-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
 function renderStoreItems() {
