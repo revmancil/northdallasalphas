@@ -182,13 +182,10 @@
     <a class="nav-item" href="dashboard.html"><i class="fas fa-chart-pie"></i> Dashboard</a>
     <a class="nav-item active" href="pay-dues.html"><i class="fas fa-dollar-sign"></i> Pay Dues</a>
     <hr class="nav-divider" />
-    <div class="nav-label">Requests</div>
-    <a class="nav-item" href="requisition.html"><i class="fas fa-file-invoice-dollar"></i> Requisitions</a>
-    <a class="nav-item" href="reimbursement.html"><i class="fas fa-receipt"></i> Reimbursements</a>
-    <hr class="nav-divider" />
     <div class="nav-label">Account</div>
     <a class="nav-item" href="../member-portal.html"><i class="fas fa-arrow-left"></i> Member Portal</a>
     <a class="nav-item" id="adminNavLink" href="admin/index.html" style="display:none;"><i class="fas fa-shield-halved"></i> Finance Admin</a>
+    <a class="nav-item" id="requestsNavLink" href="admin/index.html#requests" style="display:none;"><i class="fas fa-inbox"></i> Member Requests</a>
   </nav>
   <div class="sidebar-footer">
     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
@@ -465,6 +462,7 @@ function showAdminLinkIfEligible() {
   var r = (currentMember.chapter_role || '').toLowerCase().replace(/\s+/g, '_');
   if (adminRoles.some(function(ar){ return r.includes(ar); })) {
     document.getElementById('adminNavLink').style.display = '';
+    document.getElementById('requestsNavLink').style.display = '';
   }
 }
 

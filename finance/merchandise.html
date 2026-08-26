@@ -145,11 +145,10 @@
     <a class="nav-item" href="dashboard.html"><i class="fas fa-chart-line"></i> Dashboard</a>
     <a class="nav-item" href="pay-dues.html"><i class="fas fa-credit-card"></i> Pay Dues</a>
     <a class="nav-item active" href="merchandise.html"><i class="fas fa-store"></i> Merchandise</a>
-    <a class="nav-item" href="requisition.html"><i class="fas fa-file-invoice-dollar"></i> Requisitions</a>
-    <a class="nav-item" href="reimbursement.html"><i class="fas fa-receipt"></i> Reimbursements</a>
     <hr class="nav-divider" />
     <a class="nav-item" href="../member-portal.html"><i class="fas fa-arrow-left"></i> Member Portal</a>
     <a class="nav-item" id="financeAdminLink" href="admin/index.html" style="display:none;"><i class="fas fa-tools"></i> Finance Admin</a>
+    <a class="nav-item" id="requestsNavLink" href="admin/index.html#requests" style="display:none;"><i class="fas fa-inbox"></i> Member Requests</a>
   </nav>
   <div class="sidebar-footer">
     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
@@ -387,11 +386,15 @@
       const role = rows[0]?.finance_role;
       if (['treasurer','financial_secretary','president'].includes(role)) {
         document.getElementById('financeAdminLink').style.display = '';
+        document.getElementById('requestsNavLink').style.display = '';
       }
     } catch(_) {}
     // Also show for site admins
     const adminSession = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
-    if (adminSession?.access_token) document.getElementById('financeAdminLink').style.display = '';
+    if (adminSession?.access_token) {
+      document.getElementById('financeAdminLink').style.display = '';
+      document.getElementById('requestsNavLink').style.display = '';
+    }
 
     // Load catalog
     const catalog = await getContentJson(CATALOG_KEY);
