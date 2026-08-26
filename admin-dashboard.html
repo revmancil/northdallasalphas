@@ -1232,6 +1232,9 @@
       <i class="fas fa-chevron-down group-caret"></i>
     </button>
     <div class="nav-group-body open" id="navbody-finance">
+      <button class="sidebar-link" data-section="finance-dashboard" onclick="showPanel('finance-dashboard');loadFinanceDashboard()">
+        <i class="fas fa-chart-pie"></i> Finance Dashboard
+      </button>
       <button class="sidebar-link" data-section="dues-admin" onclick="showPanel('dues-admin');loadDuesAdminPanel()">
         <i class="fas fa-dollar-sign"></i> Dues &amp; Payments <span id="navBadge-dues-admin" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle;"></span>
       </button>
@@ -2687,6 +2690,67 @@
     </div>
 
     <!-- ══════════════════════════════════
+         FINANCE DASHBOARD PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-finance-dashboard">
+      <!-- Stat tiles -->
+      <div id="fd-stat-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px;">
+        <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px;">
+          <div style="width:44px;height:44px;border-radius:10px;background:var(--gold-pale);display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--gold);flex-shrink:0;"><i class="fas fa-spinner fa-spin"></i></div>
+          <div><div style="font-size:1.45rem;font-weight:800;color:var(--white);line-height:1;">—</div><div style="font-size:0.74rem;color:rgba(255,255,255,0.4);margin-top:4px;">Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Cash Position -->
+      <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:20px;overflow:hidden;">
+        <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <h3 style="font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;"><i class="fas fa-vault" style="color:var(--gold);font-size:0.88rem;"></i> Cash Position</h3>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="fd-asOfBadge" style="display:none;font-size:0.7rem;font-weight:600;padding:3px 9px;border-radius:5px;background:rgba(201,168,76,0.12);color:var(--gold);display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-calendar-check"></i> <span id="fd-asOfLabel">—</span></span>
+          </div>
+        </div>
+        <div style="padding:22px;" id="fd-cashBody"><div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i></div></div>
+      </div>
+
+      <!-- Budget + Balance Sheet -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;" id="fd-two-col">
+        <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;">
+          <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+            <h3 style="font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;"><i class="fas fa-chart-bar" style="color:var(--gold);font-size:0.88rem;"></i> Budget-to-Actuals</h3>
+          </div>
+          <div style="padding:22px;" id="fd-budgetBody"><div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i></div></div>
+        </div>
+        <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;">
+          <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <h3 style="font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;"><i class="fas fa-scale-balanced" style="color:var(--gold);font-size:0.88rem;"></i> Balance Sheet</h3>
+          </div>
+          <div style="padding:22px;" id="fd-bsBody"><div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i></div></div>
+        </div>
+      </div>
+
+      <!-- Pending Items -->
+      <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:20px;overflow:hidden;">
+        <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;"><i class="fas fa-clock" style="color:var(--gold);font-size:0.88rem;"></i> Pending Items</h3>
+          <span id="fd-pendingCount" style="font-size:0.78rem;color:rgba(255,255,255,0.35);"></span>
+        </div>
+        <div style="padding:22px;" id="fd-pendingBody"><div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i></div></div>
+      </div>
+
+      <!-- Xero Transactions -->
+      <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden;">
+        <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;"><i class="fas fa-link" style="color:#93c5fd;font-size:0.88rem;"></i> Xero Transactions</h3>
+          <span style="font-size:0.7rem;font-weight:600;padding:3px 9px;border-radius:5px;background:rgba(59,130,246,0.1);color:#93c5fd;">Phase 2 — Xero sync pending</span>
+        </div>
+        <div style="padding:22px;text-align:center;color:rgba(255,255,255,0.25);">
+          <i class="fas fa-plug" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
+          <p style="font-size:0.85rem;line-height:1.6;">Xero integration will surface live bank transactions, reconciliation status, and GL entries here once the webhook is wired in Phase 2.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
          REQUISITIONS — ADMIN PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-requisitions">
@@ -3329,7 +3393,11 @@ const PANEL_META = {
   gallery:       ['Event Photo Gallery', 'Photos displayed on the public gallery page'],
   settings:      ['Settings',           'Admin account & chapter settings'],
   meetings:      ['Meetings Manager',   'Schedule meetings and track RSVP & attendance'],
-  'chapter-news':['Chapter News Feed',  'Post private announcements and updates for brothers']
+  'chapter-news':     ['Chapter News Feed',   'Post private announcements and updates for brothers'],
+  'finance-dashboard':['Finance Dashboard',   'Cash position, budget-to-actuals, balance sheet, and pending requests'],
+  'dues-admin':       ['Dues & Payments',     'Configure dues and log manual payments'],
+  requisitions:       ['Requisitions',        'Review and approve member requisition requests'],
+  reimbursements:     ['Reimbursements',      'Review and approve member reimbursement requests']
 };
 
 // ── Admin Permissions (full admin vs. restricted to certain sections) ──
@@ -9841,6 +9909,178 @@ document.getElementById('newsSubModal').addEventListener('click', function(e) {
    REQUISITIONS — ADMIN
 ═══════════════════════════════════════════ */
 var _allRequisitions = [];
+/* ══════════════════════════════════════════
+   FINANCE DASHBOARD
+══════════════════════════════════════════ */
+var _fdLoaded = false;
+
+async function loadFinanceDashboard() {
+  if (_fdLoaded) return;
+  _fdLoaded = true;
+  var token = getAdminToken();
+  var fy = String(new Date().getFullYear());
+
+  // Stat tiles
+  try {
+    var results = await Promise.allSettled([
+      sbGet('finance_payments',      'fiscal_year=eq.'+fy+'&status=eq.paid&select=amount_cents', token),
+      sbGet('finance_requisitions',  'status=eq.pending&select=id,amount_cents', token),
+      sbGet('finance_reimbursements','status=eq.pending&select=id,amount_cents', token),
+      sbGet('finance_reimbursements','status=eq.approved&select=amount_cents', token)
+    ]);
+    var payments     = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
+    var pendingReqs  = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
+    var pendingReimbs= results[2].status==='fulfilled' ? (results[2].value||[]) : [];
+    var paidReimbs   = results[3].status==='fulfilled' ? (results[3].value||[]) : [];
+    var duesTotal    = payments.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var reqAmt       = pendingReqs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var reimbAmt     = pendingReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var paidAmt      = paidReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var tiles = [
+      {icon:'fas fa-dollar-sign',  bg:'rgba(201,168,76,0.12)',   col:'#C9A84C', val:fdFmt(duesTotal),       lbl:'Dues Collected — FY '+fy},
+      {icon:'fas fa-file-invoice-dollar', bg:'rgba(59,130,246,0.1)',  col:'#93c5fd', val:pendingReqs.length,    lbl:'Pending Requisitions'},
+      {icon:'fas fa-receipt',      bg:'rgba(139,92,246,0.1)',    col:'#c4b5fd', val:pendingReimbs.length,   lbl:'Pending Reimbursements'},
+      {icon:'fas fa-money-bill-transfer', bg:'rgba(34,197,94,0.1)', col:'#4ade80', val:fdFmt(paidAmt),         lbl:'Reimbursements Paid'}
+    ];
+    document.getElementById('fd-stat-grid').innerHTML = tiles.map(function(t){
+      return '<div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:18px 20px;display:flex;align-items:center;gap:14px;">'+
+        '<div style="width:44px;height:44px;border-radius:10px;background:'+t.bg+';display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:'+t.col+';flex-shrink:0;"><i class="'+t.icon+'"></i></div>'+
+        '<div><div style="font-size:1.45rem;font-weight:800;color:var(--white);line-height:1;">'+t.val+'</div><div style="font-size:0.74rem;color:rgba(255,255,255,0.4);margin-top:4px;">'+t.lbl+'</div></div>'+
+      '</div>';
+    }).join('');
+  } catch(e) {}
+
+  // Snapshot (cash, budget, balance sheet)
+  try {
+    var snRows = await sbGet('site_content','content_key=eq.finance_dashboard_snapshot&select=content_json&limit=1', SUPABASE_ANON_KEY);
+    var snap   = (snRows && snRows[0] && snRows[0].content_json) || {};
+    if (snap.as_of) {
+      document.getElementById('fd-asOfBadge').style.display = '';
+      document.getElementById('fd-asOfLabel').textContent   = snap.as_of;
+    }
+    fdRenderCash(snap.cash_position, snap.as_of, snap.updated_by);
+    fdRenderBudget(snap.budget_actuals, snap.as_of);
+    fdRenderBS(snap.balance_sheet, snap.as_of);
+  } catch(e) {
+    fdRenderCash(null); fdRenderBudget(null); fdRenderBS(null);
+  }
+
+  // Pending items
+  try {
+    var pr = await Promise.allSettled([
+      sbGet('finance_requisitions',  'status=eq.pending&order=submitted_at.asc&select=id,committee,description,amount_cents,submitted_at,member_id', token),
+      sbGet('finance_reimbursements','status=eq.pending&order=submitted_at.asc&select=id,description,amount_cents,submitted_at,member_id', token)
+    ]);
+    var reqs   = pr[0].status==='fulfilled'?(pr[0].value||[]):[];
+    var reimbs = pr[1].status==='fulfilled'?(pr[1].value||[]):[];
+    var all = reqs.map(function(r){return{type:'req',data:r};}).concat(reimbs.map(function(r){return{type:'reimb',data:r};}));
+    all.sort(function(a,b){return new Date(a.data.submitted_at)-new Date(b.data.submitted_at);});
+
+    // fetch member names
+    var ids = [...new Set(all.map(function(x){return x.data.member_id;}).filter(Boolean))];
+    var mmap = {};
+    if (ids.length) {
+      var mems = await sbGet('members','id=in.('+ids.join(',')+')'+'&select=id,first_name,last_name', token);
+      (mems||[]).forEach(function(m){mmap[m.id]=m.first_name+' '+m.last_name;});
+    }
+
+    var countEl = document.getElementById('fd-pendingCount');
+    if (countEl) countEl.textContent = all.length ? all.length+' item'+(all.length!==1?'s':'')+' awaiting review' : '';
+    var el = document.getElementById('fd-pendingBody');
+    if (!all.length) { el.innerHTML='<div style="text-align:center;padding:28px;color:rgba(255,255,255,0.3);"><i class="fas fa-check-circle" style="font-size:1.6rem;color:#4ade80;display:block;margin-bottom:8px;"></i>No pending items — all caught up.</div>'; return; }
+    var overdueCutoff = Date.now() - 7*24*60*60*1000;
+    el.innerHTML = all.map(function(item){
+      var r=item.data, isReq=item.type==='req';
+      var date=r.submitted_at?new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';
+      var overdue=new Date(r.submitted_at).getTime()<overdueCutoff;
+      var name=escapeHtml(mmap[r.member_id]||'Unknown');
+      var desc=escapeHtml((isReq?(r.committee?r.committee+' — ':'')+(r.description||'Requisition'):(r.description||'Reimbursement')).substring(0,70));
+      return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05);gap:12px;">'+
+        '<div style="flex:1;min-width:0;">'+
+          '<div style="font-size:0.85rem;font-weight:600;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+desc+'</div>'+
+          '<div style="font-size:0.74rem;color:rgba(255,255,255,0.38);margin-top:2px;">'+name+' · Submitted '+date+(overdue?' · <span style="color:#f59e0b;font-weight:700;">7+ days</span>':'')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">'+
+          '<span style="font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:5px;'+(isReq?'background:rgba(59,130,246,0.1);color:#93c5fd;':'background:rgba(139,92,246,0.1);color:#c4b5fd;')+'">'+(isReq?'Requisition':'Reimbursement')+'</span>'+
+          '<span style="font-size:0.9rem;font-weight:700;color:var(--gold);">'+fdFmt(r.amount_cents)+'</span>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) {}
+}
+
+function fdFmt(cents) { if(cents==null)return '—'; return '$'+(cents/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fdFmtD(cents) { if(cents==null)return '—'; var neg=cents<0; var abs=Math.abs(cents); return (neg?'-':'')+'$'+(abs/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fdEmpty(msg) { return '<div style="padding:28px;text-align:center;"><i class="fas fa-calendar-xmark" style="font-size:1.4rem;color:rgba(255,255,255,0.15);display:block;margin-bottom:10px;"></i><p style="font-size:0.84rem;color:rgba(255,255,255,0.3);line-height:1.5;">'+msg+'<br><span style="font-size:0.78rem;color:rgba(255,255,255,0.15);">Publish a month-end snapshot from Finance Admin → Dashboard Snapshot.</span></p></div>'; }
+
+function fdRenderCash(cash, asOf, updatedBy) {
+  var el = document.getElementById('fd-cashBody');
+  if (!cash) { el.innerHTML=fdEmpty('Cash position will appear here once a month-end snapshot is published.'); return; }
+  var total=cash.total_balance||0, reserved=cash.reserved||0, available=cash.available||(total-reserved);
+  var pct=total>0?Math.min(100,Math.round(reserved/total*100)):0;
+  el.innerHTML=
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">'+
+      '<div style="text-align:center;padding:18px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);">'+
+        '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);margin-bottom:8px;">Reserved Funds</div>'+
+        '<div style="font-size:1.5rem;font-weight:800;color:var(--white);">'+fdFmtD(reserved)+'</div>'+
+        '<div style="font-size:0.73rem;color:rgba(255,255,255,0.3);margin-top:5px;">Scholarship, programs &amp; commitments</div>'+
+      '</div>'+
+      '<div style="text-align:center;padding:18px 12px;border-radius:10px;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);">'+
+        '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);margin-bottom:8px;">Total Balance</div>'+
+        '<div style="font-size:1.5rem;font-weight:800;color:var(--gold);">'+fdFmtD(total)+'</div>'+
+        '<div style="font-size:0.73rem;color:rgba(255,255,255,0.3);margin-top:5px;">All chapter accounts</div>'+
+      '</div>'+
+      '<div style="text-align:center;padding:18px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);">'+
+        '<div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.35);margin-bottom:8px;">Available</div>'+
+        '<div style="font-size:1.5rem;font-weight:800;color:var(--white);">'+fdFmtD(available)+'</div>'+
+        '<div style="font-size:0.73rem;color:rgba(255,255,255,0.3);margin-top:5px;">Unallocated &amp; operating</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:rgba(255,255,255,0.06);border-radius:6px;height:10px;overflow:hidden;"><div style="height:100%;border-radius:6px;width:'+pct+'%;background:linear-gradient(90deg,#f59e0b,var(--gold));"></div></div>'+
+    '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:rgba(255,255,255,0.3);"><span>Reserved ('+pct+'%)</span><span>Available ('+(100-pct)+'%)</span></div>'+
+    (updatedBy?'<div style="margin-top:12px;padding:10px 14px;border-radius:7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);font-size:0.78rem;color:rgba(255,255,255,0.3);display:flex;gap:8px;"><i class="fas fa-user-tie" style="flex-shrink:0;margin-top:1px;color:rgba(255,255,255,0.25);"></i>Last updated by '+escapeHtml(updatedBy)+(asOf?' · '+escapeHtml(asOf):'')+'</div>':'');
+}
+
+function fdRenderBudget(budgetActuals, asOf) {
+  var el = document.getElementById('fd-budgetBody');
+  if (!budgetActuals || !budgetActuals.length) { el.innerHTML=fdEmpty('Budget-to-Actuals will appear here once a snapshot is published.'); return; }
+  el.innerHTML=
+    '<div style="display:flex;gap:16px;margin-bottom:16px;font-size:0.75rem;color:rgba(255,255,255,0.4);">'+
+      '<span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#22c55e;display:inline-block;"></span>Under budget</span>'+
+      '<span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#f59e0b;display:inline-block;"></span>Near limit</span>'+
+      '<span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:#ef4444;display:inline-block;"></span>Over budget</span>'+
+    '</div>'+
+    budgetActuals.map(function(row){
+      var pct=row.budget>0?Math.min(110,Math.round(row.actual/row.budget*100)):0;
+      var col=pct>=100?'#ef4444':pct>=80?'#f59e0b':'#22c55e';
+      return '<div style="display:flex;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'+
+        '<div style="width:140px;flex-shrink:0;font-size:0.84rem;font-weight:600;color:var(--white);">'+escapeHtml(row.category)+'</div>'+
+        '<div style="flex:1;background:rgba(255,255,255,0.06);border-radius:4px;height:8px;overflow:hidden;"><div style="height:100%;border-radius:4px;width:'+Math.min(100,pct)+'%;background:'+col+';"></div></div>'+
+        '<div style="width:120px;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:2px;"><div style="font-size:0.85rem;font-weight:700;color:var(--white);">'+fdFmtD(row.actual)+'</div><div style="font-size:0.73rem;color:rgba(255,255,255,0.35);">of '+fdFmtD(row.budget)+'</div></div>'+
+        '<div style="width:44px;text-align:right;font-size:0.78rem;font-weight:700;color:'+col+';">'+pct+'%</div>'+
+      '</div>';
+    }).join('');
+}
+
+function fdRenderBS(bs, asOf) {
+  var el = document.getElementById('fd-bsBody');
+  if (!bs) { el.innerHTML=fdEmpty('Balance sheet will appear once a snapshot is published.'); return; }
+  var assets=bs.assets||[], liabs=bs.liabilities||[];
+  var totalA=bs.total_assets!=null?bs.total_assets:assets.reduce(function(s,r){return s+(r.amount||0);},0);
+  var totalL=bs.total_liabilities!=null?bs.total_liabilities:liabs.reduce(function(s,r){return s+(r.amount||0);},0);
+  var net=bs.net_position!=null?bs.net_position:totalA-totalL;
+  function rows(arr){ return arr.map(function(r){return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;"><span style="color:rgba(255,255,255,0.55);">'+escapeHtml(r.label)+'</span><span style="font-weight:700;color:var(--white);">'+fdFmtD(r.amount)+'</span></div>';}).join('')||'<div style="font-size:0.82rem;color:rgba(255,255,255,0.2);padding:8px 0;">None</div>'; }
+  el.innerHTML=
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:16px;">'+
+      '<div><div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.3);margin-bottom:10px;">Assets</div>'+rows(assets)+'<div style="display:flex;justify-content:space-between;padding:12px 0 0;border-top:1px solid rgba(255,255,255,0.15);margin-top:4px;font-size:0.9rem;font-weight:800;"><span style="color:var(--white);">Total Assets</span><span style="color:var(--gold);font-size:1.1rem;">'+fdFmtD(totalA)+'</span></div></div>'+
+      '<div><div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.3);margin-bottom:10px;">Liabilities</div>'+rows(liabs)+'<div style="display:flex;justify-content:space-between;padding:12px 0 0;border-top:1px solid rgba(255,255,255,0.15);margin-top:4px;font-size:0.9rem;font-weight:800;"><span style="color:var(--white);">Total Liabilities</span><span style="color:var(--gold);font-size:1.1rem;">'+fdFmtD(totalL)+'</span></div></div>'+
+    '</div>'+
+    '<div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:9px;padding:16px 18px;text-align:center;">'+
+      '<div style="font-size:0.73rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:6px;">Net Position (Equity)</div>'+
+      '<div style="font-size:1.8rem;font-weight:800;color:var(--gold);">'+fdFmtD(net)+'</div>'+
+    '</div>';
+}
+
 var _reqFilter = 'all';
 var _reqModalRow = null;
 
