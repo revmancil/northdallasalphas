@@ -64,6 +64,8 @@
     .tool-tab:hover{color:var(--white);background:rgba(255,255,255,0.04);}
     .tool-tab.active{color:var(--gold);background:var(--dark2);border-color:rgba(201,168,76,0.2);border-bottom-color:var(--dark);}
     .tool-tab i{font-size:0.8rem;}
+    .req-type-btn{padding:7px 14px;border-radius:7px;font-size:0.82rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);background:none;color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.2s;}
+    .req-type-btn.active{background:var(--gold-pale);color:var(--gold);border-color:rgba(201,168,76,0.3);}
 
     /* ── Tool Panel ── */
     .tool-panel{display:none;}
@@ -298,6 +300,9 @@
       </button>
       <button class="tool-tab" data-tab="catalog" onclick="switchTab('catalog')">
         <i class="fas fa-store"></i> Merchandise
+      </button>
+      <button class="tool-tab" data-tab="requests" onclick="switchTab('requests')">
+        <i class="fas fa-file-invoice-dollar"></i> Requests
       </button>
     </div>
 
@@ -662,6 +667,27 @@
   </div>
 </div>
 
+    <!-- ══════════════════════════════════════════
+         TAB: Requests (Requisitions & Reimbursements)
+    ══════════════════════════════════════════ -->
+    <div class="tool-panel" id="tab-requests">
+      <div class="card">
+        <div class="card-title"><i class="fas fa-file-invoice-dollar"></i> Requisitions &amp; Reimbursements</div>
+        <div class="card-sub">Review, approve, or deny member requests.</div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-sm req-type-btn active" id="reqTypeBtn-requisition" onclick="switchReqType('requisition')"><i class="fas fa-file-invoice-dollar"></i> Requisitions</button>
+          <button class="btn btn-sm req-type-btn" id="reqTypeBtn-reimbursement" onclick="switchReqType('reimbursement')"><i class="fas fa-receipt"></i> Reimbursements</button>
+          <select id="reqStatusFilter" onchange="loadRequests()" style="margin-left:auto;padding:7px 12px;background:var(--dark);border:1px solid rgba(255,255,255,0.12);color:var(--white);border-radius:7px;font-size:0.82rem;">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="denied">Denied</option>
+            <option value="">All</option>
+          </select>
+        </div>
+        <div id="requestsTable"><div style="text-align:center;padding:40px;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+      </div>
+    </div>
+
 <!-- ── Add/Edit Merch Modal ── -->
 <div class="modal-overlay" id="merchModal">
   <div class="modal">
@@ -716,8 +742,8 @@
 
 <script>
   /* ── Config ── */
-  const SB_URL = 'https://bqkpoqyzmweawbmbpetl.supabase.co';
-  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxa3BvcXl6bXdlYXdibWJwZXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MTg3NTQsImV4cCI6MjA1OTI5NDc1NH0.2orvVmMHqxCXfSsBARJWHTuGVVyCeC-qBkT71lWP2Ds';
+  const SB_URL = 'https://fbjervpgxnbyntylabfr.supabase.co';
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
   const DUES_CONFIG_KEY = 'finance_dues_config';
   const SNAPSHOT_KEY    = 'finance_dashboard_snapshot';
   const CATALOG_KEY     = 'finance_merch_catalog';
@@ -815,6 +841,7 @@
     if (id === 'snapshot') loadSnapshot();
     if (id === 'roster') loadRoster();
     if (id === 'catalog') loadCatalog();
+    if (id === 'requests') loadRequests();
   }
 
   function fmt$(cents) {
@@ -1368,6 +1395,99 @@
   }
 
   init();
+
+  /* ══════════════════════════════════════════
+     REQUESTS (Requisitions & Reimbursements)
+  ══════════════════════════════════════════ */
+  let currentReqType = 'requisition';
+
+  function switchReqType(type) {
+    currentReqType = type;
+    document.querySelectorAll('.req-type-btn').forEach(b => b.classList.toggle('active', b.id === 'reqTypeBtn-' + type));
+    loadRequests();
+  }
+
+  async function loadRequests() {
+    const table   = currentReqType === 'requisition' ? 'finance_requisitions' : 'finance_reimbursements';
+    const status  = document.getElementById('reqStatusFilter').value;
+    const params  = { order: 'submitted_at.desc' };
+    if (status) params['status'] = 'eq.' + status;
+    const el      = document.getElementById('requestsTable');
+    el.innerHTML  = '<div style="text-align:center;padding:40px;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    try {
+      const rows = await sbGet(table, params);
+      if (!rows || !rows.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-400);">No requests found.</div>';
+        return;
+      }
+      // fetch member names
+      const memberIds = [...new Set(rows.map(r => r.member_id).filter(Boolean))];
+      let memberMap = {};
+      if (memberIds.length) {
+        const mems = await sbGet('members', { id: 'in.(' + memberIds.join(',') + ')', select: 'id,first_name,last_name' });
+        (mems || []).forEach(m => { memberMap[m.id] = m.first_name + ' ' + m.last_name; });
+      }
+      const isReimb = currentReqType === 'reimbursement';
+      el.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:0.84rem;">' +
+        '<thead><tr style="border-bottom:1px solid rgba(255,255,255,0.1);color:var(--gray-400);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.07em;">' +
+        '<th style="padding:10px 12px;text-align:left;">Member</th>' +
+        '<th style="padding:10px 12px;text-align:left;">Description</th>' +
+        (isReimb ? '<th style="padding:10px 12px;text-align:left;">Receipt</th>' : '<th style="padding:10px 12px;text-align:left;">Doc</th>') +
+        '<th style="padding:10px 12px;text-align:right;">Amount</th>' +
+        '<th style="padding:10px 12px;text-align:left;">Submitted</th>' +
+        '<th style="padding:10px 12px;text-align:left;">Status</th>' +
+        '<th style="padding:10px 12px;text-align:left;">Actions</th>' +
+        '</tr></thead><tbody>' +
+        rows.map(function(r) {
+          const name   = memberMap[r.member_id] || r.member_name || '—';
+          const desc   = escHtml(r.description || r.item_service || '—');
+          const amount = fmt$(r.amount_cents || 0);
+          const date   = fmtDate(r.submitted_at);
+          const docUrl = isReimb ? r.receipt_url : r.doc_url;
+          const docLink = docUrl ? '<a href="' + escHtml(docUrl) + '" target="_blank" style="color:var(--gold);font-size:0.78rem;"><i class="fas fa-paperclip"></i> View</a>' : '<span style="color:rgba(255,255,255,0.2);">—</span>';
+          const statusColors = { pending:'#fbbf24', approved:'#4ade80', denied:'#f87171', paid:'#4ade80' };
+          const statusBadge = '<span style="background:' + (statusColors[r.status]||'#9ca3af') + '22;color:' + (statusColors[r.status]||'#9ca3af') + ';border:1px solid ' + (statusColors[r.status]||'#9ca3af') + '44;border-radius:20px;padding:2px 10px;font-size:0.72rem;font-weight:700;">' + (r.status||'pending') + '</span>';
+          const actions = r.status === 'pending'
+            ? '<button onclick="reviewRequest(\'' + r.id + '\',\'approved\')" style="background:var(--green-pale);color:var(--green);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:4px 10px;font-size:0.75rem;cursor:pointer;margin-right:4px;"><i class="fas fa-check"></i> Approve</button>' +
+              '<button onclick="reviewRequest(\'' + r.id + '\',\'denied\')" style="background:var(--red-pale);color:var(--red);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:4px 10px;font-size:0.75rem;cursor:pointer;"><i class="fas fa-times"></i> Deny</button>'
+            : '<span style="font-size:0.75rem;color:rgba(255,255,255,0.25);">—</span>';
+          return '<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">' +
+            '<td style="padding:10px 12px;">' + escHtml(name) + '</td>' +
+            '<td style="padding:10px 12px;max-width:220px;">' + desc + '</td>' +
+            '<td style="padding:10px 12px;">' + docLink + '</td>' +
+            '<td style="padding:10px 12px;text-align:right;font-weight:600;color:var(--gold);">' + amount + '</td>' +
+            '<td style="padding:10px 12px;color:var(--gray-400);">' + date + '</td>' +
+            '<td style="padding:10px 12px;">' + statusBadge + '</td>' +
+            '<td style="padding:10px 12px;">' + actions + '</td>' +
+            '</tr>';
+        }).join('') +
+        '</tbody></table></div>';
+    } catch(e) {
+      el.innerHTML = '<div style="color:var(--red);padding:20px;">Error loading requests: ' + escHtml(String(e)) + '</div>';
+    }
+  }
+
+  async function reviewRequest(id, newStatus) {
+    const table = currentReqType === 'requisition' ? 'finance_requisitions' : 'finance_reimbursements';
+    const note  = newStatus === 'denied' ? (prompt('Optional: enter a reason for denial') || null) : null;
+    try {
+      const r = await fetch(SB_URL + '/rest/v1/' + table + '?id=eq.' + id, {
+        method: 'PATCH',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + authToken(), 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ status: newStatus, review_note: note, reviewed_at: new Date().toISOString() })
+      });
+      if (!r.ok) throw new Error(await r.text());
+      showToast((newStatus === 'approved' ? 'Approved' : 'Denied') + ' successfully.');
+      loadRequests();
+    } catch(e) {
+      showToast('Error: ' + e.message, 'error');
+    }
+  }
+
+  function escHtml(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
 </script>
 </body>
 </html>
