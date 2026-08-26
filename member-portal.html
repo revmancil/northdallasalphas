@@ -53,7 +53,7 @@ position:sticky;top:0;z-index:50;}
     .topbar-site-link{display:flex;align-items:center;gap:6px;color:var(--gray-400);text-decoration:none;font-size:0.8rem;transition:color 0.2s;}
     .topbar-site-link:hover{color:var(--gold);}
     .content{padding:28px;flex:1;}
-    .panel{display:none;} .panel.active{display:block;}
+    .panel{display:none;padding-top:18px;} .panel.active{display:block;}
     .section-card{background:var(--dark2);border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:20px;overflow:hidden;}
     .section-card-header{padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;}
     .section-card-header h3{font-size:0.92rem;font-weight:700;color:var(--white);display:flex;align-items:center;gap:9px;}
@@ -1118,15 +1118,21 @@ function showToast(msg, type) {
 }
 
 const PANEL_META = {
-  dashboard: ['Dashboard',        'Member Portal'],
-  events:      ['Events',         'Upcoming chapter events'],
-  meetings:    ['Meetings',       'Upcoming chapter meetings'],
-  'news-feed': ['Chapter News',   'Updates and announcements from chapter leadership'],
-  dues:      ['Dues',             'Your dues history'],
-  documents: ['Documents',        'Chapter documents and resources'],
-  directory: ['Brother Directory','Active chapter members'],
-  card:      ['Membership Card',  'Your digital Alpha ID card'],
-  profile:   ['My Profile',       'Edit your member profile']
+  dashboard:              ['Dashboard',             'Member Portal'],
+  events:                 ['Events',                'Upcoming chapter events'],
+  meetings:               ['Meetings',              'Upcoming chapter meetings'],
+  'news-feed':            ['Chapter News',          'Updates and announcements from chapter leadership'],
+  dues:                   ['Dues',                  'Your dues history'],
+  documents:              ['Documents',             'Chapter documents and resources'],
+  directory:              ['Brother Directory',     'Active chapter members'],
+  card:                   ['Membership Card',       'Your digital Alpha ID card'],
+  profile:                ['My Profile',            'Edit your member profile'],
+  store:                  ['Chapter Store',         'Browse and order chapter merchandise'],
+  newsletters:            ['Newsletters',           'Chapter newsletters and publications'],
+  'announcements-submit': ['Submit Announcement',   'Send an announcement to chapter leadership'],
+  'news-submit':          ['Submit News Article',   'Contribute to the chapter news feed'],
+  requisition:            ['Submit Requisition',    'Request funds or chapter resources'],
+  reimbursement:          ['Request Reimbursement', 'Submit a reimbursement request']
 };
 
 function showPanel(id) {
