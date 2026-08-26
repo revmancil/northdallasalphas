@@ -3294,12 +3294,12 @@ async function submitPortalRequisition() {
     if (rqDocFile) {
       var ext = rqDocFile.name.split('.').pop();
       var path = 'requisitions/' + currentMember.id + '_' + Date.now() + '.' + ext;
-      var upRes = await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/chapter-media/' + path, {
+      var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
         method: 'POST',
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rqDocFile.type, 'x-upsert': 'true' },
         body: rqDocFile
       });
-      if (upRes.ok) docUrl = 'https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/public/chapter-media/' + path;
+      if (upRes.ok) docUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
     }
 
     var payload = {
@@ -3318,7 +3318,7 @@ async function submitPortalRequisition() {
 
     // notify admin
     try {
-      await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/functions/v1/send-admin-notification', {
+      await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
         method: 'POST',
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'requisition', memberName: currentMember.first_name + ' ' + currentMember.last_name, amount: amountRaw, description: description })
@@ -3432,13 +3432,13 @@ async function submitPortalReimbursement() {
   try {
     var ext = rbReceiptFile.name.split('.').pop();
     var path = 'reimbursements/' + currentMember.id + '_' + Date.now() + '.' + ext;
-    var upRes = await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/chapter-media/' + path, {
+    var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
       method: 'POST',
       headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rbReceiptFile.type, 'x-upsert': 'true' },
       body: rbReceiptFile
     });
-    if (!upRes.ok) throw new Error('Receipt upload failed.');
-    var receiptUrl = 'https://bqkpoqyzmweawbmbpetl.supabase.co/storage/v1/object/public/chapter-media/' + path;
+    if (!upRes.ok) throw new Error('Receipt upload failed: ' + await upRes.text());
+    var receiptUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
 
     await sbPost('finance_reimbursements', {
       member_id:      currentMember.id,
@@ -3452,7 +3452,7 @@ async function submitPortalReimbursement() {
     }, currentSession.access_token);
 
     try {
-      await fetch('https://bqkpoqyzmweawbmbpetl.supabase.co/functions/v1/send-admin-notification', {
+      await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
         method: 'POST',
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'reimbursement', memberName: currentMember.first_name + ' ' + currentMember.last_name, amount: amountRaw, description: description })
