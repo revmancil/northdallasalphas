@@ -5045,7 +5045,7 @@ function renderRosterGroup(m) {
     '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Expiration</div>' + rosterVal(m.risk_mgmt_expiration, 'N/A') + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">IMDP Certified</div>'       + rosterVal(normalizeOptionalDateValue(m.imdp_certified))      + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">IMDP Expiration</div>'      + rosterVal(m.imdp_expiration, 'N/A')                          + '</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + rosterYesNo(m.grand_tax_paid)                                + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + (isLife ? '<span class="roster-cell-val missing">N/A — Life Member</span>' : rosterYesNo(m.grand_tax_paid)) + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>'    + rosterYesNo(m.dues_current)                                  + '</div>' +
     '</div>' +
     '</div>';
