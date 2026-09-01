@@ -5558,19 +5558,13 @@ function renderBrothersDirectoryTable() {
     updateBrothersDirectoryCount();
     return;
   }
-  const viewRows = getBrothersDirectoryViewRows();
-  if (!viewRows.length) {
-    body.innerHTML = '<tr><td colspan="' + _colCount + '" style="padding:10px;color:var(--gray-500);">No brothers match your search.</td></tr>';
-    updateBrothersDirectoryCount();
-    return;
-  }
+  const q = (brothersDirectorySearch || '').trim().toLowerCase();
   const visible = bdVisibleFields();
-  const colCount = visible.length + 1;
-  viewRows.forEach(function(rec) {
+  let anyRendered = false;
+  brothersDirectoryData.forEach(function(rec, dataIndex) {
+    if (q && !brotherDirectoryRowSearchText(rec).includes(q)) return;
+    anyRendered = true;
     const rowId = rec.alpha_id || '';
-    const dataIndex = brothersDirectoryData.indexOf(
-      brothersDirectoryData.find(function(r) { return r === rec || (rowId && normalizeAlphaId(r.alpha_id) === normalizeAlphaId(rowId)); })
-    );
     const isLife = !!(rec.life_member_date || rec.life_member_number);
     const tr = document.createElement('tr');
     var cells = visible.map(function(col) {
@@ -5580,6 +5574,9 @@ function renderBrothersDirectoryTable() {
     tr.innerHTML = cells + '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(\'' + escHtml(rowId) + '\')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
   });
+  if (!anyRendered) {
+    body.innerHTML = '<tr><td colspan="' + _colCount + '" style="padding:10px;color:var(--gray-500);">No brothers match your search.</td></tr>';
+  }
   updateBrothersDirectoryCount();
 }
 
