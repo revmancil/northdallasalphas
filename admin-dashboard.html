@@ -5232,9 +5232,11 @@ async function updateVisitingRequestStatus(requestId, status) {
         photo: req.photo || '',
         bio: req.bio || '',
         status: 'active',
+        portal_access: 'chapter_member',
         chapter_active_date: new Date().toISOString().slice(0, 10),
         updated_at: new Date().toISOString()
       };
+      if (req.auth_user_id) memberPayload.auth_user_id = req.auth_user_id;
       if (existing && existing.length) {
         await sbPatch('members', 'id=eq.' + encodeURIComponent(existing[0].id), memberPayload, token);
       } else {
