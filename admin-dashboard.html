@@ -11439,14 +11439,20 @@ let _planBudget = [];
 async function loadEventPlanning() {
   const token = getAdminToken();
   if (!token) return;
+  const sel = document.getElementById('epEventSelect');
+  if (!sel) return;
+  let events = [];
   try {
-    const events = await sbGet('events','order=start_date.desc&select=id,title,start_date',token);
-    const sel = document.getElementById('epEventSelect');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">— Select an event —</option>' + (events||[]).map(function(e){
-      return '<option value="'+escHtml(e.id)+'">'+escHtml(e.title)+(e.start_date?' ('+e.start_date+')':'')+'</option>';
-    }).join('');
+    events = await sbGet('events','order=start_date.desc&select=id,name,start_date',token) || [];
   } catch(e) {}
+  // Fall back to locally loaded eventsData if Supabase has none
+  if (!events.length && typeof eventsData !== 'undefined' && eventsData.length) {
+    events = eventsData.map(function(e,i) { return {id: e.id||String(i), name: e.name||e.title||'Event '+(i+1), start_date: e.start_date||''}; });
+  }
+  sel.innerHTML = '<option value="">— Select an event —</option>' + events.map(function(e){
+    return '<option value="'+escHtml(String(e.id))+'">'+escHtml(e.name||(e.title)||'Untitled')+(e.start_date?' ('+e.start_date+')':'')+'</option>';
+  }).join('');
+  if (!events.length) sel.innerHTML += '<option disabled>No events found — add events in Events Manager first</option>';
 }
 
 async function loadOrCreatePlan() {
@@ -11456,14 +11462,23 @@ async function loadOrCreatePlan() {
   const planArea = document.getElementById('epPlanArea');
   if (planArea) planArea.style.display = '';
   try {
-    let plans = await sbGet('event_plans','event_id=eq.'+eventId+'&limit=1',token);
-    if (!plans||!plans.length) {
-      const created = await sbPost('event_plans',{event_id:eventId},token);
+    // Try UUID-based lookup first; if eventId is not a real UUID the FK insert will fail gracefully
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(eventId);
+    let plans = [];
+    if (isUuid) {
+      plans = await sbGet('event_plans','event_id=eq.'+eventId+'&limit=1',token) || [];
+    }
+    if (!plans.length) {
+      const payload = isUuid ? {event_id:eventId} : {};
+      const created = await sbPost('event_plans',payload,token);
       _currentPlan = Array.isArray(created)?created[0]:created;
     } else {
       _currentPlan = plans[0];
     }
-    document.getElementById('epPlanId').textContent = 'Plan ID: '+(_currentPlan&&_currentPlan.id||'');
+    const eventLabel = (document.getElementById('epEventSelect')||{}).options;
+    const selectedText = eventLabel && eventLabel[(document.getElementById('epEventSelect')||{}).selectedIndex] ?
+      eventLabel[(document.getElementById('epEventSelect')||{}).selectedIndex].text : '';
+    document.getElementById('epPlanId').textContent = selectedText;
     await Promise.all([loadPlanTasks(token), loadPlanBudget(token)]);
     renderGantt();
   } catch(e) { showToast('Could not load plan: '+escHtml(e.message),'error'); }
