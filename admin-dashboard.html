@@ -5547,8 +5547,15 @@ function renderBrothersDirectoryTable() {
   }
   const q = (brothersDirectorySearch || '').trim().toLowerCase();
   const visible = bdVisibleFields();
+  const sortKey = brothersDirectorySortKey || 'last_name';
+  const sortDir = brothersDirectorySortDir === 'desc' ? 'desc' : 'asc';
+  // Build an index-aware sorted list for rendering
+  const indexed = brothersDirectoryData.map(function(rec, i) { return { rec: rec, i: i }; });
+  indexed.sort(function(a, b) { return compareBrotherDirectoryRows(a.rec, b.rec, sortKey, sortDir); });
   let anyRendered = false;
-  brothersDirectoryData.forEach(function(rec, dataIndex) {
+  indexed.forEach(function(item) {
+    const rec = item.rec;
+    const dataIndex = item.i;
     if (q && !brotherDirectoryRowSearchText(rec).includes(q)) return;
     anyRendered = true;
     const rowId = rec.alpha_id || '';
@@ -5587,6 +5594,17 @@ async function loadBrothersDirectory() {
 }
 
 function addBrotherDirectoryRow() {
+  // Flush any unsaved DOM values before re-rendering
+  var body = document.getElementById('brothersDirectoryBody');
+  if (body) {
+    body.querySelectorAll('input[data-bd-row]').forEach(function(input) {
+      var idx = parseInt(input.getAttribute('data-bd-row'), 10);
+      var field = input.getAttribute('data-bd-field');
+      if (!isNaN(idx) && field && brothersDirectoryData[idx] !== undefined) {
+        brothersDirectoryData[idx][field] = input.value;
+      }
+    });
+  }
   brothersDirectoryData.push(emptyBrotherRecord());
   renderBrothersDirectoryTable();
 }
