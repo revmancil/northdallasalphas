@@ -5178,7 +5178,8 @@ async function loadVisitingBrotherRequests(token) {
         (details.length ? '<div style="font-size:0.76rem;color:var(--gray-500);margin-top:6px;line-height:1.45;">' + escHtml(details.join(' | ')) + '</div>' : '') +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
-        '<button class="btn-sm success" onclick="updateVisitingRequestStatus(\'' + escHtml(id) + '\', \'approved\')"><i class="fas fa-check"></i> Approve</button>' +
+        '<button class="btn-sm" style="background:rgba(74,222,128,0.15);color:#16a34a;border:1px solid rgba(74,222,128,0.4);" onclick="updateVisitingRequestStatus(\'' + escHtml(id) + '\', \'chapter\')"><i class="fas fa-home"></i> Chapter Brother</button>' +
+        '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="updateVisitingRequestStatus(\'' + escHtml(id) + '\', \'visiting\')"><i class="fas fa-user-clock"></i> Visiting Brother</button>' +
         '<button class="btn-sm danger" onclick="updateVisitingRequestStatus(\'' + escHtml(id) + '\', \'rejected\')"><i class="fas fa-times"></i> Reject</button>' +
         '</div>' +
         '</div>' +
@@ -5190,26 +5191,39 @@ async function loadVisitingBrotherRequests(token) {
   }
 }
 
-async function updateVisitingRequestStatus(requestId, status) {
+async function updateVisitingRequestStatus(requestId, approvalType) {
+  // approvalType: 'chapter' | 'visiting' | 'rejected'
   if (!requestId) return;
   const token = getAdminToken();
   if (!token) {
     showToast('Admin session expired. Please sign in again.', 'error');
     return;
   }
-  const approve = status === 'approved';
-  if (!confirm((approve ? 'Approve' : 'Reject') + ' this visiting brother request?')) return;
+  const isChapter  = approvalType === 'chapter';
+  const isVisiting = approvalType === 'visiting';
+  const isApproved = isChapter || isVisiting;
+  const confirmMsg = isChapter
+    ? 'Approve as a Chapter Brother? They will be added to the Brothers Directory and Member Compliance.'
+    : isVisiting
+      ? 'Approve as a Visiting Brother? They will get limited portal access (Dashboard, Events, Dues).'
+      : 'Reject this access request?';
+  if (!confirm(confirmMsg)) return;
   try {
     const rows = await sbGet('visiting_brothers_requests', 'id=eq.' + encodeURIComponent(requestId) + '&limit=1', token);
     const req = rows && rows.length ? rows[0] : null;
     if (!req) throw new Error('Request not found.');
+
+    const patchStatus = isApproved ? 'approved' : 'rejected';
     await sbPatch(
       'visiting_brothers_requests',
       'id=eq.' + encodeURIComponent(requestId),
-      { status: status, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+      { status: patchStatus, reviewed_at: new Date().toISOString(), updated_at: new Date().toISOString() },
       token
     );
-    if (approve) {
+
+    if (isApproved) {
+      const portalAccess = isChapter ? 'chapter_member' : 'visiting';
+      const memberStatus = isChapter ? 'active' : 'inactive';
       const existing = await sbGet('members', 'email=eq.' + encodeURIComponent(req.email || '') + '&limit=1', token);
       const memberPayload = {
         first_name: req.first_name || '',
@@ -5231,9 +5245,9 @@ async function updateVisitingRequestStatus(requestId, status) {
         linkedin: req.linkedin || '',
         photo: req.photo || '',
         bio: req.bio || '',
-        status: 'active',
-        portal_access: 'chapter_member',
-        chapter_active_date: new Date().toISOString().slice(0, 10),
+        status: memberStatus,
+        portal_access: portalAccess,
+        chapter_active_date: isChapter ? new Date().toISOString().slice(0, 10) : null,
         updated_at: new Date().toISOString()
       };
       if (req.auth_user_id) memberPayload.auth_user_id = req.auth_user_id;
@@ -5242,9 +5256,43 @@ async function updateVisitingRequestStatus(requestId, status) {
       } else {
         await sbPost('members', Object.assign({}, memberPayload, { created_at: new Date().toISOString() }), token);
       }
+
+      // For chapter brothers: also add to Brothers Directory and sync
+      if (isChapter && req.alpha_id) {
+        try {
+          const dirRows = await getContentJson(BROTHERS_DIRECTORY_KEY, []);
+          const dir = Array.isArray(dirRows) ? dirRows.map(sanitizeBrotherRecord) : [];
+          const exists = dir.findIndex(function(r) { return r.alpha_id && r.alpha_id === normalizeAlphaId(req.alpha_id); });
+          const newRec = sanitizeBrotherRecord({
+            alpha_id: req.alpha_id,
+            first_name: req.first_name || '',
+            last_name: req.last_name || '',
+            email: req.email || '',
+            phone: req.phone || '',
+            initiation_chapter: req.initiation_chapter || '',
+            initiation_date: req.initiation_date || '',
+            imdp_certified: req.imdp_certified || '',
+            risk_mgmt_certified: req.risk_mgmt_certified || '',
+            status: 'active'
+          });
+          if (exists >= 0) {
+            dir[exists] = mergeBrotherRecords(dir[exists], newRec);
+          } else {
+            dir.push(newRec);
+          }
+          await saveContentJson(BROTHERS_DIRECTORY_KEY, dir.filter(function(r) { return !!r.alpha_id; }));
+        } catch (dirErr) {
+          // Directory update failed — member record still created, show warning
+          showToast('Member record created but Brothers Directory update failed: ' + (dirErr.message || 'unknown error'), 'info');
+        }
+      }
     }
-    // SPEC §2 Step 3 — email visiting brother on approval
-    if (approve && req.email) {
+
+    // Email notification
+    if (isApproved && req.email) {
+      const emailBody = isChapter
+        ? 'Your request has been approved. You are now recognized as a Chapter Brother of Xi Tau Lambda Chapter 607. You may log in to the Member Portal: ' + window.location.origin + '/member-portal.html'
+        : 'Your visiting brother request has been approved. You now have limited portal access. Log in here: ' + window.location.origin + '/member-portal.html';
       fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
@@ -5252,12 +5300,18 @@ async function updateVisitingRequestStatus(requestId, status) {
           type: 'visiting_brother_approved',
           to: req.email,
           name: [req.first_name, req.last_name].filter(Boolean).join(' ') || req.email,
-          subject: 'Your Visiting Brother Request Has Been Approved',
-          body: 'Your visiting brother request for Xi Tau Lambda Chapter 607 has been approved. You may now log in to the Member Portal to request full access: ' + window.location.origin + '/member-portal.html'
+          subject: isChapter ? 'Chapter Brother Access Approved' : 'Visiting Brother Access Approved',
+          body: emailBody
         })
       }).catch(function(){});
     }
-    showToast(approve ? 'Visiting brother approved and member record updated.' : 'Visiting brother request rejected.', approve ? 'success' : 'info');
+
+    const toastMsg = isChapter
+      ? 'Approved as Chapter Brother — added to Brothers Directory and Member Compliance.'
+      : isVisiting
+        ? 'Approved as Visiting Brother — limited portal access granted.'
+        : 'Access request rejected.';
+    showToast(toastMsg, isApproved ? 'success' : 'info');
     await loadMemberRequests();
   } catch (err) {
     showToast('Could not update visiting request: ' + (err.message || 'unknown error'), 'error');
