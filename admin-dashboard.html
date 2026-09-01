@@ -5460,6 +5460,16 @@ function setBrotherDirectoryField(alphaId, field, value) {
   }
 }
 
+function setBrotherDirectoryFieldByIndex(rowIndex, field, value) {
+  if (rowIndex < 0 || rowIndex >= brothersDirectoryData.length) return;
+  brothersDirectoryData[rowIndex][field] = value;
+  if (field === 'alpha_id') {
+    brothersDirectoryData[rowIndex] = sanitizeBrotherRecord(brothersDirectoryData[rowIndex]);
+    // Re-render so subsequent field edits use the alpha_id-based lookup
+    renderBrothersDirectoryTable();
+  }
+}
+
 function bdVisibleFields() {
   return BROTHERS_DIRECTORY_FIELDS.filter(function(col) {
     return col.contact || (col.member && bdShowMemberCols);
@@ -5478,10 +5488,14 @@ function toggleBdMemberCols() {
   renderBrothersDirectoryTable();
 }
 
-function brotherDirectoryInput(value, field, alphaId, isContact) {
+function brotherDirectoryInput(value, field, alphaId, isContact, rowIndex) {
   const id = escHtml(alphaId || '');
   var extra = isContact ? ' class="bd-contact-input"' : '';
-  return '<input type="text" value="' + escHtml(value || '') + '"' + extra + ' onchange="setBrotherDirectoryField(\'' + id + '\',\'' + field + '\',this.value)" />';
+  // For new rows with no alpha_id yet, use the data-row-index fallback
+  var handler = (field === 'alpha_id' && !alphaId)
+    ? 'setBrotherDirectoryFieldByIndex(' + rowIndex + ',\'alpha_id\',this.value)'
+    : 'setBrotherDirectoryField(\'' + id + '\',\'' + field + '\',this.value)';
+  return '<input type="text" value="' + escHtml(value || '') + '"' + extra + ' onchange="' + handler + '" />';
 }
 
 function renderBrothersDirectoryHead() {
@@ -5554,11 +5568,14 @@ function renderBrothersDirectoryTable() {
   const colCount = visible.length + 1;
   viewRows.forEach(function(rec) {
     const rowId = rec.alpha_id || '';
+    const dataIndex = brothersDirectoryData.indexOf(
+      brothersDirectoryData.find(function(r) { return r === rec || (rowId && normalizeAlphaId(r.alpha_id) === normalizeAlphaId(rowId)); })
+    );
     const isLife = !!(rec.life_member_date || rec.life_member_number);
     const tr = document.createElement('tr');
     var cells = visible.map(function(col) {
       var tdStyle = (col.key === 'alpha_id' && isLife) ? ' style="background:rgba(212,175,55,0.12);" title="Life Member"' : '';
-      return '<td' + tdStyle + '>' + brotherDirectoryInput(rec[col.key], col.key, rowId, !!col.contact) + '</td>';
+      return '<td' + tdStyle + '>' + brotherDirectoryInput(rec[col.key], col.key, rowId, !!col.contact, dataIndex) + '</td>';
     }).join('');
     tr.innerHTML = cells + '<td style="text-align:center;"><button class="btn-sm danger" onclick="removeBrotherDirectoryRow(\'' + escHtml(rowId) + '\')" title="Remove"><i class="fas fa-trash"></i></button></td>';
     body.appendChild(tr);
