@@ -5460,15 +5460,6 @@ function setBrotherDirectoryField(alphaId, field, value) {
   }
 }
 
-function setBrotherDirectoryFieldByIndex(rowIndex, field, value) {
-  if (rowIndex < 0 || rowIndex >= brothersDirectoryData.length) return;
-  brothersDirectoryData[rowIndex][field] = value;
-  if (field === 'alpha_id') {
-    brothersDirectoryData[rowIndex] = sanitizeBrotherRecord(brothersDirectoryData[rowIndex]);
-    // Re-render so subsequent field edits use the alpha_id-based lookup
-    renderBrothersDirectoryTable();
-  }
-}
 
 function bdVisibleFields() {
   return BROTHERS_DIRECTORY_FIELDS.filter(function(col) {
@@ -5489,13 +5480,9 @@ function toggleBdMemberCols() {
 }
 
 function brotherDirectoryInput(value, field, alphaId, isContact, rowIndex) {
-  const id = escHtml(alphaId || '');
   var extra = isContact ? ' class="bd-contact-input"' : '';
-  // For new rows with no alpha_id yet, use the data-row-index fallback
-  var handler = (field === 'alpha_id' && !alphaId)
-    ? 'setBrotherDirectoryFieldByIndex(' + rowIndex + ',\'alpha_id\',this.value)'
-    : 'setBrotherDirectoryField(\'' + id + '\',\'' + field + '\',this.value)';
-  return '<input type="text" value="' + escHtml(value || '') + '"' + extra + ' onchange="' + handler + '" />';
+  return '<input type="text" value="' + escHtml(value || '') + '"' + extra +
+    ' data-bd-row="' + rowIndex + '" data-bd-field="' + escHtml(field) + '" />';
 }
 
 function renderBrothersDirectoryHead() {
@@ -5977,6 +5964,17 @@ async function syncBrotherDirectoryToMembers(records) {
 }
 
 async function saveBrothersDirectory() {
+  // Read current values directly from DOM inputs before saving
+  const body = document.getElementById('brothersDirectoryBody');
+  if (body) {
+    body.querySelectorAll('input[data-bd-row]').forEach(function(input) {
+      const idx = parseInt(input.getAttribute('data-bd-row'), 10);
+      const field = input.getAttribute('data-bd-field');
+      if (!isNaN(idx) && field && brothersDirectoryData[idx] !== undefined) {
+        brothersDirectoryData[idx][field] = input.value;
+      }
+    });
+  }
   const cleaned = [];
   const seen = {};
   let missingAlphaIdCount = 0;
