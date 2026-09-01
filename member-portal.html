@@ -2154,24 +2154,34 @@ async function init() {
         body: JSON.stringify({ type: 'member_request', name: [meta.first_name||'', meta.last_name||''].filter(Boolean).join(' ') || userEmail, email: userEmail })
       }).catch(function(){});
     } catch(e) {}
-  } else if (!currentMember.portal_access || currentMember.portal_access === 'pending') {
-    // Member record exists (pre-loaded by admin) but access not yet set — auto-grant
-    try {
-      await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(currentMember.id), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Prefer': 'return=representation' },
-        body: JSON.stringify({ portal_access: 'granted' })
-      });
-      currentMember.portal_access = 'granted';
-    } catch(e) {}
   }
+  // Never auto-grant — pending stays pending until an admin approves
   const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (userEmail.split('@')[0] || 'Member');
   const lastName  = (currentMember && currentMember.last_name)  ? currentMember.last_name  : '';
   const fullName  = [firstName, lastName].filter(Boolean).join(' ');
   const initials  = (firstName[0]||'') + (lastName[0]||'') || '?';
   const portalAccess = (currentMember && currentMember.portal_access) ? currentMember.portal_access : 'pending';
-  const hasAccess   = portalAccess === 'granted';
+  const hasAccess   = portalAccess === 'granted' || portalAccess === 'chapter_member';
   const isVisiting  = portalAccess === 'visiting';
+  const isPending   = !hasAccess && !isVisiting;
+
+  // Gate: pending users see a holding screen and cannot access portal content
+  if (isPending) {
+    document.getElementById('sidebarName').textContent = fullName || userEmail;
+    document.getElementById('statusText').textContent  = 'Pending Approval';
+    document.getElementById('statusDot').className = 'status-dot pending';
+    document.querySelector('.main-content').innerHTML =
+      '<div style="max-width:520px;margin:80px auto;padding:40px 32px;background:var(--white);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.08);text-align:center;">' +
+      '<div style="width:64px;height:64px;border-radius:50%;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">' +
+      '<i class="fas fa-clock" style="font-size:1.8rem;color:#f59e0b;"></i></div>' +
+      '<h2 style="font-size:1.25rem;font-weight:700;color:var(--gray-800);margin-bottom:10px;">Request Under Review</h2>' +
+      '<p style="color:var(--gray-500);font-size:0.9rem;line-height:1.6;margin-bottom:24px;">Your access request has been received and is awaiting approval from chapter leadership. You\'ll receive an email once your account is approved.</p>' +
+      '<p style="color:var(--gray-400);font-size:0.8rem;">Signed in as <strong>' + escHtml(userEmail) + '</strong></p>' +
+      '<button onclick="signOut()" style="margin-top:20px;padding:10px 24px;border-radius:8px;background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-600);font-size:0.85rem;cursor:pointer;">Sign Out</button>' +
+      '</div>';
+    return;
+  }
+
   // Visiting brothers only see Dashboard, Events, and Dues
   const visitingHidden = ['nav-documents', 'nav-directory', 'nav-meetings', 'nav-news-feed'];
   visitingHidden.forEach(function(id) {
