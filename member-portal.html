@@ -2960,12 +2960,12 @@ async function loadMemberCommittees() {
       const count = countMap[c.id]||0;
       const chair = c.chair_id ? (nameMap[c.chair_id]||'—') : '—';
       const cochair = c.cochair_id ? (nameMap[c.cochair_id]||'—') : '—';
-      return '<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:10px;padding:16px;margin-bottom:10px;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+      return '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
           '<div>' +
-            '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">'+escHtml(c.name)+'</div>' +
-            '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:4px;">Chair: <strong>'+escHtml(chair)+'</strong></div>' +
-            '<div style="font-size:0.78rem;color:var(--gray-500);">Co-Chair: <strong>'+escHtml(cochair)+'</strong></div>' +
+            '<div style="font-weight:700;font-size:0.95rem;color:var(--white);">'+escHtml(c.name)+'</div>' +
+            '<div style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;">Chair: <strong style="color:var(--white);">'+escHtml(chair)+'</strong></div>' +
+            '<div style="font-size:0.78rem;color:var(--gray-400);">Co-Chair: <strong style="color:var(--white);">'+escHtml(cochair)+'</strong></div>' +
             '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;">'+count+' member'+(count!==1?'s':'')+'</div>' +
           '</div>' +
           '<button class="btn-sm '+(isMember?'danger':'success')+'" onclick="toggleCommitteeMembership(\''+escHtml(c.id)+'\','+isMember+')">' +
