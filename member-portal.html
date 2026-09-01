@@ -263,6 +263,7 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('news-feed');loadNewsFeed()" id="nav-news-feed"><i class="fas fa-bullhorn"></i> Chapter News</button>
     <div class="nav-section-label">Community</div>
     <button class="nav-item" onclick="showPanel('directory')" id="nav-directory"><i class="fas fa-users"></i> Brother Directory</button>
+    <button class="nav-item" onclick="showPanel('committees');loadMemberCommittees()" id="nav-committees"><i class="fas fa-sitemap"></i> Committees</button>
     <button class="nav-item" onclick="showPanel('newsletters');loadNewslettersPortal()" id="nav-newsletters"><i class="fas fa-newspaper"></i> Newsletters</button>
     <div class="nav-section-label">Account</div>
     <button class="nav-item" onclick="showPanel('card');renderMemberCard()" id="nav-card"><i class="fas fa-id-card"></i> Membership Card</button>
@@ -568,6 +569,16 @@ backdrop-filter:blur(4px);}
         </div>
       </div>
     </div>
+    <!-- COMMITTEES -->
+    <div class="panel" id="panel-committees">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-sitemap" style="color:var(--gold);margin-right:8px;"></i>Chapter Committees</h3></div>
+        <div class="section-card-body">
+          <div id="committeesPortalList"><div class="hint-text">Loading committees…</div></div>
+        </div>
+      </div>
+    </div>
+
     <!-- PROFILE -->
     <!-- NEWSLETTERS -->
     <div class="panel" id="panel-newsletters">
@@ -1131,7 +1142,8 @@ const PANEL_META = {
   'announcements-submit': ['Submit Announcement',   'Send an announcement to chapter leadership'],
   'news-submit':          ['Submit News Article',   'Contribute to the chapter news feed'],
   requisition:            ['Submit Requisition',    'Request funds or chapter resources'],
-  reimbursement:          ['Request Reimbursement', 'Submit a reimbursement request']
+  reimbursement:          ['Request Reimbursement', 'Submit a reimbursement request'],
+  committees:             ['Committees',            'Chapter committees and membership']
 };
 
 function showPanel(id) {
@@ -2914,6 +2926,75 @@ document.addEventListener('DOMContentLoaded', function() {
   var overlay = document.getElementById('portalRegModalOverlay');
   if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) portalCloseRegModal(); });
 });
+
+// ═══════════════════════════════════════════
+// COMMITTEES — MEMBER PORTAL
+// ═══════════════════════════════════════════
+let _mpCommittees = [];
+let _mpMyMemberships = [];
+
+async function loadMemberCommittees() {
+  const token = currentSession && currentSession.access_token;
+  if (!token) return;
+  const container = document.getElementById('committeesPortalList');
+  if (!container) return;
+  container.innerHTML = '<div class="hint-text">Loading committees...</div>';
+  try {
+    const [committees, myRows, allRows] = await Promise.all([
+      sbGet('committees','order=name.asc',token),
+      sbGet('committee_members','member_id=eq.'+currentMember.id+'&select=committee_id',token),
+      sbGet('committee_members','select=committee_id,member_id',token)
+    ]);
+    _mpCommittees = committees||[];
+    _mpMyMemberships = (myRows||[]).map(function(r){return r.committee_id;});
+    const countMap={};
+    (allRows||[]).forEach(function(r){countMap[r.committee_id]=(countMap[r.committee_id]||0)+1;});
+    const memberIds=[...new Set(_mpCommittees.flatMap(function(c){return[c.chair_id,c.cochair_id].filter(Boolean);}))];
+    let nameMap={};
+    if (memberIds.length) {
+      const mems = await sbGet('members','id=in.('+memberIds.join(',')+')'+'&select=id,first_name,last_name',token).catch(()=>[]);
+      (mems||[]).forEach(function(m){nameMap[m.id]=[m.first_name,m.last_name].filter(Boolean).join(' ');});
+    }
+    container.innerHTML = _mpCommittees.map(function(c){
+      const isMember = _mpMyMemberships.includes(c.id);
+      const count = countMap[c.id]||0;
+      const chair = c.chair_id ? (nameMap[c.chair_id]||'—') : '—';
+      const cochair = c.cochair_id ? (nameMap[c.cochair_id]||'—') : '—';
+      return '<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:10px;padding:16px;margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;">' +
+          '<div>' +
+            '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">'+escHtml(c.name)+'</div>' +
+            '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:4px;">Chair: <strong>'+escHtml(chair)+'</strong></div>' +
+            '<div style="font-size:0.78rem;color:var(--gray-500);">Co-Chair: <strong>'+escHtml(cochair)+'</strong></div>' +
+            '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;">'+count+' member'+(count!==1?'s':'')+'</div>' +
+          '</div>' +
+          '<button class="btn-sm '+(isMember?'danger':'success')+'" onclick="toggleCommitteeMembership(\''+escHtml(c.id)+'\','+isMember+')">' +
+            '<i class="fas fa-'+(isMember?'minus':'plus')+'"></i> '+(isMember?'Leave':'Join') +
+          '</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    container.innerHTML = '<div class="hint-text" style="color:var(--red);">Could not load committees: '+escHtml(e.message)+'</div>';
+  }
+}
+
+async function toggleCommitteeMembership(committeeId, isMember) {
+  const token = currentSession && currentSession.access_token;
+  if (!token) return;
+  try {
+    if (isMember) {
+      await fetch(SUPABASE_URL+'/rest/v1/committee_members?committee_id=eq.'+encodeURIComponent(committeeId)+'&member_id=eq.'+encodeURIComponent(currentMember.id),{
+        method:'DELETE',headers:{apikey:SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
+      });
+      showToast('You have left the committee.','info');
+    } else {
+      await sbPost('committee_members',{committee_id:committeeId,member_id:currentMember.id,added_by:currentMember.id},token);
+      showToast('You have joined the committee!','success');
+    }
+    loadMemberCommittees();
+  } catch(e) { showToast('Could not update membership: '+escHtml(e.message||'error'),'error'); }
+}
 </script>
 
 <div class="portal-reg-modal-overlay" id="portalRegModalOverlay" role="dialog" aria-modal="true" aria-labelledby="portalRegTitle">

@@ -1263,6 +1263,9 @@
       <button class="sidebar-link" data-section="access" onclick="showPanel('access')">
         <i class="fas fa-user-shield"></i> Access &amp; Permissions
       </button>
+      <button class="sidebar-link" data-section="committees-admin" onclick="showPanel('committees-admin');loadCommitteesAdmin()">
+        <i class="fas fa-sitemap"></i> Committees
+      </button>
     </div>
   </div>
 
@@ -1284,6 +1287,9 @@
       </button>
       <button class="sidebar-link" data-section="meetings" onclick="showPanel('meetings');loadMeetingsPanel()">
         <i class="fas fa-people-group"></i> Meetings
+      </button>
+      <button class="sidebar-link" data-section="event-planning" onclick="showPanel('event-planning');loadEventPlanning()">
+        <i class="fas fa-project-diagram"></i> Event Planning
       </button>
     </div>
   </div>
@@ -2690,6 +2696,99 @@
     </div>
 
     <!-- ══════════════════════════════════
+         COMMITTEES ADMIN PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-committees-admin">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-sitemap" style="color:var(--gold);margin-right:8px;"></i>Chapter Committees</h3>
+          <button class="btn-sm success" onclick="seedCommittees()"><i class="fas fa-seedling"></i> Seed Committees</button>
+        </div>
+        <div class="section-card-body">
+          <div id="committeesAdminList"><div class="hint-text">Loading committees…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         EVENT PLANNING PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-event-planning">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-project-diagram" style="color:var(--gold);margin-right:8px;"></i>Event Planning</h3>
+          <button class="btn-sm gold" onclick="printEventPlan()"><i class="fas fa-print"></i> Print Plan</button>
+        </div>
+        <div class="section-card-body">
+          <div style="display:flex;gap:12px;align-items:center;margin-bottom:20px;">
+            <select id="epEventSelect" style="flex:1;padding:8px 12px;border:1px solid var(--gray-300);border-radius:8px;font-size:0.9rem;">
+              <option value="">— Select an event —</option>
+            </select>
+            <button class="btn-sm gold" onclick="loadOrCreatePlan()"><i class="fas fa-folder-open"></i> Open / Create Plan</button>
+          </div>
+          <div id="epPlanArea" style="display:none;">
+            <div style="font-size:0.75rem;color:var(--gray-400);margin-bottom:16px;" id="epPlanId"></div>
+            <!-- Tasks -->
+            <div style="margin-bottom:28px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <h4 style="margin:0;font-size:0.9rem;color:var(--gray-700);"><i class="fas fa-tasks" style="color:var(--gold);margin-right:6px;"></i>Tasks</h4>
+                <button class="btn-sm success" onclick="addTask()"><i class="fas fa-plus"></i> Add Task</button>
+              </div>
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                  <thead>
+                    <tr style="background:var(--gray-50);text-align:left;">
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Task</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Assigned To</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Start</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">End</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Status</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="epTasksBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- Budget -->
+            <div style="margin-bottom:28px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <h4 style="margin:0;font-size:0.9rem;color:var(--gray-700);"><i class="fas fa-dollar-sign" style="color:var(--gold);margin-right:6px;"></i>Budget</h4>
+                <button class="btn-sm success" onclick="addBudgetItem()"><i class="fas fa-plus"></i> Add Line Item</button>
+              </div>
+              <div style="overflow-x:auto;">
+                <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                  <thead>
+                    <tr style="background:var(--gray-50);text-align:left;">
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Label</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Projected</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);">Actual</th>
+                      <th style="padding:8px 10px;border-bottom:1px solid var(--gray-200);"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="epBudgetBody"></tbody>
+                  <tfoot>
+                    <tr style="font-weight:700;background:var(--gray-50);">
+                      <td style="padding:8px 10px;border-top:2px solid var(--gray-300);">Total</td>
+                      <td style="padding:8px 10px;border-top:2px solid var(--gray-300);" id="epTotalProjected">$0.00</td>
+                      <td style="padding:8px 10px;border-top:2px solid var(--gray-300);" id="epTotalActual">$0.00</td>
+                      <td style="border-top:2px solid var(--gray-300);"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+            <!-- Gantt -->
+            <div>
+              <h4 style="margin:0 0 10px;font-size:0.9rem;color:var(--gray-700);"><i class="fas fa-stream" style="color:var(--gold);margin-right:6px;"></i>Timeline (Gantt)</h4>
+              <div id="epGanttCanvas" style="border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;min-height:80px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
          FINANCE DASHBOARD PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-finance-dashboard">
@@ -3397,7 +3496,9 @@ const PANEL_META = {
   'finance-dashboard':['Finance Dashboard',   'Cash position, budget-to-actuals, balance sheet, and pending requests'],
   'dues-admin':       ['Dues & Payments',     'Configure dues and log manual payments'],
   requisitions:       ['Requisitions',        'Review and approve member requisition requests'],
-  reimbursements:     ['Reimbursements',      'Review and approve member reimbursement requests']
+  reimbursements:       ['Reimbursements',      'Review and approve member reimbursement requests'],
+  'committees-admin':   ['Committees',          'Manage chapter committees and membership'],
+  'event-planning':     ['Event Planning',      'Plan events with tasks, timelines, and budgets']
 };
 
 // ── Admin Permissions (full admin vs. restricted to certain sections) ──
@@ -3552,6 +3653,8 @@ function showPanel(id) {
   if (id === 'settings')       { if (!_panelLoaded.settings)      loadSettings(); }
   if (id === 'dashboard')      updateDashboardStats();
   if (id === 'dues-admin')     { if (!_panelLoaded.duesAdmin)     loadDuesAdminPanel(); }
+  if (id === 'committees-admin') loadCommitteesAdmin();
+  if (id === 'event-planning')   loadEventPlanning();
 }
 
 function getAdminSession() {
@@ -11156,6 +11259,369 @@ async function deleteDuesPayment(id) {
     renderDuesPayments();
     showToast('Payment record deleted.');
   } catch(e) { showToast('Could not delete record.', 'error'); }
+}
+
+// ═══════════════════════════════════════════
+// COMMITTEES ADMIN
+// ═══════════════════════════════════════════
+const COMMITTEE_SEED = [
+  'Alpha Legacy Celebration','Alpha Legacy Group','Awards & Recognition',
+  'Big Brothers Big Sisters',"Brother's Keeper",'Community Service',
+  'Constitution','Go-to-High School Go-to-College','Chapter Website',
+  'Housing','IMDP','March for Babies','NPHC','Professional Development',
+  'Project Alpha','Protocol & Etiquette','Social Action','Social Reclamation',
+  'Undergraduate Relations','Voteless People is a Hopeless People'
+];
+
+let _committees = [];
+let _committeeMembers = {};
+let _allMembersForDropdown = [];
+let _expandedCommittee = null;
+
+async function loadCommitteesAdmin() {
+  const token = getAdminToken();
+  if (!token) { showToast('Admin session expired.','error'); return; }
+  const container = document.getElementById('committeesAdminList');
+  if (!container) return;
+  container.innerHTML = '<div class="hint-text">Loading committees...</div>';
+  try {
+    const [committees, members] = await Promise.all([
+      sbGet('committees', 'order=name.asc', token),
+      sbGet('members', 'status=eq.active&order=last_name.asc&select=id,first_name,last_name', token)
+    ]);
+    _committees = committees || [];
+    _allMembersForDropdown = members || [];
+    await renderCommitteesAdminList(token);
+  } catch(e) {
+    container.innerHTML = '<div class="hint-text" style="color:var(--red);">Could not load committees: ' + escHtml(e.message) + '</div>';
+  }
+}
+
+async function renderCommitteesAdminList(token) {
+  const container = document.getElementById('committeesAdminList');
+  if (!container) return;
+  if (!_committees.length) {
+    container.innerHTML = '<div class="hint-text">No committees yet. Click "Seed Committees" to add the default list.</div>';
+    return;
+  }
+  const memberRows = await sbGet('committee_members', 'select=committee_id,member_id', token).catch(()=>[]);
+  const countMap = {};
+  (memberRows||[]).forEach(function(r){ countMap[r.committee_id] = (countMap[r.committee_id]||0)+1; });
+
+  function memberName(id) {
+    const m = _allMembersForDropdown.find(function(x){return x.id===id;});
+    return m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : '—';
+  }
+  const memberOptions = '<option value="">— None —</option>' + _allMembersForDropdown.map(function(m){
+    return '<option value="'+escHtml(m.id)+'">'+escHtml([m.first_name,m.last_name].filter(Boolean).join(' '))+'</option>';
+  }).join('');
+
+  container.innerHTML = _committees.map(function(c) {
+    const count = countMap[c.id] || 0;
+    const chairName = memberName(c.chair_id);
+    const cochairName = memberName(c.cochair_id);
+    const isExpanded = _expandedCommittee === c.id;
+    return '<div class="committee-card" id="cc-'+escHtml(c.id)+'">' +
+      '<div class="committee-card-header" onclick="toggleCommitteeExpand(\''+escHtml(c.id)+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--gray-50);border-radius:10px;border:1px solid var(--gray-200);margin-bottom:6px;">' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">'+escHtml(c.name)+'</div>' +
+          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">'+
+            'Chair: <strong>'+escHtml(chairName)+'</strong> &nbsp;·&nbsp; Co-Chair: <strong>'+escHtml(cochairName)+'</strong> &nbsp;·&nbsp; '+count+' member'+(count!==1?'s':'') +
+          '</div>' +
+        '</div>' +
+        '<i class="fas fa-chevron-'+(isExpanded?'up':'down')+'" style="color:var(--gray-400);"></i>' +
+      '</div>' +
+      (isExpanded ?
+        '<div class="committee-expand" style="padding:16px;border:1px solid var(--gray-200);border-top:none;border-radius:0 0 10px 10px;margin-bottom:6px;">' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">' +
+            '<div><label style="font-size:0.78rem;color:var(--gray-500);display:block;margin-bottom:4px;">Chair</label>' +
+            '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'chair_id\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">'+memberOptions.replace('value="'+(c.chair_id||'')+'"','value="'+(c.chair_id||'')+'" selected')+'</select></div>' +
+            '<div><label style="font-size:0.78rem;color:var(--gray-500);display:block;margin-bottom:4px;">Co-Chair</label>' +
+            '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'cochair_id\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">'+memberOptions.replace('value="'+(c.cochair_id||'')+'"','value="'+(c.cochair_id||'')+'" selected')+'</select></div>' +
+          '</div>' +
+          '<div style="margin-bottom:10px;font-size:0.82rem;font-weight:600;color:var(--gray-600);">Members</div>' +
+          '<div id="cm-list-'+escHtml(c.id)+'" style="margin-bottom:12px;"></div>' +
+          '<div style="display:flex;gap:8px;align-items:center;">' +
+            '<select id="cm-add-'+escHtml(c.id)+'" style="flex:1;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;"><option value="">Add member...</option>'+memberOptions+'</select>' +
+            '<button class="btn-sm success" onclick="addCommitteeMember(\''+escHtml(c.id)+'\')"><i class="fas fa-plus"></i> Add</button>' +
+          '</div>' +
+        '</div>'
+      : '') +
+    '</div>';
+  }).join('');
+
+  if (_expandedCommittee) {
+    loadCommitteeMemberList(_expandedCommittee, token);
+  }
+}
+
+async function loadCommitteeMemberList(committeeId, token) {
+  const el = document.getElementById('cm-list-'+committeeId);
+  if (!el) return;
+  if (!token) token = getAdminToken();
+  try {
+    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id',token);
+    if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No members yet.</div>'; return; }
+    el.innerHTML = rows.map(function(r){
+      const m = _allMembersForDropdown.find(function(x){return x.id===r.member_id;});
+      const name = m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : r.member_id;
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100);">'+
+        '<span style="font-size:0.85rem;">'+escHtml(name)+'</span>'+
+        '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+escHtml(r.id)+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>'+
+        '</div>';
+    }).join('');
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members.</div>'; }
+}
+
+function toggleCommitteeExpand(committeeId) {
+  _expandedCommittee = (_expandedCommittee === committeeId) ? null : committeeId;
+  renderCommitteesAdminList(getAdminToken());
+}
+
+async function assignCommitteeRole(committeeId, field, memberId) {
+  const token = getAdminToken();
+  const payload = {};
+  payload[field] = memberId || null;
+  try {
+    await sbPatch('committees','id=eq.'+committeeId,payload,token);
+    const c = _committees.find(function(x){return x.id===committeeId;});
+    if (c) c[field] = memberId || null;
+    showToast('Role updated.','success');
+  } catch(e) { showToast('Could not update role: '+escHtml(e.message),'error'); }
+}
+
+async function addCommitteeMember(committeeId) {
+  const sel = document.getElementById('cm-add-'+committeeId);
+  const memberId = sel && sel.value;
+  if (!memberId) { showToast('Select a member first.','info'); return; }
+  const token = getAdminToken();
+  try {
+    await sbPost('committee_members',{committee_id:committeeId,member_id:memberId,added_by:null},token);
+    sel.value = '';
+    showToast('Member added.','success');
+    loadCommitteeMemberList(committeeId, token);
+  } catch(e) { showToast('Could not add member: '+(e.message||'already a member'),'error'); }
+}
+
+async function removeCommitteeMember(rowId, committeeId) {
+  if (!confirm('Remove this member from the committee?')) return;
+  const token = getAdminToken();
+  try {
+    await fetch(SUPABASE_URL+'/rest/v1/committee_members?id=eq.'+encodeURIComponent(rowId),{
+      method:'DELETE',headers:{apikey:SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
+    });
+    showToast('Member removed.','info');
+    loadCommitteeMemberList(committeeId, token);
+  } catch(e) { showToast('Could not remove member.','error'); }
+}
+
+async function seedCommittees() {
+  if (!confirm('Seed the default 20 committees? Existing ones will not be duplicated.')) return;
+  const token = getAdminToken();
+  let created = 0;
+  for (const name of COMMITTEE_SEED) {
+    try {
+      await sbPost('committees',{name:name},token);
+      created++;
+    } catch(e) { /* skip duplicates */ }
+  }
+  showToast(created+' committee'+(created!==1?'s':'')+' created.','success');
+  loadCommitteesAdmin();
+}
+
+// ═══════════════════════════════════════════
+// EVENT PLANNING ADMIN
+// ═══════════════════════════════════════════
+let _currentPlan = null;
+let _planTasks = [];
+let _planBudget = [];
+
+async function loadEventPlanning() {
+  const token = getAdminToken();
+  if (!token) return;
+  try {
+    const events = await sbGet('events','order=start_date.desc&select=id,title,start_date',token);
+    const sel = document.getElementById('epEventSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">— Select an event —</option>' + (events||[]).map(function(e){
+      return '<option value="'+escHtml(e.id)+'">'+escHtml(e.title)+(e.start_date?' ('+e.start_date+')':'')+'</option>';
+    }).join('');
+  } catch(e) {}
+}
+
+async function loadOrCreatePlan() {
+  const token = getAdminToken();
+  const eventId = (document.getElementById('epEventSelect')||{}).value;
+  if (!eventId) { showToast('Select an event first.','info'); return; }
+  const planArea = document.getElementById('epPlanArea');
+  if (planArea) planArea.style.display = '';
+  try {
+    let plans = await sbGet('event_plans','event_id=eq.'+eventId+'&limit=1',token);
+    if (!plans||!plans.length) {
+      const created = await sbPost('event_plans',{event_id:eventId},token);
+      _currentPlan = Array.isArray(created)?created[0]:created;
+    } else {
+      _currentPlan = plans[0];
+    }
+    document.getElementById('epPlanId').textContent = 'Plan ID: '+(_currentPlan&&_currentPlan.id||'');
+    await Promise.all([loadPlanTasks(token), loadPlanBudget(token)]);
+    renderGantt();
+  } catch(e) { showToast('Could not load plan: '+escHtml(e.message),'error'); }
+}
+
+async function loadPlanTasks(token) {
+  if (!_currentPlan) return;
+  if (!token) token = getAdminToken();
+  const members = _allMembersForDropdown.length ? _allMembersForDropdown :
+    await sbGet('members','status=eq.active&select=id,first_name,last_name',token).catch(()=>[]);
+  _allMembersForDropdown = members || _allMembersForDropdown;
+  const tasks = await sbGet('event_tasks','plan_id=eq.'+_currentPlan.id+'&order=start_date.asc',token).catch(()=>[]);
+  _planTasks = tasks || [];
+  const tbody = document.getElementById('epTasksBody');
+  if (!tbody) return;
+  const memberOpts = _allMembersForDropdown.map(function(m){
+    return '<option value="'+m.id+'">'+escHtml([m.first_name,m.last_name].filter(Boolean).join(' '))+'</option>';
+  }).join('');
+  tbody.innerHTML = _planTasks.map(function(t){
+    return '<tr>' +
+      '<td><input type="text" value="'+escHtml(t.name||'')+'" onblur="updateTask(\''+t.id+'\',\'name\',this.value)" style="width:100%;border:none;background:transparent;font-size:0.85rem;" /></td>' +
+      '<td><select onchange="updateTask(\''+t.id+'\',\'assigned_to\',this.value)" style="width:100%;border:none;background:transparent;font-size:0.82rem;"><option value="">—</option>'+memberOpts+'</select></td>' +
+      '<td><input type="date" value="'+escHtml(t.start_date||'')+'" onchange="updateTask(\''+t.id+'\',\'start_date\',this.value)" style="border:none;background:transparent;font-size:0.82rem;" /></td>' +
+      '<td><input type="date" value="'+escHtml(t.end_date||'')+'" onchange="updateTask(\''+t.id+'\',\'end_date\',this.value)" style="border:none;background:transparent;font-size:0.82rem;" /></td>' +
+      '<td><select onchange="updateTask(\''+t.id+'\',\'status\',this.value)" style="border:none;background:transparent;font-size:0.82rem;">' +
+        '<option value="pending"'+(t.status==='pending'?' selected':'')+'>Pending</option>' +
+        '<option value="in_progress"'+(t.status==='in_progress'?' selected':'')+'>In Progress</option>' +
+        '<option value="complete"'+(t.status==='complete'?' selected':'')+'>Complete</option>' +
+      '</select></td>' +
+      '<td><button class="btn-sm danger" onclick="deleteTask(\''+t.id+'\')"><i class="fas fa-trash"></i></button></td>' +
+    '</tr>';
+  }).join('');
+}
+
+async function addTask() {
+  if (!_currentPlan) return;
+  const token = getAdminToken();
+  try {
+    await sbPost('event_tasks',{plan_id:_currentPlan.id,name:'New Task',status:'pending'},token);
+    await loadPlanTasks(token);
+    renderGantt();
+  } catch(e) { showToast('Could not add task.','error'); }
+}
+
+async function updateTask(taskId, field, value) {
+  const token = getAdminToken();
+  const payload = {}; payload[field] = value||null;
+  payload.updated_at = new Date().toISOString();
+  try {
+    await sbPatch('event_tasks','id=eq.'+taskId,payload,token);
+    const t = _planTasks.find(function(x){return x.id===taskId;});
+    if (t) { t[field]=value; renderGantt(); }
+  } catch(e) { showToast('Could not update task.','error'); }
+}
+
+async function deleteTask(taskId) {
+  if (!confirm('Delete this task?')) return;
+  const token = getAdminToken();
+  await fetch(SUPABASE_URL+'/rest/v1/event_tasks?id=eq.'+encodeURIComponent(taskId),{
+    method:'DELETE',headers:{apikey:SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
+  });
+  _planTasks = _planTasks.filter(function(t){return t.id!==taskId;});
+  await loadPlanTasks(token);
+  renderGantt();
+}
+
+async function loadPlanBudget(token) {
+  if (!_currentPlan) return;
+  if (!token) token = getAdminToken();
+  const items = await sbGet('event_budget_items','plan_id=eq.'+_currentPlan.id+'&order=created_at.asc',token).catch(()=>[]);
+  _planBudget = items || [];
+  renderBudgetTable();
+}
+
+function renderBudgetTable() {
+  const tbody = document.getElementById('epBudgetBody');
+  const totalProjEl = document.getElementById('epTotalProjected');
+  const totalActEl = document.getElementById('epTotalActual');
+  if (!tbody) return;
+  let totalProj = 0, totalAct = 0;
+  tbody.innerHTML = _planBudget.map(function(b){
+    totalProj += parseFloat(b.projected_amount)||0;
+    totalAct += parseFloat(b.actual_amount)||0;
+    return '<tr>' +
+      '<td><input type="text" value="'+escHtml(b.label||'')+'" onblur="updateBudgetItem(\''+b.id+'\',\'label\',this.value)" style="width:100%;border:none;background:transparent;font-size:0.85rem;" /></td>' +
+      '<td><input type="number" step="0.01" value="'+escHtml(String(b.projected_amount||0))+'" onblur="updateBudgetItem(\''+b.id+'\',\'projected_amount\',this.value)" style="width:90px;border:none;background:transparent;font-size:0.85rem;" /></td>' +
+      '<td><input type="number" step="0.01" value="'+escHtml(String(b.actual_amount||0))+'" onblur="updateBudgetItem(\''+b.id+'\',\'actual_amount\',this.value)" style="width:90px;border:none;background:transparent;font-size:0.85rem;" /></td>' +
+      '<td><button class="btn-sm danger" onclick="deleteBudgetItem(\''+b.id+'\')"><i class="fas fa-trash"></i></button></td>' +
+    '</tr>';
+  }).join('');
+  if (totalProjEl) totalProjEl.textContent = '$'+totalProj.toFixed(2);
+  if (totalActEl) totalActEl.textContent = '$'+totalAct.toFixed(2);
+}
+
+async function addBudgetItem() {
+  if (!_currentPlan) return;
+  const token = getAdminToken();
+  try {
+    await sbPost('event_budget_items',{plan_id:_currentPlan.id,label:'New Item',projected_amount:0,actual_amount:0},token);
+    await loadPlanBudget(token);
+  } catch(e) { showToast('Could not add budget item.','error'); }
+}
+
+async function updateBudgetItem(itemId, field, value) {
+  const token = getAdminToken();
+  const payload = {}; payload[field] = field.includes('amount') ? (parseFloat(value)||0) : (value||'');
+  try { await sbPatch('event_budget_items','id=eq.'+itemId,payload,token); } catch(e) {}
+}
+
+async function deleteBudgetItem(itemId) {
+  if (!confirm('Delete this budget item?')) return;
+  const token = getAdminToken();
+  await fetch(SUPABASE_URL+'/rest/v1/event_budget_items?id=eq.'+encodeURIComponent(itemId),{
+    method:'DELETE',headers:{apikey:SUPABASE_ANON_KEY,'Authorization':'Bearer '+token}
+  });
+  await loadPlanBudget(token);
+}
+
+function renderGantt() {
+  const canvas = document.getElementById('epGanttCanvas');
+  if (!canvas) return;
+  const tasks = _planTasks.filter(function(t){return t.start_date&&t.end_date;});
+  if (!tasks.length) { canvas.innerHTML = '<div class="hint-text" style="margin:20px;">No tasks with dates yet.</div>'; return; }
+  const statusColor = {pending:'#f59e0b',in_progress:'#3b82f6',complete:'#22c55e'};
+  const allDates = tasks.flatMap(function(t){return[new Date(t.start_date),new Date(t.end_date)];});
+  const minDate = new Date(Math.min.apply(null,allDates));
+  const maxDate = new Date(Math.max.apply(null,allDates));
+  const totalDays = Math.max((maxDate-minDate)/(1000*60*60*24)+1,1);
+  const rowH = 36, headerH = 28, padding = 160;
+  const canvasW = Math.max(700, totalDays*18+padding);
+  const canvasH = headerH+tasks.length*rowH+20;
+  let svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+canvasW+'" height="'+canvasH+'" style="font-family:system-ui,sans-serif;font-size:12px;">';
+  svg += '<rect width="'+canvasW+'" height="'+canvasH+'" fill="var(--white,#fff)" />';
+  let d = new Date(minDate);
+  while(d <= maxDate) {
+    const x = padding + ((d-minDate)/(1000*60*60*24))*18;
+    if (d.getDay()===0) {
+      svg += '<line x1="'+x+'" y1="0" x2="'+x+'" y2="'+canvasH+'" stroke="#e5e7eb" stroke-width="1"/>';
+      svg += '<text x="'+(x+2)+'" y="18" fill="#9ca3af">'+d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+'</text>';
+    }
+    d.setDate(d.getDate()+1);
+  }
+  tasks.forEach(function(t,i) {
+    const y = headerH+i*rowH;
+    const x1 = padding+((new Date(t.start_date)-minDate)/(1000*60*60*24))*18;
+    const x2 = padding+((new Date(t.end_date)-minDate)/(1000*60*60*24)+1)*18;
+    const color = statusColor[t.status]||'#9ca3af';
+    svg += '<rect x="0" y="'+y+'" width="'+canvasW+'" height="'+rowH+'" fill="'+(i%2?'#f9fafb':'#fff')+'" />';
+    svg += '<text x="8" y="'+(y+rowH/2+4)+'" fill="#374151" font-weight="500">'+escHtml((t.name||'').substring(0,22))+'</text>';
+    svg += '<rect x="'+x1+'" y="'+(y+6)+'" width="'+(x2-x1)+'" height="'+(rowH-12)+'" rx="4" fill="'+color+'" opacity="0.85"/>';
+    if (x2-x1 > 60) svg += '<text x="'+(x1+6)+'" y="'+(y+rowH/2+4)+'" fill="#fff" font-size="11">'+escHtml(t.status.replace('_',' '))+'</text>';
+  });
+  svg += '</svg>';
+  canvas.innerHTML = '<div style="overflow-x:auto;">'+svg+'</div>';
+}
+
+function printEventPlan() {
+  window.print();
 }
 
 </script>
