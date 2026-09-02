@@ -5038,15 +5038,20 @@ async function loadMemberRequests() {
       container.innerHTML = pending.map(function(m) {
         const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
         const requested = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown time';
-        return '<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
+        const mid = escHtml(String(m.id || ''));
+        return '<div style="padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
+          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">' +
           '<div>' +
           '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
           '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:2px;">' + escHtml(m.email || 'No email provided') + '</div>' +
+          (m.alpha_id ? '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Alpha ID: ' + escHtml(m.alpha_id) + '</div>' : '') +
           '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:2px;">Requested: ' + escHtml(requested) + '</div>' +
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">' +
-          '<button class="btn-sm success" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'granted\')"><i class="fas fa-check"></i> Approve</button>' +
-          '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + escHtml(String(m.id || '')) + '\', \'revoked\')"><i class="fas fa-times"></i> Reject</button>' +
+          '<button class="btn-sm" style="background:rgba(74,222,128,0.15);color:#16a34a;border:1px solid rgba(74,222,128,0.4);" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')"><i class="fas fa-home"></i> Chapter Brother</button>' +
+          '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="updateMemberStatus(\'' + mid + '\',\'visiting\')"><i class="fas fa-user-clock"></i> Visiting Brother</button>' +
+          '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + mid + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>' +
+          '</div>' +
           '</div>' +
           '</div>';
       }).join('');
@@ -5223,19 +5228,86 @@ function renderMemberComplianceList(members) {
   renderRosterPage();
 }
 
-async function updateMemberStatus(memberId, portalAccess) {
+async function updateMemberStatus(memberId, approvalType) {
+  // approvalType: 'chapter' | 'visiting' | 'revoked'
   if (!memberId) return;
   const token = getAdminToken();
-  if (!token) {
-    showToast('Admin session expired. Please sign in again.', 'error');
-    return;
-  }
-  const approved = portalAccess === 'granted';
-  if (!confirm((approved ? 'Approve' : 'Reject') + ' this member request?')) return;
+  if (!token) { showToast('Admin session expired. Please sign in again.', 'error'); return; }
+  const isChapter  = approvalType === 'chapter';
+  const isVisiting = approvalType === 'visiting';
+  const isApproved = isChapter || isVisiting;
+  const confirmMsg = isChapter
+    ? 'Approve as a Chapter Brother? They will be added to the Brothers Directory and Member Compliance.'
+    : isVisiting
+      ? 'Approve as a Visiting Brother? They will get limited portal access only.'
+      : 'Reject this access request?';
+  if (!confirm(confirmMsg)) return;
   try {
-    const payload = { portal_access: portalAccess, updated_at: new Date().toISOString() };
+    // Fetch the member row first so we have all their info
+    const rows = await sbGet('members', 'id=eq.' + encodeURIComponent(memberId) + '&limit=1', token);
+    const m = rows && rows.length ? rows[0] : null;
+    if (!m) throw new Error('Member record not found.');
+
+    const portalAccess = isChapter ? 'chapter_member' : isVisiting ? 'visiting' : 'revoked';
+    const memberStatus = isChapter ? 'active' : m.status || 'inactive';
+    const payload = {
+      portal_access: portalAccess,
+      status: memberStatus,
+      updated_at: new Date().toISOString()
+    };
+    if (isChapter) payload.chapter_active_date = new Date().toISOString().slice(0, 10);
     await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
-    showToast(approved ? 'Portal access granted.' : 'Member request rejected.', approved ? 'success' : 'info');
+
+    // For chapter brothers: add to Brothers Directory
+    if (isChapter && m.alpha_id) {
+      try {
+        const dirRows = await getContentJson(BROTHERS_DIRECTORY_KEY, []);
+        const dir = Array.isArray(dirRows) ? dirRows.map(sanitizeBrotherRecord) : [];
+        const exists = dir.findIndex(function(r) { return r.alpha_id && normalizeAlphaId(r.alpha_id) === normalizeAlphaId(m.alpha_id); });
+        const newRec = sanitizeBrotherRecord({
+          alpha_id: m.alpha_id,
+          first_name: m.first_name || '',
+          last_name: m.last_name || '',
+          email: m.email || '',
+          phone: m.phone || '',
+          initiation_chapter: m.initiation_chapter || '',
+          initiation_date: m.initiation_date || '',
+          imdp_certified: m.imdp_certified || '',
+          risk_mgmt_certified: m.risk_mgmt_certified || '',
+          status: 'active'
+        });
+        if (exists >= 0) { dir[exists] = mergeBrotherRecords(dir[exists], newRec); }
+        else { dir.push(newRec); }
+        await saveContentJson(BROTHERS_DIRECTORY_KEY, dir.filter(function(r) { return !!r.alpha_id; }));
+      } catch (dirErr) {
+        showToast('Member approved but Brothers Directory update failed — Alpha ID may be missing.', 'info');
+      }
+    } else if (isChapter && !m.alpha_id) {
+      showToast('Chapter Brother approved but no Alpha ID on file — add them to the Brothers Directory manually.', 'info');
+    }
+
+    // Email notification
+    if (isApproved && m.email) {
+      const emailBody = isChapter
+        ? 'Your access request has been approved. You are now a Chapter Brother with full portal access. Log in here: ' + window.location.origin + '/member-portal.html'
+        : 'Your access request has been approved. You have visiting brother access to the member portal. Log in here: ' + window.location.origin + '/member-portal.html';
+      fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          type: 'visiting_brother_approved',
+          to: m.email,
+          name: [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email,
+          subject: isChapter ? 'Chapter Brother Access Approved' : 'Portal Access Approved',
+          body: emailBody
+        })
+      }).catch(function(){});
+    }
+
+    const toastMsg = isChapter
+      ? 'Approved as Chapter Brother' + (m.alpha_id ? ' — added to Brothers Directory.' : ' (no Alpha ID — add to directory manually).')
+      : isVisiting ? 'Approved as Visiting Brother.' : 'Access request rejected.';
+    showToast(toastMsg, isApproved ? 'success' : 'info');
     await loadMemberRequests();
   } catch (err) {
     showToast('Could not update member status: ' + (err.message || 'unknown error'), 'error');
