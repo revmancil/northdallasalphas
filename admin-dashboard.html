@@ -4150,7 +4150,7 @@ function renderAccessTable() {
   tbody.innerHTML = rows.map(function(m) {
     const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || '—';
     const portalAccess = (m.portal_access || 'pending').toLowerCase();
-    const chapterStatus = (m.status || '').toLowerCase();
+    const chapterStatus = (['active','inactive'].includes((m.status||'').toLowerCase())) ? (m.status||'').toLowerCase() : '';
     const isAdmin = accessAdminEmails.has((m.email || '').toLowerCase());
     const accessColor = portalAccess === 'granted' ? 'var(--green)' : portalAccess === 'visiting' ? '#4ade80' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
     const accessLabel = portalAccess === 'visiting' ? 'Visiting' : portalAccess.charAt(0).toUpperCase() + portalAccess.slice(1);
@@ -4201,9 +4201,14 @@ async function accessUpdateStatus(memberId, portalAccess) {
               : 'update';
   if (!confirm('Are you sure you want to ' + label + ' this member?')) return;
   const payload = { portal_access: portalAccess, updated_at: new Date().toISOString() };
+  if (portalAccess === 'granted' || portalAccess === 'chapter_member') {
+    if (!m || !['active','inactive'].includes((m.status||'').toLowerCase())) {
+      payload.status = 'active';
+    }
+  }
   try {
     await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId), payload, token);
-    if (m) { m.portal_access = portalAccess; m.updated_at = payload.updated_at; }
+    if (m) { m.portal_access = portalAccess; m.updated_at = payload.updated_at; if (payload.status) m.status = payload.status; }
     renderAccessTable();
     showToast(portalAccess === 'granted' ? 'Full portal access granted.'
             : portalAccess === 'visiting' ? 'Visiting brother access granted (Dashboard, Events, Dues).'
