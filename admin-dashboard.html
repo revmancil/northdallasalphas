@@ -4162,11 +4162,11 @@ function renderAccessTable() {
     const mid = escHtml(String(m.id));
     const memail = escHtml(m.email || '');
     if (portalAccess === 'pending') {
-      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + mid + '\',\'granted\')"><i class="fas fa-check"></i> Approve</button> ' +
-                '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="accessUpdateStatus(\'' + mid + '\',\'visiting\')" title="Grant limited access: Dashboard, Events, Dues only"><i class="fas fa-user-clock"></i> Visiting</button> ' +
-                '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>';
+      actions = '<button class="btn-sm" style="background:rgba(74,222,128,0.15);color:#16a34a;border:1px solid rgba(74,222,128,0.4);" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')"><i class="fas fa-home"></i> Chapter Brother</button> ' +
+                '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="updateMemberStatus(\'' + mid + '\',\'visiting\')"><i class="fas fa-user-clock"></i> Visiting Brother</button> ' +
+                '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + mid + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>';
     } else if (portalAccess === 'visiting') {
-      actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + mid + '\',\'granted\')" title="Upgrade to full member access"><i class="fas fa-arrow-up"></i> Full Access</button> ' +
+      actions = '<button class="btn-sm success" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')" title="Upgrade to Chapter Brother with full access"><i class="fas fa-arrow-up"></i> Chapter Brother</button> ' +
                 '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
     } else if (portalAccess === 'granted') {
       actions = '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
@@ -4212,6 +4212,8 @@ async function accessUpdateStatus(memberId, portalAccess) {
     if (portalAccess === 'granted' && wasVisiting && m) {
       openPromoteModal(memberId, [m.first_name, m.last_name].filter(Boolean).join(' '));
     }
+    // Refresh Member Requests badge counts
+    loadMemberRequests();
   } catch (err) {
     showToast('Could not update status: ' + (err.message || 'error'), 'error');
   }
