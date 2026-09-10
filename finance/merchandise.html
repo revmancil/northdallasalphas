@@ -552,14 +552,12 @@
       const role = rows[0]?.finance_role;
       if (['treasurer','financial_secretary','president'].includes(role)) {
         document.getElementById('financeAdminLink').style.display = '';
-        document.getElementById('requestsNavLink').style.display = '';
       }
     } catch(_) {}
     // Also show for site admins
     const adminSession = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
     if (adminSession?.access_token) {
       document.getElementById('financeAdminLink').style.display = '';
-      document.getElementById('requestsNavLink').style.display = '';
     }
 
     // Handle payment success/cancel redirect
