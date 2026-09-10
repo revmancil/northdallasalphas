@@ -403,8 +403,8 @@ serve(async (req) => {
       mode: "payment",
       customer_email: email,
       line_items: lineItems,
-      success_url: `${siteBase}/finance/merchandise.html?payment=success`,
-      cancel_url:  `${siteBase}/finance/merchandise.html?payment=cancelled`,
+      success_url: `${siteBase}/member-portal.html?store=success`,
+      cancel_url:  `${siteBase}/member-portal.html?store=cancel`,
       metadata: {
         kind:        "store",
         order_id:    orderId,
