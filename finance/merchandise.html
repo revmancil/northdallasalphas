@@ -187,31 +187,44 @@
     <div id="omImgWrap"></div>
     <div class="modal-price" id="omPrice"></div>
     <div class="modal-desc" id="omDesc"></div>
-    <div class="notice"><i class="fas fa-info-circle"></i> Orders are fulfilled by the chapter. A brother will follow up with you directly to arrange payment and pickup/delivery.</div>
-    <div class="success-msg" id="omSuccess"><i class="fas fa-check-circle"></i> Your order request has been submitted! A chapter brother will contact you soon.</div>
-    <div class="field">
-      <label>Size (if applicable)</label>
-      <select id="omSize">
-        <option value="N/A">N/A</option>
-        <option value="XS">XS</option>
-        <option value="S">S</option>
-        <option value="M">M</option>
-        <option value="L">L</option>
-        <option value="XL">XL</option>
-        <option value="XXL">XXL</option>
-        <option value="XXXL">XXXL</option>
-      </select>
+
+    <!-- Size selector (shown for sized items) -->
+    <div class="field" id="omSizeField" style="display:none;">
+      <label>Select Size</label>
+      <select id="omSize" onchange="onSizeChange()"></select>
     </div>
+
     <div class="field">
       <label>Quantity</label>
-      <input type="number" id="omQty" value="1" min="1" max="10" />
+      <input type="number" id="omQty" value="1" min="1" max="10" oninput="onQtyChange()" />
     </div>
-    <div class="field">
-      <label>Notes (optional)</label>
-      <input type="text" id="omNotes" placeholder="Color preference, special instructions…" />
+
+    <!-- Order summary -->
+    <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:14px 16px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px;">
+        <span style="color:var(--gray-400);">Item price</span>
+        <span id="omUnitPrice" style="color:var(--white);font-weight:600;">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px;">
+        <span style="color:var(--gray-400);">Processing fee</span>
+        <span id="omFeePrice" style="color:var(--gray-400);">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:1rem;border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:4px;">
+        <span style="font-weight:700;color:var(--white);">Total</span>
+        <span id="omTotalPrice" style="font-weight:800;color:var(--gold);">—</span>
+      </div>
     </div>
-    <button class="btn-gold" id="omSubmitBtn" onclick="submitOrder()"><i class="fas fa-paper-plane"></i> Submit Order Request</button>
-    <input type="hidden" id="omItemId" />
+
+    <div id="omErr" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:10px 14px;border-radius:8px;font-size:0.83rem;margin-bottom:12px;"></div>
+
+    <button class="btn-gold" id="omSubmitBtn" onclick="startMerchCheckout()">
+      <i class="fas fa-lock"></i> <span id="omBtnLabel">Pay with Card</span>
+    </button>
+    <div style="display:flex;align-items:center;gap:6px;justify-content:center;margin-top:10px;font-size:0.75rem;color:rgba(255,255,255,0.3);">
+      <i class="fab fa-stripe"></i> Secured by Stripe · PCI compliant
+    </div>
+
+    <input type="hidden" id="omProductKey" />
     <input type="hidden" id="omItemName" />
   </div>
 </div>
@@ -219,9 +232,76 @@
 <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg"></span></div>
 
 <script>
-  const SB_URL  = 'https://bqkpoqyzmweawbmbpetl.supabase.co';
-  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxa3BvcXl6bXdlYXdibWJwZXRsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MTg3NTQsImV4cCI6MjA1OTI5NDc1NH0.2orvVmMHqxCXfSsBARJWHTuGVVyCeC-qBkT71lWP2Ds';
+  const SB_URL  = 'https://fbjervpgxnbyntylabfr.supabase.co';
+  const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+  const STRIPE_FN_URL = SB_URL + '/functions/v1/stripe-checkout';
   const CATALOG_KEY = 'finance_merch_catalog';
+
+  // ── Chapter Store Products (Stripe-wired) ───────────────────────────────────
+  const CHAPTER_PRODUCTS = [
+    {
+      id: 'chapter-blazer',
+      product_key: 'chapter-blazer',
+      name: 'Chapter Blazer',
+      category: 'Apparel',
+      description: 'Official Xi Tau Lambda chapter blazer.',
+      hasSizes: true,
+      sizeType: 'numeric',
+      sizes: ['34','36','38','40','42','44','46','48','50','52','54','56','58','60','62','64','66'],
+      priceTiers: [
+        { sizes: ['34','36','38','40','42','44','46','48','50','52','54','56','58','60'], price_cents: 15000, label: '$150.00' },
+        { sizes: ['62','64','66'],                                                        price_cents: 20000, label: '$200.00' },
+      ],
+    },
+    {
+      id: 'chapter-polo',
+      product_key: 'chapter-polo',
+      name: 'Chapter Polo',
+      category: 'Apparel',
+      description: 'Official Xi Tau Lambda chapter polo shirt.',
+      hasSizes: true,
+      sizeType: 'standard',
+      sizes: ['S','M','L','XL','2X','3X','4X','5X','6X'],
+      priceTiers: [
+        { sizes: ['S','M','L','XL'],   price_cents: 3200, label: '$32.00' },
+        { sizes: ['2X','3X'],          price_cents: 3600, label: '$36.00' },
+        { sizes: ['4X','5X','6X'],     price_cents: 4000, label: '$40.00' },
+      ],
+    },
+    {
+      id: 'chenille-sweatshirt',
+      product_key: 'chenille-sweatshirt',
+      name: 'Chenille "A" Sweatshirt',
+      category: 'Apparel',
+      description: 'Chapter sweatshirt with chenille Alpha letter. Sizes S–2X.',
+      hasSizes: true,
+      sizeType: 'standard',
+      sizes: ['S','M','L','XL','2X'],
+      priceTiers: [
+        { sizes: ['S','M','L','XL','2X'], price_cents: 6500, label: '$65.00' },
+      ],
+    },
+    {
+      id: 'chapter-necktie',
+      product_key: 'chapter-necktie',
+      name: 'Chapter Necktie',
+      category: 'Accessories',
+      description: 'Official Xi Tau Lambda chapter necktie.',
+      hasSizes: false,
+      sizes: [],
+      priceTiers: [{ sizes: [], price_cents: 2700, label: '$27.00' }],
+    },
+    {
+      id: 'chapter-bowtie',
+      product_key: 'chapter-bowtie',
+      name: 'Chapter Bowtie',
+      category: 'Accessories',
+      description: 'Official Xi Tau Lambda chapter bowtie.',
+      hasSizes: false,
+      sizes: [],
+      priceTiers: [{ sizes: [], price_cents: 2700, label: '$27.00' }],
+    },
+  ];
 
   let SESSION = null;
   let allItems = [];
@@ -303,7 +383,7 @@
           <div class="merch-card-name">${escHtml(item.name)}</div>
           ${item.description ? `<div class="merch-card-desc">${escHtml(item.description)}</div>` : '<div class="merch-card-desc"></div>'}
           <div class="merch-card-footer">
-            <div class="merch-card-price">${fmt$(item.price_cents)}</div>
+            <div class="merch-card-price">${item.priceTiers ? (item.priceTiers[0].label + (item.priceTiers.length > 1 ? '+' : '')) : fmt$(item.price_cents)}</div>
             <button class="btn-order" onclick='openOrderModal(${JSON.stringify(item)})'><i class="fas fa-shopping-bag"></i> Order</button>
           </div>
         </div>
@@ -314,58 +394,144 @@
     return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // ── Active product being ordered ─────────────────────────────────────────
+  let activeProduct = null;
+
+  function getPriceTierForSize(product, size) {
+    if (!product.hasSizes) return product.priceTiers[0];
+    for (const tier of product.priceTiers) {
+      if (tier.sizes.includes(size)) return tier;
+    }
+    return product.priceTiers[0];
+  }
+
+  function calcFeeDisplay(subtotalCents) {
+    const fee = Math.ceil((subtotalCents * 0.029 + 30) / 0.971);
+    return fee;
+  }
+
+  function updateOrderSummary() {
+    if (!activeProduct) return;
+    const size = document.getElementById('omSize').value || 'N/A';
+    const qty  = Math.max(1, parseInt(document.getElementById('omQty').value) || 1);
+    const tier = getPriceTierForSize(activeProduct, size);
+    const unit = tier ? tier.price_cents : 0;
+    const sub  = unit * qty;
+    const fee  = calcFeeDisplay(sub);
+    const tot  = sub + fee;
+
+    document.getElementById('omPrice').textContent      = tier ? tier.label : fmt$(unit);
+    document.getElementById('omUnitPrice').textContent  = fmt$(unit) + (qty > 1 ? ' × ' + qty : '');
+    document.getElementById('omFeePrice').textContent   = fmt$(fee);
+    document.getElementById('omTotalPrice').textContent = fmt$(tot);
+    document.getElementById('omBtnLabel').textContent   = 'Pay ' + fmt$(tot) + ' with Card';
+  }
+
+  function onSizeChange() { updateOrderSummary(); }
+  function onQtyChange()  { updateOrderSummary(); }
+
   function openOrderModal(item) {
-    document.getElementById('omTitle').textContent = item.name;
-    document.getElementById('omPrice').textContent = fmt$(item.price_cents);
-    document.getElementById('omDesc').textContent = item.description || '';
-    document.getElementById('omItemId').value = item.id || '';
-    document.getElementById('omItemName').value = item.name || '';
-    document.getElementById('omQty').value = 1;
-    document.getElementById('omNotes').value = '';
-    document.getElementById('omSize').value = 'N/A';
-    document.getElementById('omSuccess').style.display = 'none';
-    document.getElementById('omSubmitBtn').style.display = '';
+    // item can be a CHAPTER_PRODUCTS entry or a catalog item from Supabase
+    activeProduct = item;
+
+    document.getElementById('omTitle').textContent    = item.name;
+    document.getElementById('omDesc').textContent     = item.description || '';
+    document.getElementById('omProductKey').value     = item.product_key || item.id || '';
+    document.getElementById('omItemName').value       = item.name || '';
+    document.getElementById('omQty').value            = 1;
+    document.getElementById('omErr').style.display    = 'none';
+    document.getElementById('omSubmitBtn').disabled   = false;
+    document.getElementById('omBtnLabel').textContent = 'Pay with Card';
 
     const imgWrap = document.getElementById('omImgWrap');
     imgWrap.innerHTML = item.image_url
       ? `<img class="modal-img" src="${escHtml(item.image_url)}" alt="${escHtml(item.name)}" onerror="this.outerHTML='<div class=modal-img-placeholder><i class=fas fa-box-open></i></div>'" />`
       : `<div class="modal-img-placeholder"><i class="fas fa-box-open"></i></div>`;
 
+    const sizeField = document.getElementById('omSizeField');
+    const sizeEl    = document.getElementById('omSize');
+    if (item.hasSizes && item.sizes && item.sizes.length) {
+      sizeField.style.display = '';
+      sizeEl.innerHTML = item.sizes.map(s => `<option value="${escHtml(s)}">${escHtml(s)}</option>`).join('');
+      sizeEl.value = item.sizes[0];
+    } else {
+      sizeField.style.display = 'none';
+      sizeEl.innerHTML = '<option value="N/A">N/A</option>';
+    }
+
+    updateOrderSummary();
     document.getElementById('orderModal').classList.add('open');
   }
 
-  function closeOrderModal() { document.getElementById('orderModal').classList.remove('open'); }
+  function closeOrderModal() {
+    document.getElementById('orderModal').classList.remove('open');
+    activeProduct = null;
+  }
 
-  async function submitOrder() {
-    if (!SESSION) { toast('Please sign in to place an order.', 'error'); return; }
-    const btn = document.getElementById('omSubmitBtn');
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+  async function startMerchCheckout() {
+    if (!SESSION) { showErr('Please sign in to purchase.'); return; }
+    if (!activeProduct) return;
 
-    try {
-      // Store order in finance_merch_orders table (or site_content fallback)
-      await sbPost('finance_merch_orders', {
-        member_id:   SESSION?.user?.id || null,
-        item_id:     document.getElementById('omItemId').value,
-        item_name:   document.getElementById('omItemName').value,
-        size:        document.getElementById('omSize').value,
-        quantity:    parseInt(document.getElementById('omQty').value) || 1,
-        notes:       document.getElementById('omNotes').value.trim() || null,
-        status:      'pending',
-        ordered_at:  new Date().toISOString()
-      });
-      document.getElementById('omSuccess').style.display = '';
-      btn.style.display = 'none';
-      toast('Order submitted!');
-    } catch(e) {
-      // If table doesn't exist yet, show success anyway and note manual follow-up
-      document.getElementById('omSuccess').style.display = '';
-      btn.style.display = 'none';
-      toast('Order request submitted.');
+    const btn      = document.getElementById('omSubmitBtn');
+    const size     = document.getElementById('omSize').value || 'N/A';
+    const qty      = Math.max(1, parseInt(document.getElementById('omQty').value) || 1);
+    const prodKey  = document.getElementById('omProductKey').value;
+    const name     = document.getElementById('omItemName').value;
+
+    if (activeProduct.hasSizes && (!size || size === 'N/A')) {
+      showErr('Please select a size.'); return;
     }
 
-    btn.disabled = false;
-    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Order Request';
+    document.getElementById('omErr').style.display = 'none';
+    btn.disabled = true;
+    document.getElementById('omBtnLabel').textContent = 'Redirecting to Stripe…';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecting to Stripe…';
+
+    try {
+      const meta   = SESSION.user?.user_metadata || {};
+      const email  = SESSION.user?.email || '';
+      const fName  = meta.full_name || name || '';
+
+      const res = await fetch(STRIPE_FN_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'apikey':        SB_ANON,
+          'Authorization': 'Bearer ' + SESSION.access_token,
+        },
+        body: JSON.stringify({
+          mode:        'store',
+          fullName:    fName,
+          phone:       meta.phone || '',
+          email:       email,
+          notes:       '',
+          items: [{
+            product_key: prodKey,
+            name:        name,
+            size:        size,
+            quantity:    qty,
+          }],
+          successUrl: window.location.origin + window.location.pathname + '?payment=success',
+          cancelUrl:  window.location.origin + window.location.pathname + '?payment=cancelled',
+        }),
+      });
+
+      let data = null;
+      try { data = await res.json(); } catch(_) { data = { error: await res.text() }; }
+
+      if (!res.ok || !data?.url) throw new Error((data && data.error) || 'Checkout unavailable.');
+      window.location.href = data.url;
+    } catch(e) {
+      showErr((e && e.message) || 'Could not start checkout. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-lock"></i> <span id="omBtnLabel">Pay with Card</span>';
+    }
+  }
+
+  function showErr(msg) {
+    const el = document.getElementById('omErr');
+    el.textContent = msg;
+    el.style.display = '';
   }
 
   async function init() {
@@ -396,9 +562,20 @@
       document.getElementById('requestsNavLink').style.display = '';
     }
 
-    // Load catalog
+    // Handle payment success/cancel redirect
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'success') {
+      toast('Payment successful! Your order has been received.', 'success');
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('payment') === 'cancelled') {
+      toast('Checkout cancelled.', 'error');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // Load chapter products (hard-coded with Stripe pricing) + optional catalog items
     const catalog = await getContentJson(CATALOG_KEY);
-    allItems = Array.isArray(catalog) ? catalog.filter(i => i.active !== false) : [];
+    const catalogItems = Array.isArray(catalog) ? catalog.filter(i => i.active !== false) : [];
+    allItems = [...CHAPTER_PRODUCTS, ...catalogItems.filter(i => !CHAPTER_PRODUCTS.find(p => p.id === i.id))];
 
     // Build category filter pills
     const cats = [...new Set(allItems.map(i => i.category).filter(Boolean))];

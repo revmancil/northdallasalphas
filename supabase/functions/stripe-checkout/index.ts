@@ -23,6 +23,54 @@ function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 }
 
+// Processing fee line item so buyer pays and chapter nets 100%
+// fee = (subtotal × 0.029 + 0.30) / 0.971  → rounds up to nearest cent
+function calcFeeCents(subtotalCents: number): number {
+  return Math.ceil((subtotalCents * 0.029 + 30) / 0.971);
+}
+
+function processingFeeLine(subtotalCents: number): Stripe.Checkout.SessionCreateParams.LineItem {
+  return {
+    quantity: 1,
+    price_data: {
+      currency: "usd",
+      unit_amount: calcFeeCents(subtotalCents),
+      product_data: { name: "Processing Fee (2.9% + $0.30)" },
+    },
+  };
+}
+
+// ── Chapter Store — Stripe Price IDs ────────────────────────────────────────
+const STORE_PRICE_IDS: Record<string, string> = {
+  "blazer-standard": "price_1UEDL2CKVGcSdbnRniuhXuDC",   // sizes 34–60, $150
+  "blazer-extended": "price_1UEDObCKVGcSdbnR0hGOLO5L",   // sizes 62+,  $200
+  "polo-sxl":        "price_1UEDTYCKVGcSdbnRERKpWPQa",   // S–XL,       $32
+  "polo-2x3x":       "price_1UEDUSCKVGcSdbnR7z0igLM9",   // 2X–3X,      $36
+  "polo-4x6x":       "price_1UEDUSCKVGcSdbnRdKadb6wb",   // 4X–6X,      $40
+  "sweatshirt":      "price_1UEDamCKVGcSdbnRi8vJtosI",   // S–2X,       $65
+  "necktie":         "price_1UEDikCKVGcSdbnRX1Ku1GiK",   // one-size,   $27
+  "bowtie":          "price_1UEDiwCKVGcSdbnRppzZ8A2E",   // one-size,   $27
+};
+
+const BLAZER_EXTENDED = ["62","64","66","68","70","72"];
+const POLO_4X         = ["4X","5X","6X"];
+const POLO_2X         = ["2X","3X"];
+
+function resolveStorePriceId(productKey: string, size: string): string | null {
+  switch (productKey) {
+    case "chapter-blazer":
+      return BLAZER_EXTENDED.includes(size) ? STORE_PRICE_IDS["blazer-extended"] : STORE_PRICE_IDS["blazer-standard"];
+    case "chapter-polo":
+      if (POLO_4X.includes(size)) return STORE_PRICE_IDS["polo-4x6x"];
+      if (POLO_2X.includes(size)) return STORE_PRICE_IDS["polo-2x3x"];
+      return STORE_PRICE_IDS["polo-sxl"];
+    case "chenille-sweatshirt": return STORE_PRICE_IDS["sweatshirt"];
+    case "chapter-necktie":     return STORE_PRICE_IDS["necktie"];
+    case "chapter-bowtie":      return STORE_PRICE_IDS["bowtie"];
+    default: return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -119,6 +167,7 @@ serve(async (req) => {
             },
           },
         },
+        processingFeeLine(fee),
       ],
       success_url: `${siteBase}/events.html?reg=success`,
       cancel_url: `${siteBase}/events.html?reg=cancel`,
@@ -178,18 +227,26 @@ serve(async (req) => {
       return json({ error: "Dues amount is not configured." }, 503);
     }
 
-    const applyLateFee = payload.lateFee === true;
-    const lateFeeCents = parseInt(Deno.env.get("LATE_FEE_CENTS") ?? "1000", 10) || 1000;
+    const applyLateFee   = payload.lateFee === true;
+    const applyBldFund   = payload.buildingFund === true;
+    const lateFeeCents   = parseInt(Deno.env.get("LATE_FEE_CENTS") ?? "1000", 10) || 1000;
+    const bldFundCents   = parseInt(String(payload.buildingFundCents ?? "5000"), 10) || 5000;
+
+    const duesCategory      = trimStr(payload.duesCategory, 40)      || "renewing";
+    const duesCategoryLabel = trimStr(payload.duesCategoryLabel, 120) || "Chapter Dues";
+    const fiscalYear        = trimStr(payload.fiscalYear, 10)         || String(new Date().getFullYear());
+    const amountCents       = parseInt(String(payload.amountCents ?? duesCents), 10) || duesCents;
+    const baseCents         = amountCents - (applyLateFee ? lateFeeCents : 0) - (applyBldFund ? bldFundCents : 0);
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       {
         quantity: 1,
         price_data: {
           currency: "usd",
-          unit_amount: duesCents,
+          unit_amount: baseCents,
           product_data: {
-            name: "Xi Tau Lambda — Chapter dues",
-            description: "Chapter dues payment",
+            name: `${duesCategoryLabel} — FY ${fiscalYear}`,
+            description: "Xi Tau Lambda Chapter dues",
           },
         },
       },
@@ -202,25 +259,45 @@ serve(async (req) => {
           currency: "usd",
           unit_amount: lateFeeCents,
           product_data: {
-            name: "Late fee",
-            description: "Dues received after December 31 deadline",
+            name: "Late Fee",
+            description: "Dues received after January 1 deadline",
           },
         },
       });
     }
 
+    if (applyBldFund) {
+      lineItems.push({
+        quantity: 1,
+        price_data: {
+          currency: "usd",
+          unit_amount: bldFundCents,
+          product_data: { name: "Building Fund Contribution" },
+        },
+      });
+    }
+
+    // Processing fee — buyer pays so chapter nets the full dues amount
+    lineItems.push(processingFeeLine(amountCents));
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: email,
       line_items: lineItems,
-      success_url: `${siteBase}/member-portal.html?dues=success`,
-      cancel_url: `${siteBase}/member-portal.html?dues=cancel`,
+      success_url: `${siteBase}/finance/pay-dues.html?payment=success`,
+      cancel_url:  `${siteBase}/finance/pay-dues.html?payment=cancelled`,
       metadata: {
-        kind: "dues",
-        member_id: String(member.id),
-        full_name: fullName,
+        kind:                "dues",
+        member_id:           String(member.id),
+        full_name:           fullName,
         phone,
         email,
+        dues_category:       duesCategory,
+        dues_category_label: duesCategoryLabel,
+        fiscal_year:         fiscalYear,
+        late_fee:            applyLateFee ? "true" : "false",
+        building_fund:       applyBldFund ? "true" : "false",
+        amount_cents:        String(amountCents),
       },
     });
 
@@ -256,66 +333,86 @@ serve(async (req) => {
     const items = Array.isArray(payload.items) ? payload.items as Record<string, unknown>[] : [];
     if (!items.length) return json({ error: "Cart is empty." }, 400);
 
-    const notes = trimStr(payload.notes, 500);
-    const totalCents = items.reduce((s: number, i: Record<string, unknown>) =>
-      s + Math.round(Number(i.price ?? 0) * 100) * Math.max(1, parseInt(String(i.quantity ?? 1), 10)), 0);
-
-    if (totalCents <= 0) return json({ error: "Order total must be greater than zero for Stripe checkout." }, 400);
-
+    const notes      = trimStr(payload.notes, 500);
     const memberName = [member.first_name, member.last_name].filter(Boolean).join(" ");
 
-    // Save order first so webhook can reference it by ID
+    // Build line items — chapter store items use Stripe Price IDs when available
+    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let totalCents = 0;
+
+    for (const i of items) {
+      const qty      = Math.max(1, parseInt(String(i.quantity ?? 1), 10));
+      const prodKey  = String(i.product_key ?? "").trim();
+      const size     = String(i.size ?? "N/A").trim();
+      const resolvedPriceId = prodKey ? resolveStorePriceId(prodKey, size) : null;
+
+      if (resolvedPriceId) {
+        // Use Stripe Price ID (exact price pulled from Stripe)
+        const priceObj = await stripe.prices.retrieve(resolvedPriceId);
+        const unitAmt  = priceObj.unit_amount ?? 0;
+        totalCents    += unitAmt * qty;
+        lineItems.push({ price: resolvedPriceId, quantity: qty });
+      } else {
+        // Fallback: dynamic price from frontend
+        const unitAmt = Math.round(Number(i.price ?? 0) * 100);
+        totalCents   += unitAmt * qty;
+        lineItems.push({
+          quantity: qty,
+          price_data: {
+            currency: "usd",
+            unit_amount: unitAmt,
+            product_data: {
+              name: trimStr(i.name, 120) || "Store item",
+              description: size !== "N/A" ? `Size: ${size}` : "Xi Tau Lambda Chapter Store",
+            },
+          },
+        });
+      }
+    }
+
+    if (totalCents <= 0) return json({ error: "Order total must be greater than zero." }, 400);
+
+    // Processing fee — buyer pays so chapter nets full product price
+    lineItems.push(processingFeeLine(totalCents));
+
+    // Save order record so webhook can reference it
     const { data: order, error: orderErr } = await admin
-      .from("store_orders")
+      .from("finance_merch_orders")
       .insert({
-        member_id: member.id,
+        member_id:   member.id,
         member_name: memberName,
-        member_email: userEmail,
-        items: JSON.stringify(items.map((i) => ({
-          item_id: i.item_id,
-          name: trimStr(i.name, 200),
-          price: Number(i.price ?? 0),
-          quantity: Math.max(1, parseInt(String(i.quantity ?? 1), 10)),
-          selections: i.selections ?? {},
+        email:       userEmail,
+        items:       JSON.stringify(items.map((i) => ({
+          product_key: String(i.product_key ?? ""),
+          name:        trimStr(i.name, 200),
+          size:        String(i.size ?? "N/A"),
+          quantity:    Math.max(1, parseInt(String(i.quantity ?? 1), 10)),
         }))),
-        total: totalCents / 100,
-        status: "awaiting_payment",
-        notes: notes || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        total_cents:  totalCents,
+        status:       "awaiting_payment",
+        notes:        notes || null,
+        created_at:   new Date().toISOString(),
       })
       .select("id")
       .single();
 
-    if (orderErr || !order?.id) {
-      console.error("store_orders insert:", orderErr);
-      return json({ error: "Could not create order record." }, 500);
-    }
-
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = items.map((i) => ({
-      quantity: Math.max(1, parseInt(String(i.quantity ?? 1), 10)),
-      price_data: {
-        currency: "usd",
-        unit_amount: Math.round(Number(i.price ?? 0) * 100),
-        product_data: {
-          name: trimStr(i.name, 120) || "Store item",
-          description: "Xi Tau Lambda Chapter Store",
-        },
-      },
-    }));
+    const orderId = order?.id ? String(order.id) : "pending";
+    if (orderErr) console.warn("finance_merch_orders insert:", orderErr);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: email,
       line_items: lineItems,
-      success_url: `${siteBase}/member-portal.html?store=success`,
-      cancel_url: `${siteBase}/member-portal.html?store=cancel&order=${order.id}`,
+      success_url: `${siteBase}/finance/merchandise.html?payment=success`,
+      cancel_url:  `${siteBase}/finance/merchandise.html?payment=cancelled`,
       metadata: {
-        kind: "store",
-        order_id: String(order.id),
-        member_id: String(member.id),
-        full_name: fullName,
+        kind:        "store",
+        order_id:    orderId,
+        member_id:   String(member.id),
+        member_name: memberName,
+        full_name:   fullName,
         email,
+        amount_cents: String(totalCents),
       },
     });
 

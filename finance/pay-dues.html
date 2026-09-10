@@ -349,7 +349,7 @@ const FINANCE_DUES_KEY = 'finance_dues_config';
    Amounts in cents.
 ═══════════════════════════════════════════ */
 const DEFAULT_DUES_CONFIG = {
-  renewing:        { label: 'Renewing Member',           amount: 25000, note: 'Annual chapter dues' },
+  renewing:        { label: 'Renewing Member',           amount: 30000, note: 'Annual chapter dues' },
   new_initiate:    { label: 'New Initiate',              amount: 15000, note: 'First-year chapter dues' },
   legacy:          { label: 'Legacy / 50-Year Service',  amount: 0,     note: 'Complimentary — no charge' },
   undergrad_1:     { label: 'Undergraduate (Year 1)',    amount: 10000, note: 'First year undergraduate rate' },
@@ -358,9 +358,9 @@ const DEFAULT_DUES_CONFIG = {
   building_fund:   { label: 'Building Fund',             amount: 5000,  note: 'Optional contribution' }
 };
 
-/* Dues deadline: July 31 each year (chapter policy) */
-const DUES_DEADLINE_MONTH = 7; // 1-indexed
-const DUES_DEADLINE_DAY   = 31;
+/* Dues deadline: January 1 each year (chapter policy) */
+const DUES_DEADLINE_MONTH = 1; // 1-indexed
+const DUES_DEADLINE_DAY   = 1;
 
 /* ═══════════════════════════════════════════
    STATE
@@ -549,7 +549,7 @@ function renderLateFeeNotice() {
   var lf = duesConfig.late_fee || {};
   notice.style.display = '';
   document.getElementById('lateFeeNoticeText').textContent =
-    'Dues deadline (July 31) has passed. A late fee of ' + fmt(lf.amount || 0) +
+    'Dues deadline (January 1) has passed. A late fee of ' + fmt(lf.amount || 0) +
     ' will be added to your payment.';
 }
 
@@ -654,18 +654,21 @@ async function startCheckout() {
         'Authorization': 'Bearer ' + currentSession.access_token
       },
       body: JSON.stringify({
-        mode:          'finance_dues',
-        duesCategory:  selectedCategory,
-        duesCategoryLabel: cat.label || selectedCategory,
-        fiscalYear:    selectedFY,
-        lateFee:       lateFee,
-        buildingFund:  bldFund,
-        amountCents:   total,
-        memberId:      (currentMember && currentMember.id) || currentSession.user.id,
-        memberName:    memberName,
-        email:         email,
-        successUrl:    window.location.origin + window.location.pathname + '?payment=success',
-        cancelUrl:     window.location.origin + window.location.pathname + '?payment=cancelled'
+        mode:               'dues',
+        duesCategory:       selectedCategory,
+        duesCategoryLabel:  cat.label || selectedCategory,
+        fiscalYear:         selectedFY,
+        lateFee:            lateFee,
+        buildingFund:       bldFund,
+        buildingFundCents:  (duesConfig.building_fund || {}).amount || 5000,
+        amountCents:        total,
+        memberId:           (currentMember && currentMember.id) || currentSession.user.id,
+        memberName:         memberName,
+        fullName:           memberName,
+        phone:              (currentMember && currentMember.phone) || '',
+        email:              email,
+        successUrl:         window.location.origin + window.location.pathname + '?payment=success',
+        cancelUrl:          window.location.origin + window.location.pathname + '?payment=cancelled'
       })
     });
 

@@ -81,55 +81,62 @@ serve(async (req) => {
       return new Response(error.message, { status: 500 });
     }
   } else if (kind === "dues") {
-    const memberId = parseInt(String(meta.member_id ?? ""), 10);
-    const full_name = String(meta.full_name ?? "").slice(0, 200);
-    const phone = String(meta.phone ?? "").slice(0, 40);
-    const email = String(meta.email ?? "").slice(0, 320);
+    const memberId          = String(meta.member_id ?? "").trim();
+    const full_name         = String(meta.full_name ?? "").slice(0, 200);
+    const phone             = String(meta.phone ?? "").slice(0, 40);
+    const email             = String(meta.email ?? "").slice(0, 320);
+    const duesCategory      = String(meta.dues_category      ?? "renewing");
+    const duesCategoryLabel = String(meta.dues_category_label ?? "Chapter Dues");
+    const fiscalYear        = String(meta.fiscal_year ?? String(new Date().getFullYear()));
+    const lateFee           = meta.late_fee === "true";
+    const buildingFund      = meta.building_fund === "true";
+    const amountCents       = parseInt(String(meta.amount_cents ?? amountTotal), 10) || amountTotal;
+
     if (!full_name || !email) {
       console.error("Invalid dues checkout metadata", meta);
-      return new Response(JSON.stringify({ received: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify({ received: true }), { headers: { "Content-Type": "application/json" } });
     }
 
-    const { error } = await admin.from("dues_payments").insert({
-      member_id: Number.isFinite(memberId) && memberId > 0 ? memberId : null,
-      full_name,
-      phone,
-      email,
-      amount_cents: amountTotal,
-      payment_status: "paid",
-      stripe_checkout_session_id: sessionId,
+    // Write to finance_payments (primary dues record)
+    const { error: fpErr } = await admin.from("finance_payments").insert({
+      member_id:                 memberId || null,
+      member_name:               full_name,
+      category:                  duesCategory,
+      category_label:            duesCategoryLabel,
+      fiscal_year:               fiscalYear,
+      amount_cents:              amountCents,
+      method:                    "stripe",
+      status:                    "paid",
+      late_fee:                  lateFee,
+      building_fund:             buildingFund,
+      stripe_session_id:         sessionId,
+      xero_sync_status:          "pending",
+      created_at:                new Date().toISOString(),
     });
 
-    const ignorableDues =
-      error?.code === "23505" ||
-      /duplicate key/i.test(String(error?.message ?? ""));
-    if (error && !ignorableDues) {
-      console.error("dues_payments insert:", error);
-      return new Response(error.message, { status: 500 });
+    const ignorableFP = fpErr?.code === "23505" || /duplicate key/i.test(String(fpErr?.message ?? ""));
+    if (fpErr && !ignorableFP) console.error("finance_payments insert:", fpErr);
+
+    // Update member dues_paid_year if member_id is a UUID
+    if (memberId && /^[0-9a-f-]{36}$/i.test(memberId)) {
+      const { error: memErr } = await admin
+        .from("members")
+        .update({ dues_paid_year: fiscalYear })
+        .eq("id", memberId);
+      if (memErr) console.warn("members dues_paid_year update:", memErr);
     }
+
   } else if (kind === "store") {
     const orderId = String(meta.order_id ?? "").trim();
-    if (!orderId) {
-      console.error("Missing order_id in store webhook metadata", meta);
-      return new Response(JSON.stringify({ received: true }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const { error } = await admin
-      .from("store_orders")
-      .update({
-        status: "paid",
-        stripe_checkout_session_id: sessionId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", orderId);
-
-    if (error) {
-      console.error("store_orders update:", error);
-      return new Response(error.message, { status: 500 });
+    if (orderId && orderId !== "pending") {
+      const { error } = await admin
+        .from("finance_merch_orders")
+        .update({
+          status:            "paid",
+          stripe_session_id: sessionId,
+        })
+        .eq("id", orderId);
+      if (error) console.warn("finance_merch_orders update:", error);
     }
   }
 
