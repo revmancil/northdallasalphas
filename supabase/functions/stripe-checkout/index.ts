@@ -93,7 +93,7 @@ serve(async (req) => {
   }
 
   const siteBase = (
-    Deno.env.get("PUBLIC_SITE_URL") ?? "https://northdallasalphas.org"
+    Deno.env.get("PUBLIC_SITE_URL") ?? "https://northdallasalphas.com"
   ).replace(/\/$/, "");
 
   let payload: Record<string, unknown>;
