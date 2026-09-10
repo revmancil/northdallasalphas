@@ -17,6 +17,8 @@ create table if not exists public.finance_payments (
   created_at          timestamptz default now()
 );
 alter table public.finance_payments enable row level security;
+drop policy if exists "Admin full access finance_payments" on public.finance_payments;
+drop policy if exists "Members read own payments" on public.finance_payments;
 create policy "Admin full access finance_payments"
   on public.finance_payments for all using (public.current_user_is_chapter_admin());
 create policy "Members read own payments"
@@ -38,6 +40,9 @@ create table if not exists public.finance_merch_orders (
   created_at        timestamptz default now()
 );
 alter table public.finance_merch_orders enable row level security;
+drop policy if exists "Admin full access finance_merch_orders" on public.finance_merch_orders;
+drop policy if exists "Members read own orders" on public.finance_merch_orders;
+drop policy if exists "Members insert own orders" on public.finance_merch_orders;
 create policy "Admin full access finance_merch_orders"
   on public.finance_merch_orders for all using (public.current_user_is_chapter_admin());
 create policy "Members read own orders"
