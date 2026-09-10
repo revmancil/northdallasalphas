@@ -384,7 +384,7 @@
           ${item.description ? `<div class="merch-card-desc">${escHtml(item.description)}</div>` : '<div class="merch-card-desc"></div>'}
           <div class="merch-card-footer">
             <div class="merch-card-price">${item.priceTiers ? (item.priceTiers[0].label + (item.priceTiers.length > 1 ? '+' : '')) : fmt$(item.price_cents)}</div>
-            <button class="btn-order" onclick='openOrderModal(${JSON.stringify(item)})'><i class="fas fa-shopping-bag"></i> Order</button>
+            <button class="btn-order" onclick='openOrderModal(window.__merch[${JSON.stringify(item.id)}])'><i class="fas fa-shopping-bag"></i> Order</button>
           </div>
         </div>
       </div>`).join('');
@@ -576,6 +576,7 @@
     const catalog = await getContentJson(CATALOG_KEY);
     const catalogItems = Array.isArray(catalog) ? catalog.filter(i => i.active !== false) : [];
     allItems = [...CHAPTER_PRODUCTS, ...catalogItems.filter(i => !CHAPTER_PRODUCTS.find(p => p.id === i.id))];
+    window.__merch = Object.fromEntries(allItems.map(i => [i.id, i]));
 
     // Build category filter pills
     const cats = [...new Set(allItems.map(i => i.category).filter(Boolean))];
