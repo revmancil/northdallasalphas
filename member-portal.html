@@ -2790,19 +2790,40 @@ async function loadMyOrders() {
       var statusColor = o.status==='paid'?'#4ade80':o.status==='fulfilled'?'#60a5fa':o.status==='cancelled'?'#f87171':'#fbbf24';
       var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
       var summary = items.map(function(li){ return li.name + (li.quantity>1?' ×'+li.quantity:''); }).join(', ');
+      var cancelBtn = (o.status === 'awaiting_payment' || o.status === 'pending')
+        ? '<button onclick="cancelOrder(\''+o.id+'\')" style="font-size:0.72rem;font-weight:600;color:#f87171;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:6px;padding:3px 10px;cursor:pointer;">Cancel</button>'
+        : '';
       return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
           '<div>' +
             '<div style="font-size:0.85rem;font-weight:600;color:var(--white);">' + escHtml(summary||'Order') + '</div>' +
             '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + date + ' · $' + parseFloat(o.total||0).toFixed(2) + '</div>' +
           '</div>' +
-          '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';text-transform:capitalize;">' + escHtml(o.status||'pending') + '</span>' +
+          '<div style="display:flex;align-items:center;gap:8px;">' +
+            cancelBtn +
+            '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:'+statusColor+'20;color:'+statusColor+';text-transform:capitalize;">' + escHtml(o.status||'pending') + '</span>' +
+          '</div>' +
         '</div>' +
       '</div>';
     }).join('');
   } catch(e) { el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><p>Could not load orders.</p></div>'; }
 }
 
+async function cancelOrder(orderId) {
+  if (!confirm('Cancel this order?')) return;
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/store_orders?id=eq.' + orderId + '&member_id=eq.' + currentMember.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+      body: JSON.stringify({ status: 'cancelled', updated_at: new Date().toISOString() })
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast('Order cancelled.', 'success');
+    loadMyOrders();
+  } catch(e) {
+    showToast('Could not cancel order. Please contact the chapter.', 'error');
+  }
+}
 
 function portalNormalizeEvent(ev) {
   var fee = Math.max(0, parseInt(String(ev.registration_fee_cents || ev.registrationFeeCents || 0), 10) || 0);
