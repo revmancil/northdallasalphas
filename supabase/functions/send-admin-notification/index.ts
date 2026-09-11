@@ -23,6 +23,7 @@ function esc(s: unknown): string {
 const ROLE_SECTIONS: Record<string, string[]> = {
   communications: ["member-announcements", "chapter-news", "newsletters", "meetings"],
   finance:        ["requisitions", "reimbursements", "finance", "dues"],
+  membership:     ["members"],
 };
 
 // Returns deduplicated list of admin emails matching a role group.
@@ -403,14 +404,15 @@ serve(async (req) => {
     return json({ sent: ok, recipients: recipients.length });
   }
 
-  // ── Visitor / member request → fallback admin email ───────────────────────
-  if (type === "visitor_request" || type === "member_request") {
+  // ── Member / visitor request → Membership admins ─────────────────────────
+  if (type === "member_request" || type === "visitor_request") {
     const name    = String(payload.name    ?? "").trim();
     const email   = String(payload.email   ?? "").trim();
     const chapter = String(payload.chapter ?? "").trim();
     const { subject, html } = buildGenericAlert(type, name, email, chapter);
-    const ok = await sendEmail(resendKey, from, [fallbackEmail], subject, html);
-    return json({ sent: ok });
+    const to = supabaseUrl && serviceKey ? await getAdminEmails(supabaseUrl, serviceKey, "membership") : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    return json({ sent: await sendEmail(resendKey, from, recipients, subject, html), recipients: recipients.length });
   }
 
   return json({ error: "Unknown notification type: " + type }, 400);
