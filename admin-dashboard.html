@@ -3100,6 +3100,21 @@
             <div id="siOptionsEmpty" style="font-size:0.82rem;color:var(--gray-400);padding:10px 0;">No options yet. Add a group for Size, Color, or any custom choice.</div>
           </div>
 
+          <!-- Price Tiers -->
+          <div style="border-top:1px solid var(--gray-200);padding-top:16px;margin-bottom:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div>
+                <div style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-500);">Price Tiers <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:0.75rem;color:var(--gray-400);">(optional — for size-based pricing)</span></div>
+                <div style="font-size:0.75rem;color:var(--gray-400);margin-top:3px;">Each tier maps option values to a price. Leave empty to use the single price above.</div>
+              </div>
+              <button type="button" onclick="addPriceTier()" class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border-color:rgba(201,168,76,0.3);font-size:0.75rem;white-space:nowrap;">
+                <i class="fas fa-plus"></i> Add Tier
+              </button>
+            </div>
+            <div id="siPriceTiersBuilder" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <div id="siPriceTiersEmpty" style="font-size:0.82rem;color:var(--gray-400);padding:10px 0;">No tiers. All sizes use the price above.</div>
+          </div>
+
           <div id="siErr" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#dc2626;padding:10px 14px;border-radius:6px;font-size:0.85rem;margin-bottom:14px;"></div>
           <div style="display:flex;gap:10px;">
             <button onclick="saveStoreItem()" class="btn-save" style="flex:1;"><i class="fas fa-save"></i> Save Item</button>
@@ -10711,6 +10726,7 @@ var _storeOrders = [];
 var _storeOrderFilter = 'all';
 var _editingStoreItemId = null;
 var _storeOptionGroups = [];
+var _storePriceTiers = [];
 
 async function loadStorePanel() {
   var token = getAdminToken();
@@ -10847,6 +10863,7 @@ function renderStoreItems() {
 function openStoreItemModal(id) {
   _editingStoreItemId = id || null;
   _storeOptionGroups = [];
+  _storePriceTiers = [];
   var item = id ? _storeItems.find(function(x){ return String(x.id) === String(id); }) : null;
   document.getElementById('storeItemModalTitle').textContent = item ? 'Edit Item' : 'Add Store Item';
   document.getElementById('siId').value       = item ? item.id : '';
@@ -10867,8 +10884,14 @@ function openStoreItemModal(id) {
     try { opts = typeof item.options === 'string' ? JSON.parse(item.options) : item.options; } catch(e){}
   }
   _storeOptionGroups = opts.map(function(g){ return { name: g.name, values: (g.values||[]).join(', ') }; });
+  var tiers = [];
+  if (item && item.price_tiers) {
+    try { tiers = typeof item.price_tiers === 'string' ? JSON.parse(item.price_tiers) : item.price_tiers; } catch(e){}
+  }
+  _storePriceTiers = (Array.isArray(tiers) ? tiers : []).map(function(t){ return { values: (t.values||[]).join(', '), price: t.price||'' }; });
   document.getElementById('siErr').style.display = 'none';
   renderOptionGroupsBuilder();
+  renderPriceTiersBuilder();
   document.getElementById('storeItemModal').style.display = 'flex';
 }
 
@@ -10954,6 +10977,40 @@ function renderOptionGroupsBuilder() {
   }).join('');
 }
 
+function renderPriceTiersBuilder() {
+  var empty = document.getElementById('siPriceTiersEmpty');
+  var builder = document.getElementById('siPriceTiersBuilder');
+  if (!_storePriceTiers.length) { empty.style.display = ''; builder.innerHTML = ''; return; }
+  empty.style.display = 'none';
+  builder.innerHTML = _storePriceTiers.map(function(t, i) {
+    return '<div style="background:#f9fafb;border:1px solid var(--gray-200);border-radius:8px;padding:12px;display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:start;">' +
+      '<div class="field-group" style="margin:0;">' +
+        '<label style="font-size:0.75rem;">Values <span style="font-weight:400;color:var(--gray-400);">(comma-separated option values)</span></label>' +
+        '<input type="text" value="' + escHtml(t.values) + '" placeholder="e.g. S, M, L, XL" oninput="updatePriceTier(' + i + ',\'values\',this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.85rem;" />' +
+      '</div>' +
+      '<div class="field-group" style="margin:0;">' +
+        '<label style="font-size:0.75rem;">Price ($)</label>' +
+        '<input type="number" value="' + escHtml(String(t.price)) + '" min="0" step="0.01" placeholder="0.00" oninput="updatePriceTier(' + i + ',\'price\',this.value)" style="width:100%;padding:7px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.85rem;" />' +
+      '</div>' +
+      '<button onclick="removePriceTier(' + i + ')" style="margin-top:20px;padding:6px 10px;border:1px solid #fecaca;border-radius:5px;background:#fef2f2;color:#dc2626;cursor:pointer;font-size:0.8rem;"><i class="fas fa-times"></i></button>' +
+    '</div>';
+  }).join('');
+}
+
+function addPriceTier() {
+  _storePriceTiers.push({ values: '', price: '' });
+  renderPriceTiersBuilder();
+}
+
+function removePriceTier(i) {
+  _storePriceTiers.splice(i, 1);
+  renderPriceTiersBuilder();
+}
+
+function updatePriceTier(i, field, val) {
+  if (_storePriceTiers[i]) _storePriceTiers[i][field] = val;
+}
+
 function addStoreOptionGroup() {
   _storeOptionGroups.push({ name: '', values: '' });
   renderOptionGroupsBuilder();
@@ -10982,6 +11039,11 @@ async function saveStoreItem() {
     .map(function(g){
       return { name: g.name.trim(), values: g.values.split(',').map(function(v){ return v.trim(); }).filter(Boolean) };
     });
+  var priceTiers = _storePriceTiers
+    .filter(function(t){ return t.values.trim() && t.price !== ''; })
+    .map(function(t){
+      return { values: t.values.split(',').map(function(v){ return v.trim(); }).filter(Boolean), price: parseFloat(t.price) };
+    });
   var payload = {
     name: name,
     price: price,
@@ -10990,6 +11052,7 @@ async function saveStoreItem() {
     image_url: (document.getElementById('siImageUrl').value||'').trim() || null,
     active: document.getElementById('siActive').checked,
     options: JSON.stringify(options),
+    price_tiers: priceTiers.length ? JSON.stringify(priceTiers) : null,
     updated_at: new Date().toISOString()
   };
   try {

@@ -2503,6 +2503,9 @@ async function loadMemberStore() {
       var opts = p.options;
       if (typeof opts === 'string') { try { opts = JSON.parse(opts); } catch(e){ opts=[]; } }
       p.options = Array.isArray(opts) ? opts : [];
+      var tiers = p.price_tiers;
+      if (typeof tiers === 'string') { try { tiers = JSON.parse(tiers); } catch(e){ tiers=[]; } }
+      p.price_tiers = Array.isArray(tiers) ? tiers : [];
       return p;
     });
     renderStoreCatFilter();
@@ -2593,8 +2596,28 @@ function openItemModal(id) {
 
 function updateItemTotal() {
   if (!_viewingProduct) return;
-  var total = parseFloat(_viewingProduct.price||0) * _siQty;
+  var price = getTieredPrice(_viewingProduct);
+  var total = price * _siQty;
   document.getElementById('siModalTotal').textContent = 'Total: $' + total.toFixed(2);
+  document.getElementById('siModalPrice').textContent = '$' + price.toFixed(2);
+}
+
+function getTieredPrice(product) {
+  var tiers = product.price_tiers;
+  if (!tiers || !tiers.length) return parseFloat(product.price||0);
+  // Collect current selections
+  var selections = {};
+  document.querySelectorAll('#siModalOptions select').forEach(function(sel){
+    selections[sel.getAttribute('data-opt')] = sel.value;
+  });
+  // Find matching tier
+  for (var i = 0; i < tiers.length; i++) {
+    var tier = tiers[i];
+    var vals = tier.values || [];
+    var match = Object.values(selections).some(function(v){ return vals.indexOf(v) !== -1; });
+    if (match) return parseFloat(tier.price) || parseFloat(product.price||0);
+  }
+  return parseFloat(product.price||0);
 }
 
 function closeItemModal() {
@@ -2629,7 +2652,7 @@ function addToCart() {
       _key: key,
       item_id: _viewingProduct.id,
       name: _viewingProduct.name,
-      price: parseFloat(_viewingProduct.price||0),
+      price: getTieredPrice(_viewingProduct),
       quantity: _siQty,
       selections: selections,
       image_url: _viewingProduct.image_url || ''
