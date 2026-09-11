@@ -21,7 +21,7 @@ function esc(s: unknown): string {
 
 // ── Which sections qualify an admin for each notification group ──────────────
 const ROLE_SECTIONS: Record<string, string[]> = {
-  communications: ["member-announcements", "chapter-news", "newsletters"],
+  communications: ["member-announcements", "chapter-news", "newsletters", "meetings"],
   finance:        ["requisitions", "reimbursements", "finance", "dues"],
 };
 
@@ -172,6 +172,78 @@ function buildAnnouncementStatus(name: string, title: string, status: string, no
   };
 }
 
+// Admin alert: new committee report submitted
+function buildCommitteeReportAlert(name: string, committee: string, title: string) {
+  return {
+    subject: `New Committee Report — ${committee}`,
+    html: emailShell(
+      "📋",
+      "Committee Report Submitted",
+      "North Dallas Alphas — Communications Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> submitted a committee report for review.<br><br>
+       <strong style="color:${gold};">Committee:</strong> ${esc(committee)}<br>
+       <strong style="color:${gold};">Document:</strong> ${esc(title)}`,
+      "Review in Dashboard",
+      dashboardUrl + "#meetings",
+    ),
+  };
+}
+
+// Admin alert: new news article submitted
+function buildNewsArticleAlert(name: string, title: string, tag: string) {
+  return {
+    subject: `New News Article Submitted — ${title}`,
+    html: emailShell(
+      "📰",
+      "News Article Submitted for Review",
+      "North Dallas Alphas — Communications Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> submitted a news article for review.<br><br>
+       <strong style="color:${gold};">Headline:</strong> ${esc(title)}<br>
+       <strong style="color:${gold};">Tag:</strong> ${esc(tag)}`,
+      "Review Article",
+      dashboardUrl + "#news-submissions",
+    ),
+  };
+}
+
+// Finance alert: chapter store order paid
+function buildStorePurchaseAlert(name: string, email: string, amount: string, orderId: string) {
+  return {
+    subject: `Chapter Store Purchase — ${name}`,
+    html: emailShell(
+      "🛍",
+      "Chapter Store Purchase Received",
+      "North Dallas Alphas — Finance Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> completed a chapter store purchase.<br><br>
+       <strong style="color:${gold};">Amount Paid:</strong> ${esc(amount)}<br>
+       <strong style="color:${gold};">Email:</strong> ${esc(email)}<br>
+       <strong style="color:${gold};">Order ID:</strong> ${esc(orderId)}`,
+      "View Orders",
+      dashboardUrl + "#store",
+    ),
+  };
+}
+
+// Finance alert: dues payment received
+function buildDuesPaymentAlert(name: string, email: string, amount: string, category: string, fiscalYear: string, lateFee: boolean) {
+  return {
+    subject: `Dues Payment Received — ${name}`,
+    html: emailShell(
+      "💳",
+      "Chapter Dues Payment Received",
+      "North Dallas Alphas — Finance Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> paid chapter dues.<br><br>
+       <strong style="color:${gold};">Category:</strong> ${esc(category)}<br>
+       <strong style="color:${gold};">Fiscal Year:</strong> ${esc(fiscalYear)}<br>
+       <strong style="color:${gold};">Amount Paid:</strong> ${esc(amount)}<br>
+       <strong style="color:${gold};">Email:</strong> ${esc(email)}` +
+      (lateFee ? `<br><strong style="color:${gold};">Late Fee:</strong> Included` : ""),
+      "View Finance Records",
+      dashboardUrl + "#finance-payments",
+    ),
+  };
+}
+
 // Fallback for visitor / member request types (existing behaviour)
 function buildGenericAlert(type: string, name: string, email: string, chapter: string) {
   const isVisitor = type === "visitor_request";
@@ -261,6 +333,68 @@ serve(async (req) => {
     const amount      = "$" + amountRaw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const description = String(payload.description ?? "").trim();
     const { subject, html } = buildReimbursementAlert(name, amount, description);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "finance")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── Committee report → Communications admins ─────────────────────────────
+  if (type === "committee_report") {
+    const name      = String(payload.name      ?? payload.memberName ?? "A brother").trim();
+    const committee = String(payload.committee ?? "Committee").trim();
+    const title     = String(payload.title     ?? "Report").trim();
+    const { subject, html } = buildCommitteeReportAlert(name, committee, title);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "communications")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── News article → Communications admins ──────────────────────────────────
+  if (type === "news_article") {
+    const name  = String(payload.name     ?? payload.memberName ?? "A brother").trim();
+    const title = String(payload.title    ?? "Untitled").trim();
+    const tag   = String(payload.category ?? payload.tag ?? "General").trim();
+    const { subject, html } = buildNewsArticleAlert(name, title, tag);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "communications")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── Store purchase → Finance admins ───────────────────────────────────────
+  if (type === "store_purchase") {
+    const name      = String(payload.memberName ?? payload.name ?? "A member").trim();
+    const email     = String(payload.email      ?? "").trim();
+    const amountRaw = Number(payload.amount ?? 0);
+    const amount    = "$" + amountRaw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const orderId   = String(payload.orderId    ?? "").trim();
+    const { subject, html } = buildStorePurchaseAlert(name, email, amount, orderId);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "finance")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── Dues payment → Finance admins ─────────────────────────────────────────
+  if (type === "dues_payment") {
+    const name       = String(payload.memberName ?? payload.name ?? "A member").trim();
+    const email      = String(payload.email      ?? "").trim();
+    const amountRaw  = Number(payload.amount ?? 0);
+    const amount     = "$" + amountRaw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const category   = String(payload.category   ?? "Chapter Dues").trim();
+    const fiscalYear = String(payload.fiscalYear  ?? "").trim();
+    const lateFee    = payload.lateFee === true || payload.lateFee === "true";
+    const { subject, html } = buildDuesPaymentAlert(name, email, amount, category, fiscalYear, lateFee);
     const to = supabaseUrl && serviceKey
       ? await getAdminEmails(supabaseUrl, serviceKey, "finance")
       : [fallbackEmail];

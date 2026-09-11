@@ -1784,6 +1784,12 @@ async function submitCommitteeReport(e, meetingId) {
     });
     if (!insRes.ok) { var de = await insRes.json().catch(function(){return{};}); throw new Error(de.message || 'Could not save document record.'); }
     showPortalMsg(msgEl, '✓ Submitted! An admin will review and approve it shortly.', true);
+    // Notify communications admins
+    fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY) },
+      body: JSON.stringify({ type: 'committee_report', name: byName || (currentMember ? [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ') : 'A brother'), committee: byName || 'Committee', title: title || file.name })
+    }).catch(function(){});
     if (nameEl)  nameEl.value  = '';
     if (titleEl) titleEl.value = '';
     setTimeout(function() { toggleCommitteeUpload(meetingId); }, 2500);

@@ -2,6 +2,22 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import Stripe from "npm:stripe@17.4.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+async function fireNotification(supabaseUrl: string, serviceKey: string, payload: Record<string, unknown>): Promise<void> {
+  try {
+    await fetch(`${supabaseUrl}/functions/v1/send-admin-notification`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serviceKey}`,
+        "apikey": serviceKey,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    console.warn("send-admin-notification fire failed:", e);
+  }
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -126,8 +142,21 @@ serve(async (req) => {
       if (memErr) console.warn("members dues_paid_year update:", memErr);
     }
 
+    // Notify finance admins
+    await fireNotification(supabaseUrl, serviceKey, {
+      type:        "dues_payment",
+      memberName:  full_name,
+      email,
+      amount:      amountCents / 100,
+      category:    duesCategoryLabel,
+      fiscalYear,
+      lateFee,
+    });
+
   } else if (kind === "store") {
-    const orderId = String(meta.order_id ?? "").trim();
+    const orderId    = String(meta.order_id    ?? "").trim();
+    const memberName = String(meta.member_name ?? meta.full_name ?? "").trim();
+    const email      = String(meta.email       ?? "").trim();
     if (orderId && orderId !== "pending") {
       const { error } = await admin
         .from("finance_merch_orders")
@@ -138,6 +167,15 @@ serve(async (req) => {
         .eq("id", orderId);
       if (error) console.warn("finance_merch_orders update:", error);
     }
+
+    // Notify finance admins
+    await fireNotification(supabaseUrl, serviceKey, {
+      type:       "store_purchase",
+      memberName,
+      email,
+      amount:     amountTotal / 100,
+      orderId:    orderId || "—",
+    });
   }
 
   return new Response(JSON.stringify({ received: true }), {
