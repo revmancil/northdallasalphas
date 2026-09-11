@@ -3062,22 +3062,17 @@
               <textarea id="siDescription" rows="3" placeholder="Brief description of the item..." style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;"></textarea>
             </div>
             <div class="field-group" style="grid-column:span 2;margin:0;">
-              <label>Product Image</label>
+              <label>Product Photos <span style="font-weight:400;color:var(--gray-400);font-size:0.78rem;">(up to 6 — first photo is the card thumbnail)</span></label>
               <input type="file" id="siImageFile" accept="image/*" style="display:none;" onchange="handleStoreImageUpload(event)" />
               <input type="hidden" id="siImageUrl" />
-              <div id="siImagePreviewWrap" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                <div id="siImagePreview" style="width:80px;height:80px;border-radius:6px;border:1px dashed var(--gray-300);background:#f9fafb;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
-                  <i class="fas fa-image" style="color:var(--gray-300);font-size:1.4rem;"></i>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:8px;">
-                  <button type="button" id="siUploadBtn" onclick="document.getElementById('siImageFile').click()" class="btn-sm" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);">
-                    <i class="fas fa-upload"></i> Upload Image
-                  </button>
-                  <button type="button" id="siRemoveImgBtn" onclick="clearStoreImage()" style="display:none;background:rgba(220,38,38,0.08);color:#dc2626;border:1px solid rgba(220,38,38,0.2);padding:4px 10px;border-radius:5px;cursor:pointer;font-size:0.75rem;">
-                    <i class="fas fa-times"></i> Remove
-                  </button>
-                  <div id="siUploadStatus" style="font-size:0.75rem;color:var(--gray-400);"></div>
-                </div>
+              <div id="siPhotosGrid" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:10px;"></div>
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                <button type="button" id="siUploadBtn" onclick="document.getElementById('siImageFile').click()" class="btn-sm" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);">
+                  <i class="fas fa-upload"></i> Add Photo
+                </button>
+                <input type="text" id="siPhotoUrlInput" placeholder="Or paste a photo URL and press Enter" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;" onkeydown="if(event.key==='Enter'){event.preventDefault();addPhotoFromUrl();}" />
+                <button type="button" onclick="addPhotoFromUrl()" class="btn-sm" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);">Add</button>
+                <div id="siUploadStatus" style="font-size:0.75rem;color:var(--gray-400);width:100%;"></div>
               </div>
             </div>
             <div class="field-group" style="margin:0;display:flex;align-items:center;gap:10px;">
@@ -10727,6 +10722,7 @@ var _storeOrderFilter = 'all';
 var _editingStoreItemId = null;
 var _storeOptionGroups = [];
 var _storePriceTiers = [];
+var _storePhotoUrls   = [];
 
 async function loadStorePanel() {
   var token = getAdminToken();
@@ -10864,6 +10860,7 @@ function openStoreItemModal(id) {
   _editingStoreItemId = id || null;
   _storeOptionGroups = [];
   _storePriceTiers = [];
+  _storePhotoUrls = [];
   var item = id ? _storeItems.find(function(x){ return String(x.id) === String(id); }) : null;
   document.getElementById('storeItemModalTitle').textContent = item ? 'Edit Item' : 'Add Store Item';
   document.getElementById('siId').value       = item ? item.id : '';
@@ -10874,11 +10871,16 @@ function openStoreItemModal(id) {
   var cat = document.getElementById('siCategory');
   if (item && item.category) cat.value = item.category;
   else cat.value = 'Apparel';
-  // Image preview
-  var imgUrl = item ? (item.image_url||'') : '';
-  document.getElementById('siImageUrl').value = imgUrl;
-  setStoreImagePreview(imgUrl);
+  // Image gallery
+  var imgUrls = [];
+  if (item && item.image_urls) {
+    try { imgUrls = typeof item.image_urls === 'string' ? JSON.parse(item.image_urls) : item.image_urls; } catch(e){}
+  }
+  if (!imgUrls.length && item && item.image_url) imgUrls = [item.image_url];
+  _storePhotoUrls = Array.isArray(imgUrls) ? imgUrls.slice(0, 6) : [];
+  document.getElementById('siImageUrl').value = _storePhotoUrls[0] || '';
   document.getElementById('siUploadStatus').textContent = '';
+  renderStorePhotosGrid();
   var opts = [];
   if (item && item.options) {
     try { opts = typeof item.options === 'string' ? JSON.parse(item.options) : item.options; } catch(e){}
@@ -10893,6 +10895,57 @@ function openStoreItemModal(id) {
   renderOptionGroupsBuilder();
   renderPriceTiersBuilder();
   document.getElementById('storeItemModal').style.display = 'flex';
+}
+
+function renderStorePhotosGrid() {
+  var grid = document.getElementById('siPhotosGrid');
+  var btn  = document.getElementById('siUploadBtn');
+  if (!grid) return;
+  if (!_storePhotoUrls.length) {
+    grid.innerHTML = '<div style="width:80px;height:80px;border-radius:6px;border:1px dashed var(--gray-300);background:#f9fafb;display:flex;align-items:center;justify-content:center;color:var(--gray-300);font-size:1.4rem;"><i class="fas fa-image"></i></div>';
+  } else {
+    grid.innerHTML = _storePhotoUrls.map(function(url, i) {
+      return '<div style="position:relative;width:80px;height:80px;border-radius:6px;overflow:hidden;border:1px solid var(--gray-200);">' +
+        (i === 0 ? '<div style="position:absolute;top:2px;left:2px;background:rgba(0,0,0,0.6);color:#fff;font-size:0.55rem;font-weight:700;padding:2px 5px;border-radius:3px;z-index:1;">MAIN</div>' : '') +
+        '<img src="' + escHtml(url) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.style.background=\'#fee2e2\'" />' +
+        '<button onclick="removeStorePhoto(' + i + ')" title="Remove" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(220,38,38,0.85);border:none;color:#fff;cursor:pointer;font-size:0.6rem;display:flex;align-items:center;justify-content:center;padding:0;"><i class="fas fa-times"></i></button>' +
+        (i > 0 ? '<button onclick="moveStorePhotoLeft(' + i + ')" title="Move left" style="position:absolute;bottom:2px;left:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;cursor:pointer;font-size:0.6rem;display:flex;align-items:center;justify-content:center;padding:0;"><i class="fas fa-arrow-left"></i></button>' : '') +
+      '</div>';
+    }).join('');
+  }
+  if (btn) btn.disabled = _storePhotoUrls.length >= 6;
+}
+
+function addStorePhoto(url) {
+  if (!url || _storePhotoUrls.length >= 6) return;
+  _storePhotoUrls.push(url);
+  document.getElementById('siImageUrl').value = _storePhotoUrls[0] || '';
+  renderStorePhotosGrid();
+}
+
+function removeStorePhoto(i) {
+  _storePhotoUrls.splice(i, 1);
+  document.getElementById('siImageUrl').value = _storePhotoUrls[0] || '';
+  renderStorePhotosGrid();
+}
+
+function moveStorePhotoLeft(i) {
+  if (i <= 0) return;
+  var tmp = _storePhotoUrls[i - 1];
+  _storePhotoUrls[i - 1] = _storePhotoUrls[i];
+  _storePhotoUrls[i] = tmp;
+  document.getElementById('siImageUrl').value = _storePhotoUrls[0] || '';
+  renderStorePhotosGrid();
+}
+
+function addPhotoFromUrl() {
+  var input = document.getElementById('siPhotoUrlInput');
+  var url = (input.value || '').trim();
+  if (!url) return;
+  if (_storePhotoUrls.length >= 6) { document.getElementById('siUploadStatus').textContent = 'Maximum 6 photos reached.'; return; }
+  addStorePhoto(url);
+  input.value = '';
+  document.getElementById('siUploadStatus').textContent = '';
 }
 
 function setStoreImagePreview(url) {
@@ -10937,8 +10990,7 @@ async function handleStoreImageUpload(e) {
       throw new Error(err.message || 'Upload failed. Make sure the chapter-media bucket exists in Supabase Storage.');
     }
     var url = SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + path;
-    document.getElementById('siImageUrl').value = url;
-    setStoreImagePreview(url);
+    addStorePhoto(url);
     statusEl.textContent = 'Uploaded ✓';
     statusEl.style.color = 'var(--green)';
   } catch(err) {
@@ -11049,7 +11101,8 @@ async function saveStoreItem() {
     price: price,
     category: document.getElementById('siCategory').value,
     description: (document.getElementById('siDescription').value||'').trim() || null,
-    image_url: (document.getElementById('siImageUrl').value||'').trim() || null,
+    image_url: _storePhotoUrls[0] || null,
+    image_urls: _storePhotoUrls.length ? JSON.stringify(_storePhotoUrls) : null,
     active: document.getElementById('siActive').checked,
     options: JSON.stringify(options),
     price_tiers: priceTiers.length ? JSON.stringify(priceTiers) : null,
@@ -11060,7 +11113,7 @@ async function saveStoreItem() {
     if (id) {
       await sbPatch('store_items', 'id=eq.' + encodeURIComponent(id), payload, token);
       var idx = _storeItems.findIndex(function(x){ return String(x.id)===String(id); });
-      if (idx > -1) _storeItems[idx] = Object.assign({}, _storeItems[idx], payload, { options: options });
+      if (idx > -1) _storeItems[idx] = Object.assign({}, _storeItems[idx], payload, { options: options, image_urls: _storePhotoUrls.slice() });
       showToast('Item updated.');
     } else {
       payload.created_at = new Date().toISOString();
@@ -11070,7 +11123,7 @@ async function saveStoreItem() {
         body: JSON.stringify(payload)
       });
       var newItem = (await res.json())[0];
-      if (newItem) { newItem.options = options; _storeItems.unshift(newItem); }
+      if (newItem) { newItem.options = options; newItem.image_urls = _storePhotoUrls.slice(); _storeItems.unshift(newItem); }
       showToast('Item added to store.');
     }
     renderStoreItems();
