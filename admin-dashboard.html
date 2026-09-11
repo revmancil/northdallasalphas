@@ -8678,6 +8678,9 @@ function nlBuildPayload() {
     campaignName: (document.getElementById('nlCampaignName')||{}).value || '',
     subject:      (document.getElementById('nlSubject')||{}).value || '',
     preheader:    (document.getElementById('nlPreheader')||{}).value || '',
+    brand: {
+      logoUrl: window.location.origin + '/images/xtl-logo.png'
+    },
     blocks: nlBlocks.map(function(b) {
       const copy = Object.assign({}, b);
       delete copy.id;

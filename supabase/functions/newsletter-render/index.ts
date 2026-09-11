@@ -12,7 +12,7 @@ type RenderRequest = {
   subject?: string;
   preheader?: string;
   blocks?: Block[];
-  brand?: { chapterName?: string; primaryColor?: string; darkColor?: string; textColor?: string };
+  brand?: { chapterName?: string; primaryColor?: string; darkColor?: string; textColor?: string; logoUrl?: string };
 };
 
 const cors = {
@@ -50,15 +50,25 @@ function buildHtml(p: RenderRequest): string {
   const chapter = p.brand?.chapterName  ?? "North Dallas Alphas";
   const subject = p.subject ?? p.campaignName ?? "North Dallas Alphas Newsletter";
   const pre     = p.preheader ?? "";
+  const logoUrl = p.brand?.logoUrl ?? "https://northdallasalphas.com/images/xtl-logo.png";
   const blocks  = Array.isArray(p.blocks) ? p.blocks : [];
 
   const rows: string[] = [];
 
-  // Header
+  // Header — text left, logo right
   rows.push(wrapRow(`
-    <p style="margin:0 0 4px;font-family:Georgia,serif;font-size:22px;font-weight:700;color:#ffffff;">${esc(p.campaignName ?? chapter)}</p>
-    <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#cccccc;">${esc(subject)}</p>
-  `, dark, "24px"));
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" role="presentation">
+      <tr>
+        <td style="vertical-align:middle;padding-right:16px;">
+          <p style="margin:0 0 4px;font-family:Georgia,serif;font-size:22px;font-weight:700;color:#ffffff;">${esc(p.campaignName ?? chapter)}</p>
+          <p style="margin:0;font-family:Arial,sans-serif;font-size:13px;color:#cccccc;">${esc(subject)}</p>
+        </td>
+        <td style="vertical-align:middle;text-align:right;width:72px;flex-shrink:0;">
+          <img src="${esc(logoUrl)}" alt="Xi Tau Lambda" width="60" height="60" style="display:inline-block;border-radius:50%;border:2px solid rgba(201,168,76,0.5);" />
+        </td>
+      </tr>
+    </table>
+  `, dark, "20px"));
 
   for (const block of blocks) {
     if (!block || typeof block !== "object") continue;
