@@ -9958,6 +9958,22 @@ async function updateAnnStatus(id, status) {
     var badge = document.getElementById('annPendingBadge');
     if (badge) { badge.textContent = pending; badge.style.display = pending ? 'inline' : 'none'; }
     showToast('Announcement ' + status + '.');
+
+    // Notify the member who submitted
+    if ((status === 'approved' || status === 'rejected') && r && r.member_email) {
+      fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          type:        'announcement_status',
+          memberEmail: r.member_email,
+          memberName:  r.member_name || 'Brother',
+          title:       r.title       || 'Your announcement',
+          status:      status,
+          note:        ''
+        })
+      }).catch(function(){});
+    }
   } catch(e) { showToast('Could not update: ' + (e.message||'error'), 'error'); }
 }
 

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
@@ -18,57 +19,59 @@ function esc(s: unknown): string {
     .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-type NotificationType = "announcement" | "member_request" | "visitor_request";
+// ── Which sections qualify an admin for each notification group ──────────────
+const ROLE_SECTIONS: Record<string, string[]> = {
+  communications: ["member-announcements", "chapter-news", "newsletters"],
+  finance:        ["requisitions", "reimbursements", "finance", "dues"],
+};
 
-interface Payload {
-  type: NotificationType;
-  name?: string;
-  email?: string;
-  title?: string;
-  category?: string;
-  message?: string;
-  chapter?: string;
+// Returns deduplicated list of admin emails matching a role group.
+// Full admins always qualify.
+async function getAdminEmails(supabaseUrl: string, serviceKey: string, group: string): Promise<string[]> {
+  const admin = createClient(supabaseUrl, serviceKey);
+  const { data, error } = await admin
+    .from("chapter_admins")
+    .select("email, is_full_admin, sections");
+
+  if (error || !data) {
+    console.error("chapter_admins query error:", error);
+    return [];
+  }
+
+  const qualifying = ROLE_SECTIONS[group] ?? [];
+  const emails: string[] = [];
+  for (const row of data) {
+    if (!row.email) continue;
+    if (row.is_full_admin) { emails.push(row.email); continue; }
+    const sections: string[] = Array.isArray(row.sections) ? row.sections : [];
+    if (qualifying.some((s) => sections.includes(s))) {
+      emails.push(row.email);
+    }
+  }
+  return [...new Set(emails)];
 }
 
-function buildEmail(payload: Payload): { subject: string; html: string } {
-  const dashboardUrl = "https://northdallasalphas.com/admin-dashboard.html";
-  const gold = "#c9a84c";
+async function sendEmail(resendKey: string, from: string, to: string[], subject: string, html: string): Promise<boolean> {
+  if (!to.length) return true;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + resendKey, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to, subject, html }),
+  });
+  if (!res.ok) {
+    console.error("Resend error:", await res.text().catch(() => "unknown"));
+    return false;
+  }
+  return true;
+}
 
-  const configs: Record<NotificationType, { subject: string; icon: string; heading: string; body: string; action: string }> = {
-    announcement: {
-      subject: `New Announcement Submitted — ${esc(payload.title ?? "Untitled")}`,
-      icon: "📣",
-      heading: "New Announcement Submitted",
-      body: `<strong style="color:#fff;">${esc(payload.name ?? "A brother")}</strong> submitted an announcement for review.
-             <br><br>
-             <strong style="color:${gold};">Title:</strong> ${esc(payload.title ?? "")}<br>
-             <strong style="color:${gold};">Category:</strong> ${esc(payload.category ?? "General")}`,
-      action: "Review Announcement",
-    },
-    member_request: {
-      subject: `New Member Portal Request — ${esc(payload.name ?? payload.email ?? "Unknown")}`,
-      icon: "🙋",
-      heading: "New Member Portal Request",
-      body: `<strong style="color:#fff;">${esc(payload.name ?? "Someone")}</strong> has requested access to the member portal.
-             <br><br>
-             <strong style="color:${gold};">Email:</strong> ${esc(payload.email ?? "—")}`,
-      action: "Review Request",
-    },
-    visitor_request: {
-      subject: `New Visiting Brother Request — ${esc(payload.name ?? payload.email ?? "Unknown")}`,
-      icon: "🤝",
-      heading: "New Visiting Brother Request",
-      body: `<strong style="color:#fff;">${esc(payload.name ?? "A visiting brother")}</strong> has submitted a request for visiting brother access.
-             <br><br>
-             <strong style="color:${gold};">Email:</strong> ${esc(payload.email ?? "—")}
-             ${payload.chapter ? `<br><strong style="color:${gold};">Chapter:</strong> ${esc(payload.chapter)}` : ""}`,
-      action: "Review Request",
-    },
-  };
+// ── Email builders ────────────────────────────────────────────────────────────
 
-  const cfg = configs[payload.type] ?? configs.announcement;
+const gold = "#c9a84c";
+const dashboardUrl = "https://northdallasalphas.com/admin-dashboard.html";
 
-  const html = `<!DOCTYPE html>
+function emailShell(icon: string, heading: string, eyebrow: string, body: string, actionLabel: string, actionUrl: string): string {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#0d0d0d;font-family:Arial,Helvetica,sans-serif;">
@@ -76,14 +79,14 @@ function buildEmail(payload: Payload): { subject: string; html: string } {
     <tr><td align="center">
       <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
         <tr><td style="background:#111;border:1px solid #2a2a2a;border-radius:10px 10px 0 0;padding:24px 28px;border-bottom:none;text-align:center;">
-          <div style="font-size:28px;margin-bottom:8px;">${cfg.icon}</div>
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${gold};margin-bottom:6px;">North Dallas Alphas — Admin Alert</div>
-          <div style="font-size:18px;font-weight:800;color:#fff;">${cfg.heading}</div>
+          <div style="font-size:28px;margin-bottom:8px;">${icon}</div>
+          <div style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:${gold};margin-bottom:6px;">${esc(eyebrow)}</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;">${esc(heading)}</div>
         </td></tr>
         <tr><td style="background:#161616;border:1px solid #2a2a2a;border-top:none;border-radius:0 0 10px 10px;padding:24px 28px;">
-          <p style="margin:0 0 20px;font-size:14px;color:#d4d4d4;line-height:1.7;">${cfg.body}</p>
+          <p style="margin:0 0 20px;font-size:14px;color:#d4d4d4;line-height:1.7;">${body}</p>
           <div style="text-align:center;margin-top:24px;">
-            <a href="${dashboardUrl}" style="display:inline-block;background:${gold};color:#000;font-weight:800;font-size:14px;padding:12px 28px;border-radius:7px;text-decoration:none;">${cfg.action} →</a>
+            <a href="${esc(actionUrl)}" style="display:inline-block;background:${gold};color:#000;font-weight:800;font-size:14px;padding:12px 28px;border-radius:7px;text-decoration:none;">${esc(actionLabel)} →</a>
           </div>
           <p style="margin:24px 0 0;font-size:11px;color:#555;text-align:center;">
             Alpha Phi Alpha Fraternity, Inc. &mdash; Xi Tau Lambda Chapter
@@ -94,43 +97,187 @@ function buildEmail(payload: Payload): { subject: string; html: string } {
   </table>
 </body>
 </html>`;
-
-  return { subject: cfg.subject, html };
 }
+
+// Admin alert: new announcement submitted
+function buildAnnouncementAlert(name: string, title: string, category: string) {
+  return {
+    subject: `New Announcement Submitted — ${title}`,
+    html: emailShell(
+      "📣",
+      "New Announcement Submitted",
+      "North Dallas Alphas — Communications Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> submitted an announcement for review.<br><br>
+       <strong style="color:${gold};">Title:</strong> ${esc(title)}<br>
+       <strong style="color:${gold};">Category:</strong> ${esc(category)}`,
+      "Review Announcement",
+      dashboardUrl + "#member-announcements",
+    ),
+  };
+}
+
+// Admin alert: new requisition
+function buildRequisitionAlert(name: string, amount: string, description: string) {
+  return {
+    subject: `New Requisition Request — ${name}`,
+    html: emailShell(
+      "📄",
+      "New Requisition Request",
+      "North Dallas Alphas — Finance Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> submitted a requisition request.<br><br>
+       <strong style="color:${gold};">Amount:</strong> ${esc(amount)}<br>
+       <strong style="color:${gold};">Description:</strong> ${esc(description)}`,
+      "Review Requisition",
+      dashboardUrl + "#requisitions",
+    ),
+  };
+}
+
+// Admin alert: new reimbursement
+function buildReimbursementAlert(name: string, amount: string, description: string) {
+  return {
+    subject: `New Reimbursement Request — ${name}`,
+    html: emailShell(
+      "🧾",
+      "New Reimbursement Request",
+      "North Dallas Alphas — Finance Alert",
+      `<strong style="color:#fff;">${esc(name)}</strong> submitted a reimbursement request.<br><br>
+       <strong style="color:${gold};">Amount:</strong> ${esc(amount)}<br>
+       <strong style="color:${gold};">Description:</strong> ${esc(description)}`,
+      "Review Reimbursement",
+      dashboardUrl + "#reimbursements",
+    ),
+  };
+}
+
+// Member alert: announcement status changed
+function buildAnnouncementStatus(name: string, title: string, status: string, note: string) {
+  const approved = status === "approved";
+  const icon = approved ? "✅" : "❌";
+  const heading = approved ? "Announcement Approved" : "Announcement Not Approved";
+  const bodyText = approved
+    ? `Your announcement <strong style="color:#fff;">${esc(title)}</strong> has been <strong style="color:#4ade80;">approved</strong> by chapter leadership and will be shared with the brotherhood.`
+    : `Your announcement <strong style="color:#fff;">${esc(title)}</strong> was <strong style="color:#f87171;">not approved</strong> at this time.`;
+  const noteHtml = note ? `<br><br><strong style="color:${gold};">Note from leadership:</strong> ${esc(note)}` : "";
+  return {
+    subject: approved ? `Your Announcement Was Approved — ${title}` : `Announcement Update — ${title}`,
+    html: emailShell(
+      icon,
+      heading,
+      "North Dallas Alphas — Member Portal",
+      bodyText + noteHtml,
+      "View Member Portal",
+      "https://northdallasalphas.com/member-portal.html",
+    ),
+  };
+}
+
+// Fallback for visitor / member request types (existing behaviour)
+function buildGenericAlert(type: string, name: string, email: string, chapter: string) {
+  const isVisitor = type === "visitor_request";
+  return {
+    subject: isVisitor ? `New Visiting Brother Request — ${name || email}` : `New Member Portal Request — ${name || email}`,
+    html: emailShell(
+      isVisitor ? "🤝" : "🙋",
+      isVisitor ? "New Visiting Brother Request" : "New Member Portal Request",
+      "North Dallas Alphas — Admin Alert",
+      `<strong style="color:#fff;">${esc(name || "Someone")}</strong> submitted a ${isVisitor ? "visiting brother" : "member portal"} request.<br><br>
+       <strong style="color:${gold};">Email:</strong> ${esc(email)}` +
+      (isVisitor && chapter ? `<br><strong style="color:${gold};">Chapter:</strong> ${esc(chapter)}` : ""),
+      "Review Request",
+      dashboardUrl,
+    ),
+  };
+}
+
+// ── Main handler ──────────────────────────────────────────────────────────────
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const resendKey  = Deno.env.get("RESEND_API_KEY");
-  const fromEmail  = Deno.env.get("RESEND_FROM_EMAIL") ?? "northdallasalphas@gmail.com";
-  const fromName   = Deno.env.get("RESEND_FROM_NAME")  ?? "North Dallas Alphas";
-  const adminEmail = Deno.env.get("ADMIN_NOTIFY_EMAIL") ?? "northdallasalphas@gmail.com";
+  const resendKey    = Deno.env.get("RESEND_API_KEY");
+  const fromEmail    = Deno.env.get("RESEND_FROM_EMAIL") ?? "northdallasalphas@gmail.com";
+  const fromName     = Deno.env.get("RESEND_FROM_NAME")  ?? "North Dallas Alphas";
+  const fallbackEmail = Deno.env.get("ADMIN_NOTIFY_EMAIL") ?? "northdallasalphas@gmail.com";
+  const supabaseUrl  = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey   = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
   if (!resendKey) return json({ error: "Email not configured." }, 503);
 
-  let payload: Payload;
+  const from = `${fromName} <${fromEmail}>`;
+
+  let payload: Record<string, unknown>;
   try { payload = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-  if (!payload.type) return json({ error: "type is required" }, 400);
 
-  const { subject, html } = buildEmail(payload);
+  const type = String(payload.type ?? "");
 
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": "Bearer " + resendKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: `${fromName} <${fromEmail}>`,
-      to: [adminEmail],
-      subject,
-      html,
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text().catch(() => "unknown");
-    console.error("Resend error:", err);
-    return json({ error: "Email delivery failed." }, 502);
+  // ── Announcement status → email member ────────────────────────────────────
+  if (type === "announcement_status") {
+    const memberEmail = String(payload.memberEmail ?? "").trim();
+    const memberName  = String(payload.memberName  ?? "A brother").trim();
+    const title       = String(payload.title       ?? "Your announcement").trim();
+    const status      = String(payload.status      ?? "").trim();
+    const note        = String(payload.note        ?? "").trim();
+    if (!memberEmail || !status) return json({ error: "memberEmail and status required" }, 400);
+    const { subject, html } = buildAnnouncementStatus(memberName, title, status, note);
+    const ok = await sendEmail(resendKey, from, [memberEmail], subject, html);
+    return json({ sent: ok });
   }
 
-  return json({ sent: true });
+  // ── New announcement → Communications admins ──────────────────────────────
+  if (type === "announcement") {
+    const name     = String(payload.name     ?? payload.memberName ?? "A brother").trim();
+    const title    = String(payload.title    ?? "Untitled").trim();
+    const category = String(payload.category ?? "General").trim();
+    const { subject, html } = buildAnnouncementAlert(name, title, category);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "communications")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── New requisition → Finance admins ──────────────────────────────────────
+  if (type === "requisition") {
+    const name        = String(payload.memberName ?? payload.name ?? "A brother").trim();
+    const amountRaw   = Number(payload.amount ?? 0);
+    const amount      = "$" + amountRaw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const description = String(payload.description ?? "").trim();
+    const { subject, html } = buildRequisitionAlert(name, amount, description);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "finance")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── New reimbursement → Finance admins ────────────────────────────────────
+  if (type === "reimbursement") {
+    const name        = String(payload.memberName ?? payload.name ?? "A brother").trim();
+    const amountRaw   = Number(payload.amount ?? 0);
+    const amount      = "$" + amountRaw.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const description = String(payload.description ?? "").trim();
+    const { subject, html } = buildReimbursementAlert(name, amount, description);
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "finance")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
+  // ── Visitor / member request → fallback admin email ───────────────────────
+  if (type === "visitor_request" || type === "member_request") {
+    const name    = String(payload.name    ?? "").trim();
+    const email   = String(payload.email   ?? "").trim();
+    const chapter = String(payload.chapter ?? "").trim();
+    const { subject, html } = buildGenericAlert(type, name, email, chapter);
+    const ok = await sendEmail(resendKey, from, [fallbackEmail], subject, html);
+    return json({ sent: ok });
+  }
+
+  return json({ error: "Unknown notification type: " + type }, 400);
 });
