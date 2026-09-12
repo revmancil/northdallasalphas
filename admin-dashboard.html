@@ -11272,8 +11272,41 @@ async function _fetchDuesPayments() {
   if (!token) return;
   var body = document.getElementById('duesPaymentsBody');
   try {
-    var res = await fetch(SUPABASE_URL + '/rest/v1/dues_payments?select=*&order=created_at.desc', { headers: sbHeaders(token) });
-    _duesPayments = res.ok ? (await res.json()) : [];
+    var [legacyRes, financeRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/dues_payments?select=*&order=created_at.desc', { headers: sbHeaders(token) }),
+      fetch(SUPABASE_URL + '/rest/v1/finance_payments?select=*&order=created_at.desc', { headers: sbHeaders(token) })
+    ]);
+    var legacy  = legacyRes.ok  ? (await legacyRes.json())  : [];
+    var finance = financeRes.ok ? (await financeRes.json()) : [];
+    // Normalize finance_payments rows to the shape renderDuesPayments expects
+    var normalized = finance.map(function(p) {
+      return {
+        id:                         p.id,
+        full_name:                  p.member_name || '—',
+        email:                      p.email || '—',
+        phone:                      p.phone || '—',
+        amount_cents:               p.amount_cents,
+        payment_method:             p.method || 'Stripe',
+        payment_status:             p.status || 'paid',
+        stripe_checkout_session_id: p.stripe_session_id || '',
+        created_at:                 p.created_at,
+        notes:                      [p.category_label, p.fiscal_year, p.late_fee ? 'Late Fee' : '', p.building_fund ? 'Building Fund' : ''].filter(Boolean).join(' · '),
+        _source:                    'finance'
+      };
+    });
+    // Merge: deduplicate by stripe session id so a manual + Stripe entry for the same payment doesn't double-count
+    var seen = {};
+    var merged = [];
+    legacy.forEach(function(p) {
+      if (p.stripe_checkout_session_id) seen[p.stripe_checkout_session_id] = true;
+      merged.push(p);
+    });
+    normalized.forEach(function(p) {
+      if (p.stripe_checkout_session_id && seen[p.stripe_checkout_session_id]) return;
+      merged.push(p);
+    });
+    merged.sort(function(a, b) { return (b.created_at || '') < (a.created_at || '') ? -1 : 1; });
+    _duesPayments = merged;
     renderDuesPayments();
   } catch(e) {
     if (body) body.innerHTML = '<tr><td colspan="9" style="padding:20px;text-align:center;color:var(--red);">Could not load payments.</td></tr>';

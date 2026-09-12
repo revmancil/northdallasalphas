@@ -137,7 +137,7 @@ serve(async (req) => {
     if (memberId && /^[0-9a-f-]{36}$/i.test(memberId)) {
       const { error: memErr } = await admin
         .from("members")
-        .update({ dues_paid_year: fiscalYear })
+        .update({ dues_paid_year: fiscalYear, dues_current: true })
         .eq("id", memberId);
       if (memErr) console.warn("members dues_paid_year update:", memErr);
     }
