@@ -129,7 +129,7 @@ position:sticky;top:0;z-index:50;}
     .empty-state i{font-size:2.5rem;color:rgba(201,168,76,0.3);margin-bottom:12px;}
     .empty-state p{font-size:0.85rem;}
     .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:99;}
-    @media(max-width:900px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.sidebar-overlay.show{display:block;}.main{margin-left:0;}.hamburger{display:block;}.stats-grid{grid-template-columns:1fr 1fr;}.profile-grid{grid-template-columns:1fr;}}
+    @media(max-width:900px){.sidebar{transform:translateX(-100%);}.sidebar.open{transform:translateX(0);}.sidebar-overlay.show{display:block;}.main{margin-left:0;}.hamburger{display:block;}.stats-grid{grid-template-columns:1fr 1fr;}.profile-grid{grid-template-columns:1fr;}.imdp-grid{grid-template-columns:1fr!important;}}
     @media(max-width:480px){.content{padding:16px;}.stats-grid{grid-template-columns:1fr;}.topbar{padding:0 16px;}}
     /* MEMBERSHIP CARD */
     .alpha-card{width:420px;max-width:100%;background:linear-gradient(145deg,#0a0a0a 0%,#1a1a1a 60%,#111 100%);border:2px solid rgba(201,168,76,0.6);border-radius:16px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(201,168,76,0.2);position:relative;}
@@ -260,6 +260,7 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('dues')" id="nav-dues"><i class="fas fa-dollar-sign"></i> Dues</button>
     <button class="nav-item" onclick="showPanel('store');loadMemberStore()" id="nav-store"><i class="fas fa-store"></i> Chapter Store <span id="cartBadge" style="display:none;background:var(--gold);color:#000;font-size:0.6rem;font-weight:800;padding:1px 5px;border-radius:10px;margin-left:4px;"></span></button>
     <button class="nav-item" onclick="showPanel('documents')" id="nav-documents"><i class="fas fa-file-alt"></i> Documents</button>
+    <button class="nav-item" onclick="showPanel('imdp-info')" id="nav-imdp-info"><i class="fas fa-graduation-cap"></i> IMDP Info</button>
     <button class="nav-item" onclick="showPanel('news-feed');loadNewsFeed()" id="nav-news-feed"><i class="fas fa-bullhorn"></i> Chapter News</button>
     <div class="nav-section-label">Community</div>
     <button class="nav-item" onclick="showPanel('directory')" id="nav-directory"><i class="fas fa-users"></i> Brother Directory</button>
@@ -1045,6 +1046,85 @@ backdrop-filter:blur(4px);}
         </div>
       </div>
     </div>
+    <!-- IMDP INFO PANEL -->
+    <div class="panel" id="panel-imdp-info">
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-graduation-cap"></i> IMDP Info</h3></div>
+        <div class="section-card-body" style="padding:24px;">
+
+          <!-- Notice banner -->
+          <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:14px 18px;margin-bottom:28px;display:flex;gap:12px;align-items:flex-start;">
+            <i class="fas fa-ban" style="color:#ef4444;margin-top:2px;flex-shrink:0;"></i>
+            <div style="font-size:0.88rem;color:rgba(255,255,255,0.75);line-height:1.65;">
+              <strong style="color:#f87171;">Zero Tolerance Policy:</strong> Alpha Phi Alpha does NOT permit the Initial Membership Development Process (IMDP) at the chapter level. The Fraternity has a zero-tolerance policy for hazing and/or pledging activities.
+            </div>
+          </div>
+
+          <!-- General Duties -->
+          <div style="margin-bottom:32px;">
+            <h4 style="font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--gold);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(201,168,76,0.2);">
+              <i class="fas fa-users" style="margin-right:8px;font-size:0.85rem;"></i>Chapter Dean of Membership Development — General Duties &amp; Responsibilities
+            </h4>
+            <p style="font-size:0.85rem;color:rgba(255,255,255,0.6);margin-bottom:14px;line-height:1.65;">The Chapter Dean of Membership Development and the committee collaborates and submits reports to the Chapter President and the Chapter Executive Committee. Reports provide oversight at the Chapter level for the following:</p>
+            <ol style="padding-left:20px;display:flex;flex-direction:column;gap:10px;">
+              <li style="font-size:0.88rem;color:rgba(255,255,255,0.72);line-height:1.6;">The rules and by-laws of IMDP according to the rules and guidelines of the Chapter, Area, District, Region and the National Convention as required by the IMDP Manual.</li>
+              <li style="font-size:0.88rem;color:rgba(255,255,255,0.72);line-height:1.6;">IMDP/Risk Management Certification <strong style="color:rgba(255,255,255,0.9);">(Annual Requirement)</strong>.</li>
+              <li style="font-size:0.88rem;color:rgba(255,255,255,0.72);line-height:1.6;">Sponsor/Recommender Requirements/Checklist.</li>
+              <li style="font-size:0.88rem;color:rgba(255,255,255,0.72);line-height:1.6;">Conduct Alpha Informational Seminars, Smoker, IMDP, Ritual Ceremonies and Probate shows according to the IMDP manual.</li>
+              <li style="font-size:0.88rem;color:rgba(255,255,255,0.72);line-height:1.6;">Keeps members informed of the IMDP process and assists new members in becoming familiar with the procedures and guidelines of the Chapter and the Fraternity.</li>
+              <li style="font-size:0.88rem;color:rgba(255,255,255,0.72);line-height:1.6;">They manage/support Initial Membership Development Process (IMDP) activities for the Chapter as established by the General Convention and supports/serve on the Area 1 cluster IMDP management team.</li>
+            </ol>
+          </div>
+
+          <!-- Two-column sponsor / recommender -->
+          <div class="imdp-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px;">
+
+            <!-- Sponsor Requirements -->
+            <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:20px;">
+              <h4 style="font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">① Sponsor Requirements</h4>
+              <p style="font-size:0.8rem;color:rgba(255,255,255,0.55);margin-bottom:14px;line-height:1.6;">A member who commits to be a Sponsor — a brother who guides a candidate through the IMDP from the Interested Candidate stage through his first full year of membership. He will also write a letter of support for a candidate.</p>
+              <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Qualifications:</p>
+              <ul style="padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px;">
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be in Good Standing (Financially) with the General Organization and the Chapter via which the Candidate wishes to join.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be Risk Management Certified.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be IMDP Certified.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be an active member of the Chapter for <strong style="color:var(--gold);">two (2) years*</strong> and have maintained two consecutive years of active membership with the fraternity.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must NOT have been disciplined for violation of the IMDP within a 10-year window of their sponsorship; brothers who have been reinstated after expulsion are ineligible to sponsor candidates.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must complete the Sponsor section of the candidate's official application.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must actively and personally know the candidate for at least one year before presenting to the chapter prior to their recommendation of the candidate*.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must attend 40% of the chapter meetings held in the preceding 12 month period as tracked by the chapter sign-in sheet and/or meeting minutes*.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must attend at least one (1) convention at any level within the prior two years*.</li>
+              </ul>
+              <div style="margin-top:16px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);border-radius:6px;padding:10px 14px;font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.55;">
+                <i class="fas fa-check-square" style="color:var(--gold);margin-right:6px;"></i><strong style="color:var(--gold);">A Sponsor should be required to attend all IMDP Weekend Activities.</strong>
+              </div>
+            </div>
+
+            <!-- Recommender Requirements -->
+            <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:10px;padding:20px;">
+              <h4 style="font-size:0.85rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;">② Recommender Requirements</h4>
+              <p style="font-size:0.8rem;color:rgba(255,255,255,0.55);margin-bottom:14px;line-height:1.6;">A member who commits to be a Recommender — a brother that will write a letter of support for a candidate (to be included in his completed application packet).</p>
+              <p style="font-size:0.75rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:10px;">Qualifications:</p>
+              <ul style="padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px;">
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be in Good Standing (Financially) with the General Organization and the Chapter via which the Candidate wishes to join.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be Risk Management Certified.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must be IMDP Certified.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>Must complete the Recommender section of the candidate's official application.</li>
+                <li style="display:flex;gap:8px;align-items:flex-start;font-size:0.82rem;color:rgba(255,255,255,0.68);line-height:1.55;"><span style="color:var(--gold);margin-top:2px;">•</span>For a brother to serve as a recommender, must actively and personally know the candidate for at least one year before presenting to the chapter prior to their recommendation of the candidate*.</li>
+              </ul>
+              <div style="margin-top:16px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);border-radius:6px;padding:10px 14px;font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.55;">
+                <i class="fas fa-check-square" style="color:var(--gold);margin-right:6px;"></i><strong style="color:var(--gold);">A Recommender should be required to attend all IMDP Weekend Activities.</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer note -->
+          <p style="font-size:0.78rem;color:rgba(255,255,255,0.35);line-height:1.65;text-align:center;">* Denotes chapter constitutional requirement. The requirements of the sponsor and recommender may change per the standing orders of the General Organization.</p>
+
+        </div>
+      </div>
+    </div>
+
   </main>
 </div>
 <div class="toast" id="toast"><i class="fas fa-check-circle"></i><span id="toastMsg">Saved!</span></div><script>
@@ -1144,7 +1224,8 @@ const PANEL_META = {
   'news-submit':          ['Submit News Article',   'Contribute to the chapter news feed'],
   requisition:            ['Submit Requisition',    'Request funds or chapter resources'],
   reimbursement:          ['Request Reimbursement', 'Submit a reimbursement request'],
-  committees:             ['Committees',            'Chapter committees and membership']
+  committees:             ['Committees',            'Chapter committees and membership'],
+  'imdp-info':            ['IMDP Info',             'Membership development sponsorship and recommender requirements']
 };
 
 function showPanel(id) {

@@ -5130,6 +5130,17 @@ function rosterCell(key, val, fallback) {
   return '<div class="roster-cell"><div class="roster-cell-key">' + escHtml(key) + '</div>' + rosterVal(val, fallback) + '</div>';
 }
 
+function imdpEligible(m) {
+  const lifeMem = String(m.life_member || '').toLowerCase();
+  const isLife  = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
+  const grandTaxOk  = isLife || m.grand_tax_paid;
+  const duesOk      = m.dues_current;
+  const today       = new Date().toISOString().slice(0, 10);
+  const imdpOk      = m.imdp_certified && m.imdp_certified >= today;
+  const riskOk      = m.risk_mgmt_certified && m.risk_mgmt_certified >= today;
+  return !!(grandTaxOk && duesOk && imdpOk && riskOk);
+}
+
 function renderRosterGroup(m) {
   const name     = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown Member';
   const isActive = rosterComputeActive(m);
@@ -5141,6 +5152,9 @@ function renderRosterGroup(m) {
     : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
   const lifeBadge = isLife
     ? ' <span class="roster-badge roster-badge-life"><i class="fas fa-star" style="font-size:0.6rem;margin-right:3px;"></i>Life Member</span>'
+    : '';
+  const imdpBadge = imdpEligible(m)
+    ? ' <span class="roster-badge" style="background:rgba(99,102,241,0.15);color:#818cf8;border:1px solid rgba(99,102,241,0.3);"><i class="fas fa-graduation-cap" style="font-size:0.6rem;margin-right:3px;"></i>IMDP Eligible</span>'
     : '';
 
   // Alpha ID cell: gold badge for life members
@@ -5161,7 +5175,7 @@ function renderRosterGroup(m) {
     // Name bar
     '<div class="roster-name-bar">' +
     '<span class="roster-name">' + escHtml(name) + '</span>' +
-    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' + activeBadge + lifeBadge + '</div>' +
+    '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">' + activeBadge + lifeBadge + imdpBadge + '</div>' +
     '</div>' +
     // Row 1 — Identity & Membership
     '<div class="roster-row1">' +
