@@ -434,6 +434,17 @@
 <script src="js/main.js"></script>
 <script src="js/news-articles.js"></script>
 <script>
+// Catch Supabase auth tokens that land on the home page and redirect to the right handler
+(function() {
+  var hash = window.location.hash.replace(/^#/, '');
+  var params = {};
+  hash.split('&').forEach(function(p) { var kv = p.split('='); if (kv.length === 2) params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1]); });
+  if (params['access_token'] && params['type'] === 'recovery') {
+    window.location.replace('reset-password.html' + window.location.hash);
+  }
+})();
+</script>
+<script>
 /* ============================================================
    HOME PAGE — Dynamic Events Section from localStorage
 ============================================================ */
