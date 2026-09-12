@@ -287,6 +287,51 @@
     margin-bottom: 10px;
   }
 
+  /* Dues timeline */
+  .dues-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 16px 0;
+    position: relative;
+  }
+  .dues-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 12px;
+    bottom: 12px;
+    width: 2px;
+    background: var(--border);
+  }
+  .tl-item {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 10px 0;
+    position: relative;
+  }
+  .tl-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    z-index: 1;
+  }
+  .tl-dot.lock    { background: #2a2a2a; color: var(--text-3); border: 2px solid var(--border); }
+  .tl-dot.open    { background: rgba(74,222,128,0.15); color: #4ade80; border: 2px solid rgba(74,222,128,0.4); }
+  .tl-dot.warning { background: rgba(245,158,11,0.12); color: #f59e0b; border: 2px solid rgba(245,158,11,0.3); }
+  .tl-dot.late    { background: rgba(239,68,68,0.12); color: #ef4444; border: 2px solid rgba(239,68,68,0.3); }
+  .tl-body { flex: 1; padding-top: 2px; }
+  .tl-date { font-size: 0.75rem; font-weight: 700; color: var(--text-3); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 2px; }
+  .tl-desc { font-size: 0.88rem; color: var(--text-2); line-height: 1.5; }
+  .tl-desc strong { color: var(--text); }
+
   /* ── Mobile ── */
   @media (max-width: 700px) {
     body { flex-direction: column; }
@@ -434,14 +479,60 @@
       <div class="section-icon">💳</div>
       <h2>Dues</h2>
     </div>
-    <p>Pay your chapter dues directly through the portal via secure Stripe checkout. The chapter receives the full dues amount — the processing fee is added to your total at checkout.</p>
-    <div class="steps">
-      <div class="step"><div class="step-num">1</div><div class="step-text">Navigate to <strong>Dues</strong> in the sidebar.</div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text">Select your dues category (e.g. Renewing Member, New Member, Life Member).</div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text">Review the amount and any applicable late fees or building fund contributions.</div></div>
-      <div class="step"><div class="step-num">4</div><div class="step-text">Click <strong>Pay with Card</strong> — you will be redirected to Stripe. Complete payment and you will be sent back to the portal with a confirmation.</div></div>
+    <p>Pay your chapter dues directly through the portal via secure Stripe checkout. The chapter receives the full dues amount — a small card processing fee is added at checkout. <strong>The payment window opens and closes on a fixed annual schedule</strong> — you cannot pay outside this window.</p>
+
+    <div class="subsection">
+      <h3>Annual Dues Schedule</h3>
+      <div class="dues-timeline">
+        <div class="tl-item">
+          <div class="tl-dot lock">🔒</div>
+          <div class="tl-body">
+            <div class="tl-date">August 1</div>
+            <div class="tl-desc"><strong>Payment window locks.</strong> The portal disables dues payments each August 1. A banner will appear showing the upcoming unlock date.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot open">✓</div>
+          <div class="tl-body">
+            <div class="tl-date">Treasurer-Set Unlock Date</div>
+            <div class="tl-desc"><strong>Window opens.</strong> The Treasurer sets the unlock date each cycle. You will receive an email 3 days before and again the morning it opens.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot warning">!</div>
+          <div class="tl-body">
+            <div class="tl-date">November 1, 7 &amp; 14</div>
+            <div class="tl-desc"><strong>Reminder emails</strong> go to unpaid brothers only. Three chances to pay before the late fee kicks in.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot late">$</div>
+          <div class="tl-body">
+            <div class="tl-date">November 15</div>
+            <div class="tl-desc"><strong>Late fee begins.</strong> Dues paid on or after November 15 include a late fee. Pay by November 14 to avoid it. A past-due notice is sent to all unpaid brothers.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot late">⚠</div>
+          <div class="tl-body">
+            <div class="tl-date">December 1, 15 &amp; 31</div>
+            <div class="tl-desc"><strong>Delinquent warnings.</strong> Escalating reminders to unpaid brothers. Members not paid by December 31 may be placed in delinquent status, affecting chapter privileges.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tip"><strong>Already paid?</strong> November and December reminder emails go only to brothers whose dues are still outstanding — you will not receive them once your payment is confirmed.</div>
     </div>
-    <div class="tip"><strong>Deadline:</strong> Dues are due by <strong>January 1</strong> each fiscal year. Payments received after the deadline include a late fee. Contact the Financial Secretary if you have questions about your dues status.</div>
+
+    <div class="subsection">
+      <h3>How to Pay</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-text">Navigate to <strong>Dues</strong> in the sidebar. If the window is locked, a banner shows the unlock date — no action needed until then.</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">Once open, confirm your name, phone, and email. Your email is pre-filled from your account and cannot be changed here.</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">If a <strong>Late Fee Notice</strong> banner appears in gold, a late fee has been added to your total. Review the amount before proceeding.</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text">Click <strong>Pay with Card</strong> — you will be redirected to Stripe. Complete payment and you will be returned to the portal. Your compliance status updates automatically.</div></div>
+      </div>
+      <div class="tip"><strong>Questions about your dues status?</strong> Contact the Financial Secretary. Life members are exempt from the November and December reminder emails.</div>
+    </div>
   </section>
 
   <!-- CHAPTER STORE -->
