@@ -11385,15 +11385,15 @@ function renderDuesPayments() {
     var statusColor = p.payment_status === 'paid' ? 'var(--green)' : 'var(--gold)';
     var date = p.created_at ? new Date(p.created_at).toLocaleDateString() : '—';
     return '<tr style="border-bottom:1px solid var(--gray-100);">' +
-      '<td style="padding:8px 10px;">' + esc(p.full_name||'—') + '</td>' +
-      '<td style="padding:8px 10px;color:var(--gray-500);">' + esc(p.email||'—') + '</td>' +
-      '<td style="padding:8px 10px;color:var(--gray-500);">' + esc(p.phone||'—') + '</td>' +
+      '<td style="padding:8px 10px;">' + escHtml(p.full_name||'—') + '</td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + escHtml(p.email||'—') + '</td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + escHtml(p.phone||'—') + '</td>' +
       '<td style="padding:8px 10px;font-weight:600;">' + amt + '</td>' +
-      '<td style="padding:8px 10px;color:var(--gray-500);">' + esc(method) + '</td>' +
-      '<td style="padding:8px 10px;"><span style="color:' + statusColor + ';font-weight:600;">' + esc(p.payment_status||'—') + '</span></td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);">' + escHtml(method) + '</td>' +
+      '<td style="padding:8px 10px;"><span style="color:' + statusColor + ';font-weight:600;">' + escHtml(p.payment_status||'—') + '</span></td>' +
       '<td style="padding:8px 10px;color:var(--gray-500);">' + date + '</td>' +
-      '<td style="padding:8px 10px;color:var(--gray-500);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(p.notes||'') + '">' + esc(p.notes||'—') + '</td>' +
-      '<td style="padding:8px 10px;"><button onclick="deleteDuesPayment(\'' + esc(String(p.id)) + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.8rem;" title="Delete"><i class="fas fa-trash"></i></button></td>' +
+      '<td style="padding:8px 10px;color:var(--gray-500);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(p.notes||'') + '">' + escHtml(p.notes||'—') + '</td>' +
+      '<td style="padding:8px 10px;"><button onclick="deleteDuesPayment(\'' + escHtml(String(p.id)) + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.8rem;" title="Delete"><i class="fas fa-trash"></i></button></td>' +
       '</tr>';
   }).join('');
 }
