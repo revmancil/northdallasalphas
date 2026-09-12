@@ -606,3 +606,35 @@ create policy "dues_payments_admin_all"
 on public.dues_payments for all
 to authenticated
 using ( public.current_user_is_chapter_admin() );
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- FINANCE PAYMENTS — Stripe dues & store payments
+-- ──────────────────────────────────────────────────────────────────────────────
+create table if not exists public.finance_payments (
+  id                uuid primary key default gen_random_uuid(),
+  member_id         uuid references public.members(id) on delete set null,
+  member_name       text not null default '',
+  category          text not null default 'dues',
+  category_label    text not null default 'Chapter Dues',
+  fiscal_year       text not null default '',
+  amount_cents      integer not null default 0,
+  method            text not null default 'stripe',
+  status            text not null default 'paid',
+  late_fee          boolean not null default false,
+  building_fund     boolean not null default false,
+  stripe_session_id text,
+  xero_sync_status  text not null default 'pending',
+  created_at        timestamptz not null default now()
+);
+
+create unique index if not exists finance_payments_stripe_session_uidx
+  on public.finance_payments (stripe_session_id)
+  where stripe_session_id is not null;
+
+alter table public.finance_payments enable row level security;
+
+drop policy if exists "finance_payments_admin_all" on public.finance_payments;
+create policy "finance_payments_admin_all"
+on public.finance_payments for all
+to authenticated
+using ( public.current_user_is_chapter_admin() );

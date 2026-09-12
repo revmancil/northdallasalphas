@@ -9501,7 +9501,7 @@ function rollupGroupBadges() {
 }
 
 async function loadAllPendingCounts() {
-  var token = currentAdminSession ? currentAdminSession.access_token : null;
+  var token = getAdminToken();
   if (!token) return;
   try {
     var results = await Promise.allSettled([
