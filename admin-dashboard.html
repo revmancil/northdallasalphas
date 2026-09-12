@@ -11437,8 +11437,8 @@ async function submitDuesRecord() {
     var now = new Date().toISOString();
 
     // Write to dues_payments (legacy / manual record)
+    // member_id is bigint in this table — omit it; member_name identifies the record
     var payload = {
-      member_id: memberId || null,
       full_name: name,
       email: email,
       phone: phone || null,
