@@ -3429,6 +3429,15 @@
               <label>Late Fee Notice (shown to member when late fee applies)</label>
               <textarea id="duesConfigLateMsg" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;" placeholder="A late fee has been added per chapter policy…"></textarea>
             </div>
+            <div class="field-group">
+              <label>Dues Unlock Date (treasurer sets when payment window opens)</label>
+              <input type="date" id="duesConfigUnlockDate" />
+              <small style="color:var(--gray-500);font-size:0.8rem;">Brothers cannot pay dues before this date. Locks automatically each August 1.</small>
+            </div>
+            <div class="field-group">
+              <label>Late Fee Start Date (default: November 15)</label>
+              <input type="date" id="duesConfigLateDate" placeholder="11/15 of current year" />
+            </div>
             <p id="duesConfigErr" style="display:none;color:var(--red);font-size:0.83rem;margin-top:8px;"></p>
             <div style="margin-top:18px;">
               <button class="btn-save" id="duesConfigBtn" onclick="saveDuesConfig()"><i class="fas fa-save"></i> Save Configuration</button>
@@ -11361,6 +11370,10 @@ async function _loadDuesConfig() {
     if (amtEl && j.dues_amount_cents) amtEl.value = (j.dues_amount_cents / 100).toFixed(2);
     if (feeEl && j.late_fee_cents) feeEl.value = (j.late_fee_cents / 100).toFixed(2);
     if (msgEl && j.late_fee_notice) msgEl.value = j.late_fee_notice;
+    var unlockEl = document.getElementById('duesConfigUnlockDate');
+    var lateDateEl = document.getElementById('duesConfigLateDate');
+    if (unlockEl && j.unlock_date) unlockEl.value = j.unlock_date;
+    if (lateDateEl && j.late_date) lateDateEl.value = j.late_date;
   } catch(e) {}
 }
 
@@ -11520,10 +11533,14 @@ async function saveDuesConfig() {
     var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.payments&select=content_json', { headers: sbHeaders(token) });
     var rows = res.ok ? await res.json() : [];
     var existing = (rows && rows[0] && rows[0].content_json) || {};
+    var unlockDateVal = (document.getElementById('duesConfigUnlockDate').value || '').trim();
+    var lateDateVal   = (document.getElementById('duesConfigLateDate').value || '').trim();
     var merged = Object.assign({}, existing, {
       dues_amount_cents: Math.round(amtVal * 100),
       late_fee_cents: Math.round(feeVal * 100),
-      late_fee_notice: msg || null
+      late_fee_notice: msg || null,
+      unlock_date: unlockDateVal || null,
+      late_date: lateDateVal || null
     });
 
     var upsertRes = await fetch(SUPABASE_URL + '/rest/v1/site_content', {

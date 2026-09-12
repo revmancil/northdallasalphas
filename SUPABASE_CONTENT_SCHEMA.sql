@@ -638,3 +638,25 @@ create policy "finance_payments_admin_all"
 on public.finance_payments for all
 to authenticated
 using ( public.current_user_is_chapter_admin() );
+
+-- ──────────────────────────────────────────────────────────────────────────────
+-- DUES NOTIFICATIONS — pg_cron schedule
+-- Run this in Supabase SQL Editor after enabling pg_cron extension.
+-- Fires the dues-notifications edge function daily at 13:06 UTC (7:06 AM CST).
+-- Replace YOUR_SERVICE_ROLE_KEY with the actual key, and YOUR_PROJECT_REF with
+-- your Supabase project reference (fbjervpgxnbyntylabfr).
+-- ──────────────────────────────────────────────────────────────────────────────
+-- SELECT cron.schedule(
+--   'dues-notifications-daily',
+--   '6 13 * * *',
+--   $$
+--   SELECT net.http_post(
+--     url := 'https://fbjervpgxnbyntylabfr.supabase.co/functions/v1/dues-notifications',
+--     headers := jsonb_build_object(
+--       'Content-Type', 'application/json',
+--       'x-dues-notify-secret', 'YOUR_DUES_NOTIFY_SECRET'
+--     ),
+--     body := '{}'::jsonb
+--   );
+--   $$
+-- );

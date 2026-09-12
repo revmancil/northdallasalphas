@@ -1057,6 +1057,7 @@ let currentSession = null;
 let currentMember  = null;
 let allEvents      = [];
 let allMembers     = [];
+var _duesWindowConfig = null; // loaded from site_content payments
 
 function getSession() {
   try {
@@ -1397,6 +1398,10 @@ function prefillDuesPayFields() {
 async function startDuesStripeCheckout() {
   var errEl = document.getElementById('duesPayErr');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  if (getDuesStatus().isLocked) {
+    if (errEl) { errEl.textContent = 'Dues payment window is not yet open.'; errEl.style.display = 'block'; }
+    return;
+  }
   if (!currentMember || !currentSession) {
     if (errEl) { errEl.textContent = 'Sign in to pay dues.'; errEl.style.display = 'block'; }
     return;
@@ -1443,10 +1448,25 @@ async function startDuesStripeCheckout() {
   }
 }
 
-function renderDuesPanel() {
+async function loadDuesWindowConfig() {
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.payments&select=content_json', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }
+    });
+    if (!res.ok) return;
+    var rows = await res.json();
+    var j = rows && rows[0] && rows[0].content_json;
+    if (j) _duesWindowConfig = j;
+  } catch(e) {}
+}
+
+async function renderDuesPanel() {
   const c = document.getElementById('duesList');
   prefillDuesPayFields();
+  await loadDuesWindowConfig();
   renderDuesLateFeeNotice();
+  var duesBtn = document.getElementById('duesStripeBtn');
+  if (duesBtn) duesBtn.disabled = getDuesStatus().isLocked;
   if (!currentMember) { c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Sign in to view your dues.</p></div>'; return; }
   sbGet('dues', 'member_id=eq.' + currentMember.id + '&order=year.desc', currentSession.access_token)
     .then(function(dues) {
@@ -2273,29 +2293,50 @@ function toggleMilitaryBranch() {
 ═══════════════════════════════════════════ */
 function getDuesStatus() {
   var now = new Date();
-  var month = now.getMonth() + 1; // 1-12
-  var day   = now.getDate();
-  // Collection window: Sept 1 (9/1) through Dec 31 (12/31)
-  var inWindow = (month >= 9 && month <= 12);
-  // Late: Jan 1 onwards (previous year's dues)
-  var isLate   = (month >= 1 && month <= 8);
-  return { inWindow: inWindow, isLate: isLate, lateFee: 10 };
+  var todayStr = now.toISOString().slice(0, 10);
+  var year = now.getFullYear();
+  var cfg = _duesWindowConfig || {};
+  var unlockDate = cfg.unlock_date || null;
+  var lateDate   = cfg.late_date   || (year + '-11-15');
+  var lateFee    = cfg.late_fee_cents ? cfg.late_fee_cents / 100 : 10;
+
+  var isLocked;
+  if (unlockDate) {
+    isLocked = todayStr < unlockDate;
+  } else {
+    // Default: locked Aug 1 – Aug 31 (before Sept 1)
+    var month = now.getMonth() + 1;
+    isLocked = (month === 8);
+  }
+  var isLate = todayStr >= lateDate;
+  var inWindow = !isLocked;
+  return { isLocked: isLocked, inWindow: inWindow, isLate: isLate, unlockDate: unlockDate, lateDate: lateDate, lateFee: lateFee };
 }
 
 function renderDuesLateFeeNotice() {
   var status = getDuesStatus();
   var noticeEl = document.getElementById('duesLateFeeNotice');
   if (!noticeEl) return;
-  if (status.isLate) {
+  var duesBtn = document.getElementById('duesStripeBtn');
+  if (status.isLocked) {
+    var unlockFormatted = status.unlockDate ? new Date(status.unlockDate + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'a future date';
+    noticeEl.style.display = '';
+    noticeEl.innerHTML = '<i class="fas fa-lock" style="color:#f59e0b;margin-right:8px;"></i>' +
+      '<span><strong>Dues payment window is not yet open.</strong> Opens on ' + unlockFormatted + '.</span>';
+    if (duesBtn) duesBtn.disabled = true;
+  } else if (status.isLate) {
     noticeEl.style.display = '';
     noticeEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:8px;"></i>' +
       '<span>A <strong style="color:#f59e0b;">$' + status.lateFee + ' late fee</strong> has been added. Dues collection ran Sept 1 – Dec 31.</span>';
+    if (duesBtn) duesBtn.disabled = false;
   } else if (status.inWindow) {
     noticeEl.style.display = '';
     noticeEl.innerHTML = '<i class="fas fa-calendar-check" style="color:var(--gold);margin-right:8px;"></i>' +
       '<span>Dues collection is open through <strong>December 31</strong>. Pay by Dec 31 to avoid a $' + status.lateFee + ' late fee.</span>';
+    if (duesBtn) duesBtn.disabled = false;
   } else {
     noticeEl.style.display = 'none';
+    if (duesBtn) duesBtn.disabled = false;
   }
 }
 
