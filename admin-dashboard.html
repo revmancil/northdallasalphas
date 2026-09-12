@@ -10222,15 +10222,20 @@ async function loadFinanceDashboard() {
   try {
     var results = await Promise.allSettled([
       sbGet('finance_payments',      'fiscal_year=eq.'+fy+'&status=eq.paid&select=amount_cents', token),
+      sbGet('dues_payments',         'payment_status=eq.paid&select=amount_cents,created_at', token),
       sbGet('finance_requisitions',  'status=eq.pending&select=id,amount_cents', token),
       sbGet('finance_reimbursements','status=eq.pending&select=id,amount_cents', token),
       sbGet('finance_reimbursements','status=eq.approved&select=amount_cents', token)
     ]);
-    var payments     = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
-    var pendingReqs  = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
-    var pendingReimbs= results[2].status==='fulfilled' ? (results[2].value||[]) : [];
-    var paidReimbs   = results[3].status==='fulfilled' ? (results[3].value||[]) : [];
-    var duesTotal    = payments.reduce(function(s,r){return s+(r.amount_cents||0);},0);
+    var fpPayments   = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
+    // Also sum dues_payments for current fiscal year (manual entries)
+    var legacyPay    = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
+    var fyLegacy     = legacyPay.filter(function(p){ var y = p.created_at ? new Date(p.created_at).getFullYear() : 0; return String(y) === fy; });
+    var pendingReqs  = results[2].status==='fulfilled' ? (results[2].value||[]) : [];
+    var pendingReimbs= results[3].status==='fulfilled' ? (results[3].value||[]) : [];
+    var paidReimbs   = results[4].status==='fulfilled' ? (results[4].value||[]) : [];
+    var duesTotal    = fpPayments.reduce(function(s,r){return s+(r.amount_cents||0);},0)
+                     + fyLegacy.reduce(function(s,r){return s+(r.amount_cents||0);},0);
     var reqAmt       = pendingReqs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
     var reimbAmt     = pendingReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
     var paidAmt      = paidReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
@@ -11427,16 +11432,21 @@ async function submitDuesRecord() {
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
   try {
+    var amountCents = Math.round(amount * 100);
+    var fy = String(new Date().getFullYear());
+    var now = new Date().toISOString();
+
+    // Write to dues_payments (legacy / manual record)
     var payload = {
       member_id: memberId || null,
       full_name: name,
       email: email,
       phone: phone || null,
-      amount_cents: Math.round(amount * 100),
+      amount_cents: amountCents,
       payment_status: 'paid',
       payment_method: method,
       notes: notes || null,
-      created_at: new Date().toISOString()
+      created_at: now
     };
     var res = await fetch(SUPABASE_URL + '/rest/v1/dues_payments', {
       method: 'POST',
@@ -11445,7 +11455,39 @@ async function submitDuesRecord() {
     });
     if (!res.ok) { var e = await res.json().catch(function(){ return {}; }); throw new Error(e.message || 'Could not save.'); }
     var rows = await res.json();
-    if (rows && rows[0]) _duesPayments.unshift(rows[0]);
+    var inserted = rows && rows[0];
+
+    // Also write to finance_payments so Finance Dashboard tile counts it
+    var fpPayload = {
+      member_id:      memberId || null,
+      member_name:    name,
+      category:       'manual',
+      category_label: 'Chapter Dues (Manual)',
+      fiscal_year:    fy,
+      amount_cents:   amountCents,
+      method:         method,
+      status:         'paid',
+      late_fee:       false,
+      building_fund:  false,
+      xero_sync_status: 'pending',
+      created_at:     now
+    };
+    await fetch(SUPABASE_URL + '/rest/v1/finance_payments', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=minimal' }),
+      body: JSON.stringify(fpPayload)
+    }).catch(function(){});
+
+    // Update member dues_current if a member was selected
+    if (memberId) {
+      fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
+        method: 'PATCH',
+        headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=minimal' }),
+        body: JSON.stringify({ dues_current: true, dues_paid_year: fy })
+      }).catch(function(){});
+    }
+
+    if (inserted) _duesPayments.unshift(Object.assign({}, inserted, { _source: 'legacy' }));
     showToast('Payment recorded successfully.');
     // Reset form
     ['duesRecordMember','duesRecordName','duesRecordEmail','duesRecordPhone','duesRecordAmount','duesRecordNotes'].forEach(function(id) {
