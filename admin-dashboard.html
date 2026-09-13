@@ -9881,9 +9881,9 @@ function renderDocRow(doc, opts) {
       '</div>' +
     '</div>' +
     '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+    (doc.file_url ? '<a href="' + escHtml(doc.file_url) + '" target="_blank" rel="noopener" class="btn-sm view" title="View / Download"><i class="fas fa-eye"></i> View</a>' : '') +
     (opts.approve ? '<button class="btn-sm success" onclick="approveDocument(\'' + escHtml(String(doc.id)) + '\')"><i class="fas fa-check"></i> Approve</button>' : '') +
     (opts.approve ? '<button class="btn-sm danger" onclick="rejectDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')"><i class="fas fa-times"></i> Reject</button>' : '') +
-    (doc.file_url && !opts.approve ? '<a href="' + escHtml(doc.file_url) + '" target="_blank" rel="noopener" class="btn-sm view" title="Download"><i class="fas fa-download"></i></a>' : '') +
     (!opts.approve ? '<button class="btn-sm danger" onclick="deleteDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' : '') +
     '</div>' +
     '</div>';
