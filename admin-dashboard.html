@@ -280,6 +280,30 @@
       gap: 16px;
       margin-bottom: 24px;
     }
+    .stat-box {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 14px 16px;
+      text-align: center;
+    }
+    .stat-box-val {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--gold);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+    .stat-box-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+    }
+    #statsAccessRow { grid-template-columns: repeat(5, 1fr); }
+    #statsLoginRow  { grid-template-columns: repeat(4, 1fr); }
     .stat-card {
       background: var(--white);
       border-radius: var(--radius);
@@ -1262,6 +1286,9 @@
       </button>
       <button class="sidebar-link" data-section="access" onclick="showPanel('access')">
         <i class="fas fa-user-shield"></i> Access &amp; Permissions
+      </button>
+      <button class="sidebar-link" data-section="statistics" onclick="showPanel('statistics');loadStatisticsPanel()">
+        <i class="fas fa-chart-bar"></i> Statistics
       </button>
       <button class="sidebar-link" data-section="committees-admin" onclick="showPanel('committees-admin');loadCommitteesAdmin()">
         <i class="fas fa-sitemap"></i> Committees
@@ -3235,6 +3262,55 @@
               <label>About Section Image (filename in images/ folder)</label>
               <input type="text" id="galaAboutImage" placeholder="images/gala-award-ceremony.jpg" value="images/gala-award-ceremony.jpg" />
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATISTICS -->
+    <div class="panel" id="panel-statistics">
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-door-open" style="color:var(--gold);margin-right:8px;"></i>Portal Access Requests</h3>
+          <button class="btn-sm view" onclick="loadStatisticsPanel()" style="font-size:0.75rem;padding:4px 10px;"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="section-card-body">
+          <div id="statsAccessRow" class="stats-row" style="margin-bottom:0;">
+            <div class="stat-box"><div class="stat-box-val" id="stat-access-total">--</div><div class="stat-box-label">Total Requests</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-access-granted">--</div><div class="stat-box-label">Approved</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-access-pending">--</div><div class="stat-box-label">Pending</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-access-visiting">--</div><div class="stat-box-label">Visiting</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-access-rejected">--</div><div class="stat-box-label">Rejected/Revoked</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-sign-in-alt" style="color:var(--gold);margin-right:8px;"></i>Portal Logins</h3>
+        </div>
+        <div class="section-card-body">
+          <div id="statsLoginRow" class="stats-row" style="margin-bottom:20px;">
+            <div class="stat-box"><div class="stat-box-val" id="stat-login-ever">--</div><div class="stat-box-label">Ever Logged In</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-login-30d">--</div><div class="stat-box-label">Last 30 Days</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-login-7d">--</div><div class="stat-box-label">Last 7 Days</div></div>
+            <div class="stat-box"><div class="stat-box-val" id="stat-login-never">--</div><div class="stat-box-label">Never Logged In</div></div>
+          </div>
+          <h4 style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-400);margin-bottom:10px;">Recent Logins</h4>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <thead>
+                <tr style="background:var(--gray-100);text-align:left;">
+                  <th style="padding:8px 12px;border-bottom:1px solid var(--gray-200);">Name</th>
+                  <th style="padding:8px 12px;border-bottom:1px solid var(--gray-200);">Email</th>
+                  <th style="padding:8px 12px;border-bottom:1px solid var(--gray-200);">Last Login</th>
+                </tr>
+              </thead>
+              <tbody id="statsLoginTable"><tr><td colspan="3" style="padding:16px;text-align:center;color:var(--gray-400);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div id="statsNeverList" style="margin-top:18px;display:none;">
+            <h4 style="font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-400);margin-bottom:10px;">Active Members Who Have Never Logged In</h4>
+            <div id="statsNeverBody" style="font-size:0.85rem;color:var(--gray-600);line-height:1.8;"></div>
           </div>
         </div>
       </div>
@@ -11956,6 +12032,90 @@ function renderGantt() {
 
 function printEventPlan() {
   window.print();
+}
+
+async function loadStatisticsPanel() {
+  const token = getAdminToken();
+  if (!token) return;
+
+  // Access request counts
+  try {
+    const allMembers = await sbGet('members', 'select=id,portal_access,status,first_name,last_name,email,last_login_at&status=eq.active&order=last_login_at.desc.nullslast', token);
+    const allReqs    = await sbGet('members', 'select=id,portal_access&portal_access=not.is.null', token);
+
+    const total    = allReqs.length;
+    const granted  = allReqs.filter(function(m){ return (m.portal_access||'').toLowerCase()==='granted'; }).length;
+    const pending  = allReqs.filter(function(m){ return (m.portal_access||'').toLowerCase()==='pending'; }).length;
+    const visiting = allReqs.filter(function(m){ return (m.portal_access||'').toLowerCase()==='visiting'; }).length;
+    const rejected = allReqs.filter(function(m){ var p=(m.portal_access||'').toLowerCase(); return p==='rejected'||p==='revoked'; }).length;
+
+    document.getElementById('stat-access-total').textContent   = total;
+    document.getElementById('stat-access-granted').textContent = granted;
+    document.getElementById('stat-access-pending').textContent = pending;
+    document.getElementById('stat-access-visiting').textContent= visiting;
+    document.getElementById('stat-access-rejected').textContent= rejected;
+
+    // Login counts
+    var now = Date.now();
+    var day30 = new Date(now - 30*24*3600*1000).toISOString();
+    var day7  = new Date(now -  7*24*3600*1000).toISOString();
+
+    var everLogged  = allMembers.filter(function(m){ return !!m.last_login_at; }).length;
+    var in30d       = allMembers.filter(function(m){ return m.last_login_at && m.last_login_at >= day30; }).length;
+    var in7d        = allMembers.filter(function(m){ return m.last_login_at && m.last_login_at >= day7;  }).length;
+    var neverLogged = allMembers.filter(function(m){ return !m.last_login_at; }).length;
+
+    document.getElementById('stat-login-ever').textContent  = everLogged;
+    document.getElementById('stat-login-30d').textContent   = in30d;
+    document.getElementById('stat-login-7d').textContent    = in7d;
+    document.getElementById('stat-login-never').textContent = neverLogged;
+
+    // Recent logins table (top 20 with last_login_at)
+    var logged = allMembers.filter(function(m){ return !!m.last_login_at; }).slice(0, 20);
+    var tbody = document.getElementById('statsLoginTable');
+    if (!logged.length) {
+      tbody.innerHTML = '<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--gray-400);">No login data yet — requires the <code>last_login_at</code> column.</td></tr>';
+    } else {
+      tbody.innerHTML = logged.map(function(m) {
+        var name = [(m.first_name||''),(m.last_name||'')].filter(Boolean).join(' ') || '—';
+        var dt   = new Date(m.last_login_at);
+        var ago  = formatRelativeTime(dt);
+        return '<tr style="border-bottom:1px solid var(--gray-100);">' +
+          '<td style="padding:8px 12px;font-weight:600;color:var(--gray-800);">' + escHtml(name) + '</td>' +
+          '<td style="padding:8px 12px;color:var(--gray-500);font-size:0.82rem;">' + escHtml(m.email||'') + '</td>' +
+          '<td style="padding:8px 12px;color:var(--gray-500);font-size:0.82rem;" title="' + dt.toLocaleString() + '">' + ago + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    // Never logged in list
+    var neverDiv = document.getElementById('statsNeverList');
+    var neverBody = document.getElementById('statsNeverBody');
+    if (neverLogged > 0) {
+      var neverMembers = allMembers.filter(function(m){ return !m.last_login_at; });
+      neverDiv.style.display = 'block';
+      neverBody.innerHTML = neverMembers.map(function(m){
+        var name = [(m.first_name||''),(m.last_name||'')].filter(Boolean).join(' ') || m.email || '—';
+        return '<span style="display:inline-block;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:16px;padding:3px 10px;margin:3px;font-size:0.82rem;">' + escHtml(name) + '</span>';
+      }).join('');
+    } else {
+      neverDiv.style.display = 'none';
+    }
+  } catch(e) {
+    console.error('loadStatisticsPanel', e);
+  }
+}
+
+function formatRelativeTime(dt) {
+  var diff = Date.now() - dt.getTime();
+  var min  = Math.floor(diff / 60000);
+  if (min <   1) return 'Just now';
+  if (min <  60) return min + 'm ago';
+  var hr = Math.floor(min / 60);
+  if (hr  <  24) return hr + 'h ago';
+  var days = Math.floor(hr / 24);
+  if (days < 30) return days + 'd ago';
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 </script>
