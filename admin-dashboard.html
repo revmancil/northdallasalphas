@@ -11754,23 +11754,34 @@ async function loadCommitteeMemberList(committeeId, token) {
   const el = document.getElementById('cm-list-'+committeeId);
   if (!el) return;
   if (!token) token = getAdminToken();
-  try {
-    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,role',token);
+  function renderRows(rows, hasRole) {
     if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No members yet.</div>'; return; }
     el.innerHTML = rows.map(function(r){
       const m = _allMembersForDropdown.find(function(x){return x.id===r.member_id;});
       const name = m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : r.member_id;
       const rid = escHtml(r.id);
+      const roleInput = hasRole
+        ? '<input type="text" value="'+escHtml(r.role||'')+'" placeholder="Role (optional)" '+
+            'style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
+            'onblur="saveCommitteeMemberRole(\''+rid+'\',this.value)" '+
+            'onkeydown="if(event.key===\'Enter\')this.blur()" />'
+        : '<span style="flex:1;font-size:0.75rem;color:var(--gray-400);font-style:italic;">Run SQL to enable roles</span>';
       return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray-100);">'+
         '<span style="font-size:0.85rem;min-width:140px;flex-shrink:0;">'+escHtml(name)+'</span>'+
-        '<input type="text" value="'+escHtml(r.role||'')+'" placeholder="Role (optional)" '+
-          'style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
-          'onblur="saveCommitteeMemberRole(\''+rid+'\',this.value)" '+
-          'onkeydown="if(event.key===\'Enter\')this.blur()" />'+
+        roleInput+
         '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+rid+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>'+
         '</div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members.</div>'; }
+  }
+  try {
+    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,role',token);
+    renderRows(rows, true);
+  } catch(e) {
+    try {
+      const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id',token);
+      renderRows(rows, false);
+    } catch(e2) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members.</div>'; }
+  }
 }
 
 async function saveCommitteeMemberRole(rowId, role) {
