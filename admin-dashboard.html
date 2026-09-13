@@ -11761,7 +11761,7 @@ async function loadCommitteeMemberList(committeeId, token) {
       const name = m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : r.member_id;
       const rid = escHtml(r.id);
       const roleInput = hasRole
-        ? '<input type="text" value="'+escHtml(r.role||'')+'" placeholder="Role (optional)" '+
+        ? '<input type="text" value="'+escHtml(r.member_role||'')+'" placeholder="Role (optional)" '+
             'style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
             'onblur="saveCommitteeMemberRole(\''+rid+'\',this.value)" '+
             'onkeydown="if(event.key===\'Enter\')this.blur()" />'
@@ -11774,7 +11774,7 @@ async function loadCommitteeMemberList(committeeId, token) {
     }).join('');
   }
   try {
-    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,role',token);
+    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,member_role',token);
     renderRows(rows, true);
   } catch(e) {
     try {
@@ -11787,7 +11787,7 @@ async function loadCommitteeMemberList(committeeId, token) {
 async function saveCommitteeMemberRole(rowId, role) {
   const token = getAdminToken();
   try {
-    await sbPatch('committee_members','id=eq.'+encodeURIComponent(rowId),{role: role || null},token);
+    await sbPatch('committee_members','id=eq.'+encodeURIComponent(rowId),{member_role: role || null},token);
     showToast('Role saved.','success');
   } catch(e) { showToast('Could not save role: '+(e.message||'error'),'error'); }
 }
