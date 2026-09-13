@@ -11755,17 +11755,30 @@ async function loadCommitteeMemberList(committeeId, token) {
   if (!el) return;
   if (!token) token = getAdminToken();
   try {
-    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id',token);
+    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,role',token);
     if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No members yet.</div>'; return; }
     el.innerHTML = rows.map(function(r){
       const m = _allMembersForDropdown.find(function(x){return x.id===r.member_id;});
       const name = m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : r.member_id;
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100);">'+
-        '<span style="font-size:0.85rem;">'+escHtml(name)+'</span>'+
-        '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+escHtml(r.id)+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>'+
+      const rid = escHtml(r.id);
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray-100);">'+
+        '<span style="font-size:0.85rem;min-width:140px;flex-shrink:0;">'+escHtml(name)+'</span>'+
+        '<input type="text" value="'+escHtml(r.role||'')+'" placeholder="Role (optional)" '+
+          'style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
+          'onblur="saveCommitteeMemberRole(\''+rid+'\',this.value)" '+
+          'onkeydown="if(event.key===\'Enter\')this.blur()" />'+
+        '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+rid+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>'+
         '</div>';
     }).join('');
   } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members.</div>'; }
+}
+
+async function saveCommitteeMemberRole(rowId, role) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('committee_members','id=eq.'+encodeURIComponent(rowId),{role: role || null},token);
+    showToast('Role saved.','success');
+  } catch(e) { showToast('Could not save role: '+(e.message||'error'),'error'); }
 }
 
 function toggleCommitteeExpand(committeeId) {
