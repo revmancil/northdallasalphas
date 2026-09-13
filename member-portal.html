@@ -314,7 +314,7 @@ backdrop-filter:blur(4px);}
         <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-info"><div class="stat-value" id="statEventsCount">--</div><div class="stat-label">Upcoming Events</div></div></div>
         <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-info"><div class="stat-value" id="statDuesPaid">--</div><div class="stat-label">Dues Status</div></div></div>
         <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-file-alt"></i></div><div class="stat-info"><div class="stat-value" id="statDocCount">--</div><div class="stat-label">Documents</div></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6;"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-value" id="statMemberCount">--</div><div class="stat-label">Active Brothers</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(201,168,76,0.1);color:var(--gold);"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-value" id="statMemberCount">--</div><div class="stat-label">Active Brothers</div></div></div>
       </div>
       <!-- SPEC §2 Step 4 — Visiting Brother Access Request card (hidden for non-visiting) -->
       <div id="vbAccessRequestCard" style="display:none;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px 24px;margin-bottom:20px;">
@@ -644,7 +644,7 @@ backdrop-filter:blur(4px);}
             <div class="pfield">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <label style="margin-bottom:0;">Message <span style="color:var(--red);">*</span></label>
-                <button type="button" onclick="openAiAssist()" style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:20px;color:#fff;font-size:0.75rem;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.03em;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
+                <button type="button" onclick="openAiAssist()" style="display:flex;align-items:center;gap:6px;background:var(--gold);border:none;border-radius:20px;color:#111;font-size:0.75rem;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.03em;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
                   <i class="fas fa-wand-magic-sparkles"></i> AI Assist
                 </button>
               </div>
@@ -1637,7 +1637,7 @@ async function loadNewsFeed() {
       el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No updates posted yet. Check back soon.</p></div>';
       return;
     }
-    var catColors = { General:'#3b82f6', Announcement:'#C9A84C', Reminder:'#f59e0b', 'Event Update':'#8b5cf6', Financial:'#27ae60' };
+    var catColors = { General:'#3b82f6', Announcement:'#C9A84C', Reminder:'#f59e0b', 'Event Update':'#C9A84C', Financial:'#27ae60' };
     el.innerHTML = posts.map(function(p) {
       var color = catColors[p.category] || '#3b82f6';
       var date  = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
@@ -2292,14 +2292,14 @@ async function init() {
     document.getElementById('sidebarName').textContent = fullName || userEmail;
     document.getElementById('statusText').textContent  = 'Pending Approval';
     document.getElementById('statusDot').className = 'status-dot pending';
-    document.querySelector('.main-content').innerHTML =
+    document.querySelector('.main').innerHTML =
       '<div style="max-width:520px;margin:80px auto;padding:40px 32px;background:var(--white);border-radius:16px;box-shadow:0 2px 16px rgba(0,0,0,0.08);text-align:center;">' +
       '<div style="width:64px;height:64px;border-radius:50%;background:rgba(245,158,11,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">' +
       '<i class="fas fa-clock" style="font-size:1.8rem;color:#f59e0b;"></i></div>' +
       '<h2 style="font-size:1.25rem;font-weight:700;color:var(--gray-800);margin-bottom:10px;">Request Under Review</h2>' +
       '<p style="color:var(--gray-500);font-size:0.9rem;line-height:1.6;margin-bottom:24px;">Your access request has been received and is awaiting approval from chapter leadership. You\'ll receive an email once your account is approved.</p>' +
       '<p style="color:var(--gray-400);font-size:0.8rem;">Signed in as <strong>' + escHtml(userEmail) + '</strong></p>' +
-      '<button onclick="signOut()" style="margin-top:20px;padding:10px 24px;border-radius:8px;background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-600);font-size:0.85rem;cursor:pointer;">Sign Out</button>' +
+      '<button onclick="logout()" style="margin-top:20px;padding:10px 24px;border-radius:8px;background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-600);font-size:0.85rem;cursor:pointer;">Sign Out</button>' +
       '</div>';
     return;
   }
@@ -2562,7 +2562,7 @@ async function loadNewslettersPortal() {
       var dateStr = n.published_at ? new Date(n.published_at).toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' }) : '';
       return '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.07);">' +
         '<div>' +
-          '<div style="font-weight:600;color:var(--white);font-size:0.9rem;">' + esc(n.title) + '</div>' +
+          '<div style="font-weight:600;color:var(--white);font-size:0.9rem;">' + escHtml(n.title) + '</div>' +
           (dateStr ? '<div style="font-size:0.78rem;color:var(--gray-400);margin-top:2px;">' + dateStr + '</div>' : '') +
         '</div>' +
         '<button onclick="openNewsletter(' + JSON.stringify(n.id) + ',' + JSON.stringify(n.title) + ')" style="padding:7px 16px;background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:6px;font-size:0.82rem;font-weight:600;cursor:pointer;white-space:nowrap;"><i class="fas fa-book-open"></i> Read</button>' +
@@ -3250,7 +3250,7 @@ backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px
     <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid rgba(255,255,255,0.07);">
       <div style="display:flex;align-items:center;gap:10px;">
-        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <i class="fas fa-wand-magic-sparkles" style="color:#fff;font-size:0.85rem;"></i>
         </div>
         <div>
@@ -3287,7 +3287,7 @@ backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px
       <div id="aiAssistErr" style="display:none;background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#f87171;padding:10px 14px;border-radius:6px;font-size:0.83rem;"></div>
 
       <!-- Generate button -->
-      <button type="button" id="aiAssistGenerateBtn" onclick="generateAiAnnouncement()" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:600;padding:11px 20px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+      <button type="button" id="aiAssistGenerateBtn" onclick="generateAiAnnouncement()" style="background:var(--gold);border:none;border-radius:8px;color:#fff;font-size:0.88rem;font-weight:600;padding:11px 20px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
         <i class="fas fa-wand-magic-sparkles"></i> Generate Announcement
       </button>
 

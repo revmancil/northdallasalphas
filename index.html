@@ -620,8 +620,8 @@ async function homeGetEvents() {
     if (!upcoming.length) return [];
     // Sort ascending by event date (soonest first)
     upcoming.sort(function(a, b) {
-      const da = (a.date || '').split(' ')[0] || '';
-      const db = (b.date || '').split(' ')[0] || '';
+      const da = (a.eventDate || '').split(' ')[0] || '';
+      const db = (b.eventDate || '').split(' ')[0] || '';
       function toIso(d) {
         const s = d.split('/');
         if (s.length < 3) return '';

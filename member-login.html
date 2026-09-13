@@ -40,7 +40,7 @@
     .btn { width:100%; padding:13px; background:var(--gold); color:var(--black); border:none; border-radius:6px; font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; cursor:pointer; transition:all 0.25s; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:8px; }
     .btn:hover { background:var(--gold-light); transform:translateY(-1px); }
     .btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
-    @-webkit-keyframes spin {{ to { transform:rotate(360deg); } }}
+    @-webkit-keyframes spin { to { transform:rotate(360deg); } }
 @keyframes spin { to { transform:rotate(360deg); } }
     .spinner { width:15px; height:15px; border:2px solid rgba(0,0,0,0.3); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; }
     .forgot-link { display:block; text-align:right; font-size:0.75rem; color:rgba(201,168,76,0.6); text-decoration:none; margin-top:4px; cursor:pointer; }
@@ -91,7 +91,7 @@
       <div class="msg error" id="forgotError"><i class="fas fa-exclamation-circle"></i><span id="forgotErrorText">Email not found.</span></div>
       <div class="msg success" id="forgotSuccess"><i class="fas fa-check-circle"></i><span>Password reset email sent! Check your inbox.</span></div>
       <p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin-bottom:8px;">Enter your email and we will send a password reset link.</p>
-      <p style="color:rgba(201,168,76,0.7);font-size:0.78rem;margin-bottom:20px;line-height:1.5;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>This only works if you have already created a portal account. If you are signing in for the first time, use the <a onclick="switchTab('signup')" style="color:var(--gold);cursor:pointer;text-decoration:underline;">Sign Up</a> tab instead.</p>
+      <p style="color:rgba(201,168,76,0.7);font-size:0.78rem;margin-bottom:20px;line-height:1.5;"><i class="fas fa-info-circle" style="margin-right:4px;"></i>This only works if you have already created a portal account. If you are signing in for the first time, use the <a onclick="switchTab('register')" style="color:var(--gold);cursor:pointer;text-decoration:underline;">Sign Up</a> tab instead.</p>
       <form id="forgotForm" novalidate>
         <div class="form-group"><label>Email Address</label><div class="input-wrap"><i class="fas fa-envelope"></i><input type="email" id="forgotEmail" placeholder="your@email.com" required /></div></div>
         <button type="submit" class="btn" id="forgotBtn"><i class="fas fa-paper-plane"></i> Send Reset Link</button>
@@ -385,6 +385,6 @@ document.getElementById('forgotForm').addEventListener('submit', async function(
 </script>
 
 <!-- Help button -->
-<a href="/member-guide.html" target="_blank" title="Member Portal Guide" style="position:fixed;bottom:24px;right:24px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#C9A84C;color:#111;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;text-decoration:none;box-shadow:0 2px 12px rgba(0,0,0,0.25);transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 4px 18px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.25)'">?</a>
+<a href="member-guide.html" target="_blank" title="Member Portal Guide" style="position:fixed;bottom:24px;right:24px;z-index:9999;width:44px;height:44px;border-radius:50%;background:#C9A84C;color:#111;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:700;text-decoration:none;box-shadow:0 2px 12px rgba(0,0,0,0.25);transition:transform 0.15s,box-shadow 0.15s;" onmouseover="this.style.transform='scale(1.1)';this.style.boxShadow='0 4px 18px rgba(0,0,0,0.35)'" onmouseout="this.style.transform='scale(1)';this.style.boxShadow='0 2px 12px rgba(0,0,0,0.25)'">?</a>
 </body>
 </html>
