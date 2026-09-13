@@ -13,7 +13,7 @@
     .vb-card { background: var(--white); border: 1px solid var(--gray-200); border-radius: 8px; padding: 26px; }
     .vb-intro { background: var(--black); color: var(--white); border: 1px solid rgba(201,168,76,0.2); }
     .vb-intro p { color: rgba(255,255,255,0.65); line-height: 1.7; }
-    .vb-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .vb-form-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 14px; }
     .vb-field.full { grid-column: span 2; }
     .vb-field label { display: block; font-size: 0.74rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-600); margin-bottom: 6px; }
     .vb-field input, .vb-field textarea, .vb-field select {
@@ -150,7 +150,7 @@
 
 <section id="reactivation" style="padding: 90px 0; background: var(--gray-100);">
   <div class="container">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;" class="fade-up">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 40px; align-items: center;" class="fade-up">
       <div>
         <span class="section-label">Returning Brothers</span>
         <h2 class="section-title" style="font-size: 2rem;">Interested in Reactivating?</h2>
