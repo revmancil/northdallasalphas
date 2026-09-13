@@ -11736,8 +11736,9 @@ async function renderCommitteesAdminList(token) {
           '</div>' +
           '<div style="margin-bottom:10px;font-size:0.82rem;font-weight:600;color:var(--gray-600);">Members</div>' +
           '<div id="cm-list-'+escHtml(c.id)+'" style="margin-bottom:12px;"></div>' +
-          '<div style="display:flex;gap:8px;align-items:center;">' +
-            '<select id="cm-add-'+escHtml(c.id)+'" style="flex:1;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;"><option value="">Add member...</option>'+memberOptions+'</select>' +
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+            '<input id="cm-role-'+escHtml(c.id)+'" type="text" placeholder="Position (e.g. Upsilon Mu)" style="flex:1;min-width:140px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" />' +
+            '<select id="cm-add-'+escHtml(c.id)+'" style="flex:1;min-width:140px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;"><option value="">Select brother...</option>'+memberOptions+'</select>' +
             '<button class="btn-sm success" onclick="addCommitteeMember(\''+escHtml(c.id)+'\')"><i class="fas fa-plus"></i> Add</button>' +
           '</div>' +
         '</div>'
@@ -11754,34 +11755,23 @@ async function loadCommitteeMemberList(committeeId, token) {
   const el = document.getElementById('cm-list-'+committeeId);
   if (!el) return;
   if (!token) token = getAdminToken();
-  function renderRows(rows, hasRole) {
+  try {
+    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,member_role',token);
     if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No members yet.</div>'; return; }
+    const memberOpts = '<option value="">— Unassigned —</option>' + _allMembersForDropdown.map(function(m){
+      return '<option value="'+escHtml(m.id)+'">'+escHtml([m.first_name,m.last_name].filter(Boolean).join(' '))+'</option>';
+    }).join('');
     el.innerHTML = rows.map(function(r){
-      const m = _allMembersForDropdown.find(function(x){return x.id===r.member_id;});
-      const name = m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : r.member_id;
       const rid = escHtml(r.id);
-      const roleInput = hasRole
-        ? '<input type="text" value="'+escHtml(r.member_role||'')+'" placeholder="Role (optional)" '+
-            'style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
-            'onblur="saveCommitteeMemberRole(\''+rid+'\',this.value)" '+
-            'onkeydown="if(event.key===\'Enter\')this.blur()" />'
-        : '<span style="flex:1;font-size:0.75rem;color:var(--gray-400);font-style:italic;">Run SQL to enable roles</span>';
+      const selectedOpts = memberOpts.replace('value="'+(r.member_id||'')+'"','value="'+(r.member_id||'')+'" selected');
       return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray-100);">'+
-        '<span style="font-size:0.85rem;min-width:140px;flex-shrink:0;">'+escHtml(name)+'</span>'+
-        roleInput+
+        '<span style="font-size:0.85rem;font-weight:600;min-width:140px;flex-shrink:0;color:var(--gray-700);">'+escHtml(r.member_role||'—')+'</span>'+
+        '<select style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
+          'onchange="updateCommitteeMemberAssignment(\''+rid+'\',this.value)">'+selectedOpts+'</select>'+
         '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+rid+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>'+
         '</div>';
     }).join('');
-  }
-  try {
-    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,member_role',token);
-    renderRows(rows, true);
-  } catch(e) {
-    try {
-      const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id',token);
-      renderRows(rows, false);
-    } catch(e2) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members.</div>'; }
-  }
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members. Ensure the member_role column exists.</div>'; }
 }
 
 async function saveCommitteeMemberRole(rowId, role) {
@@ -11810,16 +11800,27 @@ async function assignCommitteeRole(committeeId, field, memberId) {
 }
 
 async function addCommitteeMember(committeeId) {
+  const roleInput = document.getElementById('cm-role-'+committeeId);
   const sel = document.getElementById('cm-add-'+committeeId);
+  const positionName = roleInput && roleInput.value.trim();
   const memberId = sel && sel.value;
-  if (!memberId) { showToast('Select a member first.','info'); return; }
+  if (!positionName) { showToast('Enter a position name first.','info'); return; }
   const token = getAdminToken();
   try {
-    await sbPost('committee_members',{committee_id:committeeId,member_id:memberId,added_by:null},token);
-    sel.value = '';
-    showToast('Member added.','success');
+    await sbPost('committee_members',{committee_id:committeeId,member_id:memberId||null,member_role:positionName,added_by:null},token);
+    if (roleInput) roleInput.value = '';
+    if (sel) sel.value = '';
+    showToast('Position added.','success');
     loadCommitteeMemberList(committeeId, token);
-  } catch(e) { showToast('Could not add member: '+(e.message||'already a member'),'error'); }
+  } catch(e) { showToast('Could not add position: '+(e.message||'error'),'error'); }
+}
+
+async function updateCommitteeMemberAssignment(rowId, memberId) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('committee_members','id=eq.'+encodeURIComponent(rowId),{member_id: memberId||null},token);
+    showToast('Assignment saved.','success');
+  } catch(e) { showToast('Could not save assignment.','error'); }
 }
 
 async function removeCommitteeMember(rowId, committeeId) {
