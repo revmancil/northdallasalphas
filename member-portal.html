@@ -1676,11 +1676,16 @@ async function loadMeetingsPortal() {
   var memberEmail = currentMember ? (currentMember.email || '') : '';
   el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>Loading meetings…</p></div>';
   try {
-    var meetings = await sbGet('meetings', 'order=meeting_date.asc', token);
-    _meetingsCache = meetings || [];
-    if (!meetings || !meetings.length) {
+    var allMeetings = await sbGet('meetings', 'order=meeting_date.asc', token);
+    _meetingsCache = allMeetings || [];
+    var meetings = (allMeetings || []).filter(function(m) { return !m.archived; });
+    var archivedMeetings = (allMeetings || []).filter(function(m) { return m.archived; }).reverse();
+    if (!meetings.length && !archivedMeetings.length) {
       el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>No meetings scheduled yet.</p></div>';
       return;
+    }
+    if (!meetings.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:24px 0;"><i class="fas fa-calendar-check"></i><p>No upcoming meetings.</p></div>';
     }
     // Load this member's RSVPs
     var myRsvps = {};
@@ -1757,9 +1762,51 @@ async function loadMeetingsPortal() {
         docsHtml +
         '</div>';
     }).join('');
+
+    // Append archive section if there are archived meetings
+    if (archivedMeetings.length) {
+      var archiveHtml = '<div style="margin-top:24px;">' +
+        '<div onclick="togglePortalMeetingArchive(this)" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.18);border-radius:10px;cursor:pointer;margin-bottom:4px;">' +
+        '<span style="font-size:0.88rem;font-weight:700;color:var(--gold);letter-spacing:0.04em;"><i class="fas fa-box-archive" style="margin-right:8px;"></i>Meeting Archive (' + archivedMeetings.length + ')</span>' +
+        '<i class="fas fa-chevron-down" style="color:var(--gold);font-size:0.8rem;transition:transform 0.2s;"></i>' +
+        '</div>' +
+        '<div class="portal-archive-body" style="display:none;">' +
+        archivedMeetings.map(function(m) {
+          var dateStr = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' }) : '—';
+          var timeStr = m.start_time ? time24ToAmPm(m.start_time) + (m.end_time ? ' – ' + time24ToAmPm(m.end_time) : '') : '';
+          var mDocs = (docsByMtg[m.id] || []);
+          return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:16px;margin-top:8px;background:rgba(255,255,255,0.02);">' +
+            '<div style="font-size:0.92rem;font-weight:700;color:rgba(255,255,255,0.8);margin-bottom:4px;">' + escapeHtml(m.title) + '</div>' +
+            '<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);"><i class="fas fa-calendar" style="width:14px;"></i> ' + escapeHtml(dateStr) + (timeStr ? ' &nbsp;·&nbsp; ' + escapeHtml(timeStr) : '') + '</div>' +
+            (m.location ? '<div style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-top:2px;"><i class="fas fa-map-marker-alt" style="width:14px;"></i> ' + escapeHtml(m.location) + '</div>' : '') +
+            (m.agenda ? '<div style="font-size:0.78rem;color:rgba(255,255,255,0.35);margin-top:10px;white-space:pre-wrap;border-left:2px solid rgba(201,168,76,0.25);padding-left:10px;">' + escapeHtml(m.agenda) + '</div>' : '') +
+            (mDocs.length ? '<div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.05);">' +
+              '<div style="font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;"><i class="fas fa-paperclip"></i> Documents</div>' +
+              mDocs.map(function(d) {
+                return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+                  '<i class="fas fa-file-alt" style="color:var(--gold);font-size:0.8rem;flex-shrink:0;"></i>' +
+                  '<span style="flex:1;font-size:0.82rem;color:rgba(255,255,255,0.7);">' + escapeHtml(d.title) + (d.uploaded_by_name ? ' <span style="color:rgba(255,255,255,0.3);font-size:0.72rem;">— ' + escapeHtml(d.uploaded_by_name) + '</span>' : '') + '</span>' +
+                  (d.file_url ? '<a href="' + escapeHtml(d.file_url) + '" target="_blank" style="color:var(--gold);font-size:0.75rem;text-decoration:none;border:1px solid rgba(201,168,76,0.3);padding:3px 10px;border-radius:4px;white-space:nowrap;flex-shrink:0;"><i class="fas fa-eye"></i> View</a>' : '') +
+                  '</div>';
+              }).join('') +
+            '</div>' : '') +
+          '</div>';
+        }).join('') +
+        '</div></div>';
+      el.innerHTML += archiveHtml;
+    }
+
   } catch(err) {
     el.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-circle"></i><p>Could not load meetings.</p></div>';
   }
+}
+
+function togglePortalMeetingArchive(header) {
+  var body = header.nextElementSibling;
+  var chevron = header.querySelector('i.fa-chevron-down');
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 async function submitRsvp(meetingId, response, btn) {

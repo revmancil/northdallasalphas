@@ -2479,6 +2479,19 @@
         </div>
       </div>
 
+      <!-- Meeting Archive -->
+      <div class="section-card" style="margin-top:20px;">
+        <div class="section-card-header" onclick="toggleMeetingArchive()" style="cursor:pointer;">
+          <h3><i class="fas fa-box-archive" style="color:var(--gold);margin-right:8px;"></i>Meeting Archive</h3>
+          <i class="fas fa-chevron-down" id="archiveChevron" style="color:var(--gray-400);transition:transform 0.2s;"></i>
+        </div>
+        <div id="meetingArchiveBody" style="display:none;">
+          <div class="section-card-body">
+            <div id="meetingsArchiveList"><div class="hint-text">Click to load archived meetings.</div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- QR Modal -->
       <div id="mtgQrModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
         <div style="background:#fff;border-radius:12px;padding:32px;max-width:380px;width:90%;text-align:center;position:relative;">
@@ -4778,7 +4791,7 @@ async function loadMeetingsPanel() {
   const token = getAdminToken();
   el.innerHTML = '<div class="hint-text">Loading…</div>';
   try {
-    const meetings = await sbGet('meetings', 'order=meeting_date.desc', token);
+    const meetings = await sbGet('meetings', 'archived=eq.false&order=meeting_date.desc', token);
     if (!meetings || !meetings.length) {
       el.innerHTML = '<div class="hint-text">No meetings scheduled yet.</div>';
       return;
@@ -4851,6 +4864,7 @@ async function loadMeetingsPanel() {
         '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
         '<button class="btn-sm view" onclick="showMtgQr(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\',\'' + escHtml(dateStr) + '\')"><i class="fas fa-qrcode"></i> QR Check-In</button>' +
         '<button class="btn-sm view" onclick="showMtgAttendance(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-clipboard-check"></i> Attendance</button>' +
+        '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="archiveMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-box-archive"></i> Archive</button>' +
         '<button class="btn-sm danger" onclick="deleteMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-trash"></i></button>' +
         '</div>' +
         '</div>' +
@@ -4908,6 +4922,96 @@ async function deleteMeeting(id, title) {
   } catch(err) {
     showToast('Could not delete: ' + (err.message || 'error'), 'error');
   }
+}
+
+async function archiveMeeting(id, title) {
+  if (!confirm('Archive "' + title + '"? It will move to the Meeting Archive and be visible to members as a past meeting.')) return;
+  const token = getAdminToken();
+  try {
+    await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), { archived: true }, token);
+    showToast('Meeting archived.', 'success');
+    loadMeetingsPanel();
+    // Reload archive if open
+    if (document.getElementById('meetingArchiveBody').style.display !== 'none') loadMeetingsArchive();
+  } catch(err) {
+    showToast('Could not archive: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function unarchiveMeeting(id, title) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), { archived: false }, token);
+    showToast('Meeting restored to scheduled.', 'success');
+    loadMeetingsPanel();
+    loadMeetingsArchive();
+  } catch(err) {
+    showToast('Could not restore: ' + (err.message || 'error'), 'error');
+  }
+}
+
+var _archiveLoaded = false;
+function toggleMeetingArchive() {
+  const body = document.getElementById('meetingArchiveBody');
+  const chevron = document.getElementById('archiveChevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+  if (!open && !_archiveLoaded) loadMeetingsArchive();
+}
+
+async function loadMeetingsArchive() {
+  const el = document.getElementById('meetingsArchiveList');
+  if (!el) return;
+  const token = getAdminToken();
+  el.innerHTML = '<div class="hint-text">Loading…</div>';
+  _archiveLoaded = true;
+  try {
+    const meetings = await sbGet('meetings', 'archived=eq.true&order=meeting_date.desc', token);
+    if (!meetings || !meetings.length) { el.innerHTML = '<div class="hint-text">No archived meetings yet.</div>'; return; }
+    const [attendance, allDocs] = await Promise.all([
+      sbGet('meeting_attendance', 'select=meeting_id,id', token).catch(function() { return []; }),
+      sbGet('documents', 'meeting_id=not.is.null&order=created_at.desc', token).catch(function() { return []; })
+    ]);
+    const attMap = {};
+    (attendance || []).forEach(function(a) { attMap[a.meeting_id] = (attMap[a.meeting_id] || 0) + 1; });
+    const docsByMtg = {};
+    (allDocs || []).forEach(function(d) { if (d.meeting_id) { if (!docsByMtg[d.meeting_id]) docsByMtg[d.meeting_id] = []; docsByMtg[d.meeting_id].push(d); } });
+
+    el.innerHTML = meetings.map(function(m) {
+      const dateStr = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' }) : '—';
+      const timeStr = m.start_time ? time24ToAmPm(m.start_time) + (m.end_time ? ' – ' + time24ToAmPm(m.end_time) : '') : '';
+      const checked = attMap[m.id] || 0;
+      const mDocs = (docsByMtg[m.id] || []).filter(function(d) { return (d.status || 'approved') !== 'pending'; });
+      return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:10px;background:#fafafa;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">' +
+        '<div>' +
+        '<div style="font-size:0.92rem;font-weight:700;color:var(--gray-800);">' + escHtml(m.title) + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:3px;"><i class="fas fa-calendar" style="width:14px;"></i> ' + escHtml(dateStr) + (timeStr ? ' &nbsp;·&nbsp; ' + escHtml(timeStr) : '') + '</div>' +
+        (m.location ? '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:2px;"><i class="fas fa-map-marker-alt" style="width:14px;"></i> ' + escHtml(m.location) + '</div>' : '') +
+        '<div style="font-size:0.78rem;color:var(--gold);margin-top:4px;"><i class="fas fa-door-open"></i> ' + checked + ' checked in</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button class="btn-sm view" onclick="showMtgAttendance(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-clipboard-check"></i> Attendance</button>' +
+        '<button class="btn-sm" style="background:rgba(39,174,96,0.1);color:#27ae60;border:1px solid rgba(39,174,96,0.3);" onclick="unarchiveMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-rotate-left"></i> Restore</button>' +
+        '<button class="btn-sm danger" onclick="deleteMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-trash"></i></button>' +
+        '</div></div>' +
+        (m.agenda ? '<div style="margin-top:10px;font-size:0.8rem;color:var(--gray-500);white-space:pre-wrap;border-top:1px solid var(--gray-100);padding-top:8px;">' + escHtml(m.agenda) + '</div>' : '') +
+        (mDocs.length ? '<div style="margin-top:10px;border-top:1px solid var(--gray-100);padding-top:10px;">' +
+          '<div style="font-size:0.75rem;font-weight:700;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;"><i class="fas fa-paperclip"></i> Documents</div>' +
+          mDocs.map(function(d) {
+            return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">' +
+              '<i class="fas fa-file-alt" style="color:var(--gold);font-size:0.8rem;"></i>' +
+              '<span style="flex:1;font-size:0.82rem;color:var(--gray-700);">' + escHtml(d.title) + (d.uploaded_by_name ? ' <span style="color:var(--gray-400);">— ' + escHtml(d.uploaded_by_name) + '</span>' : '') + '</span>' +
+              (d.file_url ? '<a href="' + escHtml(d.file_url) + '" target="_blank" class="btn-sm view" style="padding:3px 8px;font-size:0.72rem;"><i class="fas fa-eye"></i> View</a>' : '') +
+              '</div>';
+          }).join('') + '</div>' : '') +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div style="color:var(--red);font-size:0.83rem;">Could not load archive: ' + escHtml(err.message || 'error') + '</div>';
+  }
+}
 }
 
 function showMtgQr(id, title, dateStr) {
