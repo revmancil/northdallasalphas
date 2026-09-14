@@ -8720,8 +8720,8 @@ function nlGenId() { return 'blk_' + Math.random().toString(36).slice(2, 8); }
 
 function nlDefaultProps(type) {
   switch (type) {
-    case 'heading':   return { text: 'Heading', level: 'H2', fontSize: 28, color: '#000000', align: 'center', bold: true, paddingTop: 16, paddingBottom: 8 };
-    case 'paragraph': return { text: 'Write your content here.', fontSize: 15, color: '#000000', align: 'left', paddingTop: 8, paddingBottom: 8 };
+    case 'heading':   return { text: 'Heading', level: 'H2', fontSize: 28, color: '#000000', align: 'center', bold: true, fontFamily: '', paddingTop: 16, paddingBottom: 8 };
+    case 'paragraph': return { text: 'Write your content here.', fontSize: 15, color: '#000000', align: 'left', fontFamily: '', paddingTop: 8, paddingBottom: 8 };
     case 'image':     return { src: '', alt: '', align: 'center', widthPct: 100, borderRadius: 0, link: '', paddingTop: 8, paddingBottom: 8 };
     case 'button':    return { text: 'Click Here', url: '', shape: 'round', size: 'medium', bgColor: '#C9A84C', textColor: '#000000', align: 'center', paddingTop: 16, paddingBottom: 16 };
     case 'divider':   return { color: '#CCCCCC', thickness: 1, style: 'solid', widthPct: 80, paddingTop: 8, paddingBottom: 8 };
@@ -8937,10 +8937,12 @@ function nlBlockVisual(b) {
   switch (b.type) {
     case 'heading': {
       const tag = (p.level || 'H2').toLowerCase();
-      return '<' + tag + ' style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 24) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'center') + ';font-weight:' + (p.bold ? '700' : '400') + ';">' + escHtml(p.text || 'Heading') + '</' + tag + '>';
+      const ff = p.fontFamily ? 'font-family:' + p.fontFamily + ';' : '';
+      return '<' + tag + ' style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 24) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'center') + ';font-weight:' + (p.bold ? '700' : '400') + ';' + ff + '">' + escHtml(p.text || 'Heading') + '</' + tag + '>';
     }
     case 'paragraph': {
-      return '<p style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'left') + ';white-space:pre-wrap;">' + escHtml(p.text || '') + '</p>';
+      const ff = p.fontFamily ? 'font-family:' + p.fontFamily + ';' : '';
+      return '<p style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'left') + ';white-space:pre-wrap;' + ff + '">' + escHtml(p.text || '') + '</p>';
     }
     case 'image': {
       if (p.src) {
@@ -9050,6 +9052,7 @@ function nlPropsForm(block, zone) {
     case 'heading':
       html += field('Text', ta('text', p.text, 2));
       html += field('Level', selInp('level', p.level || 'H2', ['H1', 'H2', 'H3', 'H4']));
+      html += field('Font Family', selInp('fontFamily', p.fontFamily || '', [['', 'Use global default'], ['Arial, Helvetica, sans-serif', 'Arial'], ['Georgia, serif', 'Georgia'], ["'Times New Roman', serif", 'Times New Roman'], ['Verdana, sans-serif', 'Verdana'], ['Trebuchet MS, sans-serif', 'Trebuchet MS'], ['Impact, sans-serif', 'Impact'], ["'Courier New', monospace", 'Courier New']]));
       html += field('Font Size', numInp('fontSize', p.fontSize || 24, 10, 80, 'px'));
       html += field('Color', colorInp('color', p.color || '#000000'));
       html += field('Alignment', alignBtns('align', p.align || 'center'));
@@ -9058,6 +9061,7 @@ function nlPropsForm(block, zone) {
       break;
     case 'paragraph':
       html += field('Text', ta('text', p.text, 5));
+      html += field('Font Family', selInp('fontFamily', p.fontFamily || '', [['', 'Use global default'], ['Arial, Helvetica, sans-serif', 'Arial'], ['Georgia, serif', 'Georgia'], ["'Times New Roman', serif", 'Times New Roman'], ['Verdana, sans-serif', 'Verdana'], ['Trebuchet MS, sans-serif', 'Trebuchet MS'], ['Impact, sans-serif', 'Impact'], ["'Courier New', monospace", 'Courier New']]));
       html += field('Font Size', numInp('fontSize', p.fontSize || 15, 8, 36, 'px'));
       html += field('Color', colorInp('color', p.color || '#000000'));
       html += field('Alignment', alignBtns('align', p.align || 'left'));
@@ -9403,11 +9407,13 @@ function nlBlockToEmailRow(b, gs) {
   switch (b.type) {
     case 'heading': {
       const tag = (p.level || 'H2').toLowerCase();
-      return tdWrap('<' + tag + ' style="margin:0;font-size:' + (p.fontSize || 24) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'center') + ';font-weight:' + (p.bold ? '700' : '400') + ';font-family:' + gs.font + ';">' + escHtml(p.text || '') + '</' + tag + '>');
+      const hff = p.fontFamily || gs.font;
+      return tdWrap('<' + tag + ' style="margin:0;font-size:' + (p.fontSize || 24) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'center') + ';font-weight:' + (p.bold ? '700' : '400') + ';font-family:' + hff + ';">' + escHtml(p.text || '') + '</' + tag + '>');
     }
     case 'paragraph': {
+      const pff = p.fontFamily || gs.font;
       const lines = escHtml(p.text || '').replace(/\n/g, '<br />');
-      return tdWrap('<p style="margin:0;font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'left') + ';line-height:1.6;font-family:' + gs.font + ';">' + lines + '</p>');
+      return tdWrap('<p style="margin:0;font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'left') + ';line-height:1.6;font-family:' + pff + ';">' + lines + '</p>');
     }
     case 'image': {
       if (!p.src) return '';
