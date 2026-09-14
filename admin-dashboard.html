@@ -8841,73 +8841,114 @@ function nlShowTab(tab) {
   });
   if (tab === 'sections') nlRenderSectionsTab();
   if (tab === 'styles') nlRenderStylesTab();
-  if (tab === 'templates') nlRenderTemplatesTab();
+  if (tab === 'templates') nlRenderTemplatesTab().catch(function () { });
 }
 
-// ── Templates (localStorage) ──
-function nlGetTemplates() {
-  try { return JSON.parse(localStorage.getItem('nlTemplates') || '[]'); } catch (e) { return []; }
-}
-function nlSaveTemplates(arr) {
-  try { localStorage.setItem('nlTemplates', JSON.stringify(arr)); } catch (e) { }
-}
-function nlSaveAsTemplate() {
+// ── Templates (Supabase) ──
+let _nlTemplateCache = null;
+
+async function nlSaveAsTemplate() {
   const name = prompt('Template name:');
-  if (!name) return;
-  const arr = nlGetTemplates();
-  arr.unshift({ id: 'tpl_' + Date.now(), name: name, date: new Date().toLocaleDateString(), state: JSON.parse(JSON.stringify(nlState)) });
-  nlSaveTemplates(arr);
-  nlRenderTemplatesTab();
-  showToast('Template saved: ' + name, 'success');
+  if (!name || !name.trim()) return;
+  const token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  const btn = document.querySelector('#nlTab-templates button');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  try {
+    const payload = {
+      name: name.trim(),
+      created_by: sessionStorage.getItem('nda_admin_user') || '',
+      state_json: JSON.parse(JSON.stringify(nlState))
+    };
+    await sbPost('newsletter_templates', payload, token);
+    _nlTemplateCache = null;
+    showToast('Template saved: ' + name.trim(), 'success');
+    await nlRenderTemplatesTab();
+  } catch (err) {
+    showToast('Could not save template: ' + (err.message || 'error'), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '+ Save Current as Template'; }
+  }
 }
-function nlLoadTemplate(id) {
-  const arr = nlGetTemplates();
-  const tpl = arr.find(function (t) { return t.id === id; });
-  if (!tpl) return;
-  if (!confirm('Load template "' + tpl.name + '"? This will replace your current canvas.')) return;
-  const saved = tpl.state;
-  nlState.gs = saved.gs || nlState.gs;
-  nlState.zoneBg = saved.zoneBg || { header: '#FFFFFF', body: '#FFFFFF', footer: '#F4F4F4' };
-  nlState.zones = saved.zones || { header: [], body: [], footer: [] };
-  nlState.subject = saved.subject || '';
-  nlState.preheader = saved.preheader || '';
-  const subEl = document.getElementById('nlSubjectInput');
-  const preEl = document.getElementById('nlPreheaderInput');
-  if (subEl) subEl.value = nlState.subject;
-  if (preEl) preEl.value = nlState.preheader;
-  nlState.sel = null;
-  nlRenderCanvas();
-  nlRenderProps();
-  nlRenderTemplatesTab();
-  showToast('Template loaded.', 'success');
+
+async function nlLoadTemplate(id) {
+  const token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  try {
+    const rows = await sbGet('newsletter_templates', 'id=eq.' + encodeURIComponent(id), token);
+    const tpl = rows && rows[0];
+    if (!tpl) { showToast('Template not found.', 'error'); return; }
+    if (!confirm('Load template "' + tpl.name + '"? This will replace your current canvas.')) return;
+    const saved = tpl.state_json || {};
+    nlState.gs = saved.gs || nlState.gs;
+    nlState.zoneBg = saved.zoneBg || { header: '#FFFFFF', body: '#FFFFFF', footer: '#F4F4F4' };
+    nlState.zones = saved.zones || { header: [], body: [], footer: [] };
+    nlState.subject = saved.subject || '';
+    nlState.preheader = saved.preheader || '';
+    const subEl = document.getElementById('nlSubjectInput');
+    const preEl = document.getElementById('nlPreheaderInput');
+    if (subEl) subEl.value = nlState.subject;
+    if (preEl) preEl.value = nlState.preheader;
+    nlState.sel = null;
+    nlRenderCanvas();
+    nlRenderProps();
+    showToast('Template loaded.', 'success');
+  } catch (err) {
+    showToast('Could not load template: ' + (err.message || 'error'), 'error');
+  }
 }
-function nlDeleteTemplate(id) {
-  if (!confirm('Delete this template?')) return;
-  const arr = nlGetTemplates().filter(function (t) { return t.id !== id; });
-  nlSaveTemplates(arr);
-  nlRenderTemplatesTab();
+
+async function nlDeleteTemplate(id, name) {
+  if (!confirm('Delete template "' + name + '"? This cannot be undone.')) return;
+  const token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/newsletter_templates?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE',
+      headers: sbHeaders(token)
+    });
+    _nlTemplateCache = null;
+    showToast('Template deleted.', 'success');
+    await nlRenderTemplatesTab();
+  } catch (err) {
+    showToast('Could not delete template: ' + (err.message || 'error'), 'error');
+  }
 }
-function nlRenderTemplatesTab() {
+
+async function nlRenderTemplatesTab() {
   const panel = document.getElementById('nlTab-templates');
   if (!panel) return;
-  const arr = nlGetTemplates();
-  let html = '<div style="margin-bottom:10px;">'
-    + '<button type="button" onclick="nlSaveAsTemplate()" style="width:100%;padding:8px;background:#C9A84C;color:#111;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;">+ Save Current as Template</button>'
-    + '</div>';
-  if (!arr.length) {
-    html += '<div style="font-size:0.78rem;color:var(--gray-400);text-align:center;padding:20px 0;">No saved templates yet.<br>Build a layout and save it as a template to reuse it.</div>';
-  } else {
-    arr.forEach(function (tpl) {
-      html += '<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:8px;">'
-        + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:2px;">' + escHtml(tpl.name) + '</div>'
-        + '<div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:8px;">' + (tpl.date || '') + '</div>'
-        + '<div style="display:flex;gap:5px;">'
-        + '<button type="button" onclick="nlLoadTemplate(\'' + tpl.id + '\')" style="flex:1;padding:5px;background:#C9A84C;color:#111;border:none;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;">Load</button>'
-        + '<button type="button" onclick="nlDeleteTemplate(\'' + tpl.id + '\')" style="padding:5px 9px;background:none;border:1px solid var(--gray-200);border-radius:5px;font-size:0.75rem;cursor:pointer;color:var(--gray-500);">Delete</button>'
-        + '</div></div>';
-    });
+  panel.innerHTML = '<div style="margin-bottom:10px;"><button type="button" onclick="nlSaveAsTemplate()" style="width:100%;padding:8px;background:#C9A84C;color:#111;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;">+ Save Current as Template</button></div>'
+    + '<div style="font-size:0.78rem;color:var(--gray-400);text-align:center;padding:12px 0;">Loading…</div>';
+  const token = getAdminToken();
+  if (!token) {
+    panel.innerHTML += '<div style="font-size:0.78rem;color:var(--gray-400);text-align:center;">Sign in to see templates.</div>';
+    return;
   }
-  panel.innerHTML = html;
+  try {
+    const rows = await sbGet('newsletter_templates', 'order=created_at.desc', token);
+    _nlTemplateCache = rows || [];
+    let html = '<div style="margin-bottom:10px;"><button type="button" onclick="nlSaveAsTemplate()" style="width:100%;padding:8px;background:#C9A84C;color:#111;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;">+ Save Current as Template</button></div>';
+    if (!rows || !rows.length) {
+      html += '<div style="font-size:0.78rem;color:var(--gray-400);text-align:center;padding:20px 0;">No saved templates yet.<br>Build a layout and save it as a template to reuse it.</div>';
+    } else {
+      rows.forEach(function (tpl) {
+        const date = tpl.created_at ? new Date(tpl.created_at).toLocaleDateString() : '';
+        const safeName = escHtml(tpl.name || 'Untitled');
+        html += '<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:8px;">'
+          + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:2px;">' + safeName + '</div>'
+          + '<div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:8px;">' + date + (tpl.created_by ? ' · ' + escHtml(tpl.created_by) : '') + '</div>'
+          + '<div style="display:flex;gap:5px;">'
+          + '<button type="button" onclick="nlLoadTemplate(\'' + tpl.id + '\')" style="flex:1;padding:5px;background:#C9A84C;color:#111;border:none;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;">Load</button>'
+          + '<button type="button" onclick="nlDeleteTemplate(\'' + tpl.id + '\',\'' + safeName.replace(/'/g, "\\'") + '\')" style="padding:5px 9px;background:none;border:1px solid var(--gray-200);border-radius:5px;font-size:0.75rem;cursor:pointer;color:var(--gray-500);">Delete</button>'
+          + '</div></div>';
+      });
+    }
+    panel.innerHTML = html;
+  } catch (err) {
+    panel.innerHTML = '<div style="margin-bottom:10px;"><button type="button" onclick="nlSaveAsTemplate()" style="width:100%;padding:8px;background:#C9A84C;color:#111;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;">+ Save Current as Template</button></div>'
+      + '<div style="font-size:0.78rem;color:var(--gray-400);text-align:center;padding:12px;">Could not load templates.</div>';
+  }
 }
 
 // ── Drag & drop ──
