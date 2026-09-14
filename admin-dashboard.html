@@ -8951,7 +8951,11 @@ function nlUpdateProp(zone, id, prop, value) {
   block.props[prop] = value;
   const visual = document.querySelector('#nlblock-' + id + ' .nlblock-visual');
   if (visual) visual.innerHTML = nlBlockVisual(block);
-  nlRenderProps();
+  // Skip panel re-render when a text field has focus — rebuilding the DOM
+  // would destroy the input and lose the cursor after every keystroke.
+  const ae = document.activeElement;
+  const typing = ae && (ae.tagName === 'TEXTAREA' || (ae.tagName === 'INPUT' && (ae.type === 'text' || ae.type === 'url')));
+  if (!typing) nlRenderProps();
 }
 
 function nlUpdateSocialLink(zone, id, idx, field, value) {
