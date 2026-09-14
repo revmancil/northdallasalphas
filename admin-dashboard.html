@@ -4014,8 +4014,10 @@ async function ensurePageSectionsAvailable(token) {
 }
 
 function logout() {
+  if (_refreshTimer) { clearInterval(_refreshTimer); _refreshTimer = null; }
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem('nda_admin_user');
+  localStorage.removeItem('nda_sb_session');
   window.location.href = 'admin.html';
 }
 
