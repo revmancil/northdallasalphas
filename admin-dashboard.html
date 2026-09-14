@@ -4019,6 +4019,59 @@ function logout() {
   window.location.href = 'admin.html';
 }
 
+// ── Token refresh ──
+// Silently refreshes the Supabase JWT before it expires so admins
+// working for more than an hour are never interrupted mid-task.
+let _refreshTimer = null;
+
+async function nlRefreshSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+    if (!session || !session.refresh_token) return;
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    if (!res.ok) {
+      // Refresh token invalid or revoked — force re-login
+      console.warn('Session refresh failed, signing out.');
+      logout();
+      return;
+    }
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem('nda_sb_session', JSON.stringify({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token || session.refresh_token,
+        expires_at: data.expires_at || (Math.floor(Date.now() / 1000) + (data.expires_in || 3600))
+      }));
+    }
+  } catch (e) {
+    // Network error — leave existing session in place and try again next cycle
+    console.warn('Token refresh network error:', e);
+  }
+}
+
+function nlStartRefreshCycle() {
+  // Refresh 10 minutes before the 1-hour expiry (every 50 min)
+  const FIFTY_MINUTES = 50 * 60 * 1000;
+  if (_refreshTimer) clearInterval(_refreshTimer);
+  _refreshTimer = setInterval(nlRefreshSession, FIFTY_MINUTES);
+
+  // Also refresh immediately when the admin returns to a backgrounded tab
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    const session = JSON.parse(localStorage.getItem('nda_sb_session') || 'null');
+    if (!session) return;
+    const remaining = Number(session.expires_at) - Math.floor(Date.now() / 1000);
+    // Refresh if less than 15 minutes remain
+    if (remaining < 15 * 60) nlRefreshSession();
+  });
+}
+
+nlStartRefreshCycle();
+
 async function chapterAdminRecordCount(token) {
   const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/chapter_admin_record_count', {
     method: 'POST',
