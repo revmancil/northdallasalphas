@@ -2200,9 +2200,10 @@
         <div style="width:260px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gray-200);background:#fafafa;overflow:hidden;">
           <!-- Tab bar -->
           <div style="display:flex;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0;">
-            <button class="nl-tab-btn active" id="nlTabBtn-blocks" onclick="nlShowTab('blocks')">Blocks</button>
-            <button class="nl-tab-btn" id="nlTabBtn-sections" onclick="nlShowTab('sections')">Sections</button>
-            <button class="nl-tab-btn" id="nlTabBtn-styles" onclick="nlShowTab('styles')">Styles</button>
+            <button class="nl-tab-btn active" id="nlTabBtn-blocks" onclick="nlShowTab('blocks')" style="font-size:0.73rem;">Blocks</button>
+            <button class="nl-tab-btn" id="nlTabBtn-sections" onclick="nlShowTab('sections')" style="font-size:0.73rem;">Sections</button>
+            <button class="nl-tab-btn" id="nlTabBtn-styles" onclick="nlShowTab('styles')" style="font-size:0.73rem;">Styles</button>
+            <button class="nl-tab-btn" id="nlTabBtn-templates" onclick="nlShowTab('templates')" style="font-size:0.73rem;">Templates</button>
           </div>
           <!-- Blocks tab -->
           <div id="nlTab-blocks" style="flex:1;overflow-y:auto;padding:12px;">
@@ -2224,6 +2225,8 @@
           <div id="nlTab-sections" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
           <!-- Styles tab -->
           <div id="nlTab-styles" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
+          <!-- Templates tab -->
+          <div id="nlTab-templates" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
         </div>
 
         <!-- CENTER: Email canvas -->
@@ -8709,6 +8712,7 @@ let nlState = {
   subject: '',
   preheader: '',
   gs: { bg: '#F4F4F4', contentBg: '#FFFFFF', font: 'Arial, Helvetica, sans-serif', textColor: '#000000', linkColor: '#C9A84C' },
+  zoneBg: { header: '#FFFFFF', body: '#FFFFFF', footer: '#F4F4F4' },
   zones: { header: [], body: [], footer: [] },
   sel: null,
   drag: null,
@@ -8721,7 +8725,7 @@ function nlGenId() { return 'blk_' + Math.random().toString(36).slice(2, 8); }
 function nlDefaultProps(type) {
   switch (type) {
     case 'heading':   return { text: 'Heading', level: 'H2', fontSize: 28, color: '#000000', align: 'center', bold: true, fontFamily: '', paddingTop: 16, paddingBottom: 8 };
-    case 'paragraph': return { text: 'Write your content here.', fontSize: 15, color: '#000000', align: 'left', fontFamily: '', paddingTop: 8, paddingBottom: 8 };
+    case 'paragraph': return { text: 'Write your content here.', fontSize: 15, color: '#000000', align: 'left', fontFamily: '', bold: false, italic: false, underline: false, paddingTop: 8, paddingBottom: 8 };
     case 'image':     return { src: '', alt: '', align: 'center', widthPct: 100, borderRadius: 0, link: '', paddingTop: 8, paddingBottom: 8 };
     case 'button':    return { text: 'Click Here', url: '', shape: 'round', size: 'medium', bgColor: '#C9A84C', textColor: '#000000', align: 'center', paddingTop: 16, paddingBottom: 16 };
     case 'divider':   return { color: '#CCCCCC', thickness: 1, style: 'solid', widthPct: 80, paddingTop: 8, paddingBottom: 8 };
@@ -8753,16 +8757,81 @@ function nlInitPanel() {
 
 // ── Tab switching ──
 function nlShowTab(tab) {
-  ['blocks', 'sections', 'styles'].forEach(function (t) {
+  ['blocks', 'sections', 'styles', 'templates'].forEach(function (t) {
     const panel = document.getElementById('nlTab-' + t);
     const btn = document.getElementById('nlTabBtn-' + t);
     if (panel) panel.hidden = (t !== tab);
-    if (btn) {
-      btn.classList.toggle('active', t === tab);
-    }
+    if (btn) btn.classList.toggle('active', t === tab);
   });
   if (tab === 'sections') nlRenderSectionsTab();
   if (tab === 'styles') nlRenderStylesTab();
+  if (tab === 'templates') nlRenderTemplatesTab();
+}
+
+// ── Templates (localStorage) ──
+function nlGetTemplates() {
+  try { return JSON.parse(localStorage.getItem('nlTemplates') || '[]'); } catch (e) { return []; }
+}
+function nlSaveTemplates(arr) {
+  try { localStorage.setItem('nlTemplates', JSON.stringify(arr)); } catch (e) { }
+}
+function nlSaveAsTemplate() {
+  const name = prompt('Template name:');
+  if (!name) return;
+  const arr = nlGetTemplates();
+  arr.unshift({ id: 'tpl_' + Date.now(), name: name, date: new Date().toLocaleDateString(), state: JSON.parse(JSON.stringify(nlState)) });
+  nlSaveTemplates(arr);
+  nlRenderTemplatesTab();
+  showToast('Template saved: ' + name, 'success');
+}
+function nlLoadTemplate(id) {
+  const arr = nlGetTemplates();
+  const tpl = arr.find(function (t) { return t.id === id; });
+  if (!tpl) return;
+  if (!confirm('Load template "' + tpl.name + '"? This will replace your current canvas.')) return;
+  const saved = tpl.state;
+  nlState.gs = saved.gs || nlState.gs;
+  nlState.zoneBg = saved.zoneBg || { header: '#FFFFFF', body: '#FFFFFF', footer: '#F4F4F4' };
+  nlState.zones = saved.zones || { header: [], body: [], footer: [] };
+  nlState.subject = saved.subject || '';
+  nlState.preheader = saved.preheader || '';
+  const subEl = document.getElementById('nl-subject-input');
+  const preEl = document.getElementById('nl-preheader-input');
+  if (subEl) subEl.value = nlState.subject;
+  if (preEl) preEl.value = nlState.preheader;
+  nlState.sel = null;
+  nlRenderCanvas();
+  nlRenderProps();
+  nlRenderTemplatesTab();
+  showToast('Template loaded.', 'success');
+}
+function nlDeleteTemplate(id) {
+  if (!confirm('Delete this template?')) return;
+  const arr = nlGetTemplates().filter(function (t) { return t.id !== id; });
+  nlSaveTemplates(arr);
+  nlRenderTemplatesTab();
+}
+function nlRenderTemplatesTab() {
+  const panel = document.getElementById('nlTab-templates');
+  if (!panel) return;
+  const arr = nlGetTemplates();
+  let html = '<div style="margin-bottom:10px;">'
+    + '<button type="button" onclick="nlSaveAsTemplate()" style="width:100%;padding:8px;background:#C9A84C;color:#111;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;">+ Save Current as Template</button>'
+    + '</div>';
+  if (!arr.length) {
+    html += '<div style="font-size:0.78rem;color:var(--gray-400);text-align:center;padding:20px 0;">No saved templates yet.<br>Build a layout and save it as a template to reuse it.</div>';
+  } else {
+    arr.forEach(function (tpl) {
+      html += '<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:8px;">'
+        + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:2px;">' + escHtml(tpl.name) + '</div>'
+        + '<div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:8px;">' + (tpl.date || '') + '</div>'
+        + '<div style="display:flex;gap:5px;">'
+        + '<button type="button" onclick="nlLoadTemplate(\'' + tpl.id + '\')" style="flex:1;padding:5px;background:#C9A84C;color:#111;border:none;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;">Load</button>'
+        + '<button type="button" onclick="nlDeleteTemplate(\'' + tpl.id + '\')" style="padding:5px 9px;background:none;border:1px solid var(--gray-200);border-radius:5px;font-size:0.75rem;cursor:pointer;color:var(--gray-500);">Delete</button>'
+        + '</div></div>';
+    });
+  }
+  panel.innerHTML = html;
 }
 
 // ── Drag & drop ──
@@ -8905,7 +8974,10 @@ function nlRemoveSurveyOption(zone, id, idx) {
 function nlRenderCanvas() {
   ['header', 'body', 'footer'].forEach(function (zone) {
     const el = document.getElementById('nl-zone-' + zone);
-    if (el) el.innerHTML = nlRenderZoneInner(zone);
+    if (el) {
+      el.innerHTML = nlRenderZoneInner(zone);
+      el.style.background = nlState.zoneBg[zone] || '#FFFFFF';
+    }
   });
 }
 
@@ -8942,7 +9014,10 @@ function nlBlockVisual(b) {
     }
     case 'paragraph': {
       const ff = p.fontFamily ? 'font-family:' + p.fontFamily + ';' : '';
-      return '<p style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'left') + ';white-space:pre-wrap;' + ff + '">' + escHtml(p.text || '') + '</p>';
+      const fw = p.bold ? 'font-weight:700;' : '';
+      const fi = p.italic ? 'font-style:italic;' : '';
+      const fd = p.underline ? 'text-decoration:underline;' : '';
+      return '<p style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'left') + ';white-space:pre-wrap;' + ff + fw + fi + fd + '">' + escHtml(p.text || '') + '</p>';
     }
     case 'image': {
       if (p.src) {
@@ -9063,6 +9138,11 @@ function nlPropsForm(block, zone) {
       html += field('Text', ta('text', p.text, 5));
       html += field('Font Family', selInp('fontFamily', p.fontFamily || '', [['', 'Use global default'], ['Arial, Helvetica, sans-serif', 'Arial'], ['Georgia, serif', 'Georgia'], ["'Times New Roman', serif", 'Times New Roman'], ['Verdana, sans-serif', 'Verdana'], ['Trebuchet MS, sans-serif', 'Trebuchet MS'], ['Impact, sans-serif', 'Impact'], ["'Courier New', monospace", 'Courier New']]));
       html += field('Font Size', numInp('fontSize', p.fontSize || 15, 8, 36, 'px'));
+      html += field('Style', '<div style="display:flex;gap:4px;">'
+        + '<button type="button" onclick="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'bold\',!' + !!p.bold + ')" style="width:32px;height:28px;border:1px solid var(--gray-200);border-radius:4px;background:' + (p.bold ? '#C9A84C' : 'var(--white)') + ';font-weight:700;cursor:pointer;font-size:0.85rem;">B</button>'
+        + '<button type="button" onclick="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'italic\',!' + !!p.italic + ')" style="width:32px;height:28px;border:1px solid var(--gray-200);border-radius:4px;background:' + (p.italic ? '#C9A84C' : 'var(--white)') + ';font-style:italic;cursor:pointer;font-size:0.85rem;">I</button>'
+        + '<button type="button" onclick="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'underline\',!' + !!p.underline + ')" style="width:32px;height:28px;border:1px solid var(--gray-200);border-radius:4px;background:' + (p.underline ? '#C9A84C' : 'var(--white)') + ';text-decoration:underline;cursor:pointer;font-size:0.85rem;">U</button>'
+        + '</div>');
       html += field('Color', colorInp('color', p.color || '#000000'));
       html += field('Alignment', alignBtns('align', p.align || 'left'));
       html += padRow();
@@ -9149,15 +9229,27 @@ function nlPropsForm(block, zone) {
 }
 
 // ── Sections tab ──
+function nlUpdateZoneBg(zone, val) {
+  nlState.zoneBg[zone] = val;
+  nlRenderCanvas();
+}
+
 function nlRenderSectionsTab() {
   const panel = document.getElementById('nlTab-sections');
   if (!panel) return;
   let html = '';
   ['header', 'body', 'footer'].forEach(function (zone) {
     const blocks = nlState.zones[zone] || [];
-    html += '<div style="margin-bottom:14px;"><div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);padding-bottom:3px;border-bottom:1px solid var(--gray-200);margin-bottom:4px;">' + zone + '</div>';
+    const bg = nlState.zoneBg[zone] || '#FFFFFF';
+    html += '<div style="margin-bottom:16px;">'
+      + '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);padding-bottom:5px;border-bottom:1px solid var(--gray-200);margin-bottom:6px;">' + zone + '</div>'
+      + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">'
+      + '<label style="font-size:0.72rem;color:var(--gray-600);white-space:nowrap;">Background</label>'
+      + '<input type="color" value="' + bg + '" oninput="nlUpdateZoneBg(\'' + zone + '\',this.value)" style="width:30px;height:24px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;padding:1px;flex-shrink:0;" />'
+      + '<input type="text" value="' + bg + '" oninput="nlUpdateZoneBg(\'' + zone + '\',this.value)" style="flex:1;padding:4px 7px;border:1px solid var(--gray-200);border-radius:4px;font-size:0.78rem;" />'
+      + '</div>';
     if (!blocks.length) {
-      html += '<div style="font-size:0.78rem;color:var(--gray-400);padding:4px 0;">Empty</div>';
+      html += '<div style="font-size:0.78rem;color:var(--gray-400);padding:2px 0;">No blocks yet</div>';
     } else {
       blocks.forEach(function (b, i) {
         const label = String((b.props && (b.props.text || b.props.question || b.props.line1)) || '').slice(0, 22) || '(' + b.type + ')';
@@ -9384,16 +9476,23 @@ async function nlSendNewsletter() {
 // ── Build HTML email ──
 function nlBuildHtml() {
   const gs = nlState.gs;
-  const allBlocks = [].concat(nlState.zones.header || [], nlState.zones.body || [], nlState.zones.footer || []);
-  const rows = allBlocks.map(function (b) { return nlBlockToEmailRow(b, gs); }).join('\n');
+  const zb = nlState.zoneBg || { header: gs.contentBg, body: gs.contentBg, footer: '#F4F4F4' };
+  function zoneRows(zone) {
+    const blocks = nlState.zones[zone] || [];
+    if (!blocks.length) return '';
+    const rows = blocks.map(function (b) { return nlBlockToEmailRow(b, gs); }).join('\n');
+    return '<tr><td style="background:' + (zb[zone] || gs.contentBg) + ';padding:0;">'
+      + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'
+      + rows + '</table></td></tr>\n';
+  }
   const subj = nlState.subject || 'Newsletter';
   const preh = nlState.preheader || '';
   return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8" />\n<meta name="viewport" content="width=device-width,initial-scale=1" />\n<meta http-equiv="X-UA-Compatible" content="IE=edge" />\n<title>' + escHtml(subj) + '</title>\n</head>\n<body style="margin:0;padding:0;background:' + gs.bg + ';font-family:' + gs.font + ';">\n'
     + (preh ? '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">' + escHtml(preh) + '</div>\n' : '')
     + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + gs.bg + ';">\n'
     + '<tr><td align="center" style="padding:24px 12px;">\n'
-    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:' + gs.contentBg + ';border-radius:6px;overflow:hidden;">\n'
-    + rows
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;border-radius:6px;overflow:hidden;">\n'
+    + zoneRows('header') + zoneRows('body') + zoneRows('footer')
     + '\n</table>\n</td></tr>\n</table>\n</body>\n</html>';
 }
 
@@ -9412,8 +9511,11 @@ function nlBlockToEmailRow(b, gs) {
     }
     case 'paragraph': {
       const pff = p.fontFamily || gs.font;
+      const pfw = p.bold ? 'font-weight:700;' : '';
+      const pfi = p.italic ? 'font-style:italic;' : '';
+      const pfd = p.underline ? 'text-decoration:underline;' : '';
       const lines = escHtml(p.text || '').replace(/\n/g, '<br />');
-      return tdWrap('<p style="margin:0;font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'left') + ';line-height:1.6;font-family:' + pff + ';">' + lines + '</p>');
+      return tdWrap('<p style="margin:0;font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'left') + ';line-height:1.6;font-family:' + pff + ';' + pfw + pfi + pfd + '">' + lines + '</p>');
     }
     case 'image': {
       if (!p.src) return '';
