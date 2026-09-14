@@ -250,7 +250,18 @@
     .content { flex: 1; padding: 24px 28px; }
     .panel { display: none; }
     .panel.active { display: block; }
-    #panel-newsletter.active { display: flex; flex-direction: column; height: calc(100vh - 60px); }
+    #panel-newsletter.active { display: flex; flex-direction: column; height: calc(100vh - 60px); overflow: hidden; }
+    .nlblock-card:hover .nlblock-overlay { display: flex !important; }
+    .nlblock-card:hover { border-color: var(--gray-200) !important; }
+    .nlblock-card.nlblock-selected { border-color: #C9A84C !important; }
+    .nl-zone-area { min-height: 72px; transition: background .15s; }
+    .nl-zone-area.nl-drag-over { background: rgba(201,168,76,.08); }
+    .nl-tab-btn { padding: 7px 14px; border: none; border-bottom: 2px solid transparent; background: transparent; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--gray-500); transition: color .15s, border-color .15s; }
+    .nl-tab-btn.active { color: #C9A84C; border-bottom-color: #C9A84C; }
+    .nl-palette-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px 6px; background: var(--white); border: 1px solid var(--gray-200); border-radius: 7px; cursor: grab; font-size: 0.7rem; font-weight: 600; color: var(--gray-600); text-align: center; transition: border-color .15s, box-shadow .15s; user-select: none; }
+    .nl-palette-tile:hover { border-color: #C9A84C; box-shadow: 0 0 0 2px rgba(201,168,76,.2); color: #000; }
+    .nl-palette-tile i { font-size: 1.1rem; color: #C9A84C; }
+    .nlblock-drag-handle { cursor: grab; }
 
     /* ── Cards / Shared UI ── */
     .section-card {
@@ -2166,79 +2177,115 @@
     ══════════════════════════════════ -->
     <div class="panel" id="panel-newsletter">
       <!-- Hidden image input -->
-      <input type="file" id="nlImageInput" accept="image/*" style="display:none;" onchange="nlHandleImageFile(event)" />
+      <input type="file" id="nlImageInput" accept="image/*" style="display:none;" onchange="nlHandleImageUpload(event)" />
 
-      <!-- Top bar -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0;">
-        <h2 style="margin:0;font-size:1rem;font-weight:700;"><i class="fas fa-envelope-open-text" style="color:var(--gold);margin-right:8px;"></i>Newsletter Builder</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="nlTemplateSelect" onchange="nlLoadSelectedTemplate()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;max-width:180px;">
-            <option value="">Load template…</option>
-          </select>
-          <button class="btn-sm" onclick="nlRunPreview()" style="background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-300);"><i class="fas fa-eye"></i> Preview</button>
-          <button class="btn-sm success" onclick="nlSaveTemplate()"><i class="fas fa-floppy-disk"></i> Save Draft</button>
-          <button class="btn-sm edit" onclick="nlPublishNewsletter()"><i class="fas fa-paper-plane"></i> Publish</button>
-          <button class="btn-sm" onclick="nlSendToMembers()" style="background:#1a6b3c;color:#fff;border:none;padding:5px 12px;border-radius:5px;font-size:0.8rem;cursor:pointer;"><i class="fas fa-envelope"></i> Send to Members</button>
-          <button class="btn-sm view" onclick="downloadNewsletterHtml()"><i class="fas fa-download"></i> Download</button>
+      <!-- ── Toolbar ── -->
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0;flex-wrap:wrap;">
+        <i class="fas fa-envelope-open-text" style="color:#C9A84C;font-size:1.1rem;flex-shrink:0;"></i>
+        <input id="nlSubjectInput" type="text" placeholder="Subject line…" oninput="nlState.subject=this.value"
+          style="flex:2;min-width:160px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.85rem;" />
+        <input id="nlPreheaderInput" type="text" placeholder="Preheader text (inbox preview)…" oninput="nlState.preheader=this.value"
+          style="flex:2;min-width:140px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.85rem;" />
+        <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-sm" onclick="nlSaveDraft()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-floppy-disk"></i> Save Draft</button>
+          <button class="btn-sm" onclick="nlOpenPreview()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-eye"></i> Preview</button>
+          <button class="btn-sm" onclick="nlOpenSendModal()" style="background:#C9A84C;border:1px solid #b8963e;color:#000;font-weight:700;"><i class="fas fa-paper-plane"></i> Send</button>
         </div>
       </div>
 
-      <!-- Two-pane body -->
+      <!-- ── 3-column body ── -->
       <div style="display:flex;flex:1;overflow:hidden;">
 
-        <!-- LEFT: Builder -->
-        <div style="width:400px;flex-shrink:0;overflow-y:auto;
-          -webkit-overflow-scrolling: touch;border-right:1px solid var(--gray-200);padding:18px;display:flex;flex-direction:column;gap:14px;background:#fafafa;">
-
-          <!-- Meta fields -->
-          <div style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;">
-            <div class="field-group" style="margin:0;">
-              <label style="font-size:0.75rem;">Campaign / Email Name</label>
-              <input type="text" id="nlCampaignName" placeholder="June 2026 Chapter Update" oninput="nlSchedulePreview()" />
-            </div>
-            <div class="field-group" style="margin:0;">
-              <label style="font-size:0.75rem;">Subject Line</label>
-              <input type="text" id="nlSubject" placeholder="North Dallas Alphas — Chapter Update" oninput="nlSchedulePreview()" />
-            </div>
-            <div class="field-group" style="margin:0;">
-              <label style="font-size:0.75rem;">Preheader <span style="font-weight:400;color:var(--gray-400);">(preview text in inbox)</span></label>
-              <input type="text" id="nlPreheader" placeholder="Upcoming events and chapter highlights." oninput="nlSchedulePreview()" />
+        <!-- LEFT panel: 260px -->
+        <div style="width:260px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gray-200);background:#fafafa;overflow:hidden;">
+          <!-- Tab bar -->
+          <div style="display:flex;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0;">
+            <button class="nl-tab-btn active" id="nlTabBtn-blocks" onclick="nlShowTab('blocks')">Blocks</button>
+            <button class="nl-tab-btn" id="nlTabBtn-sections" onclick="nlShowTab('sections')">Sections</button>
+            <button class="nl-tab-btn" id="nlTabBtn-styles" onclick="nlShowTab('styles')">Styles</button>
+          </div>
+          <!-- Blocks tab -->
+          <div id="nlTab-blocks" style="flex:1;overflow-y:auto;padding:12px;">
+            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);margin-bottom:8px;">Drag onto canvas</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'heading')"><i class="fas fa-heading"></i>Heading</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'paragraph')"><i class="fas fa-align-left"></i>Paragraph</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'image')"><i class="fas fa-image"></i>Image</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'button')"><i class="fas fa-square"></i>Button</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'divider')"><i class="fas fa-minus"></i>Divider</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'spacer')"><i class="fas fa-arrows-alt-v"></i>Spacer</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'video')"><i class="fas fa-play-circle"></i>Video</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'social')"><i class="fas fa-share-alt"></i>Social</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'survey')"><i class="fas fa-poll"></i>Survey</div>
+              <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'footer')"><i class="fas fa-shoe-prints"></i>Footer</div>
             </div>
           </div>
+          <!-- Sections tab -->
+          <div id="nlTab-sections" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
+          <!-- Styles tab -->
+          <div id="nlTab-styles" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
+        </div>
 
-          <!-- Block list -->
-          <div id="nlBlocksContainer" style="display:flex;flex-direction:column;gap:8px;"></div>
-
-          <!-- Block picker -->
-          <div style="background:var(--white);border:2px dashed var(--gray-300);border-radius:8px;padding:12px;">
-            <div style="font-size:0.72rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Add Block</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button type="button" class="btn-sm edit" onclick="nlAddBlock('text')"><i class="fas fa-align-left"></i> Text</button>
-              <button type="button" class="btn-sm view" onclick="nlAddBlock('image')"><i class="fas fa-image"></i> Image</button>
-              <button type="button" class="btn-sm success" onclick="nlAddBlock('cta')"><i class="fas fa-arrow-pointer"></i> Button</button>
-              <button type="button" class="btn-sm view" onclick="nlAddBlock('social')"><i class="fas fa-share-alt"></i> Social</button>
-              <button type="button" class="btn-sm view" onclick="nlAddBlock('divider')"><i class="fas fa-minus"></i> Divider</button>
-            </div>
+        <!-- CENTER: Email canvas -->
+        <div style="flex:1;overflow-y:auto;background:#E8E8E8;padding:24px 20px;display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div style="width:100%;max-width:600px;">
+            <!-- Header zone -->
+            <div style="background:var(--gray-100);border-radius:5px 5px 0 0;padding:4px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);border:1px solid var(--gray-200);border-bottom:none;">Header</div>
+            <div id="nl-zone-header" class="nl-zone-area" style="background:var(--white);border:1px solid var(--gray-200);border-bottom:none;padding:4px;"
+              ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,'header')"></div>
+            <!-- Body zone -->
+            <div style="background:var(--gray-100);padding:4px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);border:1px solid var(--gray-200);border-bottom:none;">Body</div>
+            <div id="nl-zone-body" class="nl-zone-area" style="background:var(--white);border:1px solid var(--gray-200);border-bottom:none;padding:4px;min-height:120px;"
+              ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,'body')"></div>
+            <!-- Footer zone -->
+            <div style="background:var(--gray-100);padding:4px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);border:1px solid var(--gray-200);border-bottom:none;">Footer</div>
+            <div id="nl-zone-footer" class="nl-zone-area" style="background:var(--white);border:1px solid var(--gray-200);border-radius:0 0 5px 5px;padding:4px;"
+              ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,'footer')"></div>
           </div>
         </div>
 
-        <!-- RIGHT: Live preview -->
-        <div style="flex:1;display:flex;flex-direction:column;background:#e8e8e8;overflow:hidden;">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 16px;background:var(--white);border-bottom:1px solid var(--gray-200);flex-shrink:0;">
-            <span id="nlPreviewStatus" style="font-size:0.78rem;color:var(--gray-400);font-style:italic;">Add blocks to see a preview</span>
-            <div class="section-tabs" style="margin:0;">
-              <button type="button" class="section-tab active" id="nlDesktopBtn" onclick="nlSetPreviewMode('desktop')">Desktop</button>
-              <button type="button" class="section-tab" id="nlMobileBtn" onclick="nlSetPreviewMode('mobile')">Mobile</button>
-            </div>
-          </div>
-          <div style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:24px;">
-            <div id="nlPreviewShell" style="width:640px;transition:width 0.25s;box-shadow:0 4px 24px rgba(0,0,0,0.15);border-radius:4px;overflow:hidden;">
-              <iframe id="nlPreviewFrame" title="Email Preview" style="width:100%;min-height:560px;border:none;display:block;background:#fff;"></iframe>
-            </div>
-          </div>
+        <!-- RIGHT: Properties panel 280px -->
+        <div style="width:280px;flex-shrink:0;border-left:1px solid var(--gray-200);background:var(--white);display:flex;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--gray-200);font-size:0.75rem;font-weight:700;color:var(--gray-600);text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;">Properties</div>
+          <div id="nl-props-inner" style="flex:1;overflow-y:auto;padding:14px;"></div>
         </div>
 
       </div>
+
+      <!-- ── Send Modal ── -->
+      <div id="nlSendModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.65);align-items:center;justify-content:center;">
+        <div style="background:var(--white);border-radius:10px;width:520px;max-width:95vw;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.3);overflow:hidden;">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--gray-200);">
+            <h3 style="margin:0;font-size:1rem;font-weight:700;"><i class="fas fa-paper-plane" style="color:#C9A84C;margin-right:8px;"></i>Send Newsletter</h3>
+            <button onclick="nlCloseSendModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);line-height:1;">×</button>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:20px;">
+            <div style="margin-bottom:14px;">
+              <div style="font-size:0.73rem;font-weight:600;color:var(--gray-500);margin-bottom:4px;">SUBJECT</div>
+              <div id="nlSendSubject" style="padding:8px 10px;background:var(--gray-100);border-radius:6px;font-size:0.88rem;font-weight:600;"></div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="font-size:0.73rem;font-weight:600;color:var(--gray-500);margin-bottom:8px;">RECIPIENTS</div>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
+                <input type="radio" name="nlRecipMode" value="all" checked onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> All active members
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
+                <input type="radio" name="nlRecipMode" value="alumni" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Alumni only
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
+                <input type="radio" name="nlRecipMode" value="specific" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Select specific members
+              </label>
+            </div>
+            <div id="nlMemberList" style="display:none;max-height:220px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px 12px;margin-bottom:10px;"></div>
+            <div id="nlRecipCount" style="font-size:0.82rem;color:var(--gray-500);margin-bottom:4px;">0 recipients selected</div>
+          </div>
+          <div style="padding:14px 20px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:8px;">
+            <button onclick="nlCloseSendModal()" class="btn-sm" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);">Cancel</button>
+            <button id="nlSendBtn" onclick="nlSendNewsletter()" class="btn-sm" style="background:#C9A84C;border:1px solid #b8963e;color:#000;font-weight:700;">Send Now</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- ══════════════════════════════════
@@ -8657,464 +8704,761 @@ async function saveAnnouncement() {
 // ══════════════════════════════════════════════════
 // NEWSLETTER GENERATOR
 // ══════════════════════════════════════════════════
-const NEWSLETTER_RENDER_FUNCTION = SUPABASE_URL + '/functions/v1/newsletter-render';
-let latestNewsletterHtml = '';
-let nlBlocks = [];
-let nlPreviewTimer = null;
-let nlActiveImageBlockId = null;
-let nlTemplatesChecked = false;
-let nlTemplatesAvailable = true;
 
-function nlGenId() {
-  return 'nlb_' + Math.random().toString(36).slice(2, 9);
+let nlState = {
+  subject: '',
+  preheader: '',
+  gs: { bg: '#F4F4F4', contentBg: '#FFFFFF', font: 'Arial, Helvetica, sans-serif', textColor: '#000000', linkColor: '#C9A84C' },
+  zones: { header: [], body: [], footer: [] },
+  sel: null,
+  drag: null,
+  draftId: null,
+  sendMembers: []
+};
+
+function nlGenId() { return 'blk_' + Math.random().toString(36).slice(2, 8); }
+
+function nlDefaultProps(type) {
+  switch (type) {
+    case 'heading':   return { text: 'Heading', level: 'H2', fontSize: 28, color: '#000000', align: 'center', bold: true, paddingTop: 16, paddingBottom: 8 };
+    case 'paragraph': return { text: 'Write your content here.', fontSize: 15, color: '#000000', align: 'left', paddingTop: 8, paddingBottom: 8 };
+    case 'image':     return { src: '', alt: '', align: 'center', widthPct: 100, borderRadius: 0, link: '', paddingTop: 8, paddingBottom: 8 };
+    case 'button':    return { text: 'Click Here', url: '', shape: 'round', size: 'medium', bgColor: '#C9A84C', textColor: '#000000', align: 'center', paddingTop: 16, paddingBottom: 16 };
+    case 'divider':   return { color: '#CCCCCC', thickness: 1, style: 'solid', widthPct: 80, paddingTop: 8, paddingBottom: 8 };
+    case 'spacer':    return { height: 32 };
+    case 'video':     return { thumbnailUrl: '', videoUrl: '', caption: '', paddingTop: 8, paddingBottom: 8 };
+    case 'social':    return { links: [{ platform: 'facebook', url: '' }, { platform: 'instagram', url: '' }, { platform: 'twitter', url: '' }], iconSize: 28, align: 'center', paddingTop: 16, paddingBottom: 16 };
+    case 'survey':    return { question: 'How are we doing?', options: ['Excellent', 'Good', 'Needs Improvement'], align: 'center', paddingTop: 16, paddingBottom: 16 };
+    case 'footer':    return { line1: 'North Dallas Alphas', line2: 'Dallas, TX', unsubscribeText: 'Unsubscribe', copyright: '© 2026 North Dallas Alphas', textColor: '#666666', bgColor: '#F4F4F4', fontSize: 12, paddingTop: 24, paddingBottom: 24 };
+    default:          return {};
+  }
 }
 
-// ── Block management ──
-function nlAddBlock(type) {
-  const block = { id: nlGenId(), type };
-  if (type === 'text')    { block.heading = ''; block.body = ''; }
-  if (type === 'image')   { block.imageUrl = ''; block.alt = ''; block.caption = ''; }
-  if (type === 'cta')     { block.text = ''; block.url = ''; }
-  if (type === 'social')  { block.heading = 'Connect With Us'; block.links = [{ network: 'Instagram', url: '' }]; }
-  nlBlocks.push(block);
-  nlRenderBlocks();
-  nlSchedulePreview();
+// ── Init ──
+function nlInitPanel() {
+  const now = new Date();
+  const month = now.toLocaleString('en-US', { month: 'long' });
+  const year = now.getFullYear();
+  const si = document.getElementById('nlSubjectInput');
+  if (si) {
+    if (!si.value && !nlState.subject) { nlState.subject = 'North Dallas Alphas — ' + month + ' ' + year + ' Update'; }
+    si.value = nlState.subject;
+  }
+  const pi = document.getElementById('nlPreheaderInput');
+  if (pi) pi.value = nlState.preheader || '';
+  nlShowTab('blocks');
+  nlRenderCanvas();
+  nlRenderProps();
 }
 
-function nlRemoveBlock(id) {
-  nlBlocks = nlBlocks.filter(function(b) { return b.id !== id; });
-  nlRenderBlocks();
-  nlSchedulePreview();
+// ── Tab switching ──
+function nlShowTab(tab) {
+  ['blocks', 'sections', 'styles'].forEach(function (t) {
+    const panel = document.getElementById('nlTab-' + t);
+    const btn = document.getElementById('nlTabBtn-' + t);
+    if (panel) panel.hidden = (t !== tab);
+    if (btn) {
+      btn.classList.toggle('active', t === tab);
+    }
+  });
+  if (tab === 'sections') nlRenderSectionsTab();
+  if (tab === 'styles') nlRenderStylesTab();
 }
 
-function nlMoveBlock(id, dir) {
-  const i = nlBlocks.findIndex(function(b) { return b.id === id; });
-  const j = i + dir;
-  if (j < 0 || j >= nlBlocks.length) return;
-  const tmp = nlBlocks[i]; nlBlocks[i] = nlBlocks[j]; nlBlocks[j] = tmp;
-  nlRenderBlocks();
-  nlSchedulePreview();
+// ── Drag & drop ──
+function nlOnDragStartTile(event, blockType) {
+  nlState.drag = { type: 'tile', blockType: blockType };
+  event.dataTransfer.effectAllowed = 'copy';
+  event.dataTransfer.setData('text/plain', blockType);
 }
 
-function nlSetField(id, field, value) {
-  const b = nlBlocks.find(function(b) { return b.id === id; });
-  if (b) b[field] = value;
-  nlSchedulePreview();
+function nlOnDragStartBlock(event, zone, id) {
+  nlState.drag = { type: 'block', zone: zone, id: id };
+  event.dataTransfer.effectAllowed = 'move';
+  event.dataTransfer.setData('text/plain', id);
+  event.stopPropagation();
 }
 
-function nlAddSocialLink(id) {
-  const b = nlBlocks.find(function(b) { return b.id === id; });
-  if (!b) return;
-  if (!b.links) b.links = [];
-  b.links.push({ network: 'Website', url: '' });
-  nlRenderBlocks();
+function nlOnDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = (nlState.drag && nlState.drag.type === 'tile') ? 'copy' : 'move';
 }
 
-function nlRemoveSocialLink(id, idx) {
-  const b = nlBlocks.find(function(b) { return b.id === id; });
-  if (b && b.links) { b.links.splice(idx, 1); nlRenderBlocks(); nlSchedulePreview(); }
+function nlOnDrop(event, zone) {
+  event.preventDefault();
+  event.stopPropagation();
+  const drag = nlState.drag;
+  nlState.drag = null;
+  if (!drag) return;
+  if (drag.type === 'tile') {
+    const block = { id: nlGenId(), type: drag.blockType, props: nlDefaultProps(drag.blockType) };
+    nlState.zones[zone].push(block);
+    nlState.sel = { zone: zone, id: block.id };
+  } else if (drag.type === 'block') {
+    const fromZone = drag.zone;
+    const fromId = drag.id;
+    const fromArr = nlState.zones[fromZone];
+    const idx = fromArr.findIndex(function (b) { return b.id === fromId; });
+    if (idx < 0) return;
+    const block = fromArr.splice(idx, 1)[0];
+    nlState.zones[zone].push(block);
+    nlState.sel = { zone: zone, id: block.id };
+  }
+  nlRenderCanvas();
+  nlRenderProps();
 }
 
-function nlSetSocialLink(id, idx, field, value) {
-  const b = nlBlocks.find(function(b) { return b.id === id; });
-  if (b && b.links && b.links[idx]) { b.links[idx][field] = value; nlSchedulePreview(); }
+// ── Block selection / operations ──
+function nlSelectBlock(zone, id) {
+  nlState.sel = { zone: zone, id: id };
+  // Update border without full re-render
+  document.querySelectorAll('.nlblock-card').forEach(function (el) {
+    el.style.borderColor = 'transparent';
+    el.classList.remove('nlblock-selected');
+  });
+  const el = document.getElementById('nlblock-' + id);
+  if (el) { el.style.borderColor = '#C9A84C'; el.classList.add('nlblock-selected'); }
+  nlRenderProps();
 }
 
-// ── Render block cards ──
-function nlRenderBlocks() {
-  const wrap = document.getElementById('nlBlocksContainer');
-  if (!wrap) return;
-  if (!nlBlocks.length) {
-    wrap.innerHTML = '<p style="text-align:center;color:var(--gray-400);font-size:0.83rem;padding:16px 0;">No blocks yet. Add one below.</p>';
+function nlDeleteBlock(zone, id) {
+  nlState.zones[zone] = nlState.zones[zone].filter(function (b) { return b.id !== id; });
+  if (nlState.sel && nlState.sel.id === id) nlState.sel = null;
+  nlRenderCanvas();
+  nlRenderProps();
+}
+
+function nlMoveBlockUp(zone, id) {
+  const arr = nlState.zones[zone];
+  const i = arr.findIndex(function (b) { return b.id === id; });
+  if (i <= 0) return;
+  const tmp = arr[i - 1]; arr[i - 1] = arr[i]; arr[i] = tmp;
+  nlRenderCanvas();
+}
+
+function nlMoveBlockDown(zone, id) {
+  const arr = nlState.zones[zone];
+  const i = arr.findIndex(function (b) { return b.id === id; });
+  if (i < 0 || i >= arr.length - 1) return;
+  const tmp = arr[i + 1]; arr[i + 1] = arr[i]; arr[i] = tmp;
+  nlRenderCanvas();
+}
+
+// ── Prop updates ──
+function nlUpdateProp(zone, id, prop, value) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (!block) return;
+  block.props[prop] = value;
+  const visual = document.querySelector('#nlblock-' + id + ' .nlblock-visual');
+  if (visual) visual.innerHTML = nlBlockVisual(block);
+}
+
+function nlUpdateSocialLink(zone, id, idx, field, value) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (block && block.props.links && block.props.links[idx]) {
+    block.props.links[idx][field] = value;
+    const visual = document.querySelector('#nlblock-' + id + ' .nlblock-visual');
+    if (visual) visual.innerHTML = nlBlockVisual(block);
+  }
+}
+
+function nlAddSocialPlatform(zone, id) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (!block) return;
+  if (!block.props.links) block.props.links = [];
+  block.props.links.push({ platform: 'facebook', url: '' });
+  nlRenderProps();
+}
+
+function nlRemoveSocialPlatform(zone, id, idx) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (!block || !block.props.links) return;
+  block.props.links.splice(idx, 1);
+  nlRenderProps();
+}
+
+function nlUpdateSurveyOption(zone, id, idx, value) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (block && block.props.options) {
+    block.props.options[idx] = value;
+    const visual = document.querySelector('#nlblock-' + id + ' .nlblock-visual');
+    if (visual) visual.innerHTML = nlBlockVisual(block);
+  }
+}
+
+function nlAddSurveyOption(zone, id) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (!block) return;
+  if (!block.props.options) block.props.options = [];
+  block.props.options.push('Option ' + (block.props.options.length + 1));
+  nlRenderProps();
+}
+
+function nlRemoveSurveyOption(zone, id, idx) {
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (!block || !block.props.options) return;
+  block.props.options.splice(idx, 1);
+  nlRenderProps();
+}
+
+// ── Canvas rendering ──
+function nlRenderCanvas() {
+  ['header', 'body', 'footer'].forEach(function (zone) {
+    const el = document.getElementById('nl-zone-' + zone);
+    if (el) el.innerHTML = nlRenderZoneInner(zone);
+  });
+}
+
+function nlRenderZoneInner(zone) {
+  const blocks = nlState.zones[zone] || [];
+  if (!blocks.length) {
+    return '<div style="min-height:56px;border:2px dashed var(--gray-300);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:0.78rem;margin:4px;" ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,\'' + zone + '\')">Drop blocks here</div>';
+  }
+  const isSel = function (id) { return nlState.sel && nlState.sel.id === id; };
+  return blocks.map(function (b, i) {
+    const sel = isSel(b.id);
+    return '<div id="nlblock-' + b.id + '" class="nlblock-card' + (sel ? ' nlblock-selected' : '') + '" style="position:relative;border:2px solid ' + (sel ? '#C9A84C' : 'transparent') + ';border-radius:6px;margin:4px;background:#fff;cursor:pointer;transition:border-color .15s;" onclick="nlSelectBlock(\'' + zone + '\',\'' + b.id + '\')">'
+      + '<div class="nlblock-drag-handle" draggable="true" ondragstart="nlOnDragStartBlock(event,\'' + zone + '\',\'' + b.id + '\')" onclick="event.stopPropagation()" style="position:absolute;left:0;top:0;bottom:0;width:22px;display:flex;align-items:center;justify-content:center;cursor:grab;color:#aaa;font-size:1rem;z-index:2;border-right:1px solid #f0f0f0;">&#8286;</div>'
+      + '<div class="nlblock-visual" style="padding:6px 8px 6px 28px;">' + nlBlockVisual(b) + '</div>'
+      + '<div class="nlblock-overlay" style="position:absolute;top:4px;right:4px;display:none;gap:4px;z-index:3;">'
+      + '<button type="button" onclick="event.stopPropagation();nlMoveBlockUp(\'' + zone + '\',\'' + b.id + '\')" title="Move up" style="background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-size:0.75rem;cursor:pointer;"' + (i === 0 ? ' disabled' : '') + '>↑</button>'
+      + '<button type="button" onclick="event.stopPropagation();nlMoveBlockDown(\'' + zone + '\',\'' + b.id + '\')" title="Move down" style="background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-size:0.75rem;cursor:pointer;"' + (i === blocks.length - 1 ? ' disabled' : '') + '>↓</button>'
+      + '<button type="button" onclick="event.stopPropagation();nlDeleteBlock(\'' + zone + '\',\'' + b.id + '\')" title="Delete" style="background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-size:0.75rem;cursor:pointer;">🗑</button>'
+      + '</div>'
+      + '</div>';
+  }).join('')
+    + '<div style="min-height:20px;" ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,\'' + zone + '\')"></div>';
+}
+
+function nlBlockVisual(b) {
+  const p = b.props || {};
+  const ptop = (p.paddingTop || 0) + 'px';
+  const pbot = (p.paddingBottom || 0) + 'px';
+  switch (b.type) {
+    case 'heading': {
+      const tag = (p.level || 'H2').toLowerCase();
+      return '<' + tag + ' style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 24) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'center') + ';font-weight:' + (p.bold ? '700' : '400') + ';">' + escHtml(p.text || 'Heading') + '</' + tag + '>';
+    }
+    case 'paragraph': {
+      return '<p style="margin:' + ptop + ' 0 ' + pbot + ';font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || '#000') + ';text-align:' + (p.align || 'left') + ';white-space:pre-wrap;">' + escHtml(p.text || '') + '</p>';
+    }
+    case 'image': {
+      if (p.src) {
+        const align = p.align || 'center';
+        const ma = align === 'center' ? 'margin:0 auto' : align === 'right' ? 'margin-left:auto' : 'margin-right:auto';
+        return '<div style="text-align:' + align + ';padding:' + ptop + ' 0 ' + pbot + '"><img src="' + escHtml(p.src) + '" alt="' + escHtml(p.alt || '') + '" style="max-width:' + (p.widthPct || 100) + '%;display:block;' + ma + ';border-radius:' + (p.borderRadius || 0) + 'px;" /></div>';
+      }
+      return '<div onclick="nlTriggerImg(\'' + b.id + '\')" style="padding:' + ptop + ' 0 ' + pbot + ';text-align:center;background:#f5f5f5;border-radius:6px;color:#aaa;font-size:0.78rem;cursor:pointer;min-height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><i class="fas fa-image" style="font-size:1.5rem;"></i>Click to upload image</div>';
+    }
+    case 'button': {
+      const sz = { small: '7px 14px', medium: '11px 22px', large: '15px 30px' }[p.size || 'medium'];
+      const br = { square: '4px', round: '8px', pill: '50px' }[p.shape || 'round'];
+      return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '"><span style="display:inline-block;padding:' + sz + ';background:' + (p.bgColor || '#C9A84C') + ';color:' + (p.textColor || '#000') + ';border-radius:' + br + ';font-weight:600;font-size:0.88rem;">' + escHtml(p.text || 'Button') + '</span></div>';
+    }
+    case 'divider': {
+      return '<div style="padding:' + ptop + ' 0 ' + pbot + '"><hr style="border:none;border-top:' + (p.thickness || 1) + 'px ' + (p.style || 'solid') + ' ' + (p.color || '#ccc') + ';width:' + (p.widthPct || 80) + '%;margin:0 auto;" /></div>';
+    }
+    case 'spacer': {
+      return '<div style="height:' + (p.height || 32) + 'px;background:repeating-linear-gradient(45deg,#f0f0f0,#f0f0f0 3px,#fafafa 3px,#fafafa 8px);border-radius:3px;display:flex;align-items:center;justify-content:center;"><span style="font-size:0.68rem;color:#999;background:#fff;padding:1px 6px;border-radius:3px;">' + (p.height || 32) + 'px spacer</span></div>';
+    }
+    case 'video': {
+      if (p.thumbnailUrl) {
+        return '<div style="padding:' + ptop + ' 0 ' + pbot + ';position:relative;text-align:center"><img src="' + escHtml(p.thumbnailUrl) + '" style="max-width:100%;border-radius:6px;" /><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><span style="background:rgba(0,0,0,0.55);color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">▶</span></div>' + (p.caption ? '<div style="font-size:0.75rem;color:#888;margin-top:5px;">' + escHtml(p.caption) + '</div>' : '') + '</div>';
+      }
+      return '<div style="padding:' + ptop + ' 0 ' + pbot + ';text-align:center;background:#f5f5f5;border-radius:6px;color:#aaa;font-size:0.78rem;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><i class="fas fa-play-circle" style="font-size:1.8rem;"></i>Video block' + (p.caption ? '<br><span style="font-size:0.7rem;">' + escHtml(p.caption) + '</span>' : '') + '</div>';
+    }
+    case 'social': {
+      const faBrands = { facebook: 'fa-facebook-f', twitter: 'fa-twitter', instagram: 'fa-instagram', linkedin: 'fa-linkedin-in', youtube: 'fa-youtube' };
+      const sz = (p.iconSize || 28) + 'px';
+      const icons = (p.links || []).map(function (lnk) {
+        const ico = faBrands[lnk.platform] || 'fa-globe';
+        return '<span style="display:inline-flex;align-items:center;justify-content:center;width:' + sz + ';height:' + sz + ';background:#000;border-radius:50%;margin:0 3px;"><i class="fab ' + ico + '" style="color:#C9A84C;font-size:0.7rem;"></i></span>';
+      }).join('');
+      return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '">' + (icons || '<span style="color:#aaa;font-size:0.78rem;">No social links configured</span>') + '</div>';
+    }
+    case 'survey': {
+      const opts = (p.options || []).map(function (o) {
+        return '<span style="display:inline-block;margin:3px;padding:5px 11px;border:1px solid #C9A84C;border-radius:4px;font-size:0.78rem;color:#C9A84C;">' + escHtml(o) + '</span>';
+      }).join('');
+      return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '"><div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;">' + escHtml(p.question || 'Survey question') + '</div><div>' + opts + '</div></div>';
+    }
+    case 'footer': {
+      return '<div style="text-align:center;background:' + (p.bgColor || '#F4F4F4') + ';padding:' + ptop + ' 16px ' + pbot + ';font-size:' + (p.fontSize || 12) + 'px;color:' + (p.textColor || '#666') + ';"><div>' + escHtml(p.line1 || '') + '</div><div>' + escHtml(p.line2 || '') + '</div><div style="margin-top:6px;">' + escHtml(p.copyright || '') + ' · <span style="text-decoration:underline;cursor:pointer;">' + escHtml(p.unsubscribeText || 'Unsubscribe') + '</span></div></div>';
+    }
+    default: return '<div style="padding:8px;font-size:0.78rem;color:#aaa;">' + b.type + ' block</div>';
+  }
+}
+
+// ── Properties panel ──
+function nlRenderProps() {
+  const panel = document.getElementById('nl-props-inner');
+  if (!panel) return;
+  if (!nlState.sel) {
+    panel.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400);font-size:0.82rem;line-height:1.5;">Click a block to edit its properties</div>';
     return;
   }
-  wrap.innerHTML = nlBlocks.map(function(b, i) { return nlBlockCard(b, i); }).join('');
+  const zone = nlState.sel.zone;
+  const id = nlState.sel.id;
+  const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
+  if (!block) { nlState.sel = null; panel.innerHTML = ''; return; }
+  panel.innerHTML = nlPropsForm(block, zone);
 }
 
-function nlBlockCard(b, idx) {
-  const first = idx === 0, last = idx === nlBlocks.length - 1;
-  const icons = { text: 'fa-align-left', image: 'fa-image', cta: 'fa-arrow-pointer', social: 'fa-share-alt', divider: 'fa-minus' };
-  const labels = { text: 'Text', image: 'Image', cta: 'Button / CTA', social: 'Social Links', divider: 'Divider' };
-  const header = `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);">
-    <span style="font-size:0.75rem;font-weight:600;color:var(--gray-600);display:flex;align-items:center;gap:6px;"><i class="fas ${icons[b.type]||'fa-cube'}"></i>${labels[b.type]||b.type}</span>
-    <div style="display:flex;gap:2px;">
-      <button type="button" onclick="nlMoveBlock('${b.id}',-1)" ${first?'disabled':''} style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:3px 6px;font-size:0.85rem;" title="Move up">↑</button>
-      <button type="button" onclick="nlMoveBlock('${b.id}',1)" ${last?'disabled':''} style="background:none;border:none;cursor:pointer;color:var(--gray-400);padding:3px 6px;font-size:0.85rem;" title="Move down">↓</button>
-      <button type="button" onclick="nlRemoveBlock('${b.id}')" style="background:none;border:none;cursor:pointer;color:var(--red);padding:3px 6px;font-size:0.85rem;" title="Remove">✕</button>
-    </div>
-  </div>`;
+function nlPropsForm(block, zone) {
+  const p = block.props || {};
+  const z = zone;
+  const id = block.id;
 
-  let body = '';
-  if (b.type === 'text') {
-    body = `<div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Heading <em style="color:var(--gray-400);font-style:normal;">(optional)</em></label>
-      <input type="text" value="${escHtml(b.heading||'')}" oninput="nlSetField('${b.id}','heading',this.value)" placeholder="Section heading…" style="font-size:0.84rem;" /></div>
-    <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Body</label>
-      <div style="border:1px solid var(--gray-200);border-radius:6px;overflow:hidden;">
-        <div style="display:flex;gap:2px;align-items:center;flex-wrap:wrap;padding:4px 6px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);">
-          <button type="button" title="Bold" onclick="nlExec('bold')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-weight:700;font-size:0.85rem;">B</button>
-          <button type="button" title="Italic" onclick="nlExec('italic')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-style:italic;font-size:0.85rem;">I</button>
-          <button type="button" title="Underline" onclick="nlExec('underline')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;text-decoration:underline;font-size:0.85rem;">U</button>
-          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
-          <select title="Font size" onchange="nlExecFontSize(this.value);this.value=''" style="height:26px;border:1px solid var(--gray-200);border-radius:3px;font-size:0.75rem;padding:0 2px;background:var(--white);">
-            <option value="">Size</option>
-            <option value="11px">11</option>
-            <option value="13px">13</option>
-            <option value="15px">15</option>
-            <option value="17px">17</option>
-            <option value="20px">20</option>
-            <option value="24px">24</option>
-            <option value="28px">28</option>
-          </select>
-          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
-          <label title="Text color" style="position:relative;cursor:pointer;width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-font" style="font-size:0.75rem;color:#333;"></i>
-            <input type="color" value="#000000" onchange="nlExec('foreColor',this.value)" style="position:absolute;opacity:0;width:0;height:0;" />
-          </label>
-          <label title="Highlight color" style="position:relative;cursor:pointer;width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);display:flex;align-items:center;justify-content:center;">
-            <i class="fas fa-highlighter" style="font-size:0.75rem;color:#333;"></i>
-            <input type="color" value="#ffff00" onchange="nlExec('hiliteColor',this.value)" style="position:absolute;opacity:0;width:0;height:0;" />
-          </label>
-          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
-          <button type="button" title="Align left" onclick="nlExec('justifyLeft')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;"><i class="fas fa-align-left"></i></button>
-          <button type="button" title="Align center" onclick="nlExec('justifyCenter')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;"><i class="fas fa-align-center"></i></button>
-          <button type="button" title="Align right" onclick="nlExec('justifyRight')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;"><i class="fas fa-align-right"></i></button>
-          <div style="width:1px;height:18px;background:var(--gray-200);margin:0 2px;"></div>
-          <button type="button" title="Clear formatting" onclick="nlExec('removeFormat')" style="width:26px;height:26px;border:1px solid var(--gray-200);border-radius:3px;background:var(--white);cursor:pointer;font-size:0.75rem;" title="Clear formatting"><i class="fas fa-remove-format"></i></button>
-        </div>
-        <div id="nlbody-${b.id}" contenteditable="true"
-          oninput="nlSetField('${b.id}','body',document.getElementById('nlbody-${b.id}').innerHTML);nlSchedulePreview()"
-          style="min-height:100px;padding:10px 12px;font-size:0.88rem;line-height:1.6;outline:none;font-family:Arial,sans-serif;color:#2a2a2a;"
-        >${b.body||''}</div>
-      </div>
-    </div>`;
-  } else if (b.type === 'image') {
-    const hasImg = /^https?:\/\//.test(String(b.imageUrl||'').trim());
-    body = `<div style="margin-bottom:10px;">
-      <div onclick="nlTriggerImageUpload('${b.id}')" style="border:2px dashed var(--gray-300);border-radius:8px;padding:${hasImg?'8px':'28px'};text-align:center;cursor:pointer;background:var(--gray-50);">
-        ${hasImg
-          ? `<img src="${escHtml(b.imageUrl)}" style="max-width:100%;max-height:150px;border-radius:4px;display:block;margin:0 auto;" /><div style="font-size:0.73rem;color:var(--gray-400);margin-top:6px;">Click to replace</div>`
-          : `<i class="fas fa-cloud-upload-alt" style="font-size:2rem;color:var(--gray-300);"></i><div style="color:var(--gray-500);font-size:0.82rem;margin-top:8px;">Click to upload image</div>`}
-      </div></div>
-    <div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Alt text</label>
-      <input type="text" value="${escHtml(b.alt||'')}" oninput="nlSetField('${b.id}','alt',this.value)" placeholder="Describe the image…" style="font-size:0.84rem;" /></div>
-    <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Caption <em style="color:var(--gray-400);font-style:normal;">(optional)</em></label>
-      <input type="text" value="${escHtml(b.caption||'')}" oninput="nlSetField('${b.id}','caption',this.value)" placeholder="Image caption…" style="font-size:0.84rem;" /></div>`;
-  } else if (b.type === 'cta') {
-    body = `<div class="field-group" style="margin:0 0 8px;"><label style="font-size:0.73rem;">Button Label</label>
-      <input type="text" value="${escHtml(b.text||'')}" oninput="nlSetField('${b.id}','text',this.value)" placeholder="Register Now" style="font-size:0.84rem;" /></div>
-    <div class="field-group" style="margin:0;"><label style="font-size:0.73rem;">Link URL</label>
-      <input type="url" value="${escHtml(b.url||'')}" oninput="nlSetField('${b.id}','url',this.value)" placeholder="https://…" style="font-size:0.84rem;" /></div>`;
-  } else if (b.type === 'social') {
-    const nets = ['Instagram','Facebook','X','LinkedIn','YouTube','Website'];
-    const linkRows = (b.links||[]).map(function(lnk, li) {
-      return `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;">
-        <select onchange="nlSetSocialLink('${b.id}',${li},'network',this.value)" style="padding:4px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:0.78rem;flex-shrink:0;">
-          ${nets.map(function(n){ return `<option${lnk.network===n?' selected':''}>${n}</option>`; }).join('')}
-        </select>
-        <input type="url" value="${escHtml(lnk.url||'')}" oninput="nlSetSocialLink('${b.id}',${li},'url',this.value)" placeholder="https://…" style="font-size:0.8rem;flex:1;" />
-        <button type="button" onclick="nlRemoveSocialLink('${b.id}',${li})" style="background:none;border:none;color:var(--red);cursor:pointer;padding:2px 5px;font-size:0.85rem;">✕</button>
-      </div>`;
+  function field(label, control) {
+    return '<div style="margin-bottom:11px;"><label style="display:block;font-size:0.72rem;font-weight:600;color:var(--gray-600);margin-bottom:3px;">' + label + '</label>' + control + '</div>';
+  }
+  function inp(prop, val, type) {
+    return '<input type="' + (type || 'text') + '" value="' + escHtml(String(val == null ? '' : val)) + '" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;box-sizing:border-box;" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)" oninput="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)" />';
+  }
+  function colorInp(prop, val) {
+    const v = val || '#000000';
+    return '<div style="display:flex;gap:5px;align-items:center;"><input type="color" value="' + v + '" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)" style="width:34px;height:27px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;padding:2px;flex-shrink:0;" /><input type="text" value="' + v + '" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)" style="flex:1;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;" /></div>';
+  }
+  function numInp(prop, val, min, max, suffix) {
+    return '<div style="display:flex;align-items:center;gap:4px;"><input type="number" value="' + (val == null ? 0 : val) + '" min="' + (min == null ? 0 : min) + '" max="' + (max == null ? 9999 : max) + '" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',+this.value)" style="width:72px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;" />' + (suffix ? '<span style="font-size:0.78rem;color:var(--gray-500);">' + suffix + '</span>' : '') + '</div>';
+  }
+  function selInp(prop, val, options) {
+    const opts = options.map(function (o) {
+      const v = Array.isArray(o) ? o[0] : o;
+      const l = Array.isArray(o) ? o[1] : o;
+      return '<option value="' + escHtml(v) + '"' + (String(val) === v ? ' selected' : '') + '>' + escHtml(l) + '</option>';
     }).join('');
-    body = `<div class="field-group" style="margin:0 0 10px;"><label style="font-size:0.73rem;">Heading</label>
-      <input type="text" value="${escHtml(b.heading||'Connect With Us')}" oninput="nlSetField('${b.id}','heading',this.value)" style="font-size:0.84rem;" /></div>
-    ${linkRows}
-    <button type="button" class="btn-sm view" onclick="nlAddSocialLink('${b.id}')" style="margin-top:4px;"><i class="fas fa-plus"></i> Add link</button>`;
-  } else if (b.type === 'divider') {
-    body = `<div style="border-top:2px solid var(--gray-200);margin:6px 0;"></div><span style="font-size:0.73rem;color:var(--gray-400);">Horizontal divider between sections</span>`;
+    return '<select onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;">' + opts + '</select>';
+  }
+  function alignBtns(prop, val) {
+    return '<div style="display:flex;gap:3px;">' + ['left', 'center', 'right'].map(function (a) {
+      const icons = { left: 'fa-align-left', center: 'fa-align-center', right: 'fa-align-right' };
+      const active = a === (val || 'left');
+      return '<button type="button" onclick="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',\'' + a + '\')" style="flex:1;padding:5px;border:1px solid ' + (active ? '#C9A84C' : 'var(--gray-200)') + ';background:' + (active ? '#C9A84C' : '#fff') + ';border-radius:4px;cursor:pointer;font-size:0.78rem;color:' + (active ? '#000' : 'var(--gray-600)') + ';"><i class="fas ' + icons[a] + '"></i></button>';
+    }).join('') + '</div>';
+  }
+  function padRow() {
+    return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' + field('Pad Top', numInp('paddingTop', p.paddingTop, 0, 200, 'px')) + field('Pad Bottom', numInp('paddingBottom', p.paddingBottom, 0, 200, 'px')) + '</div>';
+  }
+  function ta(prop, val, rows) {
+    return '<textarea rows="' + (rows || 3) + '" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;resize:vertical;box-sizing:border-box;" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)" oninput="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'' + prop + '\',this.value)">' + escHtml(String(val == null ? '' : val)) + '</textarea>';
   }
 
-  return `<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:8px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-    ${header}<div style="padding:12px;">${body}</div></div>`;
+  let html = '<div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-500);padding-bottom:8px;border-bottom:1px solid var(--gray-200);margin-bottom:12px;">' + block.type + ' block</div>';
+
+  switch (block.type) {
+    case 'heading':
+      html += field('Text', ta('text', p.text, 2));
+      html += field('Level', selInp('level', p.level || 'H2', ['H1', 'H2', 'H3', 'H4']));
+      html += field('Font Size', numInp('fontSize', p.fontSize || 24, 10, 80, 'px'));
+      html += field('Color', colorInp('color', p.color || '#000000'));
+      html += field('Alignment', alignBtns('align', p.align || 'center'));
+      html += field('Bold', '<label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.82rem;"><input type="checkbox"' + (p.bold ? ' checked' : '') + ' onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'bold\',this.checked)" style="accent-color:#C9A84C;" /> Bold</label>');
+      html += padRow();
+      break;
+    case 'paragraph':
+      html += field('Text', ta('text', p.text, 5));
+      html += field('Font Size', numInp('fontSize', p.fontSize || 15, 8, 36, 'px'));
+      html += field('Color', colorInp('color', p.color || '#000000'));
+      html += field('Alignment', alignBtns('align', p.align || 'left'));
+      html += padRow();
+      break;
+    case 'image':
+      html += field('Image URL / Upload', '<div style="display:flex;gap:5px;align-items:center;"><input type="text" value="' + escHtml(p.src || '') + '" placeholder="https://…" style="flex:1;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'src\',this.value)" /><button type="button" onclick="nlTriggerImg(\'' + id + '\')" style="padding:5px 8px;background:#C9A84C;border:none;border-radius:5px;font-size:0.78rem;cursor:pointer;font-weight:600;white-space:nowrap;flex-shrink:0;">Upload</button></div>');
+      html += field('Alt Text', inp('alt', p.alt || ''));
+      html += field('Alignment', alignBtns('align', p.align || 'center'));
+      html += field('Width %', numInp('widthPct', p.widthPct || 100, 10, 100, '%'));
+      html += field('Border Radius', numInp('borderRadius', p.borderRadius || 0, 0, 100, 'px'));
+      html += field('Link URL', inp('link', p.link || '', 'url'));
+      html += padRow();
+      break;
+    case 'button':
+      html += field('Button Text', inp('text', p.text || ''));
+      html += field('URL', inp('url', p.url || '', 'url'));
+      html += field('Shape', selInp('shape', p.shape || 'round', [['square', 'Square'], ['round', 'Round'], ['pill', 'Pill']]));
+      html += field('Size', selInp('size', p.size || 'medium', [['small', 'Small'], ['medium', 'Medium'], ['large', 'Large']]));
+      html += field('Background Color', colorInp('bgColor', p.bgColor || '#C9A84C'));
+      html += field('Text Color', colorInp('textColor', p.textColor || '#000000'));
+      html += field('Alignment', alignBtns('align', p.align || 'center'));
+      html += padRow();
+      break;
+    case 'divider':
+      html += field('Color', colorInp('color', p.color || '#CCCCCC'));
+      html += field('Thickness', numInp('thickness', p.thickness || 1, 1, 20, 'px'));
+      html += field('Style', selInp('style', p.style || 'solid', ['solid', 'dashed', 'dotted']));
+      html += field('Width %', numInp('widthPct', p.widthPct || 80, 10, 100, '%'));
+      html += padRow();
+      break;
+    case 'spacer':
+      html += field('Height', numInp('height', p.height || 32, 4, 500, 'px'));
+      break;
+    case 'video':
+      html += field('Thumbnail URL', inp('thumbnailUrl', p.thumbnailUrl || '', 'url'));
+      html += field('Video URL', inp('videoUrl', p.videoUrl || '', 'url'));
+      html += field('Caption', inp('caption', p.caption || ''));
+      html += padRow();
+      break;
+    case 'social': {
+      const platforms = ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube'];
+      let linkRows = (p.links || []).map(function (lnk, li) {
+        return '<div style="display:flex;gap:4px;align-items:center;margin-bottom:5px;">'
+          + '<select onchange="nlUpdateSocialLink(\'' + z + '\',\'' + id + '\',' + li + ',\'platform\',this.value)" style="padding:4px;border:1px solid var(--gray-200);border-radius:4px;font-size:0.75rem;flex-shrink:0;">'
+          + platforms.map(function (pl) { return '<option value="' + pl + '"' + (pl === lnk.platform ? ' selected' : '') + '>' + pl.charAt(0).toUpperCase() + pl.slice(1) + '</option>'; }).join('')
+          + '</select>'
+          + '<input type="url" value="' + escHtml(lnk.url || '') + '" placeholder="URL" onchange="nlUpdateSocialLink(\'' + z + '\',\'' + id + '\',' + li + ',\'url\',this.value)" style="flex:1;padding:4px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:0.75rem;" />'
+          + '<button type="button" onclick="nlRemoveSocialPlatform(\'' + z + '\',\'' + id + '\',' + li + ')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.88rem;padding:0 3px;">&#10005;</button>'
+          + '</div>';
+      }).join('');
+      html += field('Social Links', linkRows + '<button type="button" onclick="nlAddSocialPlatform(\'' + z + '\',\'' + id + '\')" style="padding:4px 10px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:4px;font-size:0.75rem;cursor:pointer;"><i class="fas fa-plus"></i> Add Platform</button>');
+      html += field('Icon Size', numInp('iconSize', p.iconSize || 28, 16, 64, 'px'));
+      html += field('Alignment', alignBtns('align', p.align || 'center'));
+      html += padRow();
+      break;
+    }
+    case 'survey': {
+      html += field('Question', ta('question', p.question, 2));
+      let optRows = (p.options || []).map(function (opt, oi) {
+        return '<div style="display:flex;gap:4px;align-items:center;margin-bottom:4px;">'
+          + '<input type="text" value="' + escHtml(opt) + '" onchange="nlUpdateSurveyOption(\'' + z + '\',\'' + id + '\',' + oi + ',this.value)" style="flex:1;padding:4px 6px;border:1px solid var(--gray-200);border-radius:4px;font-size:0.8rem;" />'
+          + '<button type="button" onclick="nlRemoveSurveyOption(\'' + z + '\',\'' + id + '\',' + oi + ')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.88rem;padding:0 3px;">&#10005;</button>'
+          + '</div>';
+      }).join('');
+      html += field('Options', optRows + '<button type="button" onclick="nlAddSurveyOption(\'' + z + '\',\'' + id + '\')" style="padding:4px 10px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:4px;font-size:0.75rem;cursor:pointer;"><i class="fas fa-plus"></i> Add Option</button>');
+      html += field('Alignment', alignBtns('align', p.align || 'center'));
+      html += padRow();
+      break;
+    }
+    case 'footer':
+      html += field('Line 1', inp('line1', p.line1 || ''));
+      html += field('Line 2', inp('line2', p.line2 || ''));
+      html += field('Unsubscribe Text', inp('unsubscribeText', p.unsubscribeText || ''));
+      html += field('Copyright', inp('copyright', p.copyright || ''));
+      html += field('Text Color', colorInp('textColor', p.textColor || '#666666'));
+      html += field('Background Color', colorInp('bgColor', p.bgColor || '#F4F4F4'));
+      html += field('Font Size', numInp('fontSize', p.fontSize || 12, 8, 20, 'px'));
+      html += padRow();
+      break;
+    default:
+      html += '<div style="color:var(--gray-400);font-size:0.82rem;">No properties available.</div>';
+  }
+  return html;
+}
+
+// ── Sections tab ──
+function nlRenderSectionsTab() {
+  const panel = document.getElementById('nlTab-sections');
+  if (!panel) return;
+  let html = '';
+  ['header', 'body', 'footer'].forEach(function (zone) {
+    const blocks = nlState.zones[zone] || [];
+    html += '<div style="margin-bottom:14px;"><div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);padding-bottom:3px;border-bottom:1px solid var(--gray-200);margin-bottom:4px;">' + zone + '</div>';
+    if (!blocks.length) {
+      html += '<div style="font-size:0.78rem;color:var(--gray-400);padding:4px 0;">Empty</div>';
+    } else {
+      blocks.forEach(function (b, i) {
+        const label = String((b.props && (b.props.text || b.props.question || b.props.line1)) || '').slice(0, 22) || '(' + b.type + ')';
+        const active = nlState.sel && nlState.sel.id === b.id;
+        html += '<div style="display:flex;align-items:center;gap:3px;padding:3px 0;border-bottom:1px solid var(--gray-100);">'
+          + '<span style="flex:1;font-size:0.78rem;cursor:pointer;color:' + (active ? '#C9A84C' : 'var(--gray-700)') + ';" onclick="nlSelectBlock(\'' + zone + '\',\'' + b.id + '\')">' + b.type + ': ' + escHtml(label) + '</span>'
+          + '<button type="button" onclick="nlMoveBlockUp(\'' + zone + '\',\'' + b.id + '\')" ' + (i === 0 ? 'disabled' : '') + ' style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.75rem;padding:1px 3px;">↑</button>'
+          + '<button type="button" onclick="nlMoveBlockDown(\'' + zone + '\',\'' + b.id + '\')" ' + (i === blocks.length - 1 ? 'disabled' : '') + ' style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.75rem;padding:1px 3px;">↓</button>'
+          + '<button type="button" onclick="nlDeleteBlock(\'' + zone + '\',\'' + b.id + '\')" style="background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:0.75rem;padding:1px 3px;">&#10005;</button>'
+          + '</div>';
+      });
+    }
+    html += '</div>';
+  });
+  panel.innerHTML = html;
+}
+
+// ── Styles tab ──
+function nlRenderStylesTab() {
+  const panel = document.getElementById('nlTab-styles');
+  if (!panel) return;
+  const gs = nlState.gs;
+  function gsColorField(label, key, val) {
+    return '<div style="margin-bottom:11px;"><label style="display:block;font-size:0.72rem;font-weight:600;color:var(--gray-600);margin-bottom:3px;">' + label + '</label>'
+      + '<div style="display:flex;gap:5px;align-items:center;"><input type="color" value="' + val + '" onchange="nlUpdateGS(\'' + key + '\',this.value)" style="width:34px;height:27px;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;padding:2px;flex-shrink:0;" /><input type="text" value="' + val + '" onchange="nlUpdateGS(\'' + key + '\',this.value)" style="flex:1;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;" /></div></div>';
+  }
+  panel.innerHTML = gsColorField('Background Color', 'bg', gs.bg)
+    + gsColorField('Content Background', 'contentBg', gs.contentBg)
+    + '<div style="margin-bottom:11px;"><label style="display:block;font-size:0.72rem;font-weight:600;color:var(--gray-600);margin-bottom:3px;">Default Font</label>'
+    + '<select onchange="nlUpdateGS(\'font\',this.value)" style="width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.82rem;">'
+    + ['Arial, Helvetica, sans-serif', 'Georgia, serif', 'Verdana, Geneva, sans-serif', "'Trebuchet MS', Helvetica, sans-serif"].map(function (f) {
+      return '<option value="' + f + '"' + (gs.font === f ? ' selected' : '') + '>' + f.split(',')[0].replace(/'/g, '') + '</option>';
+    }).join('')
+    + '</select></div>'
+    + gsColorField('Default Text Color', 'textColor', gs.textColor)
+    + gsColorField('Link Color', 'linkColor', gs.linkColor);
+}
+
+function nlUpdateGS(key, value) {
+  nlState.gs[key] = value;
 }
 
 // ── Image upload ──
-function nlTriggerImageUpload(blockId) {
-  nlActiveImageBlockId = blockId;
+let nlActiveImgBlockId = null;
+function nlTriggerImg(blockId) {
+  nlActiveImgBlockId = blockId;
   const inp = document.getElementById('nlImageInput');
   if (inp) inp.click();
 }
 
-async function nlHandleImageFile(e) {
+async function nlHandleImageUpload(e) {
   const file = e.target.files[0];
-  if (!file || !nlActiveImageBlockId) return;
-  const blockId = nlActiveImageBlockId;
+  if (!file || !nlActiveImgBlockId) return;
+  const bid = nlActiveImgBlockId;
   e.target.value = '';
   try {
     showToast('Uploading image…', 'info');
     const uploaded = await uploadImageToSupabaseBucket(file, EVENT_GALLERY_IMAGE_BUCKET, { prefixA: 'newsletter/', prefixB: 'nl-' });
-    const b = nlBlocks.find(function(x) { return x.id === blockId; });
-    if (b) { b.imageUrl = uploaded.url; nlRenderBlocks(); nlSchedulePreview(); }
+    let found = null;
+    let fz = null;
+    ['header', 'body', 'footer'].forEach(function (zone) {
+      const b = nlState.zones[zone].find(function (x) { return x.id === bid; });
+      if (b) { found = b; fz = zone; }
+    });
+    if (found) {
+      found.props.src = uploaded.url;
+      const visual = document.querySelector('#nlblock-' + bid + ' .nlblock-visual');
+      if (visual) visual.innerHTML = nlBlockVisual(found);
+      nlRenderProps();
+    }
     showToast('Image uploaded.', 'success');
   } catch (err) {
     showToast('Upload failed: ' + (err.message || 'unknown error'), 'error');
   }
 }
 
-// ── Live preview ──
-function nlSchedulePreview() {
-  clearTimeout(nlPreviewTimer);
-  const status = document.getElementById('nlPreviewStatus');
-  if (status) status.textContent = 'Updating…';
-  nlPreviewTimer = setTimeout(nlRunPreview, 900);
-}
-
-async function nlRunPreview() {
-  try {
-    const html = await nlCompileHtml(nlBuildPayload());
-    latestNewsletterHtml = html;
-    const frame = document.getElementById('nlPreviewFrame');
-    if (frame) frame.srcdoc = html;
-    const status = document.getElementById('nlPreviewStatus');
-    if (status) status.textContent = 'Preview up to date';
-  } catch (err) {
-    const status = document.getElementById('nlPreviewStatus');
-    if (status) status.textContent = 'Preview error — check console';
-    console.warn('Newsletter preview error:', err);
-  }
-}
-
-function nlBuildPayload() {
-  return {
-    campaignName: (document.getElementById('nlCampaignName')||{}).value || '',
-    subject:      (document.getElementById('nlSubject')||{}).value || '',
-    preheader:    (document.getElementById('nlPreheader')||{}).value || '',
-    brand: {
-      logoUrl: window.location.origin + '/images/xtl-logo.png'
-    },
-    blocks: nlBlocks.map(function(b) {
-      const copy = Object.assign({}, b);
-      delete copy.id;
-      return copy;
-    })
-  };
-}
-
-async function nlCompileHtml(payload) {
-  const res = await fetch(NEWSLETTER_RENDER_FUNCTION, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
-    body: JSON.stringify(payload)
-  });
-  if (!res.ok) throw new Error('Render failed (' + res.status + ')');
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-  return data.html || '';
-}
-
-function nlSetPreviewMode(mode) {
-  const shell = document.getElementById('nlPreviewShell');
-  const dBtn = document.getElementById('nlDesktopBtn');
-  const mBtn = document.getElementById('nlMobileBtn');
-  if (mode === 'mobile') {
-    if (shell) shell.style.width = '375px';
-    if (dBtn) dBtn.classList.remove('active');
-    if (mBtn) mBtn.classList.add('active');
-  } else {
-    if (shell) shell.style.width = '640px';
-    if (dBtn) dBtn.classList.add('active');
-    if (mBtn) mBtn.classList.remove('active');
-  }
-}
-
-// ── Template save / load ──
-async function nlEnsureTemplates(token) {
-  if (nlTemplatesChecked) return nlTemplatesAvailable;
-  nlTemplatesChecked = true;
-  try { await sbGet('newsletter_templates', 'select=id&limit=1', token); nlTemplatesAvailable = true; }
-  catch (e) { nlTemplatesAvailable = false; }
-  return nlTemplatesAvailable;
-}
-
-async function nlLoadTemplateOptions() {
-  const token = getAdminToken();
-  if (!token) return;
-  if (!await nlEnsureTemplates(token)) return;
-  try {
-    const rows = await sbGet('newsletter_templates', 'select=id,template_name,updated_at&order=updated_at.desc', token);
-    const sel = document.getElementById('nlTemplateSelect');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">Load template…</option>' +
-      (rows||[]).map(function(r) {
-        return '<option value="' + escHtml(String(r.id)) + '">' + escHtml(r.template_name||'Untitled') + '</option>';
-      }).join('');
-  } catch (e) { /* silent */ }
-}
-
-async function nlSaveTemplate() {
+// ── Save draft ──
+async function nlSaveDraft() {
   const token = getAdminToken();
   if (!token) { showToast('Sign in required.', 'error'); return; }
-  if (!await nlEnsureTemplates(token)) { showToast('newsletter_templates table missing — run schema SQL first.', 'error'); return; }
-  if (!nlBlocks.length) { showToast('Add at least one block before saving.', 'error'); return; }
-  const name = prompt('Template name:', (document.getElementById('nlCampaignName')||{}).value || 'My Template');
-  if (!name) return;
-  const payload = {
-    template_name: name.trim(),
-    subject:       (document.getElementById('nlSubject')||{}).value || '',
-    preheader:     (document.getElementById('nlPreheader')||{}).value || '',
-    sections_json: nlBlocks,
-    updated_at:    new Date().toISOString()
-  };
+  const si = document.getElementById('nlSubjectInput');
+  const pi = document.getElementById('nlPreheaderInput');
+  if (si) nlState.subject = si.value || nlState.subject;
+  if (pi) nlState.preheader = pi.value || '';
+  if (!nlState.subject) { showToast('Enter a subject line before saving.', 'error'); return; }
   try {
-    const existing = await sbGet('newsletter_templates', 'select=id&template_name=eq.' + encodeURIComponent(name.trim()) + '&limit=1', token);
-    if (Array.isArray(existing) && existing.length) {
-      await sbPatch('newsletter_templates', 'id=eq.' + encodeURIComponent(existing[0].id), payload, token);
-    } else {
-      payload.created_at = new Date().toISOString();
-      await sbPost('newsletter_templates', payload, token);
-    }
-    await nlLoadTemplateOptions();
-    showToast('Template saved: ' + name.trim());
-  } catch (err) { showToast('Save failed: ' + (err.message||'unknown'), 'error'); }
-}
-
-async function nlLoadSelectedTemplate() {
-  const token = getAdminToken();
-  if (!token) { showToast('Sign in required.', 'error'); return; }
-  const sel = document.getElementById('nlTemplateSelect');
-  if (!sel || !sel.value) return;
-  try {
-    const rows = await sbGet('newsletter_templates', 'id=eq.' + encodeURIComponent(sel.value) + '&limit=1', token);
-    if (!rows || !rows.length) { showToast('Template not found.', 'error'); return; }
-    const row = rows[0];
-    const setV = function(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; };
-    setV('nlCampaignName', row.template_name);
-    setV('nlSubject', row.subject);
-    setV('nlPreheader', row.preheader);
-    nlBlocks = (Array.isArray(row.sections_json) ? row.sections_json : []).map(function(s) {
-      return Object.assign({ id: nlGenId() }, s || {});
-    });
-    nlRenderBlocks();
-    nlSchedulePreview();
-    showToast('Template loaded.');
-  } catch (err) { showToast('Load failed: ' + (err.message||'unknown'), 'error'); }
-}
-
-// ── Init panel ──
-function nlInitPanel() {
-  const now = new Date();
-  const month = now.toLocaleString('en-US', { month: 'long' });
-  const year  = now.getFullYear();
-  const cn = document.getElementById('nlCampaignName');
-  if (cn && !cn.value) cn.value = month + ' ' + year + ' Chapter Update';
-  const subj = document.getElementById('nlSubject');
-  if (subj && !subj.value) subj.value = 'North Dallas Alphas — ' + month + ' Chapter Update';
-  if (!nlBlocks.length) nlRenderBlocks();
-  nlLoadTemplateOptions();
-  if (nlBlocks.length) nlSchedulePreview();
-}
-
-// ── Export helpers ──
-async function copyNewsletterHtml() {
-  if (!latestNewsletterHtml) {
-    if (!nlBlocks.length) { showToast('Add blocks first.', 'error'); return; }
-    try { latestNewsletterHtml = await nlCompileHtml(nlBuildPayload()); } catch (e) { showToast('Could not compile HTML.', 'error'); return; }
-  }
-  try { await navigator.clipboard.writeText(latestNewsletterHtml); showToast('HTML copied to clipboard.'); }
-  catch (e) { showToast('Copy failed — try Download instead.', 'error'); }
-}
-
-function downloadNewsletterHtml() {
-  if (!latestNewsletterHtml) { showToast('Generate a preview first, then download.', 'error'); return; }
-  const name = ((document.getElementById('nlCampaignName')||{}).value || 'newsletter').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
-  const blob = new Blob([latestNewsletterHtml], { type: 'text/html' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = name + '.html';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function newsletterEsc(str) { return escHtml(str || ''); }
-
-// ── Rich text helpers ──
-function nlExec(cmd, val) {
-  document.execCommand('styleWithCSS', false, true);
-  document.execCommand(cmd, false, val || null);
-}
-
-function nlExecFontSize(px) {
-  if (!px) return;
-  // Insert a styled span around the current selection
-  var sel = window.getSelection();
-  if (!sel || sel.rangeCount === 0) return;
-  var range = sel.getRangeAt(0);
-  if (range.collapsed) return;
-  var span = document.createElement('span');
-  span.style.fontSize = px;
-  try { range.surroundContents(span); } catch(e) {
-    // If selection spans multiple elements, use execCommand fallback
-    document.execCommand('styleWithCSS', false, true);
-    document.execCommand('fontSize', false, '4');
-    // Post-patch: replace font-size on the resulting element
-    var fontEls = document.querySelectorAll('[style*="font-size"]');
-    fontEls.forEach(function(el) { if (el.style.fontSize === 'medium') el.style.fontSize = px; });
-  }
-  // Sync block data
-  var ce = span.closest('[id^="nlbody-"]');
-  if (ce) { var bid = ce.id.replace('nlbody-',''); nlSetField(bid,'body',ce.innerHTML); nlSchedulePreview(); }
-}
-
-// ── Publish newsletter ──
-async function nlPublishNewsletter() {
-  var token = getAdminToken();
-  if (!token) { showToast('Sign in required.', 'error'); return; }
-  if (!nlBlocks.length) { showToast('Add at least one block before publishing.', 'error'); return; }
-  var title = (document.getElementById('nlCampaignName')||{}).value || '';
-  if (!title) { showToast('Enter a Campaign / Email Name before publishing.', 'error'); return; }
-  try {
-    showToast('Compiling newsletter…', 'info');
-    var html = await nlCompileHtml(nlBuildPayload());
-    latestNewsletterHtml = html;
-    var frame = document.getElementById('nlPreviewFrame');
-    if (frame) frame.srcdoc = html;
-    var payload = {
-      title:        title,
-      subject:      (document.getElementById('nlSubject')||{}).value || '',
-      html_content: html,
-      sections_json: nlBlocks,
-      status:       'published',
-      published_at: new Date().toISOString(),
-      updated_at:   new Date().toISOString()
+    showToast('Saving draft…', 'info');
+    const payload = {
+      title: nlState.subject,
+      subject: nlState.subject,
+      preheader: nlState.preheader,
+      content_json: JSON.stringify(nlState),
+      html_content: nlBuildHtml(),
+      status: 'draft',
+      updated_at: new Date().toISOString()
     };
-    // Check for existing newsletter with same title
-    var existing = await sbGet('newsletters', 'title=eq.'+encodeURIComponent(title)+'&select=id&limit=1', token);
-    if (Array.isArray(existing) && existing.length) {
-      await sbPatch('newsletters', 'id=eq.'+existing[0].id, payload, token);
-      showToast('Newsletter updated and published!');
+    if (nlState.draftId) {
+      await sbPatch('newsletters', 'id=eq.' + nlState.draftId, payload, token);
     } else {
       payload.created_at = new Date().toISOString();
-      await sbPost('newsletters', payload, token);
-      showToast('Newsletter published! Members can now view it in the portal.');
+      if (typeof adminUser !== 'undefined' && adminUser && adminUser.id) payload.created_by = adminUser.id;
+      const rows = await sbPost('newsletters', payload, token);
+      if (Array.isArray(rows) && rows[0] && rows[0].id) nlState.draftId = rows[0].id;
     }
-  } catch(err) {
-    showToast('Publish failed: '+(err.message||'unknown error'), 'error');
+    showToast('Draft saved.', 'success');
+  } catch (err) {
+    showToast('Save failed: ' + (err.message || 'unknown'), 'error');
   }
 }
 
-// ── Send to members ──
-async function nlSendToMembers() {
-  var token = getAdminToken();
-  if (!token) { showToast('Sign in required.', 'error'); return; }
-  if (!nlBlocks.length) { showToast('Build the newsletter first.', 'error'); return; }
-  var subject = (document.getElementById('nlSubject')||{}).value || '';
-  if (!subject) { showToast('Enter a Subject Line before sending.', 'error'); return; }
-  if (!confirm('Send this newsletter to all active members? This cannot be undone.')) return;
+// ── Preview ──
+function nlOpenPreview() {
+  const html = nlBuildHtml();
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+}
+
+// ── Send modal ──
+async function nlOpenSendModal() {
+  const si = document.getElementById('nlSubjectInput');
+  if (si) nlState.subject = si.value || nlState.subject;
+  if (!nlState.subject) { showToast('Enter a subject line first.', 'error'); return; }
+  const modal = document.getElementById('nlSendModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const subj = document.getElementById('nlSendSubject');
+  if (subj) subj.textContent = nlState.subject;
+  // Reset radio to "all"
+  const radio = document.querySelector('input[name="nlRecipMode"][value="all"]');
+  if (radio) radio.checked = true;
+  nlState.sendMembers = [];
+  await nlLoadSendMembers();
+}
+
+function nlCloseSendModal() {
+  const modal = document.getElementById('nlSendModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function nlLoadSendMembers() {
+  const token = getAdminToken();
+  const listEl = document.getElementById('nlMemberList');
+  if (!listEl) return;
+  listEl.innerHTML = '<div style="padding:8px;color:var(--gray-400);font-size:0.8rem;">Loading…</div>';
   try {
-    showToast('Compiling and sending…', 'info');
-    var html = latestNewsletterHtml || await nlCompileHtml(nlBuildPayload());
-    latestNewsletterHtml = html;
-    var res = await fetch(SUPABASE_URL + '/functions/v1/send-newsletter', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ subject: subject, html: html })
-    });
-    var data = await res.json().catch(function(){ return {}; });
-    if (!res.ok) throw new Error(data.error || 'Send failed');
-    showToast('Newsletter sent to ' + (data.sent || 0) + ' members!');
-  } catch(err) {
-    showToast('Send failed: '+(err.message||'unknown'), 'error');
+    const rows = await sbGet('members', 'select=id,first_name,last_name,email,status&portal_access=eq.true&status=in.(active,alumni)&order=last_name.asc', token);
+    nlState.sendMembers = rows || [];
+    nlRenderMemberList();
+  } catch (e) {
+    listEl.innerHTML = '<div style="padding:8px;color:var(--gray-400);font-size:0.8rem;">Could not load members.</div>';
+    const countEl = document.getElementById('nlRecipCount');
+    if (countEl) countEl.textContent = '0 recipients selected';
   }
-} // legacy alias
+}
+
+function nlRenderMemberList() {
+  const listEl = document.getElementById('nlMemberList');
+  if (!listEl) return;
+  const modeEl = document.querySelector('input[name="nlRecipMode"]:checked');
+  const modeVal = modeEl ? modeEl.value : 'all';
+  let members = nlState.sendMembers;
+  if (modeVal === 'all') { members = members.filter(function (m) { return m.status === 'active'; }); }
+  else if (modeVal === 'alumni') { members = members.filter(function (m) { return m.status === 'alumni'; }); }
+  const countEl = document.getElementById('nlRecipCount');
+  if (modeVal !== 'specific') {
+    listEl.style.display = 'none';
+    if (countEl) countEl.textContent = members.length + ' recipients selected';
+  } else {
+    listEl.style.display = 'block';
+    listEl.innerHTML = members.map(function (m) {
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.82rem;cursor:pointer;">'
+        + '<input type="checkbox" value="' + escHtml(m.email || '') + '" checked style="accent-color:#C9A84C;flex-shrink:0;" onchange="nlUpdateRecipCount()" />'
+        + '<span>' + escHtml((m.first_name || '') + ' ' + (m.last_name || '')) + ' <span style="color:var(--gray-400);font-size:0.75rem;">' + escHtml(m.email || '') + '</span></span>'
+        + '</label>';
+    }).join('') || '<div style="color:var(--gray-400);font-size:0.8rem;">No members found.</div>';
+    nlUpdateRecipCount();
+  }
+}
+
+function nlUpdateRecipCount() {
+  const countEl = document.getElementById('nlRecipCount');
+  if (!countEl) return;
+  const checks = document.querySelectorAll('#nlMemberList input[type="checkbox"]:checked');
+  countEl.textContent = checks.length + ' recipients selected';
+}
+
+function nlOnRecipModeChange() { nlRenderMemberList(); }
+
+async function nlSendNewsletter() {
+  const token = getAdminToken();
+  if (!token) { showToast('Sign in required.', 'error'); return; }
+  const sendBtn = document.getElementById('nlSendBtn');
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'Sending…'; }
+  try {
+    const modeEl = document.querySelector('input[name="nlRecipMode"]:checked');
+    const modeVal = modeEl ? modeEl.value : 'all';
+    let recipients = [];
+    if (modeVal === 'all') {
+      recipients = nlState.sendMembers.filter(function (m) { return m.status === 'active'; }).map(function (m) { return m.email; }).filter(Boolean);
+    } else if (modeVal === 'alumni') {
+      recipients = nlState.sendMembers.filter(function (m) { return m.status === 'alumni'; }).map(function (m) { return m.email; }).filter(Boolean);
+    } else {
+      document.querySelectorAll('#nlMemberList input[type="checkbox"]:checked').forEach(function (c) { if (c.value) recipients.push(c.value); });
+    }
+    if (!recipients.length) { showToast('No recipients selected.', 'error'); return; }
+    const html = nlBuildHtml();
+    const res = await fetch(SUPABASE_URL + '/functions/v1/send-newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ subject: nlState.subject, html: html, recipients: recipients })
+    });
+    const data = await res.json().catch(function () { return {}; });
+    if (!res.ok) throw new Error(data.error || 'Send failed');
+    await nlSaveDraft().catch(function () { });
+    nlCloseSendModal();
+    showToast('Newsletter sent to ' + recipients.length + ' recipients!', 'success');
+  } catch (err) {
+    showToast('Send failed: ' + (err.message || 'unknown'), 'error');
+  } finally {
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Now'; }
+  }
+}
+
+// ── Build HTML email ──
+function nlBuildHtml() {
+  const gs = nlState.gs;
+  const allBlocks = [].concat(nlState.zones.header || [], nlState.zones.body || [], nlState.zones.footer || []);
+  const rows = allBlocks.map(function (b) { return nlBlockToEmailRow(b, gs); }).join('\n');
+  const subj = nlState.subject || 'Newsletter';
+  const preh = nlState.preheader || '';
+  return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8" />\n<meta name="viewport" content="width=device-width,initial-scale=1" />\n<meta http-equiv="X-UA-Compatible" content="IE=edge" />\n<title>' + escHtml(subj) + '</title>\n</head>\n<body style="margin:0;padding:0;background:' + gs.bg + ';font-family:' + gs.font + ';">\n'
+    + (preh ? '<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">' + escHtml(preh) + '</div>\n' : '')
+    + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:' + gs.bg + ';">\n'
+    + '<tr><td align="center" style="padding:24px 12px;">\n'
+    + '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:' + gs.contentBg + ';border-radius:6px;overflow:hidden;">\n'
+    + rows
+    + '\n</table>\n</td></tr>\n</table>\n</body>\n</html>';
+}
+
+function nlBlockToEmailRow(b, gs) {
+  const p = b.props || {};
+  const ptop = p.paddingTop || 0;
+  const pbot = p.paddingBottom || 0;
+  const tdWrap = function (content, extraStyle) {
+    return '<tr><td style="padding:' + ptop + 'px 24px ' + pbot + 'px;' + (extraStyle || '') + '">' + content + '</td></tr>';
+  };
+  switch (b.type) {
+    case 'heading': {
+      const tag = (p.level || 'H2').toLowerCase();
+      return tdWrap('<' + tag + ' style="margin:0;font-size:' + (p.fontSize || 24) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'center') + ';font-weight:' + (p.bold ? '700' : '400') + ';font-family:' + gs.font + ';">' + escHtml(p.text || '') + '</' + tag + '>');
+    }
+    case 'paragraph': {
+      const lines = escHtml(p.text || '').replace(/\n/g, '<br />');
+      return tdWrap('<p style="margin:0;font-size:' + (p.fontSize || 15) + 'px;color:' + (p.color || gs.textColor) + ';text-align:' + (p.align || 'left') + ';line-height:1.6;font-family:' + gs.font + ';">' + lines + '</p>');
+    }
+    case 'image': {
+      if (!p.src) return '';
+      const align = p.align || 'center';
+      const ma = align === 'center' ? 'margin:0 auto' : align === 'right' ? 'margin-left:auto' : 'margin-right:auto';
+      const w = Math.round(552 * (p.widthPct || 100) / 100);
+      const imgTag = '<img src="' + escHtml(p.src) + '" alt="' + escHtml(p.alt || '') + '" width="' + w + '" style="display:block;max-width:100%;border-radius:' + (p.borderRadius || 0) + 'px;border:0;' + ma + ';" />';
+      return tdWrap(p.link ? '<a href="' + escHtml(p.link) + '" target="_blank" style="border:0;">' + imgTag + '</a>' : imgTag, 'text-align:' + align + ';');
+    }
+    case 'button': {
+      const sz = { small: '8px 16px', medium: '12px 26px', large: '16px 34px' }[p.size || 'medium'];
+      const br = { square: '4px', round: '8px', pill: '50px' }[p.shape || 'round'];
+      return tdWrap('<div style="text-align:' + (p.align || 'center') + ';"><a href="' + escHtml(p.url || '#') + '" target="_blank" style="display:inline-block;padding:' + sz + ';background:' + (p.bgColor || '#C9A84C') + ';color:' + (p.textColor || '#000000') + ';text-decoration:none;border-radius:' + br + ';font-weight:600;font-size:15px;font-family:' + gs.font + ';">' + escHtml(p.text || 'Click Here') + '</a></div>');
+    }
+    case 'divider': {
+      return tdWrap('<div style="text-align:center;"><div style="display:inline-block;width:' + (p.widthPct || 80) + '%;border-top:' + (p.thickness || 1) + 'px ' + (p.style || 'solid') + ' ' + (p.color || '#CCCCCC') + ';font-size:0;"></div></div>');
+    }
+    case 'spacer': {
+      return '<tr><td style="height:' + (p.height || 32) + 'px;font-size:0;line-height:0;">&nbsp;</td></tr>';
+    }
+    case 'video': {
+      const thumb = p.thumbnailUrl
+        ? '<a href="' + escHtml(p.videoUrl || '#') + '" target="_blank" style="border:0;display:block;"><img src="' + escHtml(p.thumbnailUrl) + '" alt="Watch video" style="max-width:100%;display:block;margin:0 auto;border-radius:6px;" /></a>'
+        : '<div style="text-align:center;background:#000;color:#C9A84C;padding:40px;font-size:16px;font-family:' + gs.font + ';">▶ Watch Video</div>';
+      const cap = p.caption ? '<p style="margin:6px 0 0;text-align:center;font-size:13px;color:#666;font-family:' + gs.font + ';">' + escHtml(p.caption) + '</p>' : '';
+      return tdWrap(thumb + cap);
+    }
+    case 'social': {
+      const sz = p.iconSize || 28;
+      const abbr = { facebook: 'Fb', twitter: 'Tw', instagram: 'In', linkedin: 'Li', youtube: 'Yt' };
+      const links = (p.links || []).map(function (lnk) {
+        return '<a href="' + escHtml(lnk.url || '#') + '" target="_blank" style="display:inline-block;margin:0 4px;width:' + sz + 'px;height:' + sz + 'px;background:#000;border-radius:50%;text-align:center;line-height:' + sz + 'px;color:#C9A84C;font-weight:700;font-size:' + Math.round(sz * 0.4) + 'px;text-decoration:none;font-family:Arial,sans-serif;">' + (abbr[lnk.platform] || lnk.platform.slice(0, 2).toUpperCase()) + '</a>';
+      }).join('');
+      return tdWrap('<div style="text-align:' + (p.align || 'center') + ';">' + links + '</div>');
+    }
+    case 'survey': {
+      const opts = (p.options || []).map(function (o) {
+        return '<a href="#" style="display:inline-block;margin:4px;padding:8px 18px;border:1px solid #C9A84C;border-radius:4px;color:#C9A84C;text-decoration:none;font-size:13px;font-family:' + gs.font + ';">' + escHtml(o) + '</a>';
+      }).join('');
+      return tdWrap('<div style="text-align:' + (p.align || 'center') + ';"><p style="font-weight:600;font-size:16px;color:' + gs.textColor + ';margin:0 0 10px;font-family:' + gs.font + ';">' + escHtml(p.question || '') + '</p><div>' + opts + '</div></div>');
+    }
+    case 'footer': {
+      return '<tr><td style="padding:' + ptop + 'px 24px ' + pbot + 'px;background:' + (p.bgColor || '#F4F4F4') + ';text-align:center;font-size:' + (p.fontSize || 12) + 'px;color:' + (p.textColor || '#666666') + ';font-family:' + gs.font + ';">'
+        + '<p style="margin:0 0 3px;">' + escHtml(p.line1 || '') + '</p>'
+        + '<p style="margin:0 0 8px;">' + escHtml(p.line2 || '') + '</p>'
+        + '<p style="margin:0;">' + escHtml(p.copyright || '') + ' &nbsp;&middot;&nbsp; <a href="#" style="color:' + (p.textColor || '#666666') + ';text-decoration:underline;">' + escHtml(p.unsubscribeText || 'Unsubscribe') + '</a></p>'
+        + '</td></tr>';
+    }
+    default: return '';
+  }
+}
 
 
 
