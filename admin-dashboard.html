@@ -255,7 +255,8 @@
     .nlblock-card:hover { border-color: var(--gray-200) !important; }
     .nlblock-card.nlblock-selected { border-color: #C9A84C !important; }
     .nl-zone-area { min-height: 72px; transition: background .15s; }
-    .nl-zone-area.nl-drag-over { background: rgba(201,168,76,.08); }
+    .nl-zone-area.nl-drag-over { outline: 2px dashed #C9A84C; outline-offset: -3px; }
+    .nl-drop-gap-active { height: 20px !important; background: rgba(201,168,76,0.25) !important; }
     .nl-tab-btn { padding: 7px 14px; border: none; border-bottom: 2px solid transparent; background: transparent; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--gray-500); transition: color .15s, border-color .15s; }
     .nl-tab-btn.active { color: #C9A84C; border-bottom-color: #C9A84C; }
     .nl-palette-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px 6px; background: var(--white); border: 1px solid var(--gray-200); border-radius: 7px; cursor: grab; font-size: 0.7rem; font-weight: 600; color: var(--gray-600); text-align: center; transition: border-color .15s, box-shadow .15s; user-select: none; }
@@ -2187,6 +2188,7 @@
         <input id="nlPreheaderInput" type="text" placeholder="Preheader text (inbox preview)…" oninput="nlState.preheader=this.value"
           style="flex:2;min-width:140px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.85rem;" />
         <div style="display:flex;gap:6px;flex-shrink:0;">
+          <button class="btn-sm" onclick="nlNewNewsletter()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-plus"></i> New</button>
           <button class="btn-sm" onclick="nlSaveDraft()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-floppy-disk"></i> Save Draft</button>
           <button class="btn-sm" onclick="nlOpenPreview()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-eye"></i> Preview</button>
           <button class="btn-sm" onclick="nlOpenSendModal()" style="background:#C9A84C;border:1px solid #b8963e;color:#000;font-weight:700;"><i class="fas fa-paper-plane"></i> Send</button>
@@ -2235,15 +2237,15 @@
             <!-- Header zone -->
             <div style="background:var(--gray-100);border-radius:5px 5px 0 0;padding:4px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);border:1px solid var(--gray-200);border-bottom:none;">Header</div>
             <div id="nl-zone-header" class="nl-zone-area" style="background:var(--white);border:1px solid var(--gray-200);border-bottom:none;padding:4px;"
-              ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,'header')"></div>
+              ondragover="nlOnDragOver(event)" ondragleave="nlOnDragLeave(event)" ondrop="nlOnDrop(event,'header')"></div>
             <!-- Body zone -->
             <div style="background:var(--gray-100);padding:4px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);border:1px solid var(--gray-200);border-bottom:none;">Body</div>
             <div id="nl-zone-body" class="nl-zone-area" style="background:var(--white);border:1px solid var(--gray-200);border-bottom:none;padding:4px;min-height:120px;"
-              ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,'body')"></div>
+              ondragover="nlOnDragOver(event)" ondragleave="nlOnDragLeave(event)" ondrop="nlOnDrop(event,'body')"></div>
             <!-- Footer zone -->
             <div style="background:var(--gray-100);padding:4px 10px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);border:1px solid var(--gray-200);border-bottom:none;">Footer</div>
             <div id="nl-zone-footer" class="nl-zone-area" style="background:var(--white);border:1px solid var(--gray-200);border-radius:0 0 5px 5px;padding:4px;"
-              ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,'footer')"></div>
+              ondragover="nlOnDragOver(event)" ondragleave="nlOnDragLeave(event)" ondrop="nlOnDrop(event,'footer')"></div>
           </div>
         </div>
 
@@ -8755,6 +8757,25 @@ function nlInitPanel() {
   nlRenderProps();
 }
 
+function nlNewNewsletter() {
+  if (!confirm('Start a new newsletter? Your current canvas will be cleared.')) return;
+  const now = new Date();
+  const month = now.toLocaleString('en-US', { month: 'long' });
+  nlState.subject = 'North Dallas Alphas — ' + month + ' ' + now.getFullYear() + ' Update';
+  nlState.preheader = '';
+  nlState.gs = { bg: '#F4F4F4', contentBg: '#FFFFFF', font: 'Arial, Helvetica, sans-serif', textColor: '#000000', linkColor: '#C9A84C' };
+  nlState.zoneBg = { header: '#FFFFFF', body: '#FFFFFF', footer: '#F4F4F4' };
+  nlState.zones = { header: [], body: [], footer: [] };
+  nlState.sel = null;
+  nlState.draftId = null;
+  const si = document.getElementById('nlSubjectInput');
+  const pi = document.getElementById('nlPreheaderInput');
+  if (si) si.value = nlState.subject;
+  if (pi) pi.value = '';
+  nlRenderCanvas();
+  nlRenderProps();
+}
+
 // ── Tab switching ──
 function nlShowTab(tab) {
   ['blocks', 'sections', 'styles', 'templates'].forEach(function (t) {
@@ -8795,8 +8816,8 @@ function nlLoadTemplate(id) {
   nlState.zones = saved.zones || { header: [], body: [], footer: [] };
   nlState.subject = saved.subject || '';
   nlState.preheader = saved.preheader || '';
-  const subEl = document.getElementById('nl-subject-input');
-  const preEl = document.getElementById('nl-preheader-input');
+  const subEl = document.getElementById('nlSubjectInput');
+  const preEl = document.getElementById('nlPreheaderInput');
   if (subEl) subEl.value = nlState.subject;
   if (preEl) preEl.value = nlState.preheader;
   nlState.sel = null;
@@ -8851,28 +8872,38 @@ function nlOnDragStartBlock(event, zone, id) {
 function nlOnDragOver(event) {
   event.preventDefault();
   event.dataTransfer.dropEffect = (nlState.drag && nlState.drag.type === 'tile') ? 'copy' : 'move';
+  const zone = event.currentTarget.closest('.nl-zone-area');
+  if (zone) zone.classList.add('nl-drag-over');
+}
+function nlOnDragLeave(event) {
+  const zone = event.currentTarget.closest('.nl-zone-area');
+  if (zone && !zone.contains(event.relatedTarget)) zone.classList.remove('nl-drag-over');
 }
 
-function nlOnDrop(event, zone) {
+function nlOnDrop(event, zone, afterId) {
   event.preventDefault();
   event.stopPropagation();
+  document.querySelectorAll('.nl-zone-area').forEach(function (el) { el.classList.remove('nl-drag-over'); });
   const drag = nlState.drag;
   nlState.drag = null;
   if (!drag) return;
+  var block;
   if (drag.type === 'tile') {
-    const block = { id: nlGenId(), type: drag.blockType, props: nlDefaultProps(drag.blockType) };
-    nlState.zones[zone].push(block);
-    nlState.sel = { zone: zone, id: block.id };
+    block = { id: nlGenId(), type: drag.blockType, props: nlDefaultProps(drag.blockType) };
   } else if (drag.type === 'block') {
-    const fromZone = drag.zone;
-    const fromId = drag.id;
-    const fromArr = nlState.zones[fromZone];
-    const idx = fromArr.findIndex(function (b) { return b.id === fromId; });
+    const fromArr = nlState.zones[drag.zone];
+    const idx = fromArr.findIndex(function (b) { return b.id === drag.id; });
     if (idx < 0) return;
-    const block = fromArr.splice(idx, 1)[0];
-    nlState.zones[zone].push(block);
-    nlState.sel = { zone: zone, id: block.id };
+    block = fromArr.splice(idx, 1)[0];
+  } else { return; }
+  const toArr = nlState.zones[zone];
+  if (afterId) {
+    const pos = toArr.findIndex(function (b) { return b.id === afterId; });
+    toArr.splice(pos + 1, 0, block);
+  } else {
+    toArr.unshift(block);
   }
+  nlState.sel = { zone: zone, id: block.id };
   nlRenderCanvas();
   nlRenderProps();
 }
@@ -8920,6 +8951,7 @@ function nlUpdateProp(zone, id, prop, value) {
   block.props[prop] = value;
   const visual = document.querySelector('#nlblock-' + id + ' .nlblock-visual');
   if (visual) visual.innerHTML = nlBlockVisual(block);
+  nlRenderProps();
 }
 
 function nlUpdateSocialLink(zone, id, idx, field, value) {
@@ -8981,15 +9013,21 @@ function nlRenderCanvas() {
   });
 }
 
+function nlDropZone(zone, afterId) {
+  const after = afterId ? ',\'' + afterId + '\'' : '';
+  return '<div class="nl-drop-gap" ondragover="event.preventDefault();this.classList.add(\'nl-drop-gap-active\')" ondragleave="this.classList.remove(\'nl-drop-gap-active\')" ondrop="this.classList.remove(\'nl-drop-gap-active\');nlOnDrop(event,\'' + zone + '\'' + after + ')" style="height:8px;border-radius:4px;margin:1px 4px;transition:height .15s,background .15s;"></div>';
+}
+
 function nlRenderZoneInner(zone) {
   const blocks = nlState.zones[zone] || [];
   if (!blocks.length) {
-    return '<div style="min-height:56px;border:2px dashed var(--gray-300);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:0.78rem;margin:4px;" ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,\'' + zone + '\')">Drop blocks here</div>';
+    return nlDropZone(zone) + '<div style="min-height:48px;border:2px dashed var(--gray-300);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:0.78rem;margin:4px;">Drop blocks here</div>';
   }
   const isSel = function (id) { return nlState.sel && nlState.sel.id === id; };
   return blocks.map(function (b, i) {
     const sel = isSel(b.id);
-    return '<div id="nlblock-' + b.id + '" class="nlblock-card' + (sel ? ' nlblock-selected' : '') + '" style="position:relative;border:2px solid ' + (sel ? '#C9A84C' : 'transparent') + ';border-radius:6px;margin:4px;background:#fff;cursor:pointer;transition:border-color .15s;" onclick="nlSelectBlock(\'' + zone + '\',\'' + b.id + '\')">'
+    return nlDropZone(zone, i > 0 ? blocks[i - 1].id : null)
+      + '<div id="nlblock-' + b.id + '" class="nlblock-card' + (sel ? ' nlblock-selected' : '') + '" style="position:relative;border:2px solid ' + (sel ? '#C9A84C' : 'transparent') + ';border-radius:6px;margin:0 4px;background:#fff;cursor:pointer;transition:border-color .15s;" onclick="nlSelectBlock(\'' + zone + '\',\'' + b.id + '\')">'
       + '<div class="nlblock-drag-handle" draggable="true" ondragstart="nlOnDragStartBlock(event,\'' + zone + '\',\'' + b.id + '\')" onclick="event.stopPropagation()" style="position:absolute;left:0;top:0;bottom:0;width:22px;display:flex;align-items:center;justify-content:center;cursor:grab;color:#aaa;font-size:1rem;z-index:2;border-right:1px solid #f0f0f0;">&#8286;</div>'
       + '<div class="nlblock-visual" style="padding:6px 8px 6px 28px;">' + nlBlockVisual(b) + '</div>'
       + '<div class="nlblock-overlay" style="position:absolute;top:4px;right:4px;display:none;gap:4px;z-index:3;">'
@@ -8998,8 +9036,7 @@ function nlRenderZoneInner(zone) {
       + '<button type="button" onclick="event.stopPropagation();nlDeleteBlock(\'' + zone + '\',\'' + b.id + '\')" title="Delete" style="background:#f5f5f5;border:1px solid #ddd;border-radius:4px;padding:2px 7px;font-size:0.75rem;cursor:pointer;">🗑</button>'
       + '</div>'
       + '</div>';
-  }).join('')
-    + '<div style="min-height:20px;" ondragover="nlOnDragOver(event)" ondrop="nlOnDrop(event,\'' + zone + '\')"></div>';
+  }).join('') + nlDropZone(zone, blocks[blocks.length - 1].id);
 }
 
 function nlBlockVisual(b) {
