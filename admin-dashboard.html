@@ -257,7 +257,7 @@
     .nl-zone-area { min-height: 72px; transition: background .15s; }
     .nl-zone-area.nl-drag-over { outline: 2px dashed #C9A84C; outline-offset: -3px; }
     .nl-drop-gap-active { height: 20px !important; background: rgba(201,168,76,0.25) !important; }
-    .nl-tab-btn { padding: 7px 14px; border: none; border-bottom: 2px solid transparent; background: transparent; font-size: 0.8rem; font-weight: 600; cursor: pointer; color: var(--gray-500); transition: color .15s, border-color .15s; }
+    .nl-tab-btn { padding: 7px 6px; border: none; border-bottom: 2px solid transparent; background: transparent; font-size: 0.72rem; font-weight: 600; cursor: pointer; color: var(--gray-500); transition: color .15s, border-color .15s; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nl-tab-btn.active { color: #C9A84C; border-bottom-color: #C9A84C; }
     .nl-palette-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px 6px; background: var(--white); border: 1px solid var(--gray-200); border-radius: 7px; cursor: grab; font-size: 0.7rem; font-weight: 600; color: var(--gray-600); text-align: center; transition: border-color .15s, box-shadow .15s; user-select: none; }
     .nl-palette-tile:hover { border-color: #C9A84C; box-shadow: 0 0 0 2px rgba(201,168,76,.2); color: #000; }
@@ -2202,10 +2202,10 @@
         <div style="width:260px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid var(--gray-200);background:#fafafa;overflow:hidden;">
           <!-- Tab bar -->
           <div style="display:flex;border-bottom:1px solid var(--gray-200);background:var(--white);flex-shrink:0;">
-            <button class="nl-tab-btn active" id="nlTabBtn-blocks" onclick="nlShowTab('blocks')" style="font-size:0.73rem;">Blocks</button>
-            <button class="nl-tab-btn" id="nlTabBtn-sections" onclick="nlShowTab('sections')" style="font-size:0.73rem;">Sections</button>
-            <button class="nl-tab-btn" id="nlTabBtn-styles" onclick="nlShowTab('styles')" style="font-size:0.73rem;">Styles</button>
-            <button class="nl-tab-btn" id="nlTabBtn-templates" onclick="nlShowTab('templates')" style="font-size:0.73rem;">Templates</button>
+            <button class="nl-tab-btn active" id="nlTabBtn-blocks" onclick="nlShowTab('blocks')">Blocks</button>
+            <button class="nl-tab-btn" id="nlTabBtn-sections" onclick="nlShowTab('sections')">Sections</button>
+            <button class="nl-tab-btn" id="nlTabBtn-styles" onclick="nlShowTab('styles')">Styles</button>
+            <button class="nl-tab-btn" id="nlTabBtn-templates" onclick="nlShowTab('templates')">Templates</button>
           </div>
           <!-- Blocks tab -->
           <div id="nlTab-blocks" style="flex:1;overflow-y:auto;padding:12px;">
