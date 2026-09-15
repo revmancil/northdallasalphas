@@ -40,20 +40,14 @@ serve(async (req) => {
   if (userErr || !userData?.user) {
     return json({ error: "Invalid or expired session." }, 401);
   }
-  // Confirm caller is a chapter admin via the security-definer RPC
+  // Confirm caller is a chapter admin — use service role key to bypass RLS
+  const userEmail = (userData.user.email ?? "").toLowerCase().trim();
   const adminCheck = await fetch(
-    `${supabaseUrl}/rest/v1/rpc/current_user_is_chapter_admin`,
-    {
-      method: "POST",
-      headers: {
-        "apikey": anonKey,
-        "Authorization": authHeader,
-        "Content-Type": "application/json",
-      },
-      body: "{}",
-    }
+    `${supabaseUrl}/rest/v1/chapter_admins?select=email&limit=1`,
+    { headers: { "apikey": serviceKey, "Authorization": "Bearer " + serviceKey, "Accept": "application/json" } }
   );
-  const isAdmin = adminCheck.ok ? await adminCheck.json() : false;
+  const adminRows: Array<{ email: string }> = adminCheck.ok ? await adminCheck.json() : [];
+  const isAdmin = Array.isArray(adminRows) && adminRows.some((r) => (r.email ?? "").toLowerCase().trim() === userEmail);
   if (!isAdmin) {
     return json({ error: "Admin access required." }, 403);
   }
