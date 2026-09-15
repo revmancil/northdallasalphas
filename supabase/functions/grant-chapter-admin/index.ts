@@ -30,10 +30,14 @@ const ALLOWED_SECTIONS = [
   "pages",
   "members",
   "events",
+  "event-planning",
   "registrations",
+  "gala",
   "news-manager",
+  "news-submissions",
   "documents",
   "meetings",
+  "committees-admin",
   "chapter-news",
   "store",
   "member-announcements",
@@ -42,6 +46,11 @@ const ALLOWED_SECTIONS = [
   "presidents",
   "announcements",
   "newsletter",
+  "finance-dashboard",
+  "dues-admin",
+  "reimbursements",
+  "requisitions",
+  "statistics",
 ];
 
 function sanitizeSections(v: unknown): string[] {
