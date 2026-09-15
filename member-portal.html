@@ -2441,12 +2441,19 @@ function getDuesStatus() {
   var year = now.getFullYear();
   var cfg = _duesWindowConfig || {};
   var unlockDate = cfg.unlock_date || null;
+  var unlockTime = cfg.unlock_time || null;
   var lateDate   = cfg.late_date   || (year + '-11-15');
   var lateFee    = cfg.late_fee_cents ? cfg.late_fee_cents / 100 : 10;
 
   var isLocked;
   if (unlockDate) {
-    isLocked = todayStr < unlockDate;
+    if (unlockTime) {
+      // Compare against full datetime
+      var unlockDt = new Date(unlockDate + 'T' + unlockTime + ':00');
+      isLocked = now < unlockDt;
+    } else {
+      isLocked = todayStr < unlockDate;
+    }
   } else {
     // Default: locked Aug 1 – Aug 31 (before Sept 1)
     var month = now.getMonth() + 1;
