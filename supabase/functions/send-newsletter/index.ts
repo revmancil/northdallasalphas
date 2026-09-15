@@ -50,40 +50,40 @@ serve(async (req) => {
     return json({ error: "Admin access required." }, 403);
   }
 
-  let payload: { subject: string; html: string };
+  let payload: { subject: string; html: string; recipients?: string[] };
   try { payload = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
   if (!payload.subject || !payload.html) return json({ error: "subject and html are required." }, 400);
 
-  // Fetch all active members with emails
-  const membersRes = await fetch(
-    `${supabaseUrl}/rest/v1/members?status=eq.active&portal_access=eq.granted&select=email,first_name&email=not.is.null`,
-    { headers: { "apikey": serviceKey, "Authorization": "Bearer " + serviceKey } }
-  );
-  if (!membersRes.ok) return json({ error: "Failed to fetch members." }, 502);
-  const members: Array<{ email: string; first_name?: string }> = await membersRes.json();
+  // Use the provided recipients list, or fall back to all active members
+  let emailList: string[] = [];
+  if (Array.isArray(payload.recipients) && payload.recipients.length > 0) {
+    emailList = payload.recipients.filter((e) => typeof e === "string" && e.includes("@"));
+  } else {
+    const membersRes = await fetch(
+      `${supabaseUrl}/rest/v1/members?status=eq.active&select=email&email=not.is.null`,
+      { headers: { "apikey": serviceKey, "Authorization": "Bearer " + serviceKey } }
+    );
+    if (!membersRes.ok) return json({ error: "Failed to fetch members." }, 502);
+    const members: Array<{ email: string }> = await membersRes.json();
+    emailList = members.map((m) => m.email).filter((e) => e && e.includes("@"));
+  }
 
-  const emails = members.filter((m) => m.email && m.email.includes("@"));
-  if (!emails.length) return json({ error: "No active members with email addresses found." }, 404);
+  if (!emailList.length) return json({ error: "No recipients found." }, 404);
 
   const from = `${fromName} <${fromEmail}>`;
   let sent = 0;
 
   // Send in batches of 50 (Resend batch limit)
-  for (let i = 0; i < emails.length; i += 50) {
-    const batch = emails.slice(i, i + 50);
-    await Promise.allSettled(batch.map((m) =>
+  for (let i = 0; i < emailList.length; i += 50) {
+    const batch = emailList.slice(i, i + 50);
+    await Promise.allSettled(batch.map((email) =>
       fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: { "Authorization": "Bearer " + resendKey, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from,
-          to: [m.email],
-          subject: payload.subject,
-          html: payload.html,
-        }),
+        body: JSON.stringify({ from, to: [email], subject: payload.subject, html: payload.html }),
       }).then((r) => { if (r.ok) sent++; else r.text().then((t) => console.error("Resend error:", t)); })
     ));
   }
 
-  return json({ sent, total: emails.length });
+  return json({ sent, total: emailList.length });
 });
