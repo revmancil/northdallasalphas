@@ -3581,9 +3581,13 @@
               <textarea id="duesConfigLateMsg" rows="3" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;resize:vertical;font-family:inherit;" placeholder="A late fee has been added per chapter policy…"></textarea>
             </div>
             <div class="field-group">
-              <label>Dues Unlock Date (treasurer sets when payment window opens)</label>
-              <input type="date" id="duesConfigUnlockDate" />
-              <small style="color:var(--gray-500);font-size:0.8rem;">Brothers cannot pay dues before this date. Locks automatically each August 1.</small>
+              <label>Dues Unlock Date &amp; Time (treasurer sets when payment window opens)</label>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <input type="date" id="duesConfigUnlockDate" style="flex:1;min-width:140px;" />
+                <input type="time" id="duesConfigUnlockTime" style="width:120px;" />
+                <button type="button" onclick="duesUnlockNow()" style="padding:7px 14px;background:#C9A84C;color:#111;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;cursor:pointer;white-space:nowrap;"><i class="fas fa-lock-open"></i> Unlock Now</button>
+              </div>
+              <small style="color:var(--gray-500);font-size:0.8rem;">Brothers cannot pay dues before this date/time. Locks automatically each August 1. "Unlock Now" sets the window to the current moment and saves immediately.</small>
             </div>
             <div class="field-group">
               <label>Late Fee Start Date (default: November 15)</label>
@@ -12194,8 +12198,10 @@ async function _loadDuesConfig() {
     if (feeEl && j.late_fee_cents) feeEl.value = (j.late_fee_cents / 100).toFixed(2);
     if (msgEl && j.late_fee_notice) msgEl.value = j.late_fee_notice;
     var unlockEl = document.getElementById('duesConfigUnlockDate');
+    var unlockTimeEl = document.getElementById('duesConfigUnlockTime');
     var lateDateEl = document.getElementById('duesConfigLateDate');
     if (unlockEl && j.unlock_date) unlockEl.value = j.unlock_date;
+    if (unlockTimeEl && j.unlock_time) unlockTimeEl.value = j.unlock_time;
     if (lateDateEl && j.late_date) lateDateEl.value = j.late_date;
   } catch(e) {}
 }
@@ -12337,6 +12343,18 @@ async function submitDuesRecord() {
   }
 }
 
+async function duesUnlockNow() {
+  const now = new Date();
+  const pad = function(n) { return String(n).padStart(2, '0'); };
+  const dateVal = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+  const timeVal = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  const dateEl = document.getElementById('duesConfigUnlockDate');
+  const timeEl = document.getElementById('duesConfigUnlockTime');
+  if (dateEl) dateEl.value = dateVal;
+  if (timeEl) timeEl.value = timeVal;
+  await saveDuesConfig();
+}
+
 async function saveDuesConfig() {
   var token = getAdminToken();
   if (!token) { showToast('Session expired.', 'error'); return; }
@@ -12357,12 +12375,14 @@ async function saveDuesConfig() {
     var rows = res.ok ? await res.json() : [];
     var existing = (rows && rows[0] && rows[0].content_json) || {};
     var unlockDateVal = (document.getElementById('duesConfigUnlockDate').value || '').trim();
+    var unlockTimeVal = (document.getElementById('duesConfigUnlockTime').value || '').trim();
     var lateDateVal   = (document.getElementById('duesConfigLateDate').value || '').trim();
     var merged = Object.assign({}, existing, {
       dues_amount_cents: Math.round(amtVal * 100),
       late_fee_cents: Math.round(feeVal * 100),
       late_fee_notice: msg || null,
       unlock_date: unlockDateVal || null,
+      unlock_time: unlockTimeVal || null,
       late_date: lateDateVal || null
     });
 
