@@ -9493,7 +9493,9 @@ async function nlSaveDraft() {
     }
     showToast('Draft saved.', 'success');
   } catch (err) {
-    showToast('Save failed: ' + (err.message || 'unknown'), 'error');
+    let msg = err.message || 'unknown error';
+    try { const j = JSON.parse(msg); msg = j.message || j.details || msg; } catch (e) { }
+    showToast('Save failed: ' + msg, 'error');
   }
 }
 
