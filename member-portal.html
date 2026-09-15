@@ -1632,23 +1632,57 @@ async function loadNewsFeed() {
   var token = currentSession ? currentSession.access_token : null;
   el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>Loading…</p></div>';
   try {
-    var posts = await sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token);
-    if (!posts || !posts.length) {
+    var results = await Promise.all([
+      sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token).catch(function(){ return []; }),
+      sbGet('member_announcements', 'status=eq.approved&order=created_at.desc', token).catch(function(){ return []; })
+    ]);
+    var adminPosts = (results[0] || []).map(function(p) { return Object.assign({}, p, { _type: 'admin' }); });
+    var annPosts   = (results[1] || []).map(function(a) { return Object.assign({}, a, { _type: 'member' }); });
+
+    // Pinned admin posts float to top; everything else sorted newest first
+    var pinned    = adminPosts.filter(function(p){ return p.pinned; });
+    var unpinned  = adminPosts.filter(function(p){ return !p.pinned; });
+    var merged = pinned.concat(
+      unpinned.concat(annPosts).sort(function(a,b){
+        return new Date(b.created_at) - new Date(a.created_at);
+      })
+    );
+
+    if (!merged.length) {
       el.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No updates posted yet. Check back soon.</p></div>';
       return;
     }
-    var catColors = { General:'#3b82f6', Announcement:'#C9A84C', Reminder:'#f59e0b', 'Event Update':'#C9A84C', Financial:'#27ae60' };
-    el.innerHTML = posts.map(function(p) {
-      var color = catColors[p.category] || '#3b82f6';
+
+    var catColors = { General:'#C9A84C', Announcement:'#C9A84C', Reminder:'#f59e0b', 'Event Update':'#C9A84C', Financial:'#27ae60' };
+    el.innerHTML = merged.map(function(p) {
+      var isMember = p._type === 'member';
+      var color = catColors[p.category] || '#C9A84C';
       var date  = p.created_at ? new Date(p.created_at).toLocaleDateString('en-US', { month:'long', day:'numeric', year:'numeric' }) : '';
-      return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px;margin-bottom:14px;background:rgba(255,255,255,0.03)' + (p.pinned ? ';border-color:rgba(201,168,76,0.35);' : '') + '">' +
+      var byline = isMember ? (p.member_name || 'Brother') : (p.created_by || '');
+      var eventInfo = '';
+      if (isMember && (p.event_date || p.event_location)) {
+        eventInfo = '<div style="margin:8px 0 10px;padding:8px 12px;background:rgba(201,168,76,0.07);border-left:3px solid var(--gold);border-radius:0 6px 6px 0;font-size:0.8rem;color:rgba(255,255,255,0.6);">';
+        if (p.event_date) {
+          var ed = new Date(p.event_date + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+          eventInfo += '<span><i class="fas fa-calendar-day" style="color:var(--gold);margin-right:5px;"></i>' + escapeHtml(ed);
+          if (p.event_time) eventInfo += ' at ' + escapeHtml(time24ToAmPm(p.event_time));
+          eventInfo += '</span>';
+        }
+        if (p.event_location) eventInfo += (p.event_date ? '<span style="margin-left:14px;">' : '<span>') + '<i class="fas fa-map-marker-alt" style="color:var(--gold);margin-right:5px;"></i>' + escapeHtml(p.event_location) + '</span>';
+        eventInfo += '</div>';
+      }
+      var flyerHtml = (isMember && p.flyer_url) ? '<div style="margin-top:12px;"><img src="' + escapeHtml(p.flyer_url) + '" alt="Flyer" style="max-width:100%;border-radius:8px;border:1px solid rgba(201,168,76,0.2);"></div>' : '';
+      return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px;margin-bottom:14px;background:rgba(255,255,255,0.03)' + (p.pinned ? ';border-color:rgba(201,168,76,0.35)' : '') + '">' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;">' +
         (p.pinned ? '<span style="background:rgba(201,168,76,0.15);color:var(--gold);font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:4px;"><i class="fas fa-thumbtack"></i> PINNED</span>' : '') +
+        (isMember ? '<span style="background:rgba(201,168,76,0.12);color:var(--gold);font-size:0.65rem;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;">BROTHERHOOD</span>' : '') +
         '<span style="background:' + color + '22;color:' + color + ';font-size:0.7rem;font-weight:700;padding:2px 8px;border-radius:10px;">' + escapeHtml(p.category || 'General') + '</span>' +
         '</div>' +
         '<div style="font-size:0.97rem;font-weight:700;color:var(--white);margin-bottom:4px;">' + escapeHtml(p.title) + '</div>' +
-        '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-bottom:10px;">' + date + (p.created_by ? ' · ' + escapeHtml(p.created_by) : '') + '</div>' +
-        '<div style="font-size:0.88rem;color:rgba(255,255,255,0.65);line-height:1.7;white-space:pre-wrap;">' + escapeHtml(p.body) + '</div>' +
+        '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-bottom:6px;">' + date + (byline ? ' · ' + escapeHtml(byline) : '') + '</div>' +
+        eventInfo +
+        '<div style="font-size:0.88rem;color:rgba(255,255,255,0.65);line-height:1.7;white-space:pre-wrap;">' + escapeHtml(p.body || '') + '</div>' +
+        flyerHtml +
         '</div>';
     }).join('');
   } catch(err) {
