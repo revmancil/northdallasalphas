@@ -8856,7 +8856,7 @@ async function nlSaveAsTemplate() {
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
   try {
     const payload = {
-      name: name.trim(),
+      template_name: name.trim(),
       created_by: sessionStorage.getItem('nda_admin_user') || '',
       state_json: JSON.parse(JSON.stringify(nlState))
     };
@@ -8880,7 +8880,7 @@ async function nlLoadTemplate(id) {
     const rows = await sbGet('newsletter_templates', 'id=eq.' + encodeURIComponent(id), token);
     const tpl = rows && rows[0];
     if (!tpl) { showToast('Template not found.', 'error'); return; }
-    if (!confirm('Load template "' + tpl.name + '"? This will replace your current canvas.')) return;
+    if (!confirm('Load template "' + tpl.template_name + '"? This will replace your current canvas.')) return;
     const saved = tpl.state_json || {};
     nlState.gs = saved.gs || nlState.gs;
     nlState.zoneBg = saved.zoneBg || { header: '#FFFFFF', body: '#FFFFFF', footer: '#F4F4F4' };
@@ -8936,7 +8936,7 @@ async function nlRenderTemplatesTab() {
     } else {
       rows.forEach(function (tpl) {
         const date = tpl.created_at ? new Date(tpl.created_at).toLocaleDateString() : '';
-        const safeName = escHtml(tpl.name || 'Untitled');
+        const safeName = escHtml(tpl.template_name || 'Untitled');
         html += '<div style="background:var(--white);border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:8px;">'
           + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:2px;">' + safeName + '</div>'
           + '<div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:8px;">' + date + (tpl.created_by ? ' · ' + escHtml(tpl.created_by) : '') + '</div>'
