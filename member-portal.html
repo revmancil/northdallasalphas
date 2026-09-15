@@ -3660,16 +3660,27 @@ async function submitPortalRequisition() {
       if (upRes.ok) docUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
     }
 
+    // Generate sequential reference number
+    var rqYear = new Date().getFullYear();
+    var rqCountRows = [];
+    try { rqCountRows = await sbGet('finance_requisitions', 'select=id&submitted_at=gte.' + rqYear + '-01-01T00:00:00', currentSession.access_token); } catch(_) {}
+    var rqSeq = String((rqCountRows.length || 0) + 1).padStart(4, '0');
+    var refNumber = 'REQ-' + rqYear + '-' + rqSeq;
+
     var payload = {
-      member_id:   currentMember.id,
-      committee:   document.getElementById('rqCommittee').value,
-      description: description,
+      member_id:    currentMember.id,
+      member_name:  (currentMember.first_name + ' ' + currentMember.last_name).trim(),
+      member_email: currentMember.email || null,
+      committee:    document.getElementById('rqCommittee').value,
+      description:  description,
       amount_cents: Math.round(amountRaw * 100),
-      payee:       (document.getElementById('rqPayee').value || '').trim() || null,
-      method:      document.getElementById('rqMethod').value,
-      doc_url:     docUrl,
-      status:      'pending',
-      submitted_at: new Date().toISOString()
+      payee:        (document.getElementById('rqPayee').value || '').trim() || null,
+      payee_name:   (document.getElementById('rqPayee').value || '').trim() || null,
+      method:       document.getElementById('rqMethod').value,
+      doc_url:      docUrl,
+      status:       'pending',
+      submitted_at: new Date().toISOString(),
+      ref_number:   refNumber
     };
 
     await sbPost('finance_requisitions', payload, currentSession.access_token);
@@ -3711,7 +3722,7 @@ async function loadMyRequisitions() {
       var amt = '$' + ((r.amount_cents||0)/100).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
       return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
-          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + escHtml(r.committee||'Requisition') + ' — ' + amt + '</div>' +
+          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + (r.ref_number ? '<span style="font-family:monospace;font-size:0.75rem;color:var(--gold);margin-right:6px;">' + escHtml(r.ref_number) + '</span>' : '') + escHtml(r.committee||'Requisition') + ' — ' + amt + '</div>' +
           '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml(r.description||'').substring(0,80) + (r.description&&r.description.length>80?'…':'') + ' · ' + date + '</div></div>' +
           '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
         '</div>' +
@@ -3798,15 +3809,28 @@ async function submitPortalReimbursement() {
     if (!upRes.ok) throw new Error('Receipt upload failed: ' + await upRes.text());
     var receiptUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
 
+    // Generate sequential reference number
+    var rbYear = new Date().getFullYear();
+    var rbCountRows = [];
+    try { rbCountRows = await sbGet('finance_reimbursements', 'select=id&submitted_at=gte.' + rbYear + '-01-01T00:00:00', currentSession.access_token); } catch(_) {}
+    var rbSeq = String((rbCountRows.length || 0) + 1).padStart(4, '0');
+    var rbRefNumber = 'RMB-' + rbYear + '-' + rbSeq;
+
     await sbPost('finance_reimbursements', {
-      member_id:      currentMember.id,
-      description:    description,
-      amount_cents:   Math.round(amountRaw * 100),
-      receipt_url:    receiptUrl,
-      payment_method: rbPayMethod,
+      member_id:       currentMember.id,
+      member_name:     (currentMember.first_name + ' ' + currentMember.last_name).trim(),
+      member_email:    currentMember.email || null,
+      description:     description,
+      item_service:    description,
+      amount_cents:    Math.round(amountRaw * 100),
+      receipt_url:     receiptUrl,
+      doc_url:         receiptUrl,
+      payment_method:  rbPayMethod,
+      method:          rbPayMethod,
       payment_details: paymentDetails,
-      status:         'pending',
-      submitted_at:   new Date().toISOString()
+      status:          'pending',
+      submitted_at:    new Date().toISOString(),
+      ref_number:      rbRefNumber
     }, currentSession.access_token);
 
     try {
@@ -3847,8 +3871,8 @@ async function loadMyReimbursements() {
       var autoBadge = r.auto_generated ? '<span style="font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:#a78bfa;margin-left:6px;">Auto-generated</span>' : '';
       return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:12px 16px;margin-bottom:10px;background:rgba(255,255,255,0.02);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">' +
-          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + amt + autoBadge + '</div>' +
-          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml((r.description||'').substring(0,80)) + ' · ' + date + '</div></div>' +
+          '<div><div style="font-size:0.88rem;font-weight:600;color:var(--white);">' + (r.ref_number ? '<span style="font-family:monospace;font-size:0.75rem;color:var(--gold);margin-right:6px;">' + escHtml(r.ref_number) + '</span>' : '') + amt + autoBadge + '</div>' +
+          '<div style="font-size:0.75rem;color:rgba(255,255,255,0.35);margin-top:2px;">' + escHtml((r.description || r.item_service ||'').substring(0,80)) + ' · ' + date + '</div></div>' +
           '<span style="font-size:0.7rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;">' + escHtml(r.status||'pending') + '</span>' +
         '</div>' +
         (r.admin_note ? '<div style="margin-top:8px;font-size:0.8rem;color:rgba(255,255,255,0.45);font-style:italic;"><i class="fas fa-comment" style="margin-right:5px;color:var(--gold);"></i>' + escHtml(r.admin_note) + '</div>' : '') +

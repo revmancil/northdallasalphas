@@ -2692,7 +2692,10 @@
             </div>
           </div>
           <div id="cnPostMsg" style="display:none;font-size:0.83rem;margin-bottom:10px;"></div>
-          <button class="btn-save" onclick="postChapterNews()"><i class="fas fa-paper-plane"></i> Post to Feed</button>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button class="btn-save" onclick="postChapterNews()"><i class="fas fa-paper-plane"></i> Post to Feed</button>
+            <button id="cnCancelEdit" type="button" onclick="cancelChapterNewsEdit()" style="display:none;padding:8px 16px;background:none;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;cursor:pointer;color:var(--gray-600);">Cancel Edit</button>
+          </div>
         </div>
       </div>
 
@@ -2727,6 +2730,33 @@
       </div>
       <div id="annAdminList">
         <div class="empty-state"><i class="fas fa-bullhorn"></i><p>Loading announcements...</p></div>
+      </div>
+    </div>
+
+    <!-- Announcement Edit Modal -->
+    <div id="annEditModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
+      <div style="background:var(--white);border-radius:10px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.3);padding:24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <h3 style="margin:0;font-size:1rem;font-weight:700;"><i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Edit Announcement</h3>
+          <button onclick="closeAnnEditModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
+        </div>
+        <div class="field-group"><label>Title</label><input type="text" id="annEditTitle" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
+        <div class="field-group"><label>Category</label>
+          <select id="annEditCategory" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;">
+            <option>General</option><option>Social</option><option>Brotherhood</option><option>Service</option><option>Fundraiser</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field-group"><label>Message</label><textarea id="annEditBody" rows="5" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;font-family:inherit;resize:vertical;"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="field-group" style="margin:0;"><label>Event Date</label><input type="date" id="annEditEventDate" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
+          <div class="field-group" style="margin:0;"><label>Event Time</label><input type="time" id="annEditEventTime" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
+        </div>
+        <div class="field-group"><label>Event Location</label><input type="text" id="annEditEventLocation" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
+        <div id="annEditErr" style="display:none;color:var(--red);font-size:0.83rem;margin-bottom:10px;"></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
+          <button onclick="closeAnnEditModal()" class="btn-sm" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);">Cancel</button>
+          <button onclick="saveAnnEdit()" class="btn-sm" style="background:#C9A84C;border:1px solid #b8963e;color:#000;font-weight:700;"><i class="fas fa-save"></i> Save Changes</button>
+        </div>
       </div>
     </div>
 
@@ -4837,6 +4867,7 @@ async function loadChapterNewsPanel() {
         '</div>' +
         '<div style="display:flex;gap:6px;flex-shrink:0;">' +
         '<button class="btn-sm" onclick="togglePinNews(\'' + escHtml(p.id) + '\',' + (p.pinned ? 'false' : 'true') + ')" style="background:var(--gray-200);color:var(--gray-700);" title="' + (p.pinned ? 'Unpin' : 'Pin') + '"><i class="fas fa-thumbtack"></i></button>' +
+        '<button class="btn-sm" onclick="editChapterNews(\'' + escHtml(p.id) + '\')" style="background:var(--gray-200);color:var(--gray-700);"><i class="fas fa-pen"></i></button>' +
         '<button class="btn-sm danger" onclick="deleteChapterNews(\'' + escHtml(p.id) + '\',\'' + escHtml(p.title) + '\')"><i class="fas fa-trash"></i></button>' +
         '</div>' +
         '</div>' +
@@ -4847,6 +4878,45 @@ async function loadChapterNewsPanel() {
     _panelLoaded.chapterNews = false;
     el.innerHTML = '<div style="color:var(--red);">Could not load posts. <button onclick="loadChapterNewsPanel()" style="margin-left:10px;padding:4px 10px;border:1px solid var(--red);border-radius:5px;background:none;color:var(--red);cursor:pointer;font-size:0.8rem;">Retry</button></div>';
   }
+}
+
+let _cnEditingId = null;
+
+function editChapterNews(id) {
+  const posts = document.querySelectorAll('#chapterNewsList > div');
+  // Find data from the cached panel load — re-fetch to be safe
+  _cnEditingId = id;
+  // Scroll compose form into view and signal edit mode
+  const hdr = document.querySelector('#panel-chapter-news .section-card-header h3');
+  if (hdr) hdr.innerHTML = '<i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Edit Post';
+  const btn = document.querySelector('#panel-chapter-news .btn-save');
+  if (btn) btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+  const cancelBtn = document.getElementById('cnCancelEdit');
+  if (cancelBtn) cancelBtn.style.display = '';
+  // Re-fetch the record to pre-fill
+  const token = getAdminToken();
+  sbGet('chapter_news', 'id=eq.' + encodeURIComponent(id), token).then(function(rows) {
+    const p = rows && rows[0];
+    if (!p) return;
+    document.getElementById('cnTitle').value = p.title || '';
+    document.getElementById('cnBody').value = p.body || '';
+    document.getElementById('cnCategory').value = p.category || 'General';
+    document.getElementById('cnPinned').checked = !!p.pinned;
+    document.querySelector('#panel-chapter-news .section-card').scrollIntoView({ behavior: 'smooth' });
+  });
+}
+
+function cancelChapterNewsEdit() {
+  _cnEditingId = null;
+  document.getElementById('cnTitle').value = '';
+  document.getElementById('cnBody').value = '';
+  document.getElementById('cnPinned').checked = false;
+  const hdr = document.querySelector('#panel-chapter-news .section-card-header h3');
+  if (hdr) hdr.innerHTML = '<i class="fas fa-pen" style="color:var(--gold);margin-right:8px;"></i>Post an Update';
+  const btn = document.querySelector('#panel-chapter-news .btn-save');
+  if (btn) btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post to Feed';
+  const cancelBtn = document.getElementById('cnCancelEdit');
+  if (cancelBtn) cancelBtn.style.display = 'none';
 }
 
 async function postChapterNews() {
@@ -4865,15 +4935,21 @@ async function postChapterNews() {
   if (!body)  { msg('Please enter a message.', false); return; }
   const token = getAdminToken();
   try {
-    await sbPost('chapter_news', { title, body, category, pinned, created_by: uname }, token);
-    msg('Posted!', true);
-    document.getElementById('cnTitle').value = '';
-    document.getElementById('cnBody').value  = '';
-    document.getElementById('cnPinned').checked = false;
+    if (_cnEditingId) {
+      await sbPatch('chapter_news', 'id=eq.' + encodeURIComponent(_cnEditingId), { title, body, category, pinned }, token);
+      msg('Updated!', true);
+      cancelChapterNewsEdit();
+    } else {
+      await sbPost('chapter_news', { title, body, category, pinned, created_by: uname }, token);
+      msg('Posted!', true);
+      document.getElementById('cnTitle').value = '';
+      document.getElementById('cnBody').value  = '';
+      document.getElementById('cnPinned').checked = false;
+    }
     loadChapterNewsPanel();
     setTimeout(function() { msgEl.style.display = 'none'; }, 3000);
   } catch(err) {
-    msg('Error: ' + (err.message || 'could not post.'), false);
+    msg('Error: ' + (err.message || 'could not save.'), false);
   }
 }
 
@@ -10756,11 +10832,13 @@ function renderAnnouncements() {
     var evtTime = escHtml(r.event_time || 'TBD');
     var evtLoc  = escHtml(r.event_location || 'TBD');
     var actions = '';
+    var editBtn = '<button class="btn-sm" onclick="openAnnEditModal(\'' + id + '\')" style="background:var(--gray-100);color:var(--gray-700);"><i class="fas fa-pen"></i> Edit</button>';
     if (r.status === 'pending') {
       actions = '<button class="btn-sm success" onclick="updateAnnStatus(\'' + id + '\',\'approved\')"><i class="fas fa-check"></i> Approve</button> ' +
-                '<button class="btn-sm danger"  onclick="updateAnnStatus(\'' + id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button>';
+                '<button class="btn-sm danger"  onclick="updateAnnStatus(\'' + id + '\',\'rejected\')"><i class="fas fa-times"></i> Reject</button> ' +
+                editBtn;
     } else {
-      actions = '<button class="btn-sm" onclick="updateAnnStatus(\'' + id + '\',\'pending\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
+      actions = '<button class="btn-sm" onclick="updateAnnStatus(\'' + id + '\',\'pending\')"><i class="fas fa-undo"></i> Reset to Pending</button> ' + editBtn;
       if (r.status === 'approved') {
         actions += ' <button class="btn-sm" style="background:#f0f9ff;border-color:#0ea5e9;color:#0369a1;" onclick="addAnnouncementToEvents(\'' + id + '\')"><i class="fas fa-calendar-plus"></i> Add to Events</button>';
       }
@@ -10784,6 +10862,59 @@ function renderAnnouncements() {
       '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + '</div>' +
     '</div>';
   }).join('');
+}
+
+let _annEditingId = null;
+
+function openAnnEditModal(id) {
+  var r = _allAnnouncements.find(function(x){ return String(x.id) === String(id); });
+  if (!r) return;
+  _annEditingId = id;
+  document.getElementById('annEditTitle').value = r.title || '';
+  document.getElementById('annEditBody').value = r.body || '';
+  document.getElementById('annEditCategory').value = r.category || 'General';
+  document.getElementById('annEditEventDate').value = r.event_date || '';
+  document.getElementById('annEditEventTime').value = r.event_time || '';
+  document.getElementById('annEditEventLocation').value = r.event_location || '';
+  document.getElementById('annEditErr').style.display = 'none';
+  document.getElementById('annEditModal').style.display = 'flex';
+}
+
+function closeAnnEditModal() {
+  document.getElementById('annEditModal').style.display = 'none';
+  _annEditingId = null;
+}
+
+async function saveAnnEdit() {
+  var token = getAdminToken();
+  if (!token || !_annEditingId) return;
+  var errEl = document.getElementById('annEditErr');
+  var title = (document.getElementById('annEditTitle').value || '').trim();
+  var body  = (document.getElementById('annEditBody').value  || '').trim();
+  if (!title || !body) { errEl.textContent = 'Title and message are required.'; errEl.style.display = ''; return; }
+  try {
+    await sbPatch('member_announcements', 'id=eq.' + encodeURIComponent(_annEditingId), {
+      title: title,
+      body: body,
+      category: document.getElementById('annEditCategory').value || 'General',
+      event_date: document.getElementById('annEditEventDate').value || null,
+      event_time: document.getElementById('annEditEventTime').value || null,
+      event_location: document.getElementById('annEditEventLocation').value || null,
+      updated_at: new Date().toISOString()
+    }, token);
+    var r = _allAnnouncements.find(function(x){ return String(x.id) === String(_annEditingId); });
+    if (r) {
+      r.title = title; r.body = body; r.category = document.getElementById('annEditCategory').value;
+      r.event_date = document.getElementById('annEditEventDate').value || null;
+      r.event_time = document.getElementById('annEditEventTime').value || null;
+      r.event_location = document.getElementById('annEditEventLocation').value || null;
+    }
+    closeAnnEditModal();
+    renderAnnouncements();
+    showToast('Announcement updated.', 'success');
+  } catch(err) {
+    errEl.textContent = err.message || 'Could not save.'; errEl.style.display = '';
+  }
 }
 
 async function updateAnnStatus(id, status) {
@@ -11269,13 +11400,14 @@ function renderRequisitionsAdmin() {
     var id    = escHtml(String(r.id));
     var amt   = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
     var mLabel = escHtml(REQ_METHOD_LABEL[r.method] || r.method || '—');
+    var refNum = r.ref_number ? '<span style="font-size:0.7rem;font-weight:700;color:var(--gray-400);font-family:monospace;margin-right:8px;">' + escHtml(r.ref_number) + '</span>' : '';
     var actions = r.status === 'pending'
       ? '<button class="btn-sm success" onclick="openReqModal(\'' + id + '\')"><i class="fas fa-eye"></i> Review</button>'
       : '<button class="btn-sm" onclick="resetReqStatus(\'' + id + '\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
     return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:16px;margin-bottom:12px;background:#fff;">' +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">' +
         '<div style="flex:1;min-width:200px;">' +
-          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.committee||'Requisition') + ' — ' + amt + '</div>' +
+          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + refNum + escHtml(r.committee||'Requisition') + ' — ' + amt + '</div>' +
           '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">' + escHtml(r.member_name||'Unknown') + ' · ' + mLabel + ' · ' + date + '</div>' +
         '</div>' +
         '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
@@ -11298,16 +11430,19 @@ function openReqModal(id) {
   var mLabel = REQ_METHOD_LABEL[r.method] || r.method || '—';
   document.getElementById('reqModalMeta').textContent = 'Submitted by ' + (r.member_name||'Unknown') + ' · ' + (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '');
   document.getElementById('reqModalDetails').innerHTML =
+    (r.ref_number ? '<strong>Reference #:</strong> <span style="font-family:monospace;color:var(--gold);">' + escHtml(r.ref_number) + '</span><br>' : '') +
+    '<strong>Submitted by:</strong> ' + escHtml(r.member_name||'—') + (r.member_email ? ' (' + escHtml(r.member_email) + ')' : '') + '<br>' +
     '<strong>Committee:</strong> ' + escHtml(r.committee||'—') + '<br>' +
     '<strong>Description:</strong> ' + escHtml(r.description||'—') + '<br>' +
-    '<strong>Payee / Vendor:</strong> ' + escHtml(r.payee_name||'—') + '<br>' +
+    '<strong>Payee / Vendor:</strong> ' + escHtml(r.payee_name || r.payee || '—') + '<br>' +
     '<strong>Amount:</strong> ' + amt + '<br>' +
     '<strong>Payment Method:</strong> ' + escHtml(mLabel) +
     (r.method==='personal_reimbursement' ? ' <em style="color:#e67e22;">(A reimbursement form will be auto-created on approval)</em>' : '');
+  var reqDocUrl = r.doc_url || r.receipt_url || null;
   var docWrap = document.getElementById('reqModalDocLink');
-  if (r.doc_url) {
+  if (reqDocUrl) {
     docWrap.style.display = '';
-    docWrap.innerHTML = '<a href="' + escHtml(r.doc_url) + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--blue);"><i class="fas fa-paperclip"></i> View Supporting Document</a>';
+    docWrap.innerHTML = '<a href="' + escHtml(reqDocUrl) + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--blue);"><i class="fas fa-paperclip"></i> View Supporting Document</a>';
   } else { docWrap.style.display = 'none'; }
   document.getElementById('reqModal').style.display = 'flex';
 }
@@ -11452,8 +11587,12 @@ function renderReimbursementsAdmin() {
     var date  = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
     var id    = escHtml(String(r.id));
     var amt   = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
-    var mLabel = r.method === 'zelle' ? 'Zelle' : r.method === 'check' ? 'Check' : (r.method || '—');
+    var rMethod = r.method || r.payment_method || '';
+    var mLabel = rMethod === 'zelle' ? 'Zelle' : rMethod === 'check' ? 'Check' : (rMethod || '—');
+    var rDocUrl = r.doc_url || r.receipt_url || null;
+    var rDesc = r.item_service || r.description || '';
     var overdue = r.status === 'pending' && isOverdueAdmin(r.submitted_at);
+    var rRefNum = r.ref_number ? '<span style="font-size:0.7rem;font-weight:700;color:var(--gray-400);font-family:monospace;margin-right:8px;">' + escHtml(r.ref_number) + '</span>' : '';
     var actions = r.status === 'pending'
       ? '<button class="btn-sm success" onclick="openReimbModal(\'' + id + '\')"><i class="fas fa-eye"></i> Review &amp; Pay</button>'
       : '<button class="btn-sm" onclick="resetReimbStatus(\'' + id + '\')"><i class="fas fa-undo"></i> Reset to Pending</button>';
@@ -11461,7 +11600,7 @@ function renderReimbursementsAdmin() {
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;">' +
         '<div style="flex:1;min-width:200px;">' +
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">' +
-            '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + escHtml(r.member_name||'Unknown') + ' — ' + amt + '</div>' +
+            '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">' + rRefNum + escHtml(r.member_name||'Unknown') + ' — ' + amt + '</div>' +
             (overdue ? '<span style="font-size:0.7rem;font-weight:700;color:var(--gold);background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);padding:2px 7px;border-radius:5px;"><i class="fas fa-clock"></i> 7+ days pending</span>' : '') +
             (r.auto_generated ? '<span style="font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:5px;background:#f3e8ff;color:#7c3aed;"><i class="fas fa-magic-wand-sparkles"></i> Auto-generated</span>' : '') +
           '</div>' +
@@ -11469,9 +11608,9 @@ function renderReimbursementsAdmin() {
         '</div>' +
         '<span style="font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusColor + '20;color:' + statusColor + ';text-transform:capitalize;flex-shrink:0;">' + escHtml(r.status||'pending') + '</span>' +
       '</div>' +
-      '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.5;">' + escHtml((r.item_service||'').substring(0,250)) + '</p>' +
+      '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.5;">' + escHtml(rDesc.substring(0,250)) + '</p>' +
       (r.admin_note ? '<div style="font-size:0.82rem;color:var(--gray-500);font-style:italic;margin-bottom:10px;"><i class="fas fa-comment" style="color:var(--gold);margin-right:5px;"></i>' + escHtml(r.admin_note) + '</div>' : '') +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + (r.doc_url ? '<a href="' + escHtml(r.doc_url) + '" target="_blank" class="btn-sm"><i class="fas fa-receipt"></i> Receipt</a>' : '') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + (rDocUrl ? '<a href="' + escHtml(rDocUrl) + '" target="_blank" class="btn-sm"><i class="fas fa-receipt"></i> Receipt</a>' : '') + '</div>' +
     '</div>';
   }).join('');
 }
@@ -11483,24 +11622,29 @@ function openReimbModal(id) {
   document.getElementById('reimbModalId').value = String(r.id);
   document.getElementById('reimbModalNote').value = '';
   var amt = r.amount_cents != null ? '$' + (r.amount_cents/100).toFixed(2) : '—';
-  var mLabel = r.method === 'zelle' ? 'Zelle' : r.method === 'check' ? 'Check' : (r.method || '—');
+  var rmbMethod = r.method || r.payment_method || '';
+  var mLabel = rmbMethod === 'zelle' ? 'Zelle' : rmbMethod === 'check' ? 'Check' : (rmbMethod || '—');
+  var rmbDocUrl = r.doc_url || r.receipt_url || null;
+  var rmbDesc = r.item_service || r.description || '—';
   document.getElementById('reimbModalMeta').textContent =
     'Submitted by ' + (r.member_name||'Unknown') + ' · ' +
     (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '');
   document.getElementById('reimbModalDetails').innerHTML =
-    '<strong>Item / Service:</strong> ' + escHtml(r.item_service||'—') + '<br>' +
+    (r.ref_number ? '<strong>Reference #:</strong> <span style="font-family:monospace;color:var(--gold);">' + escHtml(r.ref_number) + '</span><br>' : '') +
+    '<strong>Submitted by:</strong> ' + escHtml(r.member_name||'—') + (r.member_email ? ' (' + escHtml(r.member_email) + ')' : '') + '<br>' +
+    '<strong>Item / Service:</strong> ' + escHtml(rmbDesc) + '<br>' +
     '<strong>Amount:</strong> ' + escHtml(amt) + '<br>' +
-    '<strong>Payee / Vendor:</strong> ' + escHtml(r.payee_name||'—') + '<br>' +
+    '<strong>Payee / Vendor:</strong> ' + escHtml(r.payee_name || r.member_name || '—') + '<br>' +
     '<strong>Payment Method:</strong> ' + escHtml(mLabel) +
     (r.auto_generated ? ' <em style="color:#7c3aed;">(auto-generated from approved requisition)</em>' : '');
 
   // Payment details
   var pd = r.payment_details || {};
   var pdHtml = '';
-  if (r.method === 'zelle') {
+  if (rmbMethod === 'zelle') {
     pdHtml = '<strong>Send Zelle to:</strong> ' + escHtml(pd.zelle_contact||r.member_email||'—') +
              (pd.zelle_name ? '<br><strong>Account Name:</strong> ' + escHtml(pd.zelle_name) : '');
-  } else if (r.method === 'check') {
+  } else if (rmbMethod === 'check') {
     pdHtml = '<strong>Mail check to:</strong><br>' +
              escHtml(r.member_name||'') + '<br>' +
              escHtml(pd.check_street||'') + '<br>' +
@@ -11512,7 +11656,7 @@ function openReimbModal(id) {
 
   // Receipt
   var docWrap = document.getElementById('reimbModalDocWrap');
-  if (r.doc_url) { document.getElementById('reimbModalDocLink').href = r.doc_url; docWrap.style.display = ''; }
+  if (rmbDocUrl) { document.getElementById('reimbModalDocLink').href = rmbDocUrl; docWrap.style.display = ''; }
   else { docWrap.style.display = 'none'; }
 
   // Overdue
