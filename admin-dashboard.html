@@ -9547,7 +9547,7 @@ async function nlLoadSendMembers() {
   if (!listEl) return;
   listEl.innerHTML = '<div style="padding:8px;color:var(--gray-400);font-size:0.8rem;">Loading…</div>';
   try {
-    const rows = await sbGet('members', 'select=id,first_name,last_name,email,status&portal_access=eq.true&status=in.(active,alumni)&order=last_name.asc', token);
+    const rows = await sbGet('members', 'select=id,first_name,last_name,email,status&status=in.(active,alumni)&order=last_name.asc', token);
     nlState.sendMembers = rows || [];
     nlRenderMemberList();
   } catch (e) {
