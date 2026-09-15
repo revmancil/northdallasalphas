@@ -40,9 +40,10 @@ serve(async (req) => {
   if (userErr || !userData?.user) {
     return json({ error: "Invalid or expired session." }, 401);
   }
-  // Confirm caller is a chapter admin
+  // Confirm caller is a chapter admin (table is keyed by email)
+  const userEmail = userData.user.email ?? "";
   const adminCheck = await fetch(
-    `${supabaseUrl}/rest/v1/chapter_admins?user_id=eq.${userData.user.id}&select=user_id&limit=1`,
+    `${supabaseUrl}/rest/v1/chapter_admins?email=eq.${encodeURIComponent(userEmail)}&select=email&limit=1`,
     { headers: { "apikey": serviceKey, "Authorization": "Bearer " + serviceKey } }
   );
   const adminRows = adminCheck.ok ? await adminCheck.json() : [];
