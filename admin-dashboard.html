@@ -2287,6 +2287,10 @@
                 <input type="radio" name="nlRecipMode" value="specific" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Select specific members
               </label>
             </div>
+            <div id="nlMemberListControls" style="display:none;display:none;margin-bottom:6px;gap:6px;flex-wrap:wrap;">
+              <button type="button" onclick="nlSelectAllMembers(true)" style="font-size:0.75rem;padding:3px 10px;background:none;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;color:var(--gray-700);">Select all</button>
+              <button type="button" onclick="nlSelectAllMembers(false)" style="font-size:0.75rem;padding:3px 10px;background:none;border:1px solid var(--gray-300);border-radius:5px;cursor:pointer;color:var(--gray-700);">Deselect all</button>
+            </div>
             <div id="nlMemberList" style="display:none;max-height:220px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px 12px;margin-bottom:10px;"></div>
             <div id="nlRecipCount" style="font-size:0.82rem;color:var(--gray-500);margin-bottom:4px;">0 recipients selected</div>
           </div>
@@ -9566,13 +9570,17 @@ function nlRenderMemberList() {
   if (modeVal === 'all') { members = members.filter(function (m) { return m.status === 'active'; }); }
   else if (modeVal === 'alumni') { members = members.filter(function (m) { return m.status === 'alumni'; }); }
   const countEl = document.getElementById('nlRecipCount');
+  const ctrlEl = document.getElementById('nlMemberListControls');
   if (modeVal === 'test') {
     listEl.style.display = 'none';
+    if (ctrlEl) ctrlEl.style.display = 'none';
     if (countEl) countEl.textContent = 'Test send — 1 recipient';
   } else if (modeVal !== 'specific') {
     listEl.style.display = 'none';
+    if (ctrlEl) ctrlEl.style.display = 'none';
     if (countEl) countEl.textContent = members.length + ' recipients selected';
   } else {
+    if (ctrlEl) ctrlEl.style.display = 'flex';
     listEl.style.display = 'block';
     listEl.innerHTML = members.map(function (m) {
       return '<label style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.82rem;cursor:pointer;">'
@@ -9589,6 +9597,11 @@ function nlUpdateRecipCount() {
   if (!countEl) return;
   const checks = document.querySelectorAll('#nlMemberList input[type="checkbox"]:checked');
   countEl.textContent = checks.length + ' recipients selected';
+}
+
+function nlSelectAllMembers(checked) {
+  document.querySelectorAll('#nlMemberList input[type="checkbox"]').forEach(function (c) { c.checked = checked; });
+  nlUpdateRecipCount();
 }
 
 function nlOnRecipModeChange() {
