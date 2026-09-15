@@ -2272,7 +2272,13 @@
             <div style="margin-bottom:14px;">
               <div style="font-size:0.73rem;font-weight:600;color:var(--gray-500);margin-bottom:8px;">RECIPIENTS</div>
               <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
-                <input type="radio" name="nlRecipMode" value="all" checked onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> All active members
+                <input type="radio" name="nlRecipMode" value="test" checked onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Test email (single address)
+              </label>
+              <div id="nlTestEmailWrap" style="margin:4px 0 10px 24px;">
+                <input type="email" id="nlTestEmailInput" placeholder="you@example.com" style="width:100%;padding:7px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;box-sizing:border-box;background:var(--white);color:var(--gray-800);" />
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
+                <input type="radio" name="nlRecipMode" value="all" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> All active members
               </label>
               <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
                 <input type="radio" name="nlRecipMode" value="alumni" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Alumni only
@@ -9518,9 +9524,14 @@ async function nlOpenSendModal() {
   modal.style.display = 'flex';
   const subj = document.getElementById('nlSendSubject');
   if (subj) subj.textContent = nlState.subject;
-  // Reset radio to "all"
-  const radio = document.querySelector('input[name="nlRecipMode"][value="all"]');
+  // Reset radio to "test" and pre-fill admin email
+  const radio = document.querySelector('input[name="nlRecipMode"][value="test"]');
   if (radio) radio.checked = true;
+  const testInput = document.getElementById('nlTestEmailInput');
+  if (testInput && !testInput.value) {
+    testInput.value = sessionStorage.getItem('nda_admin_user') || '';
+  }
+  nlOnRecipModeChange();
   nlState.sendMembers = [];
   await nlLoadSendMembers();
 }
@@ -9555,7 +9566,10 @@ function nlRenderMemberList() {
   if (modeVal === 'all') { members = members.filter(function (m) { return m.status === 'active'; }); }
   else if (modeVal === 'alumni') { members = members.filter(function (m) { return m.status === 'alumni'; }); }
   const countEl = document.getElementById('nlRecipCount');
-  if (modeVal !== 'specific') {
+  if (modeVal === 'test') {
+    listEl.style.display = 'none';
+    if (countEl) countEl.textContent = 'Test send — 1 recipient';
+  } else if (modeVal !== 'specific') {
     listEl.style.display = 'none';
     if (countEl) countEl.textContent = members.length + ' recipients selected';
   } else {
@@ -9577,7 +9591,13 @@ function nlUpdateRecipCount() {
   countEl.textContent = checks.length + ' recipients selected';
 }
 
-function nlOnRecipModeChange() { nlRenderMemberList(); }
+function nlOnRecipModeChange() {
+  const modeEl = document.querySelector('input[name="nlRecipMode"]:checked');
+  const modeVal = modeEl ? modeEl.value : 'test';
+  const testWrap = document.getElementById('nlTestEmailWrap');
+  if (testWrap) testWrap.style.display = modeVal === 'test' ? 'block' : 'none';
+  nlRenderMemberList();
+}
 
 async function nlSendNewsletter() {
   const token = getAdminToken();
@@ -9588,7 +9608,12 @@ async function nlSendNewsletter() {
     const modeEl = document.querySelector('input[name="nlRecipMode"]:checked');
     const modeVal = modeEl ? modeEl.value : 'all';
     let recipients = [];
-    if (modeVal === 'all') {
+    if (modeVal === 'test') {
+      const testInput = document.getElementById('nlTestEmailInput');
+      const addr = testInput ? testInput.value.trim() : '';
+      if (!addr || !addr.includes('@')) { showToast('Enter a valid email address for the test send.', 'error'); return; }
+      recipients = [addr];
+    } else if (modeVal === 'all') {
       recipients = nlState.sendMembers.filter(function (m) { return m.status === 'active'; }).map(function (m) { return m.email; }).filter(Boolean);
     } else if (modeVal === 'alumni') {
       recipients = nlState.sendMembers.filter(function (m) { return m.status === 'alumni'; }).map(function (m) { return m.email; }).filter(Boolean);
@@ -9604,9 +9629,10 @@ async function nlSendNewsletter() {
     });
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok) throw new Error(data.error || 'Send failed');
-    await nlSaveDraft().catch(function () { });
+    if (modeVal !== 'test') await nlSaveDraft().catch(function () { });
     nlCloseSendModal();
-    showToast('Newsletter sent to ' + recipients.length + ' recipients!', 'success');
+    const msg = modeVal === 'test' ? 'Test email sent to ' + recipients[0] + '!' : 'Newsletter sent to ' + recipients.length + ' recipients!';
+    showToast(msg, 'success');
   } catch (err) {
     showToast('Send failed: ' + (err.message || 'unknown'), 'error');
   } finally {
