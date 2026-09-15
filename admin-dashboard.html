@@ -8865,7 +8865,9 @@ async function nlSaveAsTemplate() {
     showToast('Template saved: ' + name.trim(), 'success');
     await nlRenderTemplatesTab();
   } catch (err) {
-    showToast('Could not save template: ' + (err.message || 'error'), 'error');
+    let msg = err.message || 'error';
+    try { const j = JSON.parse(msg); msg = j.message || j.details || msg; } catch (e) { }
+    showToast('Could not save template: ' + msg, 'error');
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '+ Save Current as Template'; }
   }
