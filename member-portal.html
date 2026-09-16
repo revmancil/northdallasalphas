@@ -279,6 +279,7 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('requisition');loadMyRequisitions()" id="nav-requisition"><i class="fas fa-file-invoice-dollar"></i> Submit Requisition</button>
     <button class="nav-item" onclick="showPanel('reimbursement');loadMyReimbursements()" id="nav-reimbursement"><i class="fas fa-receipt"></i> Request Reimbursement</button>
     <button class="nav-item" onclick="showPanel('profile')" id="nav-profile"><i class="fas fa-user-circle"></i> My Profile</button>
+    <button class="nav-item" onclick="showPanel('my-issues');loadMyHelpdeskIssues()" id="nav-my-issues"><i class="fas fa-life-ring"></i> My Help Desk Issues</button>
   </nav>
   <div class="sidebar-footer">
     <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
@@ -1062,6 +1063,19 @@ backdrop-filter:blur(4px);}
         </div>
       </div>
     </div>
+    <!-- MY HELP DESK ISSUES PANEL -->
+    <div class="panel" id="panel-my-issues">
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-life-ring"></i> My Help Desk Issues</h3>
+          <button class="card-action" onclick="openHelpdeskModal()"><i class="fas fa-plus"></i> New Issue</button>
+        </div>
+        <div class="section-card-body" style="padding:0;">
+          <div id="myIssuesList" style="min-height:120px;"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- IMDP INFO PANEL -->
     <div class="panel" id="panel-imdp-info">
       <div class="section-card">
@@ -3411,6 +3425,40 @@ async function submitHelpdeskIssue() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Submit Issue';
+  }
+}
+
+// ── My Help Desk Issues ────────────────────────────────────
+async function loadMyHelpdeskIssues() {
+  var list = document.getElementById('myIssuesList');
+  if (!list) return;
+  list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  try {
+    var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
+    var token = session && session.access_token ? session.access_token : null;
+    if (!token) { list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.85rem;">Sign in to view your issues.</div>'; return; }
+    var issues = await sbGet('helpdesk_issues', 'member_email=eq.' + encodeURIComponent((currentMember && currentMember.email) || '') + '&order=created_at.desc&limit=50', token);
+    if (!issues || !issues.length) {
+      list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.85rem;">No issues submitted yet. Use the <strong style="color:var(--gold);">New Issue</strong> button to report a problem.</div>';
+      return;
+    }
+    var statusColors = { open: '#C9A84C', 'in-progress': '#aaa', resolved: '#27ae60' };
+    var statusLabels = { open: 'Open', 'in-progress': 'In Progress', resolved: 'Resolved' };
+    list.innerHTML = issues.map(function(iss) {
+      var color = statusColors[iss.status] || '#aaa';
+      var label = statusLabels[iss.status] || iss.status;
+      var created = iss.created_at ? new Date(iss.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      var updated = iss.updated_at && iss.updated_at !== iss.created_at ? ' · Updated ' + new Date(iss.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      return '<div style="display:flex;align-items:flex-start;gap:14px;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:0.88rem;color:var(--white);font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.description || '') + '</div>' +
+        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);">' + escHtml(iss.category || '') + ' · ' + created + escHtml(updated) + '</div>' +
+        '</div>' +
+        '<span style="flex-shrink:0;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:' + color + ';border:1px solid ' + color + ';border-radius:20px;padding:2px 9px;margin-top:2px;">' + label + '</span>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="padding:32px;text-align:center;color:#c66;font-size:0.85rem;">Could not load issues: ' + escHtml(e.message || '') + '</div>';
   }
 }
 
