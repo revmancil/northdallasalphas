@@ -336,6 +336,17 @@ backdrop-filter:blur(4px);}
         <div id="vbAccessRequestStatus" style="margin-top:10px;font-size:0.82rem;color:#888;"></div>
       </div>
 
+      <!-- Personal celebration banner (birthday / alphaversary for the logged-in brother) -->
+      <div id="dashCelebrationBanner" style="display:none;"></div>
+
+      <!-- Good of the Day card (other brothers' birthdays / alphaversaries) -->
+      <div id="dashGoodOfDay" style="display:none;" class="section-card">
+        <div class="section-card-header">
+          <h3><i class="fas fa-shield-halved" style="color:var(--gold);"></i> Good of the Day</h3>
+        </div>
+        <div class="section-card-body" id="dashGoodOfDayBody" style="padding:16px 22px;"></div>
+      </div>
+
       <div class="section-card">
         <div class="section-card-header">
           <h3><i class="fas fa-star"></i> Welcome Back, Bro. <span id="welcomeName">Brother</span></h3>
@@ -2494,6 +2505,7 @@ async function init() {
   document.getElementById('statDuesPaid').textContent    = '--';
   renderDashboardEvents();
   await loadAnnouncements();
+  loadDashboardCelebrations();
   (function duesReturnFlash() {
     var q = new URLSearchParams(window.location.search);
     if (q.get('dues') === 'success') {
@@ -3460,6 +3472,61 @@ async function loadMyHelpdeskIssues() {
   } catch(e) {
     list.innerHTML = '<div style="padding:32px;text-align:center;color:#c66;font-size:0.85rem;">Could not load issues: ' + escHtml(e.message || '') + '</div>';
   }
+}
+
+// ── Dashboard Celebrations (Birthday / Alphaversary) ────────
+function isTodayMonthDay(dateStr) {
+  if (!dateStr) return false;
+  var today = new Date();
+  var tm = today.getMonth() + 1; // 1-12
+  var td = today.getDate();
+  // ISO YYYY-MM-DD
+  var m = String(dateStr).match(/^\d{4}-(\d{2})-(\d{2})/);
+  if (m) return parseInt(m[1], 10) === tm && parseInt(m[2], 10) === td;
+  // MM/DD or MM/DD/YYYY
+  m = String(dateStr).match(/^(\d{1,2})\/(\d{1,2})/);
+  if (m) return parseInt(m[1], 10) === tm && parseInt(m[2], 10) === td;
+  return false;
+}
+
+async function loadDashboardCelebrations() {
+  if (!currentMember) return;
+  var myFullName = [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ');
+
+  // Personal banner
+  var isMyBirthday    = isTodayMonthDay(currentMember.birthday);
+  var isMyAlphaversary = isTodayMonthDay(currentMember.initiation_date);
+  var bannerEl = document.getElementById('dashCelebrationBanner');
+  if (bannerEl && (isMyBirthday || isMyAlphaversary)) {
+    var msgs = [];
+    if (isMyBirthday)     msgs.push('<div style="font-size:1.05rem;font-weight:700;color:var(--gold);margin-bottom:4px;"><i class="fas fa-cake-candles" style="margin-right:8px;"></i>Happy Birthday, Brother ' + escHtml(currentMember.first_name || myFullName) + '!</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.5;">Wishing you an outstanding day. The brothers of Xi Tau Lambda celebrate you today!</div>');
+    if (isMyAlphaversary) msgs.push('<div style="font-size:1.05rem;font-weight:700;color:var(--gold);margin-bottom:4px;"><i class="fas fa-shield-halved" style="margin-right:8px;"></i>Happy Alphaversary, Brother ' + escHtml(currentMember.first_name || myFullName) + '!</div><div style="font-size:0.85rem;color:rgba(255,255,255,0.6);line-height:1.5;">Today marks another year of brotherhood. Alpha!</div>');
+    bannerEl.style.display = '';
+    bannerEl.innerHTML = '<div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.35);border-radius:12px;padding:20px 24px;margin-bottom:20px;">' + msgs.join('<div style="margin-top:12px;"></div>') + '</div>';
+  }
+
+  // Good of the Day — fetch all active members to find other brothers celebrating today
+  try {
+    var token = currentSession ? currentSession.access_token : null;
+    var members = await sbGet('members', 'status=eq.active&select=first_name,last_name,birthday,initiation_date,email', token);
+    var myEmail = currentMember.email || '';
+    var bdays = [], alphas = [];
+    (members || []).forEach(function(m) {
+      if ((m.email || '') === myEmail) return; // skip self
+      var name = 'Brother ' + [m.first_name, m.last_name].filter(Boolean).join(' ');
+      if (isTodayMonthDay(m.birthday))         bdays.push(name);
+      if (isTodayMonthDay(m.initiation_date))  alphas.push(name);
+    });
+    var goodEl   = document.getElementById('dashGoodOfDay');
+    var bodyEl   = document.getElementById('dashGoodOfDayBody');
+    if (goodEl && bodyEl && (bdays.length || alphas.length)) {
+      var lines = [];
+      bdays.forEach(function(n)  { lines.push('<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><i class="fas fa-cake-candles" style="color:var(--gold);width:18px;text-align:center;"></i><span style="font-size:0.9rem;color:var(--white);">Happy Birthday to ' + escHtml(n) + '</span></div>'); });
+      alphas.forEach(function(n) { lines.push('<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);"><i class="fas fa-shield-halved" style="color:var(--gold);width:18px;text-align:center;"></i><span style="font-size:0.9rem;color:var(--white);">Happy Alphaversary to ' + escHtml(n) + '</span></div>'); });
+      bodyEl.innerHTML = lines.join('');
+      goodEl.style.display = '';
+    }
+  } catch(e) {}
 }
 
 // ── Maintenance Mode Check ─────────────────────────────────
