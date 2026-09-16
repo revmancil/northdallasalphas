@@ -1638,10 +1638,17 @@ async function loadNewsFeed() {
   try {
     var results = await Promise.all([
       sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token).catch(function(){ return []; }),
-      sbGet('member_announcements', 'status=eq.approved&or=(event_date.is.null,event_date.gte.' + new Date().toISOString().slice(0,10) + ')&or=(expires_at.is.null,expires_at.gte.' + new Date().toISOString().slice(0,10) + ')&order=created_at.desc', token).catch(function(){ return []; })
+      sbGet('member_announcements', 'status=eq.approved&order=created_at.desc', token).catch(function(){ return []; })
     ]);
+    var today = new Date().toISOString().slice(0, 10);
     var adminPosts = (results[0] || []).map(function(p) { return Object.assign({}, p, { _type: 'admin' }); });
-    var annPosts   = (results[1] || []).map(function(a) { return Object.assign({}, a, { _type: 'member' }); });
+    var annPosts   = (results[1] || [])
+      .filter(function(a) {
+        if (a.event_date && a.event_date < today) return false;
+        if (a.expires_at && a.expires_at < today) return false;
+        return true;
+      })
+      .map(function(a) { return Object.assign({}, a, { _type: 'member' }); });
 
     // Pinned admin posts float to top; everything else sorted newest first
     var pinned    = adminPosts.filter(function(p){ return p.pinned; });
@@ -1697,6 +1704,7 @@ async function loadNewsFeed() {
 
 function time24ToAmPm(t) {
   if (!t) return '';
+  if (/am|pm/i.test(t)) return t.trim(); // already formatted
   var parts = t.split(':');
   var h = parseInt(parts[0], 10);
   var m = parts[1] || '00';
