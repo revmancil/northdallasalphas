@@ -1452,6 +1452,19 @@
     </div>
   </div>
 
+  <div class="nav-group" id="navgroup-helpdesk">
+    <button class="nav-group-toggle" onclick="toggleNavGroup('helpdesk')">
+      <i class="fas fa-life-ring group-icon"></i> Help Desk
+      <span id="helpdeskBadge" class="group-badges" style="display:none;"><span style="background:#C9A84C;color:#000;font-size:0.6rem;font-weight:800;padding:1px 6px;border-radius:10px;" id="helpdeskOpenCount">0</span></span>
+      <i class="fas fa-chevron-down group-caret"></i>
+    </button>
+    <div class="nav-group-body" id="navbody-helpdesk">
+      <button class="sidebar-link" data-section="helpdesk" onclick="showPanel('helpdesk');loadHelpdeskPanel()">
+        <i class="fas fa-inbox"></i> Issue Inbox
+      </button>
+    </div>
+  </div>
+
   <div class="sidebar-footer">
     <div class="user-row">
       <div class="user-avatar" id="userAvatar">A</div>
@@ -3646,6 +3659,53 @@
 
     </div><!-- end panel-dues-admin -->
 
+    <!-- ─── HELPDESK PANEL ─────────────────────────── -->
+    <div id="panel-helpdesk" class="panel" style="display:none;">
+      <div class="panel-header">
+        <h2 class="panel-title"><i class="fas fa-life-ring"></i> Help Desk</h2>
+      </div>
+
+      <!-- Maintenance Mode Toggle -->
+      <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div>
+          <div style="font-weight:700;font-size:0.95rem;color:#111;margin-bottom:4px;">Member Portal Status</div>
+          <div style="font-size:0.82rem;color:#666;">When set to Maintenance, members see a maintenance page. The admin dashboard and public website are unaffected.</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+          <span id="maintenanceStatusLabel" style="font-size:0.85rem;font-weight:700;color:#27ae60;">ACTIVE</span>
+          <button id="maintenanceToggleBtn" onclick="toggleMaintenanceMode()" style="background:#27ae60;color:#fff;border:none;border-radius:6px;font-weight:700;font-size:0.83rem;padding:9px 18px;cursor:pointer;transition:background 0.2s;">Set Maintenance</button>
+        </div>
+      </div>
+
+      <!-- Issue Inbox -->
+      <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <div style="font-weight:700;font-size:0.95rem;color:#111;">Issue Inbox</div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select id="hdStatusFilter" onchange="loadHelpdeskIssues()" style="font-size:0.8rem;padding:6px 10px;border:1px solid #ddd;border-radius:6px;background:#fff;color:#333;">
+              <option value="">All Issues</option>
+              <option value="open">Open</option>
+              <option value="in-progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <button onclick="loadHelpdeskIssues()" style="background:none;border:1px solid #ddd;border-radius:6px;padding:6px 10px;font-size:0.8rem;cursor:pointer;color:#555;"><i class="fas fa-sync-alt"></i></button>
+          </div>
+        </div>
+        <div id="helpdeskIssuesList" style="min-height:120px;"></div>
+      </div>
+
+      <!-- Issue Detail Modal -->
+      <div id="hdDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:10px;width:90%;max-width:640px;max-height:90vh;overflow-y:auto;">
+          <div style="padding:18px 22px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-weight:700;font-size:1rem;color:#111;">Issue Detail</div>
+            <button onclick="closeHdDetail()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:#888;">&times;</button>
+          </div>
+          <div id="hdDetailBody" style="padding:22px;"></div>
+        </div>
+      </div>
+    </div><!-- end panel-helpdesk -->
+
   </main>
 </div>
 
@@ -3745,6 +3805,7 @@ const ADMIN_SECTIONS = [
   { key: 'reimbursements',        label: 'Reimbursements' },
   { key: 'requisitions',          label: 'Requisitions' },
   { key: 'statistics',            label: 'Chapter Statistics' },
+  { key: 'helpdesk',             label: 'Help Desk' },
 ];
 
 // Sections that always require full admin and are never grantable a la carte.
@@ -13093,6 +13154,165 @@ function formatRelativeTime(dt) {
   var days = Math.floor(hr / 24);
   if (days < 30) return days + 'd ago';
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── Help Desk Admin ─────────────────────────────────────────
+var _hdMaintenanceMode = false;
+
+async function loadHelpdeskPanel() {
+  await Promise.all([loadHelpdeskIssues(), loadMaintenanceModeStatus()]);
+}
+
+async function loadMaintenanceModeStatus() {
+  try {
+    var token = getAdminToken();
+    var rows = await sbGet('site_content', 'content_key=eq.system_settings&select=content_json&limit=1', token);
+    var cfg = (rows && rows[0] && rows[0].content_json) || {};
+    _hdMaintenanceMode = cfg.member_portal_status === 'maintenance';
+    updateMaintenanceUI();
+  } catch(e) { /* ignore */ }
+}
+
+function updateMaintenanceUI() {
+  var label = document.getElementById('maintenanceStatusLabel');
+  var btn = document.getElementById('maintenanceToggleBtn');
+  if (!label || !btn) return;
+  if (_hdMaintenanceMode) {
+    label.textContent = 'MAINTENANCE';
+    label.style.color = '#C9A84C';
+    btn.textContent = 'Set Active';
+    btn.style.background = '#333';
+  } else {
+    label.textContent = 'ACTIVE';
+    label.style.color = '#27ae60';
+    btn.textContent = 'Set Maintenance';
+    btn.style.background = '#27ae60';
+  }
+}
+
+async function toggleMaintenanceMode() {
+  var btn = document.getElementById('maintenanceToggleBtn');
+  btn.disabled = true;
+  var newMode = _hdMaintenanceMode ? 'active' : 'maintenance';
+  try {
+    var token = getAdminToken();
+    var rows = await sbGet('site_content', 'content_key=eq.system_settings&select=content_key&limit=1', token);
+    if (rows && rows.length) {
+      await sbPatch('site_content', 'content_key=eq.system_settings',
+        { content_json: { member_portal_status: newMode } }, token);
+    } else {
+      await sbPost('site_content', { content_key: 'system_settings', content_json: { member_portal_status: newMode } }, token);
+    }
+    _hdMaintenanceMode = newMode === 'maintenance';
+    updateMaintenanceUI();
+    showToast && showToast('Member Portal set to ' + newMode.toUpperCase(), false);
+  } catch(e) {
+    alert('Failed to toggle maintenance mode: ' + (e.message || 'unknown error'));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function loadHelpdeskIssues() {
+  var list = document.getElementById('helpdeskIssuesList');
+  if (!list) return;
+  list.innerHTML = '<div style="padding:32px;text-align:center;color:#999;font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  try {
+    var token = getAdminToken();
+    var filter = document.getElementById('hdStatusFilter') ? document.getElementById('hdStatusFilter').value : '';
+    var query = 'order=created_at.desc&limit=100';
+    if (filter) query += '&status=eq.' + encodeURIComponent(filter);
+    var issues = await sbGet('helpdesk_issues', query, token);
+    if (!issues || !issues.length) {
+      list.innerHTML = '<div style="padding:32px;text-align:center;color:#999;font-size:0.85rem;">No issues found.</div>';
+      document.getElementById('helpdeskBadge').style.display = 'none';
+      return;
+    }
+    var openCount = issues.filter(function(i){ return i.status === 'open'; }).length;
+    if (openCount > 0) {
+      document.getElementById('helpdeskBadge').style.display = '';
+      document.getElementById('helpdeskOpenCount').textContent = openCount;
+    } else {
+      document.getElementById('helpdeskBadge').style.display = 'none';
+    }
+    list.innerHTML = issues.map(function(iss) {
+      var statusColors = { open: '#C9A84C', 'in-progress': '#555', resolved: '#27ae60' };
+      var statusColor = statusColors[iss.status] || '#999';
+      var created = iss.created_at ? new Date(iss.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      var priorityIcon = iss.priority === 'high' ? '▲' : iss.priority === 'low' ? '▼' : '●';
+      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.15s;background:#fff;" onmouseover="this.style.background=\'#fafafa\'" onmouseout="this.style.background=\'#fff\'" onclick="openHdDetail(' + JSON.stringify(JSON.stringify(iss)) + ')">' +
+        '<div style="width:44px;height:44px;border-radius:6px;background:#f5f5f5;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
+        (iss.screenshot_data ? '<img src="' + iss.screenshot_data.substring(0,200) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'<i class=\\\"fas fa-image\\\" style=\\\"color:#ccc\\\"></i>\'">' : '<i class="fas fa-image" style="color:#ccc;"></i>') +
+        '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-weight:600;font-size:0.88rem;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.member_name || 'Unknown') + '</div>' +
+        '<div style="font-size:0.78rem;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">' + escHtml((iss.description||'').substring(0,80)) + '</div>' +
+        '<div style="font-size:0.7rem;color:#aaa;margin-top:4px;">' + escHtml(iss.category||'') + ' · ' + created + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;">' +
+        '<span style="font-size:0.7rem;font-weight:700;color:' + statusColor + ';text-transform:uppercase;letter-spacing:0.06em;padding:2px 8px;border:1px solid ' + statusColor + ';border-radius:20px;">' + escHtml(iss.status) + '</span>' +
+        '<span style="font-size:0.72rem;color:#888;">' + priorityIcon + ' ' + escHtml(iss.priority||'medium') + '</span>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="padding:32px;text-align:center;color:#c00;font-size:0.85rem;">Error loading issues: ' + escHtml(e.message||'') + '</div>';
+  }
+}
+
+function openHdDetail(issJson) {
+  var iss;
+  try { iss = JSON.parse(issJson); } catch(e) { return; }
+  var modal = document.getElementById('hdDetailModal');
+  var body = document.getElementById('hdDetailBody');
+  var created = iss.created_at ? new Date(iss.created_at).toLocaleString('en-US') : '';
+  body.innerHTML =
+    (iss.screenshot_data ? '<div style="margin-bottom:18px;border-radius:8px;overflow:hidden;border:1px solid #eee;"><img src="' + iss.screenshot_data + '" style="width:100%;display:block;" /></div>' : '') +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">' +
+    '<div><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:4px;">Brother</div><div style="font-weight:600;color:#111;">' + escHtml(iss.member_name||'') + '</div><div style="font-size:0.78rem;color:#666;">' + escHtml(iss.member_email||'') + '</div></div>' +
+    '<div><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:4px;">Submitted</div><div style="font-size:0.85rem;color:#333;">' + escHtml(created) + '</div></div>' +
+    '<div><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:4px;">Category</div><div style="font-size:0.85rem;color:#333;">' + escHtml(iss.category||'') + '</div></div>' +
+    '<div><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:4px;">Priority</div><div style="font-size:0.85rem;color:#333;text-transform:capitalize;">' + escHtml(iss.priority||'medium') + '</div></div>' +
+    '</div>' +
+    '<div style="margin-bottom:18px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:6px;">Page</div><div style="font-size:0.82rem;color:#555;word-break:break-all;">' + escHtml(iss.page_url||'') + '</div></div>' +
+    '<div style="margin-bottom:20px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:6px;">Description</div><div style="font-size:0.88rem;color:#222;line-height:1.6;white-space:pre-wrap;">' + escHtml(iss.description||'') + '</div></div>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+    '<select id="hdDetailStatus_' + iss.id + '" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.83rem;"><option value="open"' + (iss.status==='open'?' selected':'') + '>Open</option><option value="in-progress"' + (iss.status==='in-progress'?' selected':'') + '>In Progress</option><option value="resolved"' + (iss.status==='resolved'?' selected':'') + '>Resolved</option></select>' +
+    '<button onclick="updateHelpdeskIssue(\'' + iss.id + '\')" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.83rem;padding:8px 16px;cursor:pointer;">Save Status</button>' +
+    '<button onclick="deleteHelpdeskIssue(\'' + iss.id + '\')" style="background:none;border:1px solid #ddd;border-radius:6px;font-size:0.83rem;padding:8px 14px;cursor:pointer;color:#888;" onmouseover="this.style.borderColor=\'#e74c3c\';this.style.color=\'#e74c3c\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#888\'"><i class="fas fa-trash"></i></button>' +
+    '</div>';
+  modal.style.display = 'flex';
+}
+
+function closeHdDetail() {
+  document.getElementById('hdDetailModal').style.display = 'none';
+}
+
+async function updateHelpdeskIssue(id) {
+  var sel = document.getElementById('hdDetailStatus_' + id);
+  if (!sel) return;
+  var newStatus = sel.value;
+  try {
+    var token = getAdminToken();
+    await sbPatch('helpdesk_issues', 'id=eq.' + id, { status: newStatus, updated_at: new Date().toISOString() }, token);
+    closeHdDetail();
+    loadHelpdeskIssues();
+    showToast && showToast('Issue updated.');
+  } catch(e) {
+    alert('Failed to update: ' + (e.message||''));
+  }
+}
+
+async function deleteHelpdeskIssue(id) {
+  if (!confirm('Delete this issue? This cannot be undone.')) return;
+  try {
+    var token = getAdminToken();
+    await sbDeleteByFilter('helpdesk_issues', 'id=eq.' + id, token);
+    closeHdDetail();
+    loadHelpdeskIssues();
+  } catch(e) {
+    alert('Failed to delete: ' + (e.message||''));
+  }
 }
 
 </script>
