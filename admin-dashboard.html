@@ -4451,6 +4451,7 @@ function renderAccessTable() {
                 '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
     } else if (portalAccess === 'chapter_member') {
       actions = '<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;font-weight:700;color:#16a34a;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.35);padding:4px 10px;border-radius:6px;"><i class="fas fa-check-circle"></i> Chapter Brother</span> ' +
+                (!isAdmin ? '<button class="btn-sm edit" onclick="prefillAdminGrant(\'' + memail + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button> ' : '') +
                 '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
     } else if (portalAccess === 'granted') {
       actions = '<button class="btn-sm" style="background:rgba(74,222,128,0.15);color:#16a34a;border:1px solid rgba(74,222,128,0.4);" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')" title="Enroll as Chapter Brother and add to directory"><i class="fas fa-home"></i> Enroll as Chapter</button> ' +
