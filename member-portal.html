@@ -3339,41 +3339,40 @@ async function toggleCommitteeMembership(committeeId, isMember) {
 // ── Help Desk ──────────────────────────────────────────────
 var _hdScreenshotData = null;
 
-async function openHelpdeskModal() {
-  var modal = document.getElementById('helpdeskModal');
-  modal.style.display = 'flex';
+function openHelpdeskModal() {
+  _hdScreenshotData = null;
+  document.getElementById('helpdeskModal').style.display = 'flex';
   document.getElementById('hdDescription').value = '';
   document.getElementById('hdError').style.display = 'none';
+  document.getElementById('hdScreenshotFile').value = '';
   document.getElementById('hdScreenshotImg').style.display = 'none';
-  document.getElementById('hdScreenshotStatus').style.display = 'flex';
-  document.getElementById('hdScreenshotStatus').innerHTML = '<i class="fas fa-camera"></i> Capturing...';
+  document.getElementById('hdScreenshotPlaceholder').style.display = 'flex';
+  document.getElementById('hdScreenshotName').style.display = 'none';
+}
+
+function hdHandleScreenshot(e) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    _hdScreenshotData = ev.target.result;
+    var img = document.getElementById('hdScreenshotImg');
+    img.src = _hdScreenshotData;
+    img.style.display = 'block';
+    document.getElementById('hdScreenshotPlaceholder').style.display = 'none';
+    document.getElementById('hdScreenshotNameText').textContent = file.name;
+    document.getElementById('hdScreenshotName').style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function hdClearScreenshot(e) {
+  e.stopPropagation();
   _hdScreenshotData = null;
-  setTimeout(async function() {
-    try {
-      if (typeof html2canvas === 'undefined') {
-        document.getElementById('hdScreenshotStatus').textContent = 'Screenshot unavailable';
-        return;
-      }
-      modal.style.display = 'none';
-      var canvas = await html2canvas(document.body, {
-        scale: 0.5,
-        useCORS: true,
-        allowTaint: true,
-        logging: false,
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-      modal.style.display = 'flex';
-      _hdScreenshotData = canvas.toDataURL('image/jpeg', 0.6);
-      var img = document.getElementById('hdScreenshotImg');
-      img.src = _hdScreenshotData;
-      img.style.display = 'block';
-      document.getElementById('hdScreenshotStatus').style.display = 'none';
-    } catch(e) {
-      modal.style.display = 'flex';
-      document.getElementById('hdScreenshotStatus').textContent = 'Screenshot unavailable';
-    }
-  }, 100);
+  document.getElementById('hdScreenshotFile').value = '';
+  document.getElementById('hdScreenshotImg').style.display = 'none';
+  document.getElementById('hdScreenshotPlaceholder').style.display = 'flex';
+  document.getElementById('hdScreenshotName').style.display = 'none';
 }
 
 function closeHelpdeskModal() {
@@ -3389,7 +3388,7 @@ async function submitHelpdeskIssue() {
   btn.disabled = true;
   btn.textContent = 'Submitting...';
   try {
-    var session = JSON.parse(sessionStorage.getItem('nda_member_session') || 'null');
+    var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
     var token = session && session.access_token ? session.access_token : null;
     if (!token) { errEl.textContent = 'You must be signed in to report an issue.'; errEl.style.display = 'block'; btn.disabled = false; btn.textContent = 'Submit Issue'; return; }
     var body = {
@@ -4147,16 +4146,24 @@ async function submitVbAccessRequest() {
     <div style="padding:20px 24px;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;">
       <div>
         <div style="font-size:0.95rem;font-weight:700;color:#fff;">Report an Issue</div>
-        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:3px;">We'll capture a screenshot of your current view automatically.</div>
+        <div style="font-size:0.75rem;color:rgba(255,255,255,0.4);margin-top:3px;">Attach a screenshot and describe what happened.</div>
       </div>
       <button onclick="closeHelpdeskModal()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:1.1rem;cursor:pointer;padding:4px;">&times;</button>
     </div>
     <div style="padding:20px 24px;">
       <div style="margin-bottom:16px;">
-        <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:8px;">Screenshot</div>
-        <div id="hdScreenshotPreview" style="background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:8px;height:140px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;">
-          <div id="hdScreenshotStatus" style="color:rgba(255,255,255,0.3);font-size:0.82rem;display:flex;align-items:center;gap:6px;"><i class="fas fa-camera"></i> Capturing...</div>
+        <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:8px;">Screenshot <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+        <input type="file" id="hdScreenshotFile" accept="image/*" style="display:none;" onchange="hdHandleScreenshot(event)">
+        <div id="hdScreenshotPreview" onclick="document.getElementById('hdScreenshotFile').click()" style="background:#111;border:1px dashed rgba(255,255,255,0.15);border-radius:8px;height:110px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;cursor:pointer;transition:border-color 0.2s;" onmouseover="this.style.borderColor='rgba(201,168,76,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.15)'">
+          <div id="hdScreenshotPlaceholder" style="display:flex;flex-direction:column;align-items:center;gap:6px;color:rgba(255,255,255,0.3);pointer-events:none;">
+            <i class="fas fa-image" style="font-size:1.4rem;"></i>
+            <span style="font-size:0.78rem;">Click to attach a screenshot</span>
+          </div>
           <img id="hdScreenshotImg" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:7px;" />
+        </div>
+        <div id="hdScreenshotName" style="display:none;font-size:0.73rem;color:rgba(255,255,255,0.4);margin-top:5px;display:flex;align-items:center;gap:8px;">
+          <span id="hdScreenshotNameText"></span>
+          <button onclick="hdClearScreenshot(event)" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:0.78rem;padding:0;" title="Remove">✕ Remove</button>
         </div>
       </div>
       <div style="margin-bottom:14px;">
@@ -4190,7 +4197,6 @@ async function submitVbAccessRequest() {
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 </body>
 </html>
