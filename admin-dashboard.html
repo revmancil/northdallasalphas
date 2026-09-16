@@ -2488,6 +2488,12 @@
                 <input type="password" id="accessAdminPassword" placeholder="They should change after first login" autocomplete="new-password" />
               </div>
             </div>
+            <div style="margin-top:10px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
+                <input type="checkbox" id="accessAdminExistingAccount" onchange="document.getElementById('accessAdminPasswordGroup').style.display=this.checked?'none':'block';" />
+                This brother already has a member portal account — don't change their password
+              </label>
+            </div>
             <div style="margin-top:14px;">
               <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;font-weight:600;color:var(--gray-800);cursor:pointer;">
                 <input type="checkbox" id="accessAdminIsFull" checked onchange="onAccessFullAdminToggle()" style="width:16px;height:16px;" />
@@ -4589,6 +4595,8 @@ function resetAdminGrantForm() {
   if (emailEl) { emailEl.value = ''; emailEl.disabled = false; }
   if (passEl) passEl.value = '';
   if (fullEl) fullEl.checked = true;
+  const existingChk = document.getElementById('accessAdminExistingAccount');
+  if (existingChk) existingChk.checked = false;
   setSelectedSections([]);
   onAccessFullAdminToggle();
   const passGroup = document.getElementById('accessAdminPasswordGroup');
@@ -4605,12 +4613,15 @@ function prefillAdminGrant(email) {
   ensureSectionsGridBuilt();
   resetAdminGrantForm();
   const emailEl = document.getElementById('accessAdminEmail');
-  const passEl = document.getElementById('accessAdminPassword');
+  const existingChk = document.getElementById('accessAdminExistingAccount');
+  const passGroup = document.getElementById('accessAdminPasswordGroup');
   if (emailEl) emailEl.value = email;
-  if (passEl) { passEl.value = ''; passEl.focus(); }
+  // Brother already has a portal account — pre-check the box and hide password
+  if (existingChk) { existingChk.checked = true; }
+  if (passGroup) passGroup.style.display = 'none';
   const adminCard = document.getElementById('accessAdminsList');
   if (adminCard) adminCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  showToast('Email pre-filled. Choose access, set a temporary password, and click Grant Admin Access.', 'info');
+  showToast('Email pre-filled. Choose access level and click Grant Admin Access.', 'info');
 }
 
 function editAdminPermissions(email, isFullAdmin, sections) {
@@ -4720,8 +4731,19 @@ async function grantAdminFromAccessPanel() {
     return;
   }
 
+  const existingChk = document.getElementById('accessAdminExistingAccount');
+  const existingAccount = existingChk && existingChk.checked;
+  if (existingAccount) {
+    if (!isFullAdmin && !sections.length) {
+      showToast('Choose at least one section for a limited admin, or check Full Admin.', 'error');
+      return;
+    }
+    const ok = await callGrantChapterAdmin({ email, isFullAdmin, sections, updatePermissionsOnly: true });
+    if (ok) { resetAdminGrantForm(); loadAccessAdminsList(); }
+    return;
+  }
   const password = (passEl && passEl.value) || '';
-  if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+  if (password.length < 8) { showToast('Password must be at least 8 characters, or check the box if they already have an account.', 'error'); return; }
   if (!isFullAdmin && !sections.length) {
     showToast('Choose at least one section for a limited admin, or check Full Admin.', 'error');
     return;
