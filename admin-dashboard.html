@@ -3456,16 +3456,22 @@
             <div id="chapterAdminsList" class="hint-text" style="margin-bottom:14px;">Loading list…</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;align-items:end;margin-bottom:12px;">
               <div class="field-group" style="margin:0;">
-                <label for="grantAdminEmail">New admin email</label>
+                <label for="grantAdminEmail">Brother's email</label>
                 <input type="email" id="grantAdminEmail" placeholder="brother@example.com" autocomplete="off" />
               </div>
-              <div class="field-group" style="margin:0;">
+              <div class="field-group" style="margin:0;" id="grantAdminPasswordWrap">
                 <label for="grantAdminPassword">Temporary password (min 8 characters)</label>
                 <input type="password" id="grantAdminPassword" placeholder="They should change after first login" autocomplete="new-password" />
               </div>
               <div>
                 <button type="button" class="btn-save" onclick="grantChapterAdminAccess()"><i class="fas fa-user-plus"></i> Grant admin access</button>
               </div>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer;">
+                <input type="checkbox" id="grantAdminExistingAccount" onchange="document.getElementById('grantAdminPasswordWrap').style.display=this.checked?'none':'block';" />
+                This brother already has a member portal account — don't change their password
+              </label>
             </div>
             <p class="hint-text" style="margin:0;">The <code>grant-chapter-admin</code> <strong>Edge Function</strong> must be deployed to your Supabase project (a 404 in the console means it is missing). From your machine, in this repo: <code>supabase login</code> then <code>supabase functions deploy grant-chapter-admin</code>. Confirm under Supabase Dashboard → Edge Functions. Also run the <code>chapter_admins</code> SQL in <code>SUPABASE_CONTENT_SCHEMA.sql</code> if you have not.</p>
           </div>
@@ -4294,20 +4300,26 @@ async function callGrantChapterAdmin(body) {
 async function grantChapterAdminAccess() {
   const emailEl = document.getElementById('grantAdminEmail');
   const passEl = document.getElementById('grantAdminPassword');
+  const existingChk = document.getElementById('grantAdminExistingAccount');
   const email = (emailEl && emailEl.value || '').trim().toLowerCase();
   const password = (passEl && passEl.value) || '';
+  const existingAccount = existingChk && existingChk.checked;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     showToast('Enter a valid email.', 'error');
     return;
   }
-  if (password.length < 8) {
-    showToast('Password must be at least 8 characters.', 'error');
+  if (!existingAccount && password.length < 8) {
+    showToast('Password must be at least 8 characters, or check the box if they already have an account.', 'error');
     return;
   }
-  const ok = await callGrantChapterAdmin({ email: email, password: password, isFullAdmin: true, sections: [] });
+  const body = existingAccount
+    ? { email, updatePermissionsOnly: true, isFullAdmin: true, sections: [] }
+    : { email, password, isFullAdmin: true, sections: [] };
+  const ok = await callGrantChapterAdmin(body);
   if (ok) {
     if (emailEl) emailEl.value = '';
     if (passEl) passEl.value = '';
+    if (existingChk) { existingChk.checked = false; document.getElementById('grantAdminPasswordWrap').style.display = 'block'; }
     await loadChapterAdminPanel();
   }
 }
