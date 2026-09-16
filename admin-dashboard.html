@@ -4018,15 +4018,9 @@ function sbHeaders(token) {
 
 async function sbGet(table, query, token) {
   const url = SUPABASE_URL + '/rest/v1/' + table + '?' + (query || '');
-  let res = await fetch(url, {
+  const res = await fetch(url, {
     headers: sbHeaders(token)
   });
-  // If a stale/invalid token slipped through, retry reads once as anon.
-  if (res.status === 401 && token) {
-    res = await fetch(url, {
-      headers: sbHeaders(null)
-    });
-  }
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -10580,6 +10574,7 @@ async function loadAllPendingCounts() {
       sbGet('member_news_submissions', 'status=eq.pending&select=id', token),
       sbGet('finance_requisitions', 'status=eq.pending&select=id', token),
       sbGet('finance_reimbursements', 'status=eq.pending&select=id', token),
+      sbGet('helpdesk_issues', 'status=eq.open&select=id', token),
     ]);
     var memberReqs   = results[0].status === 'fulfilled' ? (results[0].value || []) : [];
     var visitingReqs = results[1].status === 'fulfilled' ? (results[1].value || []) : [];
@@ -10589,6 +10584,7 @@ async function loadAllPendingCounts() {
     var newsSubs     = results[5].status === 'fulfilled' ? (results[5].value || []) : [];
     var reqs         = results[6].status === 'fulfilled' ? (results[6].value || []) : [];
     var reimbs       = results[7].status === 'fulfilled' ? (results[7].value || []) : [];
+    var openIssues   = results[8].status === 'fulfilled' ? (results[8].value || []) : [];
     setNavBadge('navBadge-members',   memberReqs.length + visitingReqs.length);
     setNavBadge('navBadge-documents', docs.length);
     setNavBadge('navBadge-store',     orders.length);
@@ -10596,6 +10592,12 @@ async function loadAllPendingCounts() {
     setNavBadge('newsPendingBadge',   newsSubs.length);
     setNavBadge('reqPendingBadge',    reqs.length);
     setNavBadge('reimbPendingBadge',  reimbs.length);
+    var hdBadge = document.getElementById('helpdeskBadge');
+    var hdCount = document.getElementById('helpdeskOpenCount');
+    if (hdBadge && hdCount) {
+      if (openIssues.length > 0) { hdBadge.style.display = ''; hdCount.textContent = openIssues.length; }
+      else { hdBadge.style.display = 'none'; }
+    }
   } catch(e) {}
 }
 
