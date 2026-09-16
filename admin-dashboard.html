@@ -13259,6 +13259,8 @@ async function toggleMaintenanceMode() {
   }
 }
 
+var _hdIssuesCache = [];
+
 async function loadHelpdeskIssues() {
   var list = document.getElementById('helpdeskIssuesList');
   if (!list) return;
@@ -13269,26 +13271,27 @@ async function loadHelpdeskIssues() {
     var query = 'order=created_at.desc&limit=100';
     if (filter) query += '&status=eq.' + encodeURIComponent(filter);
     var issues = await sbGet('helpdesk_issues', query, token);
-    if (!issues || !issues.length) {
+    _hdIssuesCache = issues || [];
+    if (!_hdIssuesCache.length) {
       list.innerHTML = '<div style="padding:32px;text-align:center;color:#999;font-size:0.85rem;">No issues found.</div>';
       document.getElementById('helpdeskBadge').style.display = 'none';
       return;
     }
-    var openCount = issues.filter(function(i){ return i.status === 'open'; }).length;
+    var openCount = _hdIssuesCache.filter(function(i){ return i.status === 'open'; }).length;
     if (openCount > 0) {
       document.getElementById('helpdeskBadge').style.display = '';
       document.getElementById('helpdeskOpenCount').textContent = openCount;
     } else {
       document.getElementById('helpdeskBadge').style.display = 'none';
     }
-    list.innerHTML = issues.map(function(iss) {
+    list.innerHTML = _hdIssuesCache.map(function(iss, idx) {
       var statusColors = { open: '#C9A84C', 'in-progress': '#555', resolved: '#27ae60' };
       var statusColor = statusColors[iss.status] || '#999';
       var created = iss.created_at ? new Date(iss.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
       var priorityIcon = iss.priority === 'high' ? '▲' : iss.priority === 'low' ? '▼' : '●';
-      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.15s;background:#fff;" onmouseover="this.style.background=\'#fafafa\'" onmouseout="this.style.background=\'#fff\'" onclick="openHdDetail(' + JSON.stringify(JSON.stringify(iss)) + ')">' +
+      return '<div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid #f0f0f0;cursor:pointer;transition:background 0.15s;background:#fff;" onmouseover="this.style.background=\'#fafafa\'" onmouseout="this.style.background=\'#fff\'" onclick="openHdDetailByIdx(' + idx + ')">' +
         '<div style="width:44px;height:44px;border-radius:6px;background:#f5f5f5;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
-        (iss.screenshot_data ? '<img src="' + iss.screenshot_data.substring(0,200) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'<i class=\\\"fas fa-image\\\" style=\\\"color:#ccc\\\"></i>\'">' : '<i class="fas fa-image" style="color:#ccc;"></i>') +
+        (iss.screenshot_data ? '<img src="' + escHtml(iss.screenshot_data.substring(0,200)) + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'<i class=\\\"fas fa-image\\\" style=\\\"color:#ccc\\\"></i>\'">' : '<i class="fas fa-image" style="color:#ccc;"></i>') +
         '</div>' +
         '<div style="flex:1;min-width:0;">' +
         '<div style="font-weight:600;font-size:0.88rem;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.member_name || 'Unknown') + '</div>' +
@@ -13306,9 +13309,12 @@ async function loadHelpdeskIssues() {
   }
 }
 
-function openHdDetail(issJson) {
-  var iss;
-  try { iss = JSON.parse(issJson); } catch(e) { return; }
+function openHdDetailByIdx(idx) {
+  openHdDetail(_hdIssuesCache[idx]);
+}
+
+function openHdDetail(iss) {
+  if (!iss) return;
   var modal = document.getElementById('hdDetailModal');
   var body = document.getElementById('hdDetailBody');
   var created = iss.created_at ? new Date(iss.created_at).toLocaleString('en-US') : '';
