@@ -1082,7 +1082,7 @@ backdrop-filter:blur(4px);}
           <button class="card-action" onclick="openHelpdeskModal()"><i class="fas fa-plus"></i> New Issue</button>
         </div>
         <div class="section-card-body" style="padding:0;">
-          <div id="myIssuesList" style="min-height:120px;"></div>
+          <div id="myIssuesList" style="min-height:120px;background:#181818;border-radius:0 0 12px 12px;"></div>
         </div>
       </div>
     </div>
@@ -3449,9 +3449,13 @@ async function loadMyHelpdeskIssues() {
     var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
     var token = session && session.access_token ? session.access_token : null;
     if (!token) { list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.85rem;">Sign in to view your issues.</div>'; return; }
-    var issues = await sbGet('helpdesk_issues', 'member_email=eq.' + encodeURIComponent((currentMember && currentMember.email) || '') + '&order=created_at.desc&limit=50', token);
+    var userId = session.user ? session.user.id : null;
+    var query = userId
+      ? 'user_id=eq.' + encodeURIComponent(userId) + '&order=created_at.desc&limit=50'
+      : 'member_email=eq.' + encodeURIComponent((currentMember && currentMember.email) || '') + '&order=created_at.desc&limit=50';
+    var issues = await sbGet('helpdesk_issues', query, token);
     if (!issues || !issues.length) {
-      list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.85rem;">No issues submitted yet. Use the <strong style="color:var(--gold);">New Issue</strong> button to report a problem.</div>';
+      list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.4);font-size:0.85rem;">No issues submitted yet. Use the <strong style="color:#C9A84C;">New Issue</strong> button to report a problem.</div>';
       return;
     }
     var statusColors = { open: '#C9A84C', 'in-progress': '#aaa', resolved: '#27ae60' };
@@ -3463,8 +3467,8 @@ async function loadMyHelpdeskIssues() {
       var updated = iss.updated_at && iss.updated_at !== iss.created_at ? ' · Updated ' + new Date(iss.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
       return '<div style="display:flex;align-items:flex-start;gap:14px;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
         '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:0.88rem;color:var(--white);font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.description || '') + '</div>' +
-        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.4);">' + escHtml(iss.category || '') + ' · ' + created + escHtml(updated) + '</div>' +
+        '<div style="font-size:0.88rem;color:#ffffff;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.description || '') + '</div>' +
+        '<div style="font-size:0.72rem;color:rgba(255,255,255,0.45);">' + escHtml(iss.category || '') + ' · ' + created + escHtml(updated) + '</div>' +
         '</div>' +
         '<span style="flex-shrink:0;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:' + color + ';border:1px solid ' + color + ';border-radius:20px;padding:2px 9px;margin-top:2px;">' + label + '</span>' +
         '</div>';
