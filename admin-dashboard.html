@@ -2204,6 +2204,7 @@
           <button class="btn-sm" onclick="nlNewNewsletter()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-plus"></i> New</button>
           <button class="btn-sm" onclick="nlSaveDraft()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-floppy-disk"></i> Save Draft</button>
           <button class="btn-sm" onclick="nlOpenPreview()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-eye"></i> Preview</button>
+          <button class="btn-sm" id="nlPublishBtn" onclick="nlPublishToPortal()" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);"><i class="fas fa-globe"></i> Publish to Portal</button>
           <button class="btn-sm" onclick="nlOpenSendModal()" style="background:#C9A84C;border:1px solid #b8963e;color:#000;font-weight:700;"><i class="fas fa-paper-plane"></i> Send</button>
         </div>
       </div>
@@ -9024,6 +9025,8 @@ function nlNewNewsletter() {
   nlState.zones = { header: [], body: [], footer: [] };
   nlState.sel = null;
   nlState.draftId = null;
+  const pb = document.getElementById('nlPublishBtn');
+  if (pb) { pb.innerHTML = '<i class="fas fa-globe"></i> Publish to Portal'; pb.style.background = 'var(--gray-100)'; pb.style.color = 'var(--gray-700)'; pb.style.borderColor = 'var(--gray-300)'; pb.disabled = false; }
   const si = document.getElementById('nlSubjectInput');
   const pi = document.getElementById('nlPreheaderInput');
   if (si) si.value = nlState.subject;
@@ -9699,6 +9702,47 @@ async function nlSaveDraft() {
     let msg = err.message || 'unknown error';
     try { const j = JSON.parse(msg); msg = j.message || j.details || msg; } catch (e) { }
     showToast('Save failed: ' + msg, 'error');
+  }
+}
+
+// ── Publish to Portal ──
+async function nlPublishToPortal() {
+  const token = getAdminToken();
+  if (!token) { showToast('Sign in required.', 'error'); return; }
+  const si = document.getElementById('nlSubjectInput');
+  const pi = document.getElementById('nlPreheaderInput');
+  if (si) nlState.subject = si.value || nlState.subject;
+  if (pi) nlState.preheader = pi.value || '';
+  if (!nlState.subject) { showToast('Enter a subject line before publishing.', 'error'); return; }
+  const btn = document.getElementById('nlPublishBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing…'; }
+  try {
+    const now = new Date().toISOString();
+    const payload = {
+      title: nlState.subject,
+      subject: nlState.subject,
+      preheader: nlState.preheader,
+      content_json: JSON.stringify(nlState),
+      html_content: nlBuildHtml(),
+      status: 'published',
+      published_at: now,
+      updated_at: now
+    };
+    if (nlState.draftId) {
+      await sbPatch('newsletters', 'id=eq.' + nlState.draftId, payload, token);
+    } else {
+      payload.created_at = now;
+      if (typeof adminUser !== 'undefined' && adminUser && adminUser.id) payload.created_by = adminUser.id;
+      const rows = await sbPost('newsletters', payload, token);
+      if (Array.isArray(rows) && rows[0] && rows[0].id) nlState.draftId = rows[0].id;
+    }
+    if (btn) { btn.innerHTML = '<i class="fas fa-check"></i> Published'; btn.style.background = '#27ae60'; btn.style.color = '#fff'; btn.style.borderColor = '#1e8449'; }
+    showToast('Newsletter published to the Member Portal.', 'success');
+  } catch (err) {
+    let msg = err.message || 'unknown error';
+    try { const j = JSON.parse(msg); msg = j.message || j.details || msg; } catch (e) { }
+    showToast('Publish failed: ' + msg, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-globe"></i> Publish to Portal'; }
   }
 }
 
