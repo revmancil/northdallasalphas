@@ -599,7 +599,7 @@ backdrop-filter:blur(4px);}
             <span id="nlModalTitle" style="color:#c9a84c;font-weight:700;font-size:0.9rem;"></span>
             <button onclick="document.getElementById('newsletterModal').style.display='none'" style="background:none;border:none;color:#fff;font-size:1.2rem;cursor:pointer;">✕</button>
           </div>
-          <iframe id="nlModalFrame" style="width:100%;min-height:600px;border:none;display:block;" title="Newsletter"></iframe>
+          <iframe id="nlModalFrame" sandbox="allow-same-origin" style="width:100%;min-height:600px;border:none;display:block;" title="Newsletter"></iframe>
         </div>
       </div>
     </div>
@@ -1164,7 +1164,7 @@ function sbHeaders(token) {
   return {
     'Content-Type': 'application/json',
     'apikey': SUPABASE_ANON_KEY,
-    'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY)
+    'Authorization': 'Bearer ' + (token || '')
   };
 }
 
@@ -1974,7 +1974,7 @@ async function submitCommitteeReport(e, meetingId) {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY),
+        'Authorization': 'Bearer ' + (token || ''),
         'Content-Type': file.type || 'application/octet-stream',
         'x-upsert': 'false'
       },
@@ -1988,7 +1988,7 @@ async function submitCommitteeReport(e, meetingId) {
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY),
+        'Authorization': 'Bearer ' + (token || ''),
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({

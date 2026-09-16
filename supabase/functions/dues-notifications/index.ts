@@ -110,9 +110,8 @@ serve(async (req: Request) => {
 
     const cfg = (configRows && configRows[0] && configRows[0].content_json) || {};
 
-    // Get today in CST (UTC-6)
-    const nowCST   = new Date(Date.now() - 6 * 3600 * 1000);
-    const todayCST = nowCST.toISOString().slice(0, 10);
+    // Get today in Central Time (respects CST/CDT automatically)
+    const todayCST = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date());
     const year     = todayCST.slice(0, 4);
 
     const unlockDate = (cfg.unlock_date as string) || null;

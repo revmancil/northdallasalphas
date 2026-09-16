@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const cors: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://northdallasalphas.com",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -48,7 +48,7 @@ serve(async (req) => {
   );
   const adminRows: Array<{ email: string }> = adminCheck.ok ? await adminCheck.json() : [];
   if (!Array.isArray(adminRows) || adminRows.length === 0) {
-    return json({ error: "Admin access required. Email: " + userEmail }, 403);
+    return json({ error: "Admin access required." }, 403);
   }
 
   let payload: { subject: string; html: string; recipients?: string[] };

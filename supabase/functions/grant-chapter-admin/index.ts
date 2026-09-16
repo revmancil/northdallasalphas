@@ -7,7 +7,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders: Record<string, string> = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://northdallasalphas.com",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, accept, accept-profile, content-profile, prefer, x-upsert, traceparent, baggage, x-supabase-api-version",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
