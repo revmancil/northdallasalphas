@@ -2752,6 +2752,7 @@
           <div class="field-group" style="margin:0;"><label>Event Time</label><input type="time" id="annEditEventTime" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
         </div>
         <div class="field-group"><label>Event Location</label><input type="text" id="annEditEventLocation" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
+        <div class="field-group"><label>Expiration Date <span style="font-weight:400;color:var(--gray-500);">(optional — post auto-hides after this date)</span></label><input type="date" id="annEditExpiresAt" style="width:100%;padding:9px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.9rem;" /></div>
         <div id="annEditErr" style="display:none;color:var(--red);font-size:0.83rem;margin-bottom:10px;"></div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;">
           <button onclick="closeAnnEditModal()" class="btn-sm" style="background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-700);">Cancel</button>
@@ -10876,6 +10877,7 @@ function openAnnEditModal(id) {
   document.getElementById('annEditEventDate').value = r.event_date || '';
   document.getElementById('annEditEventTime').value = r.event_time || '';
   document.getElementById('annEditEventLocation').value = r.event_location || '';
+  document.getElementById('annEditExpiresAt').value = r.expires_at || '';
   document.getElementById('annEditErr').style.display = 'none';
   document.getElementById('annEditModal').style.display = 'flex';
 }
@@ -10900,6 +10902,7 @@ async function saveAnnEdit() {
       event_date: document.getElementById('annEditEventDate').value || null,
       event_time: document.getElementById('annEditEventTime').value || null,
       event_location: document.getElementById('annEditEventLocation').value || null,
+      expires_at: document.getElementById('annEditExpiresAt').value || null,
       updated_at: new Date().toISOString()
     }, token);
     var r = _allAnnouncements.find(function(x){ return String(x.id) === String(_annEditingId); });
@@ -10908,6 +10911,7 @@ async function saveAnnEdit() {
       r.event_date = document.getElementById('annEditEventDate').value || null;
       r.event_time = document.getElementById('annEditEventTime').value || null;
       r.event_location = document.getElementById('annEditEventLocation').value || null;
+      r.expires_at = document.getElementById('annEditExpiresAt').value || null;
     }
     closeAnnEditModal();
     renderAnnouncements();

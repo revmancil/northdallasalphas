@@ -642,6 +642,10 @@ backdrop-filter:blur(4px);}
               <input type="text" id="annLocation" placeholder="e.g. Frisco Hall, 5353 Independence Pkwy, Frisco TX" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;box-sizing:border-box;" />
             </div>
             <div class="pfield">
+              <label>Expiration Date <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — post auto-hides after this date)</span></label>
+              <input type="date" id="annExpiresAt" style="width:100%;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:var(--white);font-size:0.88rem;box-sizing:border-box;" />
+            </div>
+            <div class="pfield">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                 <label style="margin-bottom:0;">Message <span style="color:var(--red);">*</span></label>
                 <button type="button" onclick="openAiAssist()" style="display:flex;align-items:center;gap:6px;background:var(--gold);border:none;border-radius:20px;color:#111;font-size:0.75rem;font-weight:600;padding:5px 12px;cursor:pointer;letter-spacing:0.03em;transition:opacity 0.2s;" onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'">
@@ -1634,7 +1638,7 @@ async function loadNewsFeed() {
   try {
     var results = await Promise.all([
       sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token).catch(function(){ return []; }),
-      sbGet('member_announcements', 'status=eq.approved&or=(event_date.is.null,event_date.gte.' + new Date().toISOString().slice(0,10) + ')&order=created_at.desc', token).catch(function(){ return []; })
+      sbGet('member_announcements', 'status=eq.approved&or=(event_date.is.null,event_date.gte.' + new Date().toISOString().slice(0,10) + ')&or=(expires_at.is.null,expires_at.gte.' + new Date().toISOString().slice(0,10) + ')&order=created_at.desc', token).catch(function(){ return []; })
     ]);
     var adminPosts = (results[0] || []).map(function(p) { return Object.assign({}, p, { _type: 'admin' }); });
     var annPosts   = (results[1] || []).map(function(a) { return Object.assign({}, a, { _type: 'member' }); });
@@ -2611,6 +2615,7 @@ async function submitAnnouncement() {
         event_date:   eventDate,
         event_time:   eventTime,
         event_location: location,
+        expires_at:   (document.getElementById('annExpiresAt').value || null),
         status:       'pending',
         created_at:   new Date().toISOString()
       })
@@ -2621,11 +2626,12 @@ async function submitAnnouncement() {
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
       body: JSON.stringify({ type: 'announcement', name: [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' '), title: title, category: cat })
     }).catch(function(){});
-    document.getElementById('annTitle').value    = '';
-    document.getElementById('annBody').value     = '';
-    document.getElementById('annDate').value     = '';
-    document.getElementById('annTime').value     = '';
-    document.getElementById('annLocation').value = '';
+    document.getElementById('annTitle').value     = '';
+    document.getElementById('annBody').value      = '';
+    document.getElementById('annDate').value      = '';
+    document.getElementById('annTime').value      = '';
+    document.getElementById('annLocation').value  = '';
+    document.getElementById('annExpiresAt').value = '';
     clearAnnFlyer();
     successEl.style.display = '';
     loadMyAnnouncements();
