@@ -1640,12 +1640,18 @@ async function loadNewsFeed() {
       sbGet('chapter_news', 'order=pinned.desc,created_at.desc', token).catch(function(){ return []; }),
       sbGet('member_announcements', 'status=eq.approved&order=created_at.desc', token).catch(function(){ return []; })
     ]);
-    var today = new Date().toISOString().slice(0, 10);
+    var todayMs = new Date().setHours(0, 0, 0, 0);
     var adminPosts = (results[0] || []).map(function(p) { return Object.assign({}, p, { _type: 'admin' }); });
     var annPosts   = (results[1] || [])
       .filter(function(a) {
-        if (a.event_date && a.event_date < today) return false;
-        if (a.expires_at && a.expires_at < today) return false;
+        if (a.event_date) {
+          var d = new Date(a.event_date);
+          if (!isNaN(d) && d.setHours(0,0,0,0) < todayMs) return false;
+        }
+        if (a.expires_at) {
+          var e = new Date(a.expires_at);
+          if (!isNaN(e) && e.setHours(0,0,0,0) < todayMs) return false;
+        }
         return true;
       })
       .map(function(a) { return Object.assign({}, a, { _type: 'member' }); });
