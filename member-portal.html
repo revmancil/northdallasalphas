@@ -1168,8 +1168,17 @@ function sbHeaders(token) {
   };
 }
 
+function checkSessionExpiry() {
+  var s = getSession();
+  if (!s) { logout(); return false; }
+  // Refresh currentSession in case it was updated in localStorage
+  currentSession = s;
+  return true;
+}
+
 async function sbGet(table, query, token) {
   const r = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + (query || ''), { headers: sbHeaders(token) });
+  if (r.status === 401) { logout(); return []; }
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
@@ -1180,6 +1189,7 @@ async function sbPatch(table, filter, data, token) {
     headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=representation'}),
     body: JSON.stringify(data)
   });
+  if (r.status === 401) { logout(); return []; }
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
@@ -1190,6 +1200,7 @@ async function sbPost(table, data, token) {
     headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=representation'}),
     body: JSON.stringify(data)
   });
+  if (r.status === 401) { logout(); return null; }
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
