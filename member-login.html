@@ -123,6 +123,12 @@ function togglePw(id, btn) {
   el.type = el.type==='password' ? 'text' : 'password';
   ic.className = el.type==='password' ? 'fas fa-eye' : 'fas fa-eye-slash';
 }
+if (new URLSearchParams(window.location.search).get('expired') === '1') {
+  document.addEventListener('DOMContentLoaded', function() {
+    showMsg('loginError', 'error', 'Your session has expired. Please sign in again.');
+  });
+}
+
 function showMsg(id, type, text) {
   const el = document.getElementById(id);
   const tx = document.getElementById(id+'Text');
