@@ -1076,14 +1076,12 @@ backdrop-filter:blur(4px);}
     </div>
     <!-- MY HELP DESK ISSUES PANEL -->
     <div class="panel" id="panel-my-issues">
-      <div class="section-card">
-        <div class="section-card-header">
-          <h3><i class="fas fa-life-ring"></i> My Help Desk Issues</h3>
-          <button class="card-action" onclick="openHelpdeskModal()"><i class="fas fa-plus"></i> New Issue</button>
+      <div style="background:#181818;border:1px solid rgba(255,255,255,0.07);border-radius:12px;margin-bottom:20px;overflow:hidden;">
+        <div style="padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <h3 style="font-size:0.92rem;font-weight:700;color:#ffffff;display:flex;align-items:center;gap:9px;margin:0;"><i class="fas fa-life-ring" style="color:#C9A84C;font-size:0.85rem;"></i> My Help Desk Issues</h3>
+          <button onclick="openHelpdeskModal()" style="font-size:0.78rem;color:#C9A84C;background:none;border:none;cursor:pointer;font-weight:500;"><i class="fas fa-plus"></i> New Issue</button>
         </div>
-        <div class="section-card-body" style="padding:0;">
-          <div id="myIssuesList" style="min-height:120px;background:#181818;border-radius:0 0 12px 12px;"></div>
-        </div>
+        <div id="myIssuesList" style="min-height:120px;background:#181818;"></div>
       </div>
     </div>
 
@@ -3444,7 +3442,7 @@ async function submitHelpdeskIssue() {
 async function loadMyHelpdeskIssues() {
   var list = document.getElementById('myIssuesList');
   if (!list) return;
-  list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.35);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+  list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.4);font-size:0.85rem;background:#181818;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
   try {
     var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
     var token = session && session.access_token ? session.access_token : null;
@@ -3455,7 +3453,7 @@ async function loadMyHelpdeskIssues() {
       : 'member_email=eq.' + encodeURIComponent((currentMember && currentMember.email) || '') + '&order=created_at.desc&limit=50';
     var issues = await sbGet('helpdesk_issues', query, token);
     if (!issues || !issues.length) {
-      list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.4);font-size:0.85rem;">No issues submitted yet. Use the <strong style="color:#C9A84C;">New Issue</strong> button to report a problem.</div>';
+      list.innerHTML = '<div style="padding:32px;text-align:center;color:rgba(255,255,255,0.4);font-size:0.85rem;background:#181818;">No issues submitted yet. Use the <strong style="color:#C9A84C;">New Issue</strong> button to report a problem.</div>';
       return;
     }
     var statusColors = { open: '#C9A84C', 'in-progress': '#aaa', resolved: '#27ae60' };
@@ -3474,7 +3472,7 @@ async function loadMyHelpdeskIssues() {
         '</div>';
     }).join('');
   } catch(e) {
-    list.innerHTML = '<div style="padding:32px;text-align:center;color:#c66;font-size:0.85rem;">Could not load issues: ' + escHtml(e.message || '') + '</div>';
+    list.innerHTML = '<div style="padding:32px;text-align:center;color:#f87171;font-size:0.85rem;background:#181818;">Could not load issues: ' + escHtml(e.message || '') + '</div>';
   }
 }
 
