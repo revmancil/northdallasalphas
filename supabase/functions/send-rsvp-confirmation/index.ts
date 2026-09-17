@@ -87,13 +87,13 @@ function buildCalendarLinks(p: Payload): CalLinks | null {
     `DTEND:${endDt}`,
     `SUMMARY:${p.meeting_title}`,
     `LOCATION:${p.meeting_location || ""}`,
-    `DESCRIPTION:North Dallas Alphas — Xi Tau Lambda Chapter`,
+    `DESCRIPTION:North Dallas Alphas - Xi Tau Lambda Chapter`,
     `UID:${uid}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ].join("\r\n");
 
-  const icsData = btoa(icsLines);
+  const icsData = btoa(unescape(encodeURIComponent(icsLines)));
 
   return { google, outlook, icsData };
 }
