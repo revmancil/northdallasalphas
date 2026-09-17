@@ -1815,13 +1815,16 @@ async function loadMeetingsPortal() {
       var rsvpRows = await sbGet('meeting_rsvps', 'member_id=eq.' + encodeURIComponent(memberId), token);
       (rsvpRows || []).forEach(function(r) { myRsvps[r.meeting_id] = r.response; });
     }
-    // Load approved meeting documents
-    var allMtgDocs = await sbGet('documents', 'meeting_id=not.is.null&status=eq.approved&members_only=eq.true', token);
+    // Load approved meeting documents (not shown to visiting brothers)
     var docsByMtg = {};
-    (allMtgDocs || []).forEach(function(d) {
-      if (!docsByMtg[d.meeting_id]) docsByMtg[d.meeting_id] = [];
-      docsByMtg[d.meeting_id].push(d);
-    });
+    var isVisitingBrother = currentMember && currentMember.member_type === 'visiting';
+    if (!isVisitingBrother) {
+      var allMtgDocs = await sbGet('documents', 'meeting_id=not.is.null&status=eq.approved&members_only=eq.true', token);
+      (allMtgDocs || []).forEach(function(d) {
+        if (!docsByMtg[d.meeting_id]) docsByMtg[d.meeting_id] = [];
+        docsByMtg[d.meeting_id].push(d);
+      });
+    }
     var now = new Date(); now.setHours(0,0,0,0);
     el.innerHTML = meetings.map(function(m) {
       var mDate = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00') : null;
@@ -1841,7 +1844,7 @@ async function loadMeetingsPortal() {
         }).join('') +
         '</div>';
       var mDocs = docsByMtg[m.id] || [];
-      var docsHtml = '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' +
+      var docsHtml = isVisitingBrother ? '' : '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
         '<span style="font-size:0.75rem;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.08em;"><i class="fas fa-paperclip"></i> Meeting Documents</span>' +
         (!isPast ? '<button onclick="toggleCommitteeUpload(\'' + m.id + '\')" style="background:none;border:1px solid rgba(201,168,76,0.4);color:var(--gold);font-size:0.72rem;padding:3px 10px;border-radius:4px;cursor:pointer;">+ Submit Report</button>' : '') +
@@ -2477,8 +2480,8 @@ async function init() {
     return;
   }
 
-  // Visiting brothers only see Dashboard, Events, and Dues
-  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-meetings', 'nav-news-feed'];
+  // Visiting brothers see Dashboard, Events, Dues, and Meetings (info + RSVP only)
+  const visitingHidden = ['nav-documents', 'nav-directory', 'nav-news-feed', 'nav-store', 'nav-imdp-info'];
   visitingHidden.forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = isVisiting ? 'none' : '';
