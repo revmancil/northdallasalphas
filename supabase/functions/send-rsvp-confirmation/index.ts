@@ -25,7 +25,77 @@ interface Payload {
   meeting_date?: string;
   meeting_time?: string;
   meeting_location?: string;
+  meeting_date_raw?: string;       // YYYY-MM-DD
+  meeting_start_time_raw?: string; // HH:MM or HH:MM:SS
+  meeting_end_time_raw?: string;   // HH:MM or HH:MM:SS (optional)
   response: "yes" | "maybe" | "no";
+}
+
+function addHours(timeStr: string, hours: number): string {
+  const parts = timeStr.split(":");
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1] || "0", 10);
+  const newH = (h + hours) % 24;
+  return `${String(newH).padStart(2, "0")}:${String(m).padStart(2, "0")}:00`;
+}
+
+function toCalDt(dateRaw: string, timeRaw: string): string {
+  const d = dateRaw.replace(/-/g, "");
+  const t = timeRaw.replace(/:/g, "").substring(0, 6).padEnd(6, "0");
+  return `${d}T${t}`;
+}
+
+interface CalLinks {
+  google: string;
+  outlook: string;
+  icsData: string; // base64 ICS content for data URI
+}
+
+function buildCalendarLinks(p: Payload): CalLinks | null {
+  if (!p.meeting_date_raw) return null;
+
+  const startTime = p.meeting_start_time_raw || "12:00:00";
+  const endTime   = p.meeting_end_time_raw   || addHours(startTime, 2);
+
+  const startDt = toCalDt(p.meeting_date_raw, startTime);
+  const endDt   = toCalDt(p.meeting_date_raw, endTime);
+
+  const startIso = `${p.meeting_date_raw}T${startTime.substring(0, 8).padEnd(8, ":00")}`;
+  const endIso   = `${p.meeting_date_raw}T${endTime.substring(0, 8).padEnd(8, ":00")}`;
+
+  const title    = encodeURIComponent(p.meeting_title);
+  const location = encodeURIComponent(p.meeting_location || "");
+  const details  = encodeURIComponent(
+    `North Dallas Alphas — Xi Tau Lambda Chapter\nYour RSVP: ${
+      p.response === "yes" ? "Attending" : p.response === "maybe" ? "Maybe" : "Not Attending"
+    }`
+  );
+
+  const google = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startDt}/${endDt}&details=${details}&location=${location}`;
+
+  const outlook = `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&startdt=${encodeURIComponent(startIso)}&enddt=${encodeURIComponent(endIso)}&body=${details}&location=${location}`;
+
+  const uid = `${p.meeting_date_raw}-${Math.random().toString(36).slice(2)}@northdallasalphas.com`;
+  const icsLines = [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//North Dallas Alphas//RSVP//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `DTSTART:${startDt}`,
+    `DTEND:${endDt}`,
+    `SUMMARY:${p.meeting_title}`,
+    `LOCATION:${p.meeting_location || ""}`,
+    `DESCRIPTION:North Dallas Alphas — Xi Tau Lambda Chapter`,
+    `UID:${uid}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].join("\r\n");
+
+  const icsData = btoa(icsLines);
+
+  return { google, outlook, icsData };
 }
 
 function buildMemberEmail(p: Payload): { subject: string; html: string } {
@@ -39,12 +109,34 @@ function buildMemberEmail(p: Payload): { subject: string; html: string } {
   const firstName = p.member_name.split(" ")[0] || "Brother";
 
   const detailRows = [
-    p.meeting_date     ? `<tr><td style="padding:6px 0;color:#aaa;font-size:13px;">Date</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_date)}</td></tr>` : "",
-    p.meeting_time     ? `<tr><td style="padding:6px 0;color:#aaa;font-size:13px;">Time</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_time)}</td></tr>` : "",
-    p.meeting_location ? `<tr><td style="padding:6px 0;color:#aaa;font-size:13px;">Location</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_location)}</td></tr>` : "",
+    p.meeting_date     ? `<tr><td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Date</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_date)}</td></tr>` : "",
+    p.meeting_time     ? `<tr><td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Time</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_time)}</td></tr>` : "",
+    p.meeting_location ? `<tr><td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Location</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_location)}</td></tr>` : "",
   ].join("");
 
-  const subject = `RSVP Confirmed — ${esc(p.meeting_title)}`;
+  // QR code — encodes the portal URL
+  const qrData = encodeURIComponent("https://northdallasalphas.com/member-portal.html");
+  const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=6&color=C9A84C&bgcolor=111111&data=${qrData}`;
+
+  // Calendar links
+  const cal = buildCalendarLinks(p);
+  const calSection = cal ? `
+    <div style="margin-top:24px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:10px;">Add to Your Calendar</div>
+      <table cellpadding="0" cellspacing="0"><tr>
+        <td style="padding-right:8px;">
+          <a href="${cal.google}" target="_blank" style="display:inline-block;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;text-decoration:none;">📅 Google Calendar</a>
+        </td>
+        <td style="padding-right:8px;">
+          <a href="${cal.outlook}" target="_blank" style="display:inline-block;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;text-decoration:none;">📅 Outlook</a>
+        </td>
+        <td>
+          <a href="data:text/calendar;charset=utf8;base64,${cal.icsData}" download="${esc(p.meeting_title).replace(/\s+/g, "_")}.ics" style="display:inline-block;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;text-decoration:none;">📅 iCalendar (.ics)</a>
+        </td>
+      </tr></table>
+    </div>` : "";
+
+  const subject = `RSVP Confirmed — ${p.meeting_title}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -61,17 +153,32 @@ function buildMemberEmail(p: Payload): { subject: string; html: string } {
           <p style="margin:0 0 16px;font-size:14px;color:#d4d4d4;line-height:1.7;">
             Brother ${esc(firstName)}, your RSVP for <strong style="color:#fff;">${esc(p.meeting_title)}</strong> has been recorded.
           </p>
-          <div style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:8px;padding:16px 20px;margin-bottom:20px;">
-            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-              ${detailRows}
-              <tr><td style="padding:6px 0;color:#aaa;font-size:13px;">Your Response</td>
-                <td style="padding:6px 0;font-size:13px;">
-                  <span style="color:${res.color};font-weight:700;">${res.icon} ${res.label}</span>
-                </td>
-              </tr>
-            </table>
-          </div>
-          <p style="margin:0 0 20px;font-size:13px;color:#888;line-height:1.6;">
+
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td valign="top" style="padding-right:20px;">
+              <div style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:8px;padding:16px 20px;margin-bottom:0;">
+                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+                  ${detailRows}
+                  <tr>
+                    <td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Response</td>
+                    <td style="padding:6px 0;font-size:13px;">
+                      <span style="color:${res.color};font-weight:700;">${res.icon} ${res.label}</span>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </td>
+            <td valign="top" align="center" style="width:152px;flex-shrink:0;">
+              <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:6px;display:inline-block;">
+                <img src="${qrUrl}" width="140" height="140" alt="Member Portal QR Code" style="display:block;border-radius:4px;" />
+              </div>
+              <div style="font-size:10px;color:#555;margin-top:5px;text-align:center;">Scan for portal</div>
+            </td>
+          </tr></table>
+
+          ${calSection}
+
+          <p style="margin:20px 0 20px;font-size:13px;color:#888;line-height:1.6;">
             If your plans change, you can update your RSVP anytime from the member portal.
           </p>
           <div style="text-align:center;">
@@ -167,7 +274,6 @@ serve(async (req) => {
 
   const from = `${fromName} <${fromEmail}>`;
 
-  // Send both emails concurrently — don't fail if one bounces
   const { subject: memberSubject, html: memberHtml } = buildMemberEmail(payload);
   const { subject: adminSubject,  html: adminHtml  } = buildAdminEmail(payload);
 

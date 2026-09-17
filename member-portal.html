@@ -1946,13 +1946,16 @@ async function submitRsvp(meetingId, response, btn) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY) },
         body: JSON.stringify({
-          member_name:      memberName || emailTo,
-          member_email:     emailTo,
-          meeting_title:    mtg.title || 'Chapter Meeting',
-          meeting_date:     dateStr,
-          meeting_time:     timeStr,
-          meeting_location: mtg.location || '',
-          response:         response
+          member_name:             memberName || emailTo,
+          member_email:            emailTo,
+          meeting_title:           mtg.title || 'Chapter Meeting',
+          meeting_date:            dateStr,
+          meeting_time:            timeStr,
+          meeting_location:        mtg.location || '',
+          meeting_date_raw:        mtg.meeting_date || '',
+          meeting_start_time_raw:  mtg.start_time || '',
+          meeting_end_time_raw:    mtg.end_time || '',
+          response:                response
         })
       }).catch(function() {}); // silent — email is non-blocking
     }
