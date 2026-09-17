@@ -1470,10 +1470,33 @@ function renderEventItem(ev) {
     var label = n.fee > 0 ? 'Register — $' + (n.fee / 100).toFixed(2) : 'Register (Free)';
     regHtml = '<button type="button" class="btn-gold event-reg-btn" onclick="portalOpenRegModal(\'' + escHtml(String(ev.id)) + '\')"><i class="fas fa-ticket-alt"></i> ' + label + '</button>';
   }
-  var flyerHtml = '';
   if (ev.flyer && ev.flyer.trim()) {
-    flyerHtml = '<div style="margin-top:12px;cursor:pointer;border-radius:8px;overflow:hidden;" onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" title="Click to view full flyer">' +
-      '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:100%;height:420px;object-fit:contain;object-position:center;display:block;border:1px solid rgba(255,255,255,0.08);border-radius:8px;background:#111;" />' +
+    // Featured flyer card: flyer left, details right
+    return '<div style="display:flex;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;background:#111;margin-bottom:4px;">' +
+      // Left: flyer with date badge overlaid
+      '<div style="position:relative;flex-shrink:0;width:260px;cursor:pointer;" onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" title="View full flyer">' +
+        '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:260px;height:100%;min-height:340px;object-fit:cover;object-position:top;display:block;" />' +
+        '<div style="position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);border-radius:8px;padding:6px 10px;text-align:center;min-width:44px;">' +
+          '<div style="font-size:1.5rem;font-weight:800;color:#fff;line-height:1;">' + d.day + '</div>' +
+          '<div style="font-size:0.6rem;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:0.1em;margin-top:1px;">' + d.month + '</div>' +
+        '</div>' +
+        (ev.featured ? '<div style="position:absolute;top:12px;right:12px;background:var(--gold);color:#000;font-size:0.6rem;font-weight:800;text-transform:uppercase;letter-spacing:0.08em;padding:3px 9px;border-radius:4px;display:flex;align-items:center;gap:4px;"><i class="fas fa-star"></i> Featured</div>' : '') +
+      '</div>' +
+      // Right: details
+      '<div style="flex:1;padding:24px 26px;display:flex;flex-direction:column;justify-content:space-between;gap:14px;">' +
+        '<div>' +
+          '<h4 style="font-size:1.25rem;font-weight:800;color:#fff;line-height:1.25;margin-bottom:14px;text-transform:uppercase;letter-spacing:0.02em;">' + escHtml(ev.name) + '</h4>' +
+          '<div style="display:flex;flex-direction:column;gap:9px;">' +
+            (d.month || d.time ? '<div style="display:flex;align-items:center;gap:9px;font-size:0.85rem;color:rgba(255,255,255,0.75);"><i class="fas fa-calendar-alt" style="color:var(--gold);width:14px;"></i> ' + escHtml((d.month + ' ' + d.day) + (d.time ? ' · ' + d.time : '')) + '</div>' : '') +
+            '<div style="display:flex;align-items:center;gap:9px;font-size:0.85rem;color:rgba(255,255,255,0.75);"><i class="fas fa-map-marker-alt" style="color:var(--gold);width:14px;"></i> ' + escHtml(ev.location || 'TBD') + '</div>' +
+          '</div>' +
+          (ev.description ? '<p style="font-size:0.82rem;color:rgba(255,255,255,0.5);margin-top:14px;line-height:1.6;">' + escHtml(ev.description) + '</p>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+          regHtml +
+          '<button onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" style="display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.75);font-size:0.82rem;font-weight:600;padding:9px 16px;border-radius:7px;cursor:pointer;"><i class="fas fa-image"></i> View Flyer</button>' +
+        '</div>' +
+      '</div>' +
     '</div>';
   }
   return '<div class="event-item">' +
@@ -1484,7 +1507,6 @@ function renderEventItem(ev) {
     '<div class="meta"><i class="fas fa-map-marker-alt"></i> ' + escHtml(ev.location || 'TBD') +
     (d.time ? ' &middot; <i class="fas fa-clock"></i> ' + escHtml(d.time) : '') + '</div>' +
     (ev.description ? '<p style="font-size:0.78rem;color:var(--gray-400);margin-top:6px;line-height:1.5;">' + escHtml(ev.description) + '</p>' : '') +
-    flyerHtml +
     regHtml +
     '</div></div>';
 }
