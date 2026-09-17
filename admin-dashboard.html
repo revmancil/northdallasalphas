@@ -5317,7 +5317,7 @@ async function loadMeetingsArchive() {
 
 function showMtgQr(id, title, dateStr) {
   const modal = document.getElementById('mtgQrModal');
-  const qrUrl = CHECKIN_BASE + '?id=' + encodeURIComponent(id);
+  const qrUrl = 'https://northdallasalphas.com/member-checkin.html?meeting=' + encodeURIComponent(id);
   const imgUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(qrUrl);
   document.getElementById('mtgQrTitle').textContent = title;
   document.getElementById('mtgQrSub').textContent = dateStr;
