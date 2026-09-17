@@ -1472,23 +1472,20 @@ function renderEventItem(ev) {
   }
   var flyerHtml = '';
   if (ev.flyer && ev.flyer.trim()) {
-    flyerHtml = '<div style="flex-shrink:0;cursor:pointer;" onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" title="Click to view full flyer">' +
-      '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:300px;height:450px;object-fit:contain;object-position:top;display:block;border:1px solid rgba(255,255,255,0.08);border-radius:6px;background:#111;" />' +
+    flyerHtml = '<div style="margin-top:12px;cursor:pointer;border-radius:8px;overflow:hidden;" onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" title="Click to view full flyer">' +
+      '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:100%;height:420px;object-fit:contain;object-position:center;display:block;border:1px solid rgba(255,255,255,0.08);border-radius:8px;background:#111;" />' +
     '</div>';
   }
-  var infoHtml = '<div style="flex:1;min-width:0;">' +
+  return '<div class="event-item">' +
+    '<div class="event-date-badge"><div class="day">' + d.day + '</div><div class="month">' + d.month + '</div></div>' +
+    '<div class="event-info">' +
     (ev.featured ? '<span class="featured-badge">Featured</span>' : '') +
     '<h4>' + escHtml(ev.name) + '</h4>' +
     '<div class="meta"><i class="fas fa-map-marker-alt"></i> ' + escHtml(ev.location || 'TBD') +
     (d.time ? ' &middot; <i class="fas fa-clock"></i> ' + escHtml(d.time) : '') + '</div>' +
     (ev.description ? '<p style="font-size:0.78rem;color:var(--gray-400);margin-top:6px;line-height:1.5;">' + escHtml(ev.description) + '</p>' : '') +
-    regHtml +
-    '</div>';
-  return '<div class="event-item">' +
-    '<div class="event-date-badge"><div class="day">' + d.day + '</div><div class="month">' + d.month + '</div></div>' +
-    '<div class="event-info" style="display:flex;gap:12px;align-items:flex-start;">' +
-    infoHtml +
     flyerHtml +
+    regHtml +
     '</div></div>';
 }
 
