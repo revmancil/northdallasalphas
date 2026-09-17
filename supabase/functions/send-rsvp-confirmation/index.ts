@@ -114,10 +114,6 @@ function buildMemberEmail(p: Payload): { subject: string; html: string } {
     p.meeting_location ? `<tr><td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Location</td><td style="padding:6px 0;color:#fff;font-size:13px;">${esc(p.meeting_location)}</td></tr>` : "",
   ].join("");
 
-  // QR code — encodes the portal URL
-  const qrData = encodeURIComponent("https://northdallasalphas.com/member-portal.html");
-  const qrUrl  = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=6&color=C9A84C&bgcolor=111111&data=${qrData}`;
-
   // Calendar links
   const cal = buildCalendarLinks(p);
   const calSection = cal ? `
@@ -154,27 +150,17 @@ function buildMemberEmail(p: Payload): { subject: string; html: string } {
             Brother ${esc(firstName)}, your RSVP for <strong style="color:#fff;">${esc(p.meeting_title)}</strong> has been recorded.
           </p>
 
-          <table width="100%" cellpadding="0" cellspacing="0"><tr>
-            <td valign="top" style="padding-right:20px;">
-              <div style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:8px;padding:16px 20px;margin-bottom:0;">
-                <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
-                  ${detailRows}
-                  <tr>
-                    <td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Response</td>
-                    <td style="padding:6px 0;font-size:13px;">
-                      <span style="color:${res.color};font-weight:700;">${res.icon} ${res.label}</span>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-            </td>
-            <td valign="top" align="center" style="width:152px;flex-shrink:0;">
-              <div style="background:#111;border:1px solid #2a2a2a;border-radius:8px;padding:6px;display:inline-block;">
-                <img src="${qrUrl}" width="140" height="140" alt="Member Portal QR Code" style="display:block;border-radius:4px;" />
-              </div>
-              <div style="font-size:10px;color:#555;margin-top:5px;text-align:center;">Scan for portal</div>
-            </td>
-          </tr></table>
+          <div style="background:#1e1e1e;border:1px solid #2a2a2a;border-radius:8px;padding:16px 20px;margin-bottom:0;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              ${detailRows}
+              <tr>
+                <td style="padding:6px 0 6px 0;color:#aaa;font-size:13px;white-space:nowrap;padding-right:20px;">Response</td>
+                <td style="padding:6px 0;font-size:13px;">
+                  <span style="color:${res.color};font-weight:700;">${res.icon} ${res.label}</span>
+                </td>
+              </tr>
+            </table>
+          </div>
 
           ${calSection}
 
