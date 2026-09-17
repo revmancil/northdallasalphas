@@ -127,7 +127,7 @@ function buildMemberEmail(p: Payload): { subject: string; html: string } {
           <a href="${cal.outlook}" target="_blank" style="display:inline-block;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;text-decoration:none;">📅 Outlook</a>
         </td>
         <td>
-          <a href="data:text/calendar;charset=utf8;base64,${cal.icsData}" download="${esc(p.meeting_title).replace(/\s+/g, "_")}.ics" style="display:inline-block;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;text-decoration:none;">📅 iCalendar (.ics)</a>
+          <a href="data:text/calendar;charset=utf8;base64,${cal.icsData}" download="${esc(p.meeting_title).replace(/\s+/g, "_")}.ics" style="display:inline-block;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:700;color:#ffffff !important;text-decoration:none;"><span style="color:#ffffff !important;">&#x1F4C5; iCalendar (.ics)</span></a>
         </td>
       </tr></table>
     </div>` : "";
