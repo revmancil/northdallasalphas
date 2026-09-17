@@ -1473,7 +1473,7 @@ function renderEventItem(ev) {
   var flyerHtml = '';
   if (ev.flyer && ev.flyer.trim()) {
     flyerHtml = '<div style="flex-shrink:0;cursor:pointer;" onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" title="Click to view full flyer">' +
-      '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:90px;height:120px;object-fit:contain;object-position:top;display:block;border:1px solid rgba(255,255,255,0.08);border-radius:6px;background:#111;" />' +
+      '<img src="' + escHtml(ev.flyer) + '" alt="' + escHtml(ev.name) + ' flyer" style="width:300px;height:450px;object-fit:contain;object-position:top;display:block;border:1px solid rgba(255,255,255,0.08);border-radius:6px;background:#111;" />' +
     '</div>';
   }
   var infoHtml = '<div style="flex:1;min-width:0;">' +
