@@ -2545,6 +2545,13 @@
             <div class="field-group" style="margin:0;"><label>Location</label><input type="text" id="mtgLocation" placeholder="Address or venue name" /></div>
             <div class="field-group" style="grid-column:1/-1;margin:0;"><label>Agenda / Notes <span style="font-weight:400;color:var(--gray-400);">(optional)</span></label><textarea id="mtgAgenda" rows="3" placeholder="Key agenda items or notes for brothers…" style="width:100%;resize:vertical;"></textarea></div>
           </div>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:10px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;color:var(--gray-700);user-select:none;">
+              <input type="checkbox" id="mtgIsPublic" checked style="width:16px;height:16px;accent-color:var(--gold);" />
+              <span>Show on public website</span>
+            </label>
+            <span style="font-size:0.78rem;color:var(--gray-400);">Uncheck to keep this meeting off the public events page (e.g. ALSG, leadership meetings)</span>
+          </div>
           <div id="mtgFormMsg" style="display:none;margin-top:10px;font-size:0.83rem;"></div>
           <button class="btn-save" style="margin-top:16px;" onclick="saveMeeting()"><i class="fas fa-calendar-plus"></i> Schedule Meeting</button>
         </div>
@@ -5163,9 +5170,11 @@ async function loadMeetingsPanel() {
         '<div style="font-size:0.82rem;color:var(--gray-500);margin-top:3px;"><i class="fas fa-calendar" style="width:14px;"></i> ' + escHtml(dateStr) + (timeStr ? ' &nbsp;·&nbsp; <i class="fas fa-clock" style="width:14px;"></i> ' + escHtml(timeStr) : '') + '</div>' +
         (m.location ? '<div style="font-size:0.82rem;color:var(--gray-500);margin-top:2px;"><i class="fas fa-map-marker-alt" style="width:14px;"></i> ' + escHtml(m.location) + '</div>' : '') +
         '</div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
+        (m.is_public === false ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(156,163,175,0.15);color:var(--gray-500);border:1px solid var(--gray-200);" title="Hidden from public website"><i class="fas fa-eye-slash"></i> Private</span>' : '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.25);" title="Visible on public website"><i class="fas fa-globe"></i> Public</span>') +
         '<button class="btn-sm view" onclick="showMtgQr(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\',\'' + escHtml(dateStr) + '\')"><i class="fas fa-qrcode"></i> QR Check-In</button>' +
         '<button class="btn-sm view" onclick="showMtgAttendance(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-clipboard-check"></i> Attendance</button>' +
+        '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="toggleMeetingPublic(\'' + escHtml(m.id) + '\',' + (m.is_public === false ? 'false' : 'true') + ')"><i class="fas fa-' + (m.is_public === false ? 'globe' : 'eye-slash') + '"></i> ' + (m.is_public === false ? 'Make Public' : 'Make Private') + '</button>' +
         '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="archiveMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-box-archive"></i> Archive</button>' +
         '<button class="btn-sm danger" onclick="deleteMeeting(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-trash"></i></button>' +
         '</div>' +
@@ -5191,8 +5200,9 @@ async function saveMeeting() {
   const start    = (document.getElementById('mtgStart')    || {}).value;
   const end      = (document.getElementById('mtgEnd')      || {}).value;
   const location = (document.getElementById('mtgLocation') || {}).value?.trim();
-  const agenda   = (document.getElementById('mtgAgenda')   || {}).value?.trim();
-  const msgEl    = document.getElementById('mtgFormMsg');
+  const agenda    = (document.getElementById('mtgAgenda')   || {}).value?.trim();
+  const isPublic  = !!(document.getElementById('mtgIsPublic') || {}).checked;
+  const msgEl     = document.getElementById('mtgFormMsg');
   function mtgMsg(text, ok) {
     if (!msgEl) return;
     msgEl.style.display = 'block';
@@ -5203,7 +5213,7 @@ async function saveMeeting() {
   if (!date)  { mtgMsg('Please select a date.', false); return; }
   const token = getAdminToken();
   try {
-    await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname }, token);
+    await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic }, token);
     mtgMsg('Meeting scheduled!', true);
     ['mtgTitle','mtgDate','mtgStart','mtgEnd','mtgLocation','mtgAgenda'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.value = '';
@@ -5223,6 +5233,17 @@ async function deleteMeeting(id, title) {
     loadMeetingsPanel();
   } catch(err) {
     showToast('Could not delete: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function toggleMeetingPublic(id, currentlyPublic) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), { is_public: !currentlyPublic }, token);
+    showToast(currentlyPublic ? 'Meeting hidden from public website.' : 'Meeting now visible on public website.', 'success');
+    loadMeetingsPanel();
+  } catch(err) {
+    showToast('Could not update: ' + (err.message || 'error'), 'error');
   }
 }
 

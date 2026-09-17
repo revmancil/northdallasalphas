@@ -1180,7 +1180,7 @@ function isEventArchived(ev, todayIso) {
     const todayIso = localTodayIso();
     const [evRows, mtgRows] = await Promise.all([
       sb.getAll('events', 'order=event_date.asc,sort_order.asc'),
-      sb.getAll('meetings', 'archived=eq.false&order=meeting_date.asc').catch(function(){ return []; })
+      sb.getAll('meetings', 'archived=eq.false&is_public=eq.true&order=meeting_date.asc').catch(function(){ return []; })
     ]);
     const meetingsMapped = (mtgRows || []).map(function(m) {
       var dateIso = m.meeting_date ? String(m.meeting_date) : '';
