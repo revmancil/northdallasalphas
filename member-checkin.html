@@ -147,6 +147,32 @@
         <button class="btn-outline" onclick="showPanel('panelSetup')">
           <i class="fas fa-key"></i> Set Up My Password
         </button>
+        <div class="divider"><span>visiting from another chapter?</span></div>
+        <button class="btn-outline" onclick="showPanel('panelVisitor')">
+          <i class="fas fa-handshake"></i> I'm a Visiting Brother
+        </button>
+      </div>
+
+      <!-- VISITING BROTHER (no account) -->
+      <div class="screen" id="panelVisitor">
+        <p style="color:rgba(255,255,255,0.45);font-size:0.83rem;line-height:1.6;margin-bottom:16px;">Enter your name and chapter below to check in as a visiting brother.</p>
+        <div class="msg error" id="visitorErr"><i class="fas fa-exclamation-circle"></i><span id="visitorErrText"></span></div>
+        <label class="form-label">Full Name</label>
+        <div class="input-wrap">
+          <i class="fas fa-user icon"></i>
+          <input type="text" id="visitorName" placeholder="First and last name" autocomplete="name" />
+        </div>
+        <label class="form-label">Chapter &amp; City</label>
+        <div class="input-wrap">
+          <i class="fas fa-shield-halved icon"></i>
+          <input type="text" id="visitorChapter" placeholder="e.g. Eta Lambda – Houston, TX" />
+        </div>
+        <button class="btn-gold" id="visitorBtn" onclick="doVisitorCheckIn()">
+          <i class="fas fa-door-open"></i> Check In as Visiting Brother
+        </button>
+        <button class="btn-outline" onclick="showPanel('panelLogin')">
+          <i class="fas fa-arrow-left"></i> Back to Sign In
+        </button>
       </div>
 
       <!-- SET UP PASSWORD (no account yet) -->
@@ -233,7 +259,7 @@ function showScreen(id) {
 }
 
 function showPanel(id) {
-  ['panelConfirm','panelLogin','panelSetup','panelForgot'].forEach(function(p) {
+  ['panelConfirm','panelLogin','panelSetup','panelForgot','panelVisitor'].forEach(function(p) {
     var el = document.getElementById(p);
     if (el) el.classList.toggle('active', p === id);
   });
@@ -500,12 +526,46 @@ async function doForgot() {
   }
 }
 
+// ── Visiting brother check-in ─────────────────────────────────────────────────
+
+async function doVisitorCheckIn() {
+  hideMsg('visitorErr');
+  var name    = (document.getElementById('visitorName').value || '').trim();
+  var chapter = (document.getElementById('visitorChapter').value || '').trim();
+  if (!name) { showMsg('visitorErr', 'error', 'Please enter your full name.'); return; }
+  setLoading('visitorBtn', true, '<i class="fas fa-door-open"></i> Check In as Visiting Brother');
+  try {
+    var displayName = name + (chapter ? ' (' + chapter + ')' : '');
+    var payload = { meeting_id: meetingId, member_name: displayName, member_type: 'visiting_guest' };
+    var res = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) {
+      var ed = await res.json().catch(function(){ return {}; });
+      throw new Error(ed.message || 'Check-in failed.');
+    }
+    document.getElementById('successMsg').textContent = 'Welcome, Brother ' + name.split(' ')[0] + '! Your attendance has been recorded.';
+    showScreen('screenSuccess');
+  } catch(e) {
+    setLoading('visitorBtn', false, '<i class="fas fa-door-open"></i> Check In as Visiting Brother');
+    showMsg('visitorErr', 'error', e.message || 'Could not complete check-in. Please try again.');
+  }
+}
+
 // Enter key support
 document.addEventListener('keydown', function(e) {
   if (e.key !== 'Enter') return;
   if (document.getElementById('panelLogin').classList.contains('active')) doLogin();
   if (document.getElementById('panelSetup').classList.contains('active')) doSetup();
   if (document.getElementById('panelForgot').classList.contains('active')) doForgot();
+  if (document.getElementById('panelVisitor').classList.contains('active')) doVisitorCheckIn();
 });
 
 init();
