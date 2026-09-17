@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link rel="icon" href="images/xtl-logo.png" type="image/png" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meeting Check-In | North Dallas Alphas</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --black:#0a0a0a; --gold:#C9A84C; --gold-light:#E8C97A; --white:#ffffff; --green:#27ae60; }
+    body { font-family:'Inter',sans-serif; background:var(--black); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+    body::before { content:'ΑΦΑ'; position:fixed; font-family:'Playfair Display',serif; font-size:60vw; font-weight:800; color:rgba(201,168,76,0.025); top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none; line-height:1; white-space:nowrap; }
+    .wrap { position:relative; z-index:2; width:100%; max-width:440px; }
+    .brand { text-align:center; margin-bottom:24px; }
+    .brand img { height:64px; width:64px; object-fit:contain; border-radius:50%; border:2px solid rgba(201,168,76,0.5); margin-bottom:12px; }
+    .brand h1 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:800; color:var(--gold); }
+    .brand p { font-size:0.75rem; color:rgba(255,255,255,0.4); letter-spacing:0.12em; text-transform:uppercase; margin-top:4px; }
+    .card { background:#111; border:1px solid rgba(201,168,76,0.15); border-radius:10px; padding:28px 24px; }
+
+    /* Meeting header strip */
+    .meeting-strip { background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.18); border-radius:8px; padding:14px 16px; margin-bottom:20px; }
+    .meeting-strip-label { font-size:0.68rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:rgba(201,168,76,0.6); margin-bottom:4px; }
+    .meeting-strip-title { font-family:'Playfair Display',serif; font-size:1rem; color:var(--gold); font-weight:700; }
+    .meeting-strip-meta { font-size:0.78rem; color:rgba(255,255,255,0.4); margin-top:3px; }
+
+    /* Screens */
+    .screen { display:none; }
+    .screen.active { display:block; }
+
+    /* Login form */
+    .form-label { font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.45); display:block; margin-bottom:6px; margin-top:14px; }
+    .form-label:first-of-type { margin-top:0; }
+    .input-wrap { position:relative; }
+    .input-wrap i.icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.25); font-size:0.82rem; pointer-events:none; }
+    .input-wrap input { width:100%; padding:11px 11px 11px 36px; background:rgba(255,255,255,0.05); border:1.5px solid rgba(255,255,255,0.1); border-radius:6px; color:var(--white); font-family:'Inter',sans-serif; font-size:0.9rem; }
+    .input-wrap input:focus { outline:none; border-color:var(--gold); background:rgba(201,168,76,0.05); }
+    .input-wrap input::placeholder { color:rgba(255,255,255,0.2); }
+    .toggle-pw { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:rgba(255,255,255,0.3); cursor:pointer; padding:4px; font-size:0.82rem; }
+    .toggle-pw:hover { color:var(--gold); }
+    .forgot-link { display:block; text-align:right; font-size:0.73rem; color:rgba(201,168,76,0.55); cursor:pointer; margin-top:4px; }
+    .forgot-link:hover { color:var(--gold); }
+
+    /* Buttons */
+    .btn-gold { width:100%; padding:13px; background:var(--gold); color:var(--black); border:none; border-radius:7px; font-family:'Inter',sans-serif; font-size:0.88rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:16px; }
+    .btn-gold:hover { background:var(--gold-light); }
+    .btn-gold:disabled { opacity:0.55; cursor:not-allowed; }
+    .btn-outline { width:100%; padding:11px; background:transparent; color:var(--gold); border:1px solid rgba(201,168,76,0.35); border-radius:7px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
+    .btn-outline:hover { background:rgba(201,168,76,0.08); }
+    .btn-text { background:none; border:none; color:rgba(201,168,76,0.6); font-family:'Inter',sans-serif; font-size:0.8rem; cursor:pointer; padding:0; }
+    .btn-text:hover { color:var(--gold); }
+
+    /* Messages */
+    .msg { border-radius:6px; padding:10px 13px; font-size:0.82rem; margin-bottom:14px; display:none; }
+    .msg.show { display:flex; align-items:center; gap:8px; }
+    .msg.error { background:rgba(231,76,60,0.1); border:1px solid rgba(231,76,60,0.3); color:#e74c3c; }
+    .msg.success { background:rgba(39,174,96,0.1); border:1px solid rgba(39,174,96,0.3); color:#27ae60; }
+    .msg.info { background:rgba(201,168,76,0.08); border:1px solid rgba(201,168,76,0.25); color:var(--gold); }
+
+    /* Check-in confirm screen */
+    .confirm-name { font-family:'Playfair Display',serif; font-size:1.3rem; color:var(--white); font-weight:700; text-align:center; margin-bottom:4px; }
+    .confirm-sub { font-size:0.82rem; color:rgba(255,255,255,0.4); text-align:center; margin-bottom:20px; }
+
+    /* Success screen */
+    .success-icon { width:68px; height:68px; border-radius:50%; background:rgba(39,174,96,0.12); border:2px solid var(--green); display:flex; align-items:center; justify-content:center; margin:0 auto 16px; font-size:1.8rem; color:var(--green); }
+    .success-title { font-family:'Playfair Display',serif; font-size:1.25rem; color:var(--gold); text-align:center; margin-bottom:6px; }
+    .success-body { font-size:0.85rem; color:rgba(255,255,255,0.45); text-align:center; line-height:1.6; }
+
+    /* Spinner */
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .spinner { width:15px; height:15px; border:2px solid rgba(0,0,0,0.25); border-top-color:var(--black); border-radius:50%; animation:spin 0.7s linear infinite; }
+    .spinner-gold { border-color:rgba(201,168,76,0.2); border-top-color:var(--gold); }
+
+    /* Divider */
+    .divider { display:flex; align-items:center; gap:10px; margin:18px 0; }
+    .divider span { font-size:0.72rem; color:rgba(255,255,255,0.2); white-space:nowrap; }
+    .divider::before, .divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <img src="images/xtl-logo.png" alt="Xi Tau Lambda Logo" />
+    <h1>Meeting Check-In</h1>
+    <p>Xi Tau Lambda · North Dallas Alphas</p>
+  </div>
+
+  <!-- LOADING -->
+  <div class="card screen active" id="screenLoading">
+    <div style="text-align:center;padding:16px 0;">
+      <div class="spinner spinner-gold" style="margin:0 auto 14px;width:28px;height:28px;border-width:3px;"></div>
+      <p style="color:rgba(255,255,255,0.35);font-size:0.85rem;">Loading meeting…</p>
+    </div>
+  </div>
+
+  <!-- INVALID -->
+  <div class="card screen" id="screenInvalid">
+    <div style="text-align:center;padding:12px 0;">
+      <i class="fas fa-link-slash" style="font-size:2rem;color:rgba(231,76,60,0.45);display:block;margin-bottom:14px;"></i>
+      <p id="invalidMsg" style="color:rgba(255,255,255,0.4);font-size:0.88rem;line-height:1.6;">This check-in link is invalid or the meeting no longer exists.</p>
+    </div>
+  </div>
+
+  <!-- MAIN CARD — meeting strip shown on all active screens -->
+  <div class="screen" id="screenMain">
+
+    <div class="meeting-strip">
+      <div class="meeting-strip-label">Checking in for</div>
+      <div class="meeting-strip-title" id="meetingTitle">—</div>
+      <div class="meeting-strip-meta" id="meetingMeta"></div>
+    </div>
+
+    <div class="card">
+
+      <!-- CONFIRM (logged in) -->
+      <div class="screen active" id="panelConfirm">
+        <p class="confirm-name" id="confirmName"></p>
+        <p class="confirm-sub" id="confirmEmail"></p>
+        <div class="msg error" id="confirmErr"><i class="fas fa-exclamation-circle"></i><span id="confirmErrText"></span></div>
+        <button class="btn-gold" id="confirmBtn" onclick="doCheckIn()">
+          <i class="fas fa-door-open"></i> Check In
+        </button>
+        <button class="btn-text" style="display:block;text-align:center;width:100%;margin-top:14px;" onclick="showPanel('panelLogin')">Not you? Sign in as someone else</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div class="screen" id="panelLogin">
+        <div class="msg error" id="loginErr"><i class="fas fa-exclamation-circle"></i><span id="loginErrText"></span></div>
+        <label class="form-label">Email Address</label>
+        <div class="input-wrap">
+          <i class="fas fa-envelope icon"></i>
+          <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <label class="form-label">Password</label>
+        <div class="input-wrap">
+          <i class="fas fa-lock icon"></i>
+          <input type="password" id="loginPassword" placeholder="Enter password" autocomplete="current-password" />
+          <button type="button" class="toggle-pw" onclick="togglePw()"><i class="fas fa-eye"></i></button>
+        </div>
+        <a class="forgot-link" onclick="showPanel('panelForgot')">Forgot password?</a>
+        <button class="btn-gold" id="loginBtn" onclick="doLogin()">
+          <i class="fas fa-sign-in-alt"></i> Sign In &amp; Check In
+        </button>
+        <div class="divider"><span>don't have a password yet?</span></div>
+        <button class="btn-outline" onclick="showPanel('panelSetup')">
+          <i class="fas fa-key"></i> Set Up My Password
+        </button>
+      </div>
+
+      <!-- SET UP PASSWORD (no account yet) -->
+      <div class="screen" id="panelSetup">
+        <p style="color:rgba(255,255,255,0.45);font-size:0.83rem;line-height:1.6;margin-bottom:16px;">Enter the email address on file with the chapter. We'll send you a link to create your password.</p>
+        <div class="msg error" id="setupErr"><i class="fas fa-exclamation-circle"></i><span id="setupErrText"></span></div>
+        <div class="msg success" id="setupOk"><i class="fas fa-check-circle"></i><span>Email sent! Check your inbox, then return here to sign in and check in.</span></div>
+        <label class="form-label">Email Address</label>
+        <div class="input-wrap">
+          <i class="fas fa-envelope icon"></i>
+          <input type="email" id="setupEmail" placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <button class="btn-gold" id="setupBtn" onclick="doSetup()">
+          <i class="fas fa-paper-plane"></i> Send Setup Link
+        </button>
+        <button class="btn-outline" onclick="showPanel('panelLogin')">
+          <i class="fas fa-arrow-left"></i> Back to Sign In
+        </button>
+      </div>
+
+      <!-- FORGOT PASSWORD -->
+      <div class="screen" id="panelForgot">
+        <p style="color:rgba(255,255,255,0.45);font-size:0.83rem;line-height:1.6;margin-bottom:16px;">Enter your email and we'll send a password reset link.</p>
+        <div class="msg error" id="forgotErr"><i class="fas fa-exclamation-circle"></i><span id="forgotErrText"></span></div>
+        <div class="msg success" id="forgotOk"><i class="fas fa-check-circle"></i><span>Reset email sent! Check your inbox, then return here to sign in.</span></div>
+        <label class="form-label">Email Address</label>
+        <div class="input-wrap">
+          <i class="fas fa-envelope icon"></i>
+          <input type="email" id="forgotEmail" placeholder="your@email.com" autocomplete="email" />
+        </div>
+        <button class="btn-gold" id="forgotBtn" onclick="doForgot()">
+          <i class="fas fa-paper-plane"></i> Send Reset Link
+        </button>
+        <button class="btn-outline" onclick="showPanel('panelLogin')">
+          <i class="fas fa-arrow-left"></i> Back to Sign In
+        </button>
+      </div>
+
+    </div><!-- /card -->
+  </div><!-- /screenMain -->
+
+  <!-- SUCCESS -->
+  <div class="screen" id="screenSuccess">
+    <div class="card" style="text-align:center;padding:32px 24px;">
+      <div class="success-icon"><i class="fas fa-check"></i></div>
+      <div class="success-title">Checked In!</div>
+      <p class="success-body" id="successMsg">Your attendance has been recorded.</p>
+      <p style="font-size:0.72rem;color:rgba(255,255,255,0.2);margin-top:16px;">You may close this page.</p>
+    </div>
+  </div>
+
+  <!-- ALREADY CHECKED IN -->
+  <div class="screen" id="screenAlready">
+    <div class="card" style="text-align:center;padding:32px 24px;">
+      <i class="fas fa-circle-check" style="font-size:2.2rem;color:var(--green);display:block;margin-bottom:14px;"></i>
+      <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:8px;">Already Checked In</div>
+      <p style="font-size:0.85rem;color:rgba(255,255,255,0.4);line-height:1.6;" id="alreadyMsg">Your attendance for this meeting is already recorded.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var SUPABASE_URL      = 'https://fbjervpgxnbyntylabfr.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+var MEMBER_SESSION_KEY = 'nda_member_session';
+
+var meetingId    = null;
+var meetingData  = null;
+var currentMember = null; // { id, first_name, last_name, email }
+var authToken    = null;
+
+// ── Routing ──────────────────────────────────────────────────────────────────
+
+function getParam(key) {
+  return new URLSearchParams(window.location.search).get(key);
+}
+
+function showScreen(id) {
+  ['screenLoading','screenInvalid','screenMain','screenSuccess','screenAlready'].forEach(function(s) {
+    var el = document.getElementById(s);
+    if (el) el.classList.toggle('active', s === id);
+  });
+}
+
+function showPanel(id) {
+  ['panelConfirm','panelLogin','panelSetup','panelForgot'].forEach(function(p) {
+    var el = document.getElementById(p);
+    if (el) el.classList.toggle('active', p === id);
+  });
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function time24ToAmPm(t) {
+  if (!t) return '';
+  var p = t.split(':'); var h = parseInt(p[0],10); var m = p[1]||'00';
+  var ap = h>=12?'PM':'AM'; h = h%12||12;
+  return h+':'+m+' '+ap;
+}
+
+function setLoading(btnId, loading, html) {
+  var btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.innerHTML = loading ? '<div class="spinner"></div> Please wait…' : html;
+}
+
+function showMsg(id, type, text) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var tx = document.getElementById(id+'Text');
+  if (tx && text !== undefined) tx.textContent = text;
+  el.className = 'msg '+type+' show';
+}
+
+function hideMsg(id) {
+  var el = document.getElementById(id);
+  if (el) el.className = 'msg';
+}
+
+function togglePw() {
+  var inp = document.getElementById('loginPassword');
+  var btn = document.querySelector('.toggle-pw i');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  if (btn) btn.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+}
+
+// ── Session ───────────────────────────────────────────────────────────────────
+
+function getSavedSession() {
+  try {
+    var raw = localStorage.getItem(MEMBER_SESSION_KEY);
+    if (!raw) return null;
+    var s = JSON.parse(raw);
+    if (!s || !s.access_token) return null;
+    if (s.expires_at && Math.floor(Date.now()/1000) >= s.expires_at) return null;
+    return s;
+  } catch(e) { return null; }
+}
+
+function saveSession(s) {
+  try { localStorage.setItem(MEMBER_SESSION_KEY, JSON.stringify(s)); } catch(e) {}
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+async function init() {
+  meetingId = getParam('meeting') || getParam('id');
+  if (!meetingId) {
+    document.getElementById('invalidMsg').textContent = 'No meeting ID found in this link. Please scan the correct QR code.';
+    showScreen('screenInvalid');
+    return;
+  }
+
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/meetings?id=eq.' + encodeURIComponent(meetingId) + '&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    var rows = await res.json();
+    if (!rows || !rows.length) {
+      document.getElementById('invalidMsg').textContent = 'This meeting no longer exists or the link has expired.';
+      showScreen('screenInvalid');
+      return;
+    }
+    meetingData = rows[0];
+
+    // Populate meeting strip
+    var dateStr = meetingData.meeting_date
+      ? new Date(meetingData.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' })
+      : '';
+    var timeStr = meetingData.start_time ? time24ToAmPm(meetingData.start_time) + (meetingData.end_time ? ' – ' + time24ToAmPm(meetingData.end_time) : '') : '';
+    document.getElementById('meetingTitle').textContent = meetingData.title || 'Chapter Meeting';
+    document.getElementById('meetingMeta').textContent = [dateStr, timeStr, meetingData.location].filter(Boolean).join('  ·  ');
+
+    // Check for existing session
+    var session = getSavedSession();
+    if (session && session.access_token && session.user) {
+      authToken = session.access_token;
+      await loadMemberFromSession(session);
+    } else {
+      showScreen('screenMain');
+      showPanel('panelLogin');
+    }
+
+  } catch(e) {
+    document.getElementById('invalidMsg').textContent = 'Network error loading meeting. Check your connection and try again.';
+    showScreen('screenInvalid');
+  }
+}
+
+async function loadMemberFromSession(session) {
+  try {
+    var email = session.user && session.user.email ? session.user.email : '';
+    if (!email) { showScreen('screenMain'); showPanel('panelLogin'); return; }
+
+    var res = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id,first_name,last_name,email&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + authToken }
+    });
+    var rows = await res.json();
+    currentMember = (Array.isArray(rows) && rows.length) ? rows[0] : { first_name: email.split('@')[0], last_name: '', email: email };
+
+    // Check if already checked in
+    var alreadyRes = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance?meeting_id=eq.' + encodeURIComponent(meetingId) + '&member_email=eq.' + encodeURIComponent(email) + '&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    });
+    var already = await alreadyRes.json();
+    if (Array.isArray(already) && already.length) {
+      var firstName = currentMember.first_name || email.split('@')[0];
+      document.getElementById('alreadyMsg').textContent = 'Brother ' + firstName + ', your attendance for ' + (meetingData.title || 'this meeting') + ' is already on record.';
+      showScreen('screenAlready');
+      return;
+    }
+
+    // Show confirm panel
+    var fullName = ((currentMember.first_name || '') + ' ' + (currentMember.last_name || '')).trim() || email;
+    document.getElementById('confirmName').textContent = 'Brother ' + fullName;
+    document.getElementById('confirmEmail').textContent = email;
+    showScreen('screenMain');
+    showPanel('panelConfirm');
+
+  } catch(e) {
+    showScreen('screenMain');
+    showPanel('panelLogin');
+  }
+}
+
+// ── Check-in ──────────────────────────────────────────────────────────────────
+
+async function doCheckIn() {
+  if (!currentMember) return;
+  hideMsg('confirmErr');
+  setLoading('confirmBtn', true, '<i class="fas fa-door-open"></i> Check In');
+  try {
+    var fullName = ((currentMember.first_name || '') + ' ' + (currentMember.last_name || '')).trim();
+    var payload = { meeting_id: meetingId, member_name: fullName };
+    if (currentMember.email) payload.member_email = currentMember.email;
+    if (currentMember.id) payload.member_id = currentMember.id;
+
+    var res = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + (authToken || SUPABASE_ANON_KEY),
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      var ed = await res.json().catch(function(){ return {}; });
+      // 409 = duplicate = already checked in
+      if (res.status === 409 || (ed.code && ed.code === '23505')) {
+        document.getElementById('alreadyMsg').textContent = 'Your attendance for ' + (meetingData.title || 'this meeting') + ' is already on record.';
+        showScreen('screenAlready');
+        return;
+      }
+      throw new Error(ed.message || 'Check-in failed.');
+    }
+
+    var firstName = currentMember.first_name || fullName.split(' ')[0] || 'Brother';
+    document.getElementById('successMsg').textContent = 'Welcome, Brother ' + firstName + '! Your attendance for ' + (meetingData.title || 'this meeting') + ' has been recorded.';
+    showScreen('screenSuccess');
+
+  } catch(e) {
+    setLoading('confirmBtn', false, '<i class="fas fa-door-open"></i> Check In');
+    showMsg('confirmErr', 'error', e.message || 'Could not complete check-in. Please try again.');
+  }
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+
+async function doLogin() {
+  hideMsg('loginErr');
+  var email    = (document.getElementById('loginEmail').value || '').trim();
+  var password = document.getElementById('loginPassword').value;
+  if (!email || !password) {
+    showMsg('loginErr', 'error', 'Please enter your email and password.');
+    return;
+  }
+  setLoading('loginBtn', true, '<i class="fas fa-sign-in-alt"></i> Sign In &amp; Check In');
+  try {
+    var res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    var data = await res.json();
+    if (!res.ok || !data.access_token) {
+      var msg = (data && (data.error_description || data.msg || data.error)) || 'Invalid email or password.';
+      showMsg('loginErr', 'error', String(msg));
+      setLoading('loginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In &amp; Check In');
+      return;
+    }
+    saveSession(data);
+    authToken = data.access_token;
+    await loadMemberFromSession(data);
+  } catch(e) {
+    showMsg('loginErr', 'error', 'Network error. Please check your connection.');
+    setLoading('loginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In &amp; Check In');
+  }
+}
+
+// ── Password setup (first-time) ───────────────────────────────────────────────
+
+async function doSetup() {
+  hideMsg('setupErr');
+  hideMsg('setupOk');
+  var email = (document.getElementById('setupEmail').value || '').trim();
+  if (!email) { showMsg('setupErr', 'error', 'Please enter your email address.'); return; }
+  setLoading('setupBtn', true, '<i class="fas fa-paper-plane"></i> Send Setup Link');
+  try {
+    var res = await fetch(SUPABASE_URL + '/auth/v1/recover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: email })
+    });
+    // Supabase returns 200 regardless so we treat any response as success
+    document.getElementById('setupOk').classList.add('show');
+    setLoading('setupBtn', false, '<i class="fas fa-paper-plane"></i> Send Setup Link');
+  } catch(e) {
+    showMsg('setupErr', 'error', 'Network error. Please try again.');
+    setLoading('setupBtn', false, '<i class="fas fa-paper-plane"></i> Send Setup Link');
+  }
+}
+
+// ── Forgot password ───────────────────────────────────────────────────────────
+
+async function doForgot() {
+  hideMsg('forgotErr');
+  hideMsg('forgotOk');
+  var email = (document.getElementById('forgotEmail').value || '').trim();
+  if (!email) { showMsg('forgotErr', 'error', 'Please enter your email address.'); return; }
+  setLoading('forgotBtn', true, '<i class="fas fa-paper-plane"></i> Send Reset Link');
+  try {
+    await fetch(SUPABASE_URL + '/auth/v1/recover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: email })
+    });
+    document.getElementById('forgotOk').classList.add('show');
+    setLoading('forgotBtn', false, '<i class="fas fa-paper-plane"></i> Send Reset Link');
+  } catch(e) {
+    showMsg('forgotErr', 'error', 'Network error. Please try again.');
+    setLoading('forgotBtn', false, '<i class="fas fa-paper-plane"></i> Send Reset Link');
+  }
+}
+
+// Enter key support
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('panelLogin').classList.contains('active')) doLogin();
+  if (document.getElementById('panelSetup').classList.contains('active')) doSetup();
+  if (document.getElementById('panelForgot').classList.contains('active')) doForgot();
+});
+
+init();
+</script>
+</body>
+</html>
