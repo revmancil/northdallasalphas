@@ -2781,6 +2781,14 @@ async function openNewsletter(id, title) {
   } catch(e) {
     frame.srcdoc = '<p style="text-align:center;padding:40px;font-family:Arial;color:#888;">Could not load newsletter.</p>';
   }
+  frame.onload = function() {
+    try {
+      var contentH = frame.contentDocument.documentElement.scrollHeight;
+      var maxH = Math.round(window.innerHeight * 0.9) - 60;
+      frame.style.height = Math.min(contentH, maxH) + 'px';
+      frame.style.flex = 'none';
+    } catch(e) {}
+  };
 }
 
 async function loadMyAnnouncements() {
@@ -3619,7 +3627,7 @@ async function checkMaintenanceMode() {
         <i class="fas fa-times"></i>
       </button>
     </div>
-    <iframe id="nlModalFrame" srcdoc="" style="flex:1;border:none;height:calc(90vh - 60px);background:#fff;border-radius:0 0 12px 12px;overflow-y:auto;"></iframe>
+    <iframe id="nlModalFrame" srcdoc="" style="border:none;width:100%;background:#fff;border-radius:0 0 12px 12px;display:block;"></iframe>
   </div>
 </div>
 <!-- ═══ FLYER LIGHTBOX ═══ -->
