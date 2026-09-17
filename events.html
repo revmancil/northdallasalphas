@@ -806,6 +806,10 @@ function renderSponsorButtonHtml(ev, className) {
 }
 
 function buildRegisterButtonHtml(ev, extraStyle, stopPropagation) {
+  if (ev && ev._isMeeting) {
+    const styleAttr = extraStyle ? ' style="' + extraStyle + '"' : '';
+    return '<a href="member-portal.html" class="btn btn-gold"' + styleAttr + '><i class="fas fa-calendar-check"></i> RSVP in Member Portal</a>';
+  }
   const opts = getRegistrationOptions(ev);
   if (!opts.length) return '';
   const styleAttr = extraStyle ? ' style="' + extraStyle + '"' : '';
@@ -1174,8 +1178,46 @@ function isEventArchived(ev, todayIso) {
   let pastEvents = null;
   try {
     const todayIso = localTodayIso();
-    const allRows = await sb.getAll('events', 'order=event_date.asc,sort_order.asc');
-    const normalized = normalizeEvents(allRows) || [];
+    const [evRows, mtgRows] = await Promise.all([
+      sb.getAll('events', 'order=event_date.asc,sort_order.asc'),
+      sb.getAll('meetings', 'archived=eq.false&order=meeting_date.asc').catch(function(){ return []; })
+    ]);
+    const meetingsMapped = (mtgRows || []).map(function(m) {
+      var dateIso = m.meeting_date ? String(m.meeting_date) : '';
+      var segs = dateIso.split('-');
+      var datetime = '';
+      if (segs.length === 3) {
+        datetime = segs[1].replace(/^0/,'') + '/' + segs[2].replace(/^0/,'') + '/' + segs[0];
+        if (m.start_time) {
+          var tp = m.start_time.split(':'); var h = parseInt(tp[0],10); var min = tp[1]||'00';
+          var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+          datetime += ' ' + h + ':' + min + ' ' + ap;
+        }
+      }
+      return {
+        id: 'meeting-' + m.id,
+        _meetingId: m.id,
+        _isMeeting: true,
+        name: m.title || 'Chapter Meeting',
+        location: m.location || '',
+        datetime: datetime,
+        eventDate: dateIso,
+        featured: false,
+        flyer: m.flyer_url || '',
+        description: m.agenda || '',
+        registrationUrl: '',
+        freeRegistrationEnabled: false,
+        freeRegistrationUrl: '',
+        paidRegistrationEnabled: false,
+        registrationFeeCents: 0,
+        sponsorEnabled: false,
+        sponsorUrl: '',
+        sponsorLabel: '',
+        membersOnly: true
+      };
+    });
+    const allRows = evRows;
+    const normalized = normalizeEvents(allRows).concat(meetingsMapped) || [];
     const upcomingRaw = normalized.filter(function(ev) { return !isEventArchived(ev, todayIso); });
     const pastRaw = normalized.filter(function(ev) { return isEventArchived(ev, todayIso); });
     upcomingEvents = sortByEventDate(upcomingRaw, 'asc');

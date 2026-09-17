@@ -523,6 +523,10 @@ function homeMapEventRow(ev) {
 function homeFeaturedActionButtons(featured) {
   if (!featured) return '';
   let html = '';
+  if (featured._isMeeting) {
+    html += '<a href="member-portal.html" class="btn btn-gold"><i class="fas fa-calendar-check"></i> RSVP in Member Portal</a>';
+    return html;
+  }
   const freeUrl = homeIsAbsoluteHttpUrl(featured.freeRegistrationUrl) ? featured.freeRegistrationUrl.trim() : '';
   const paidUrl = homeIsAbsoluteHttpUrl(featured.registrationUrl) ? featured.registrationUrl.trim() : '';
   const hasId = featured.id != null && String(featured.id) !== '';
@@ -606,17 +610,54 @@ function rebindSiteShellInteractions() {
   });
 }
 
+function homeMapMeetingRow(m) {
+  const dateIso = m.meeting_date ? String(m.meeting_date) : '';
+  var segs = dateIso.split('-');
+  var datetime = '';
+  if (segs.length === 3) {
+    datetime = segs[1].replace(/^0/,'') + '/' + segs[2].replace(/^0/,'') + '/' + segs[0];
+    if (m.start_time) {
+      var tp = m.start_time.split(':'); var h = parseInt(tp[0],10); var min = tp[1]||'00';
+      var ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+      datetime += ' ' + h + ':' + min + ' ' + ap;
+    }
+  }
+  return {
+    id: 'meeting-' + m.id,
+    _meetingId: m.id,
+    _isMeeting: true,
+    name: m.title || 'Chapter Meeting',
+    location: m.location || '',
+    datetime: datetime,
+    eventDate: dateIso,
+    featured: false,
+    flyer: m.flyer_url || '',
+    description: m.agenda || '',
+    registrationUrl: '',
+    freeRegistrationEnabled: false,
+    freeRegistrationUrl: '',
+    paidRegistrationEnabled: false,
+    registrationFeeCents: 0,
+    sponsorEnabled: false,
+    sponsorUrl: '',
+    sponsorLabel: ''
+  };
+}
+
 async function homeGetEvents() {
   const todayIso = homeLocalTodayIso();
   function filterUpcoming(list) {
     return list.filter(function(ev) { return !homeIsEventArchived(ev, todayIso); });
   }
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/events?order=event_date.asc,sort_order.asc', { headers: sbHeaders() });
-    if (!res.ok) throw new Error('events failed');
-    const rows = await res.json();
-    if (!rows || !rows.length) return [];
-    const mapped = rows.map(homeMapEventRow);
+    const [evRes, mtgRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/events?order=event_date.asc,sort_order.asc', { headers: sbHeaders() }),
+      fetch(SUPABASE_URL + '/rest/v1/meetings?archived=eq.false&order=meeting_date.asc', { headers: sbHeaders() })
+    ]);
+    if (!evRes.ok) throw new Error('events failed');
+    const rows = await evRes.json();
+    const mtgRows = mtgRes.ok ? (await mtgRes.json() || []) : [];
+    const mapped = (rows || []).map(homeMapEventRow).concat(mtgRows.map(homeMapMeetingRow));
     const upcoming = filterUpcoming(mapped);
     if (!upcoming.length) return [];
     // Sort ascending by event date (soonest first)
