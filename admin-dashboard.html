@@ -9441,10 +9441,14 @@ function nlBlockVisual(b) {
       return '<div style="height:' + (p.height || 32) + 'px;background:repeating-linear-gradient(45deg,#f0f0f0,#f0f0f0 3px,#fafafa 3px,#fafafa 8px);border-radius:3px;display:flex;align-items:center;justify-content:center;"><span style="font-size:0.68rem;color:#999;background:#fff;padding:1px 6px;border-radius:3px;">' + (p.height || 32) + 'px spacer</span></div>';
     }
     case 'video': {
-      if (p.thumbnailUrl) {
-        return '<div style="padding:' + ptop + ' 0 ' + pbot + ';position:relative;text-align:center"><img src="' + escHtml(p.thumbnailUrl) + '" style="max-width:100%;border-radius:6px;" /><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><span style="background:rgba(0,0,0,0.55);color:#fff;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;">▶</span></div>' + (p.caption ? '<div style="font-size:0.75rem;color:#888;margin-top:5px;">' + escHtml(p.caption) + '</div>' : '') + '</div>';
-      }
-      return '<div style="padding:' + ptop + ' 0 ' + pbot + ';text-align:center;background:#f5f5f5;border-radius:6px;color:#aaa;font-size:0.78rem;min-height:70px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><i class="fas fa-play-circle" style="font-size:1.8rem;"></i>Video block' + (p.caption ? '<br><span style="font-size:0.7rem;">' + escHtml(p.caption) + '</span>' : '') + '</div>';
+      const hasVideo = !!p.videoUrl;
+      return '<div style="padding:' + ptop + ' 0 ' + pbot + ';text-align:center;">'
+        + '<div style="display:inline-block;position:relative;background:#000;border-radius:8px;padding:36px 48px;min-width:180px;">'
+        + '<div style="color:#C9A84C;font-size:2.5rem;line-height:1;">▶</div>'
+        + '<div style="color:#fff;font-size:0.82rem;margin-top:8px;font-weight:600;">' + (hasVideo ? 'Click to Watch' : 'No video uploaded yet') + '</div>'
+        + '</div>'
+        + (p.caption ? '<div style="font-size:0.75rem;color:#888;margin-top:6px;">' + escHtml(p.caption) + '</div>' : '')
+        + '</div>';
     }
     case 'social': {
       const faBrands = { facebook: 'fa-facebook-f', twitter: 'fa-twitter', instagram: 'fa-instagram', linkedin: 'fa-linkedin-in', youtube: 'fa-youtube' };
@@ -9579,13 +9583,6 @@ function nlPropsForm(block, zone) {
       html += field('Height', numInp('height', p.height || 32, 4, 500, 'px'));
       break;
     case 'video':
-      html += field('Thumbnail Image',
-        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'
-        + '<button type="button" onclick="nlUploadVideoAsset(\'thumbnailUrl\',\'' + z + '\',\'' + id + '\',\'image\')" style="padding:5px 10px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:5px;font-size:0.75rem;cursor:pointer;white-space:nowrap;"><i class="fas fa-upload"></i> Upload Image</button>'
-        + '<input type="url" value="' + escHtml(p.thumbnailUrl || '') + '" placeholder="or paste image URL" style="flex:1;min-width:80px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.78rem;box-sizing:border-box;" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'thumbnailUrl\',this.value)" />'
-        + '</div>'
-        + (p.thumbnailUrl ? '<div style="margin-top:5px;"><img src="' + escHtml(p.thumbnailUrl) + '" style="max-width:100%;height:50px;object-fit:cover;border-radius:4px;border:1px solid var(--gray-200);" /></div>' : '')
-      );
       html += field('Video File',
         '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'
         + '<button type="button" onclick="nlUploadVideoAsset(\'videoUrl\',\'' + z + '\',\'' + id + '\',\'video\')" style="padding:5px 10px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:5px;font-size:0.75rem;cursor:pointer;white-space:nowrap;"><i class="fas fa-upload"></i> Upload Video</button>'
@@ -10087,11 +10084,15 @@ function nlBlockToEmailRow(b, gs) {
       return '<tr><td style="height:' + (p.height || 32) + 'px;font-size:0;line-height:0;">&nbsp;</td></tr>';
     }
     case 'video': {
-      const thumb = p.thumbnailUrl
-        ? '<a href="' + escHtml(p.videoUrl || '#') + '" target="_blank" style="border:0;display:block;"><img src="' + escHtml(p.thumbnailUrl) + '" alt="Watch video" style="max-width:100%;display:block;margin:0 auto;border-radius:6px;" /></a>'
-        : '<div style="text-align:center;background:#000;color:#C9A84C;padding:40px;font-size:16px;font-family:' + gs.font + ';">▶ Watch Video</div>';
-      const cap = p.caption ? '<p style="margin:6px 0 0;text-align:center;font-size:13px;color:#666;font-family:' + gs.font + ';">' + escHtml(p.caption) + '</p>' : '';
-      return tdWrap(thumb + cap);
+      const playBtn = '<a href="' + escHtml(p.videoUrl || '#') + '" target="_blank" style="display:inline-block;text-decoration:none;border:0;">'
+        + '<table cellpadding="0" cellspacing="0" border="0" style="background:#000000;border-radius:8px;">'
+        + '<tr><td style="padding:32px 56px;text-align:center;">'
+        + '<div style="color:#C9A84C;font-size:40px;line-height:1;font-family:Arial,sans-serif;">&#9654;</div>'
+        + '<div style="color:#ffffff;font-size:14px;font-weight:bold;margin-top:10px;font-family:' + gs.font + ';">Click to Watch</div>'
+        + '</td></tr></table>'
+        + '</a>';
+      const cap = p.caption ? '<p style="margin:8px 0 0;text-align:center;font-size:13px;color:#666;font-family:' + gs.font + ';">' + escHtml(p.caption) + '</p>' : '';
+      return tdWrap('<div style="text-align:center;">' + playBtn + cap + '</div>');
     }
     case 'social': {
       const sz = p.iconSize || 28;
