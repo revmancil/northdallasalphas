@@ -2569,9 +2569,8 @@ async function init() {
     var statusEl = document.getElementById('statImdpStatus');
     var expEl    = document.getElementById('statImdpExp');
     if (!cert) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
-    var certDate = parseCertDate(cert);
-    if (!certDate || isNaN(certDate)) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
-    var expDate = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
+    var expDate = parseCertDate(cert);
+    if (!expDate || isNaN(expDate)) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
     var now = new Date();
     var expired = expDate < now;
     if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--gold)' : 'var(--green)'; }
@@ -2584,9 +2583,8 @@ async function init() {
     var statusEl = document.getElementById('statRiskStatus');
     var expEl    = document.getElementById('statRiskExp');
     if (!cert) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
-    var certDate = parseCertDate(cert);
-    if (!certDate || isNaN(certDate)) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
-    var expDate = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
+    var expDate = parseCertDate(cert);
+    if (!expDate || isNaN(expDate)) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
     var now = new Date();
     var expired = expDate < now;
     if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--gold)' : 'var(--green)'; }
