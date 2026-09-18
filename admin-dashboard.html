@@ -2298,6 +2298,9 @@
                 <input type="radio" name="nlRecipMode" value="alumni" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Alumni only
               </label>
               <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
+                <input type="radio" name="nlRecipMode" value="visiting" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Visiting brothers
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-size:0.85rem;">
                 <input type="radio" name="nlRecipMode" value="specific" onchange="nlOnRecipModeChange()" style="accent-color:#C9A84C;" /> Select specific members
               </label>
             </div>
@@ -9802,7 +9805,7 @@ async function nlLoadSendMembers() {
   if (!listEl) return;
   listEl.innerHTML = '<div style="padding:8px;color:var(--gray-400);font-size:0.8rem;">Loading…</div>';
   try {
-    const rows = await sbGet('members', 'select=id,first_name,last_name,email,status&status=in.(active,alumni)&order=last_name.asc', token);
+    const rows = await sbGet('members', 'select=id,first_name,last_name,email,status,portal_access&order=last_name.asc', token);
     nlState.sendMembers = rows || [];
     nlRenderMemberList();
   } catch (e) {
@@ -9820,6 +9823,7 @@ function nlRenderMemberList() {
   let members = nlState.sendMembers;
   if (modeVal === 'all') { members = members.filter(function (m) { return m.status === 'active'; }); }
   else if (modeVal === 'alumni') { members = members.filter(function (m) { return m.status === 'alumni'; }); }
+  else if (modeVal === 'visiting') { members = members.filter(function (m) { return (m.portal_access || '').toLowerCase() === 'visiting'; }); }
   const countEl = document.getElementById('nlRecipCount');
   const ctrlEl = document.getElementById('nlMemberListControls');
   if (modeVal === 'test') {
@@ -9881,6 +9885,8 @@ async function nlSendNewsletter() {
       recipients = nlState.sendMembers.filter(function (m) { return m.status === 'active'; }).map(function (m) { return m.email; }).filter(Boolean);
     } else if (modeVal === 'alumni') {
       recipients = nlState.sendMembers.filter(function (m) { return m.status === 'alumni'; }).map(function (m) { return m.email; }).filter(Boolean);
+    } else if (modeVal === 'visiting') {
+      recipients = nlState.sendMembers.filter(function (m) { return (m.portal_access || '').toLowerCase() === 'visiting'; }).map(function (m) { return m.email; }).filter(Boolean);
     } else {
       document.querySelectorAll('#nlMemberList input[type="checkbox"]:checked').forEach(function (c) { if (c.value) recipients.push(c.value); });
     }
