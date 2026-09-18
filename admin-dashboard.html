@@ -6491,8 +6491,8 @@ function mapAlphaMxHeaders(headers) {
     last_name:           idx.lastname        != null ? idx.lastname        : idx.last,
     email:               idx.email,
     chapter_active_date: idx.chapteractivedate != null ? idx.chapteractivedate : (idx.activedate != null ? idx.activedate : idx.chapteractive),
-    imdp_certified:      idx.imdpcertified   != null ? idx.imdpcertified   : (idx.imdp != null ? idx.imdp : (idx.imdpcertification != null ? idx.imdpcertification : idx.imdpdate)),
-    risk_mgmt_certified: idx.riskmgmtcertified != null ? idx.riskmgmtcertified : (idx.riskmgmt != null ? idx.riskmgmt : (idx.riskmanagement != null ? idx.riskmanagement : idx.riskmanagementcertification)),
+    imdp_certified:      idx.imdpcertificationdate != null ? idx.imdpcertificationdate : (idx.imdpcertified != null ? idx.imdpcertified : (idx.imdp != null ? idx.imdp : (idx.imdpcertification != null ? idx.imdpcertification : idx.imdpdate))),
+    risk_mgmt_certified: idx.riskmanagementcertificationdate != null ? idx.riskmanagementcertificationdate : (idx.riskmgmtcertified != null ? idx.riskmgmtcertified : (idx.riskmgmt != null ? idx.riskmgmt : (idx.riskmanagement != null ? idx.riskmanagement : idx.riskmanagementcertification))),
     // SPEC §4 — new AlphaMX columns
     risk_mgmt_expiration: idx.riskmgmtexpiration != null ? idx.riskmgmtexpiration : (idx.riskmanagementexpiration != null ? idx.riskmanagementexpiration : (idx.riskexpiration != null ? idx.riskexpiration : idx.riskexp)),
     imdp_expiration:      idx.imdpexpiration    != null ? idx.imdpexpiration    : (idx.imdpexp != null ? idx.imdpexp : idx.imdpexpirationdate),
