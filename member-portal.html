@@ -324,8 +324,8 @@ backdrop-filter:blur(4px);}
       <div class="stats-grid">
         <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-info"><div class="stat-value" id="statEventsCount">--</div><div class="stat-label">Upcoming Events</div></div></div>
         <div class="stat-card"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div><div class="stat-info"><div class="stat-value" id="statDuesPaid">--</div><div class="stat-label">Dues Status</div></div></div>
-        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-file-alt"></i></div><div class="stat-info"><div class="stat-value" id="statDocCount">--</div><div class="stat-label">Documents</div></div></div>
-        <div class="stat-card"><div class="stat-icon" style="background:rgba(201,168,76,0.1);color:var(--gold);"><i class="fas fa-users"></i></div><div class="stat-info"><div class="stat-value" id="statMemberCount">--</div><div class="stat-label">Active Brothers</div></div></div>
+        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-graduation-cap"></i></div><div class="stat-info"><div class="stat-value" id="statImdpStatus">--</div><div class="stat-label">IMDP Status</div><div id="statImdpExp" style="font-size:0.68rem;color:var(--gray-400);margin-top:1px;"></div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:rgba(201,168,76,0.1);color:var(--gold);"><i class="fas fa-shield-halved"></i></div><div class="stat-info"><div class="stat-value" id="statRiskStatus">--</div><div class="stat-label">Risk Mgmt Status</div><div id="statRiskExp" style="font-size:0.68rem;color:var(--gray-400);margin-top:1px;"></div></div></div>
       </div>
       <!-- SPEC §2 Step 4 — Visiting Brother Access Request card (hidden for non-visiting) -->
       <div id="vbAccessRequestCard" style="display:none;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:20px 24px;margin-bottom:20px;">
@@ -1419,24 +1419,30 @@ function clearProfilePhoto() {
 function handleProfilePhotoUpload(e) {
   var file = e.target && e.target.files ? e.target.files[0] : null;
   if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(ev) {
-    (async function() {
-      try {
-        var dataUrl = ev.target.result;
-        dataUrl = await ensureProfilePhotoFits(dataUrl);
-        document.getElementById('pfPhoto').value = dataUrl;
-        var urlEl = document.getElementById('pfPhotoUrl');
-        if (urlEl) urlEl.value = '';
-        updateProfilePreview();
-        showToast('Photo ready — click Save Profile to keep it.', 'success');
-      } catch (err) {
-        showToast('Could not process photo: ' + (err.message || 'unknown error'), 'error');
-      }
-    })();
-  };
-  reader.readAsDataURL(file);
   e.target.value = '';
+  (async function() {
+    try {
+      showToast('Uploading photo…', 'info');
+      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      var token = currentSession && currentSession.access_token;
+      var memberId = currentMember && (currentMember.id || currentMember.email);
+      var path = 'member-photos/' + (memberId || Date.now()) + '-' + Date.now() + '.' + ext;
+      var res = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      });
+      if (!res.ok) { var se = await res.json().catch(function(){return{};}); throw new Error(se.message || 'Upload failed'); }
+      var photoUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+      document.getElementById('pfPhoto').value = photoUrl;
+      var urlEl = document.getElementById('pfPhotoUrl');
+      if (urlEl) urlEl.value = photoUrl;
+      updateProfilePreview();
+      showToast('Photo uploaded — click Save Profile to keep it.', 'success');
+    } catch (err) {
+      showToast('Could not upload photo: ' + (err.message || 'unknown error'), 'error');
+    }
+  })();
 }
 
 function parseDate(dtStr) {
@@ -2397,12 +2403,6 @@ document.getElementById('profileForm').addEventListener('submit', async function
       military_branch:     document.getElementById('pfMilitaryService').checked ? (document.getElementById('pfMilitaryBranch').value || null) : null,
       updated_at:          new Date().toISOString()
     };
-    if (updates.photo && updates.photo.indexOf('data:image') === 0 && updates.photo.length > 450000) {
-      showToast('Photo is still too large after compression. Try a smaller image or use a hosted image URL.', 'error');
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fas fa-save"></i> Save Profile';
-      return;
-    }
     await sbPatch('members', 'email=eq.' + encodeURIComponent(currentMember.email), updates, currentSession.access_token);
     currentMember = Object.assign({}, currentMember, updates);
     showToast('Profile saved successfully!');
@@ -2548,9 +2548,35 @@ async function init() {
   loadProfileForm(currentMember);
   prefillDuesPayFields();
   document.getElementById('statEventsCount').textContent = allEvents.length;
-  document.getElementById('statDocCount').textContent    = '--';
-  document.getElementById('statMemberCount').textContent = '--';
   document.getElementById('statDuesPaid').textContent    = '--';
+
+  // IMDP Status
+  (function() {
+    var cert = currentMember && currentMember.imdp_certified;
+    var statusEl = document.getElementById('statImdpStatus');
+    var expEl    = document.getElementById('statImdpExp');
+    if (!cert) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
+    var certDate = new Date(cert + 'T12:00:00');
+    var expDate  = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
+    var now = new Date();
+    var expired = expDate < now;
+    if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--red)' : 'var(--green)'; }
+    if (expEl)    expEl.textContent = (expired ? 'Expired ' : 'Exp. ') + expDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  })();
+
+  // Risk Management Status
+  (function() {
+    var cert = currentMember && currentMember.risk_mgmt_certified;
+    var statusEl = document.getElementById('statRiskStatus');
+    var expEl    = document.getElementById('statRiskExp');
+    if (!cert) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
+    var certDate = new Date(cert + 'T12:00:00');
+    var expDate  = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
+    var now = new Date();
+    var expired = expDate < now;
+    if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--red)' : 'var(--green)'; }
+    if (expEl)    expEl.textContent = (expired ? 'Expired ' : 'Exp. ') + expDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  })();
   renderDashboardEvents();
   await loadAnnouncements();
   loadDashboardCelebrations();
