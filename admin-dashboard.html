@@ -10952,6 +10952,7 @@ function renderDocRow(doc, opts) {
     '</div>' +
     '<div style="display:flex;gap:6px;flex-shrink:0;">' +
     (doc.file_url ? '<a href="' + escHtml(doc.file_url) + '" target="_blank" rel="noopener" class="btn-sm view" title="View / Download"><i class="fas fa-eye"></i> View</a>' : '') +
+    (doc.file_url ? '<button class="btn-sm" onclick="copyDocLink(\'' + escHtml(doc.file_url) + '\')" title="Copy link for slides" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);"><i class="fas fa-link"></i> Copy Link</button>' : '') +
     (opts.approve ? '<button class="btn-sm success" onclick="approveDocument(\'' + escHtml(String(doc.id)) + '\')"><i class="fas fa-check"></i> Approve</button>' : '') +
     (opts.approve ? '<button class="btn-sm danger" onclick="rejectDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')"><i class="fas fa-times"></i> Reject</button>' : '') +
     (!opts.approve ? '<button class="btn-sm danger" onclick="deleteDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' : '') +
@@ -10994,6 +10995,14 @@ async function loadAdminDocuments() {
   } catch (err) {
     if (listEl) listEl.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load documents: ' + escHtml(err.message || '') + '</p></div>';
   }
+}
+
+function copyDocLink(url) {
+  navigator.clipboard.writeText(url).then(function() {
+    showToast('Link copied — paste it into your slide.', 'success');
+  }).catch(function() {
+    prompt('Copy this link:', url);
+  });
 }
 
 async function approveDocument(id) {
