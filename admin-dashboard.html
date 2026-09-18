@@ -6532,9 +6532,9 @@ async function handleAlphaMxCsvUpload(event) {
         member_type:          csvCell(cells, mapped.member_type)
       });
     }
-    // Fetch current active members to match against
-    const members = await sbGet('members', 'status=eq.active', token);
-    if (!members || !members.length) { showToast('No active members found to update.', 'info'); return; }
+    // Fetch all members to match against (not just active — status may be updated by this import)
+    const members = await sbGet('members', 'select=id,alpha_id,email,status,dues_current', token);
+    if (!members || !members.length) { showToast('No members found to update.', 'info'); return; }
     // Build lookup maps
     const byAlphaId = {};
     const byEmail = {};
