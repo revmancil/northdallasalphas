@@ -2550,17 +2550,31 @@ async function init() {
   document.getElementById('statEventsCount').textContent = allEvents.length;
   document.getElementById('statDuesPaid').textContent    = '--';
 
+  // Parse a certification date stored in any common format (YYYY-MM-DD, MM/DD/YYYY, M/D/YYYY, etc.)
+  function parseCertDate(cert) {
+    if (!cert) return null;
+    var s = String(cert).trim();
+    // MM/DD/YYYY or M/D/YYYY
+    var slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) return new Date(slash[3] + '-' + slash[1].padStart(2,'0') + '-' + slash[2].padStart(2,'0') + 'T12:00:00');
+    // YYYY-MM-DD
+    var dash = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (dash) return new Date(s + 'T12:00:00');
+    return null;
+  }
+
   // IMDP Status
   (function() {
     var cert = currentMember && currentMember.imdp_certified;
     var statusEl = document.getElementById('statImdpStatus');
     var expEl    = document.getElementById('statImdpExp');
     if (!cert) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
-    var certDate = new Date(cert + 'T12:00:00');
-    var expDate  = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
+    var certDate = parseCertDate(cert);
+    if (!certDate || isNaN(certDate)) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
+    var expDate = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
     var now = new Date();
     var expired = expDate < now;
-    if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--red)' : 'var(--green)'; }
+    if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--gold)' : 'var(--green)'; }
     if (expEl)    expEl.textContent = (expired ? 'Expired ' : 'Exp. ') + expDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
   })();
 
@@ -2570,11 +2584,12 @@ async function init() {
     var statusEl = document.getElementById('statRiskStatus');
     var expEl    = document.getElementById('statRiskExp');
     if (!cert) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
-    var certDate = new Date(cert + 'T12:00:00');
-    var expDate  = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
+    var certDate = parseCertDate(cert);
+    if (!certDate || isNaN(certDate)) { if (statusEl) statusEl.textContent = 'Not Certified'; return; }
+    var expDate = new Date(certDate); expDate.setFullYear(expDate.getFullYear() + 2);
     var now = new Date();
     var expired = expDate < now;
-    if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--red)' : 'var(--green)'; }
+    if (statusEl) { statusEl.textContent = expired ? 'Expired' : 'Certified'; statusEl.style.color = expired ? 'var(--gold)' : 'var(--green)'; }
     if (expEl)    expEl.textContent = (expired ? 'Expired ' : 'Exp. ') + expDate.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
   })();
   renderDashboardEvents();
