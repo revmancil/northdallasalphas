@@ -4519,7 +4519,7 @@ function renderAccessTable() {
     const chapterStatus = (['active','inactive'].includes((m.status||'').toLowerCase())) ? (m.status||'').toLowerCase() : '';
     const isAdmin = accessAdminEmails.has((m.email || '').toLowerCase());
     const accessColor = (portalAccess === 'granted' || portalAccess === 'chapter_member') ? 'var(--gold)' : portalAccess === 'visiting' ? '#4ade80' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
-    const accessLabel = portalAccess === 'visiting' ? 'Visiting' : (portalAccess === 'chapter_member' || portalAccess === 'granted') ? 'Granted' : portalAccess.charAt(0).toUpperCase() + portalAccess.slice(1);
+    const accessLabel = portalAccess === 'visiting' ? 'Visiting' : portalAccess === 'chapter_member' ? 'Chapter Member' : portalAccess === 'granted' ? 'Chapter Member' : portalAccess.charAt(0).toUpperCase() + portalAccess.slice(1);
     const requested = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const grantedDate = (['granted','visiting'].includes(portalAccess) && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const adminBadge = isAdmin ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;"><i class="fas fa-user-shield"></i> ADMIN</span>' : '';

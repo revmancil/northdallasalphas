@@ -2480,9 +2480,9 @@ async function init() {
       await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(userEmail), {
         method: 'PATCH',
         headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ portal_access: 'granted', access_granted_at: new Date().toISOString() })
+        body: JSON.stringify({ portal_access: 'chapter_member', access_granted_at: new Date().toISOString() })
       });
-      currentMember.portal_access = 'granted';
+      currentMember.portal_access = 'chapter_member';
     } catch(e) {}
   }
   const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (userEmail.split('@')[0] || 'Member');
