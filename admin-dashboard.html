@@ -6497,7 +6497,8 @@ function mapAlphaMxHeaders(headers) {
     risk_mgmt_expiration: idx.riskmgmtexpiration != null ? idx.riskmgmtexpiration : (idx.riskmanagementexpiration != null ? idx.riskmanagementexpiration : (idx.riskexpiration != null ? idx.riskexpiration : idx.riskexp)),
     imdp_expiration:      idx.imdpexpiration    != null ? idx.imdpexpiration    : (idx.imdpexp != null ? idx.imdpexp : idx.imdpexpirationdate),
     grand_tax_paid:       idx.grandtaxpaid      != null ? idx.grandtaxpaid      : (idx.grandtax != null ? idx.grandtax : (idx.taxpaid != null ? idx.taxpaid : idx.tax)),
-    life_member:          idx.lifemember        != null ? idx.lifemember        : (idx.lifememberstatus != null ? idx.lifememberstatus : idx.life)
+    life_member:          idx.lifemember        != null ? idx.lifemember        : (idx.lifememberstatus != null ? idx.lifememberstatus : idx.life),
+    member_type:          idx.membertype        != null ? idx.membertype        : (idx.type != null ? idx.type : (idx.memberstatus != null ? idx.memberstatus : idx.membercategory))
   };
 }
 
@@ -6527,7 +6528,8 @@ async function handleAlphaMxCsvUpload(event) {
         risk_mgmt_expiration: csvCell(cells, mapped.risk_mgmt_expiration),
         imdp_expiration:      csvCell(cells, mapped.imdp_expiration),
         grand_tax_paid:       csvCell(cells, mapped.grand_tax_paid),
-        life_member:          csvCell(cells, mapped.life_member)
+        life_member:          csvCell(cells, mapped.life_member),
+        member_type:          csvCell(cells, mapped.member_type)
       });
     }
     // Fetch current active members to match against
@@ -6553,14 +6555,22 @@ async function handleAlphaMxCsvUpload(event) {
       if (row.imdp_expiration)      payload.imdp_expiration      = row.imdp_expiration;
       if (row.grand_tax_paid)       payload.grand_tax_paid       = row.grand_tax_paid;
       if (row.life_member)          payload.life_member          = row.life_member;
-      // SPEC §4 — active/inactive: dues paid AND (grand tax paid OR life member)
-      const duesPaid = member.dues_current === true || member.dues_current === 'true' || member.dues_current === 'yes';
-      const grandTax = (row.grand_tax_paid || '').toLowerCase();
-      const lifeMem  = (row.life_member    || '').toLowerCase();
-      const isGrandTaxOk = grandTax === 'yes' || grandTax === 'y' || grandTax === 'true' || grandTax === '1';
-      const isLifeMember  = lifeMem  === 'yes' || lifeMem  === 'y' || lifeMem  === 'true' || lifeMem  === '1';
-      if (row.grand_tax_paid || row.life_member) {
-        payload.status = (duesPaid && (isGrandTaxOk || isLifeMember)) ? 'active' : 'inactive';
+      // Derive active/inactive from member_type column (e.g. "Brother-Alumni-Active" / "Brother-Alumni-Inactive")
+      // OR from explicit grand_tax_paid / life_member columns
+      const memberTypeRaw = (row.member_type || '').toLowerCase().replace(/[\s_]/g, '');
+      const memberTypeActive   = memberTypeRaw.includes('active')   && !memberTypeRaw.includes('inactive');
+      const memberTypeInactive = memberTypeRaw.includes('inactive');
+      if (memberTypeActive || memberTypeInactive) {
+        payload.status = memberTypeActive ? 'active' : 'inactive';
+      } else {
+        const duesPaid = member.dues_current === true || member.dues_current === 'true' || member.dues_current === 'yes';
+        const grandTax = (row.grand_tax_paid || '').toLowerCase();
+        const lifeMem  = (row.life_member    || '').toLowerCase();
+        const isGrandTaxOk  = grandTax === 'yes' || grandTax === 'y' || grandTax === 'true' || grandTax === '1';
+        const isLifeMember  = lifeMem  === 'yes' || lifeMem  === 'y' || lifeMem  === 'true' || lifeMem  === '1';
+        if (row.grand_tax_paid || row.life_member) {
+          payload.status = (duesPaid && (isGrandTaxOk || isLifeMember)) ? 'active' : 'inactive';
+        }
       }
       if (Object.keys(payload).length === 1) { skipped++; continue; }
       await sbPatch('members', 'id=eq.' + encodeURIComponent(String(member.id)), payload, token);
