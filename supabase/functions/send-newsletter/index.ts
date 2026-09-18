@@ -102,11 +102,15 @@ serve(async (req) => {
   const from = `${fromName} <${fromEmail}>`;
   let sent = 0; let failed = 0;
 
-  // Inject per-recipient unsubscribe footer
+  // Inject portal notice + per-recipient unsubscribe footer
   function addUnsub(html: string, email: string): string {
     const token = btoa(email);
     const unsubUrl = `${siteUrl}/unsubscribe.html?t=${encodeURIComponent(token)}`;
-    const footer = `<div style="text-align:center;padding:16px;font-size:11px;color:#999;">
+    const portalUrl = `${siteUrl}/member-portal.html`;
+    const footer = `<div style="text-align:center;padding:16px 16px 4px;font-size:12px;color:#555;border-top:1px solid #eee;margin-top:24px;">
+      <p style="margin:0 0 8px;">This newsletter is also available in the <a href="${portalUrl}" style="color:#C9A84C;font-weight:600;">Xi Tau Lambda Member Portal</a>.</p>
+    </div>
+    <div style="text-align:center;padding:4px 16px 16px;font-size:11px;color:#999;">
       You're receiving this because you're a member of Xi Tau Lambda Chapter.<br>
       <a href="${unsubUrl}" style="color:#999;">Unsubscribe</a>
     </div>`;
