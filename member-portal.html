@@ -348,6 +348,21 @@ backdrop-filter:blur(4px);}
         <div class="section-card-body" id="dashGoodOfDayBody" style="padding:16px 22px;"></div>
       </div>
 
+      <!-- Upcoming meeting notice -->
+      <div id="dashMeetingNotice" style="display:none;background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:16px 20px;margin-bottom:20px;display:none;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="flex-shrink:0;width:42px;height:42px;border-radius:50%;background:rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:1.1rem;">
+          <i class="fas fa-people-group"></i>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:0.7rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:2px;">Chapter Meeting Scheduled</div>
+          <div id="dashMeetingName" style="font-size:0.95rem;font-weight:700;color:var(--text);"></div>
+          <div id="dashMeetingDate" style="font-size:0.82rem;color:var(--gray-400);margin-top:2px;"></div>
+        </div>
+        <button class="btn-outline" style="flex-shrink:0;padding:8px 16px;font-size:0.82rem;" onclick="showPanel('meetings');loadMeetingsPortal()">
+          <i class="fas fa-calendar-check"></i> RSVP
+        </button>
+      </div>
+
       <div class="section-card">
         <div class="section-card-header">
           <h3><i class="fas fa-star"></i> Welcome Back, Bro. <span id="welcomeName">Brother</span></h3>
@@ -2539,6 +2554,7 @@ async function init() {
   renderDashboardEvents();
   await loadAnnouncements();
   loadDashboardCelebrations();
+  loadDashboardMeetingNotice();
   (function duesReturnFlash() {
     var q = new URLSearchParams(window.location.search);
     if (q.get('dues') === 'success') {
@@ -3521,6 +3537,31 @@ async function loadMyHelpdeskIssues() {
     }).join('');
   } catch(e) {
     list.innerHTML = '<div style="padding:32px;text-align:center;color:#f87171;font-size:0.85rem;background:#181818;">Could not load issues: ' + escHtml(e.message || '') + '</div>';
+  }
+}
+
+// ── Dashboard Meeting Notice ─────────────────────────────────
+async function loadDashboardMeetingNotice() {
+  var notice = document.getElementById('dashMeetingNotice');
+  if (!notice) return;
+  try {
+    var todayIso = new Date().toISOString().slice(0, 10);
+    var token = getToken ? getToken() : null;
+    var rows = await sbGet('meetings', 'archived=eq.false&meeting_date=gte.' + todayIso + '&order=meeting_date.asc&limit=1', token);
+    var m = rows && rows[0];
+    if (!m) { notice.style.display = 'none'; return; }
+    var mDate = new Date(m.meeting_date + 'T12:00:00');
+    var dateStr = mDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    if (m.start_time) {
+      var parts = m.start_time.split(':');
+      var h = parseInt(parts[0]); var min = parts[1];
+      dateStr += ' at ' + (h > 12 ? h - 12 : h || 12) + ':' + min + ' ' + (h >= 12 ? 'PM' : 'AM');
+    }
+    document.getElementById('dashMeetingName').textContent = m.title || 'Chapter Meeting';
+    document.getElementById('dashMeetingDate').textContent = dateStr + (m.location ? ' · ' + m.location : '');
+    notice.style.display = 'flex';
+  } catch(e) {
+    if (notice) notice.style.display = 'none';
   }
 }
 
