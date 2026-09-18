@@ -6498,7 +6498,7 @@ function mapAlphaMxHeaders(headers) {
     imdp_expiration:      idx.imdpexpiration    != null ? idx.imdpexpiration    : (idx.imdpexp != null ? idx.imdpexp : idx.imdpexpirationdate),
     grand_tax_paid:       idx.grandtaxpaid      != null ? idx.grandtaxpaid      : (idx.grandtax != null ? idx.grandtax : (idx.taxpaid != null ? idx.taxpaid : idx.tax)),
     life_member:          idx.lifemember        != null ? idx.lifemember        : (idx.lifememberstatus != null ? idx.lifememberstatus : idx.life),
-    member_type:          idx.membertype        != null ? idx.membertype        : (idx.type != null ? idx.type : (idx.memberstatus != null ? idx.memberstatus : idx.membercategory))
+    member_type:          idx.brotherstatus     != null ? idx.brotherstatus     : (idx.membertype != null ? idx.membertype : (idx.type != null ? idx.type : (idx.memberstatus != null ? idx.memberstatus : idx.membercategory)))
   };
 }
 
