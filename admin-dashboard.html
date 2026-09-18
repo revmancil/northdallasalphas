@@ -4488,11 +4488,15 @@ function renderAccessTable() {
   const tbody = document.getElementById('accessTableBody');
   const countEl = document.getElementById('accessGrantedCount');
   if (!tbody) return;
-  const grantedCount = allAccessMembers.filter(function(m) { return (m.portal_access || '') === 'granted'; }).length;
+  const grantedCount = allAccessMembers.filter(function(m) { return (m.portal_access || '') === 'granted' || (m.portal_access || '') === 'chapter_member'; }).length;
   if (countEl) countEl.textContent = grantedCount + ' granted';
   const searchVal = ((document.getElementById('accessSearch') || {}).value || '').trim().toLowerCase();
   let rows = accessTabFilter === 'all' ? allAccessMembers.slice()
-    : allAccessMembers.filter(function(m) { return (m.portal_access || 'pending').toLowerCase() === accessTabFilter; });
+    : allAccessMembers.filter(function(m) {
+        const pa = (m.portal_access || 'pending').toLowerCase();
+        if (accessTabFilter === 'granted') return pa === 'granted' || pa === 'chapter_member';
+        return pa === accessTabFilter;
+      });
   if (searchVal) {
     rows = rows.filter(function(m) {
       const name = ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase();
@@ -4514,8 +4518,8 @@ function renderAccessTable() {
     const portalAccess = (m.portal_access || 'pending').toLowerCase();
     const chapterStatus = (['active','inactive'].includes((m.status||'').toLowerCase())) ? (m.status||'').toLowerCase() : '';
     const isAdmin = accessAdminEmails.has((m.email || '').toLowerCase());
-    const accessColor = portalAccess === 'granted' ? 'var(--green)' : portalAccess === 'visiting' ? '#4ade80' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
-    const accessLabel = portalAccess === 'visiting' ? 'Visiting' : portalAccess.charAt(0).toUpperCase() + portalAccess.slice(1);
+    const accessColor = (portalAccess === 'granted' || portalAccess === 'chapter_member') ? 'var(--gold)' : portalAccess === 'visiting' ? '#4ade80' : portalAccess === 'pending' ? 'var(--blue)' : 'var(--red)';
+    const accessLabel = portalAccess === 'visiting' ? 'Visiting' : (portalAccess === 'chapter_member' || portalAccess === 'granted') ? 'Granted' : portalAccess.charAt(0).toUpperCase() + portalAccess.slice(1);
     const requested = m.created_at ? new Date(m.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const grantedDate = (['granted','visiting'].includes(portalAccess) && m.updated_at) ? new Date(m.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     const adminBadge = isAdmin ? '<span style="display:inline-flex;align-items:center;gap:3px;background:var(--gold);color:#000;font-size:0.65rem;font-weight:800;padding:2px 6px;border-radius:4px;margin-left:6px;"><i class="fas fa-user-shield"></i> ADMIN</span>' : '';
