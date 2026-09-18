@@ -143,10 +143,10 @@
         <button class="btn-gold" id="loginBtn" onclick="doLogin()">
           <i class="fas fa-sign-in-alt"></i> Sign In &amp; Check In
         </button>
-        <div class="divider"><span>don't have a password yet?</span></div>
-        <button class="btn-outline" onclick="showPanel('panelSetup')">
-          <i class="fas fa-key"></i> Set Up My Password
-        </button>
+        <div class="divider"><span>need portal access?</span></div>
+        <a class="btn-outline" href="member-portal.html" style="display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;">
+          <i class="fas fa-user-plus"></i> Request Access
+        </a>
         <div class="divider"><span>visiting from another chapter?</span></div>
         <button class="btn-outline" onclick="showPanel('panelVisitor')">
           <i class="fas fa-handshake"></i> I'm a Visiting Brother
@@ -169,24 +169,6 @@
         </div>
         <button class="btn-gold" id="visitorBtn" onclick="doVisitorCheckIn()">
           <i class="fas fa-door-open"></i> Check In as Visiting Brother
-        </button>
-        <button class="btn-outline" onclick="showPanel('panelLogin')">
-          <i class="fas fa-arrow-left"></i> Back to Sign In
-        </button>
-      </div>
-
-      <!-- SET UP PASSWORD (no account yet) -->
-      <div class="screen" id="panelSetup">
-        <p style="color:rgba(255,255,255,0.45);font-size:0.83rem;line-height:1.6;margin-bottom:16px;">Enter the email address on file with the chapter. We'll send you a link to create your password.</p>
-        <div class="msg error" id="setupErr"><i class="fas fa-exclamation-circle"></i><span id="setupErrText"></span></div>
-        <div class="msg success" id="setupOk"><i class="fas fa-check-circle"></i><span>Email sent! Check your inbox, then return here to sign in and check in.</span></div>
-        <label class="form-label">Email Address</label>
-        <div class="input-wrap">
-          <i class="fas fa-envelope icon"></i>
-          <input type="email" id="setupEmail" placeholder="your@email.com" autocomplete="email" />
-        </div>
-        <button class="btn-gold" id="setupBtn" onclick="doSetup()">
-          <i class="fas fa-paper-plane"></i> Send Setup Link
         </button>
         <button class="btn-outline" onclick="showPanel('panelLogin')">
           <i class="fas fa-arrow-left"></i> Back to Sign In
@@ -259,7 +241,7 @@ function showScreen(id) {
 }
 
 function showPanel(id) {
-  ['panelConfirm','panelLogin','panelSetup','panelForgot','panelVisitor'].forEach(function(p) {
+  ['panelConfirm','panelLogin','panelForgot','panelVisitor'].forEach(function(p) {
     var el = document.getElementById(p);
     if (el) el.classList.toggle('active', p === id);
   });
@@ -478,29 +460,6 @@ async function doLogin() {
   } catch(e) {
     showMsg('loginErr', 'error', 'Network error. Please check your connection.');
     setLoading('loginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In &amp; Check In');
-  }
-}
-
-// ── Password setup (first-time) ───────────────────────────────────────────────
-
-async function doSetup() {
-  hideMsg('setupErr');
-  hideMsg('setupOk');
-  var email = (document.getElementById('setupEmail').value || '').trim();
-  if (!email) { showMsg('setupErr', 'error', 'Please enter your email address.'); return; }
-  setLoading('setupBtn', true, '<i class="fas fa-paper-plane"></i> Send Setup Link');
-  try {
-    var res = await fetch(SUPABASE_URL + '/auth/v1/recover', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
-      body: JSON.stringify({ email: email })
-    });
-    // Supabase returns 200 regardless so we treat any response as success
-    document.getElementById('setupOk').classList.add('show');
-    setLoading('setupBtn', false, '<i class="fas fa-paper-plane"></i> Send Setup Link');
-  } catch(e) {
-    showMsg('setupErr', 'error', 'Network error. Please try again.');
-    setLoading('setupBtn', false, '<i class="fas fa-paper-plane"></i> Send Setup Link');
   }
 }
 
