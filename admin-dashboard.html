@@ -4528,7 +4528,7 @@ function renderAccessTable() {
                 '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="updateMemberStatus(\'' + mid + '\',\'visiting\')"><i class="fas fa-user-clock"></i> Visiting Brother</button> ' +
                 '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + mid + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>';
     } else if (portalAccess === 'visiting') {
-      actions = '<button class="btn-sm success" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')" title="Upgrade to Chapter Brother with full access"><i class="fas fa-arrow-up"></i> Chapter Brother</button> ' +
+      actions = '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.4);font-weight:700;" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')" title="Upgrade to Chapter Brother with full access"><i class="fas fa-arrow-up"></i> Chapter Brother</button> ' +
                 '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
     } else if (portalAccess === 'chapter_member') {
       actions = '<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;font-weight:700;color:#16a34a;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.35);padding:4px 10px;border-radius:6px;"><i class="fas fa-check-circle"></i> Chapter Brother</span> ' +
