@@ -6542,11 +6542,15 @@ async function handleAlphaMxCsvUpload(event) {
       if (m.alpha_id) byAlphaId[String(m.alpha_id).toUpperCase()] = m;
       if (m.email) byEmail[String(m.email).toLowerCase()] = m;
     });
-    let matched = 0, skipped = 0;
+    let matched = 0, skipped = 0, noMatch = 0;
+    // Debug: log what we found in the CSV vs DB
+    console.log('AlphaMX CSV rows:', rows.length, 'sample alpha_ids:', rows.slice(0,3).map(function(r){return r.alpha_id;}));
+    console.log('DB alpha_ids sample:', Object.keys(byAlphaId).slice(0,5));
+    console.log('Mapped headers:', mapped);
     showToast('Importing AlphaMX data…', 'info');
     for (const row of rows) {
       const member = byAlphaId[row.alpha_id] || byEmail[row.email];
-      if (!member) { skipped++; continue; }
+      if (!member) { noMatch++; skipped++; continue; }
       const payload = { updated_at: new Date().toISOString() };
       if (row.chapter_active_date)  payload.chapter_active_date  = row.chapter_active_date;
       if (row.imdp_certified)       payload.imdp_certified       = row.imdp_certified;
@@ -6576,8 +6580,10 @@ async function handleAlphaMxCsvUpload(event) {
       await sbPatch('members', 'id=eq.' + encodeURIComponent(String(member.id)), payload, token);
       matched++;
     }
-    const skipNote = skipped ? ' (' + skipped + ' row(s) not matched)' : '';
-    showToast('Updated ' + matched + ' member(s) from AlphaMX.' + skipNote, matched ? 'success' : 'info');
+    const skipNote = noMatch ? ' (' + noMatch + ' row(s) had no Alpha ID/email match)' : '';
+    const noDataNote = (skipped - noMatch) ? ' (' + (skipped - noMatch) + ' matched but had no recognizable data columns)' : '';
+    showToast('Updated ' + matched + ' member(s) from AlphaMX.' + skipNote + noDataNote, matched ? 'success' : 'error');
+    console.log('AlphaMX result — matched:', matched, 'noMatch:', noMatch, 'noData:', skipped - noMatch);
     await loadMemberRequests();
   } catch (err) {
     showToast('Could not process AlphaMX CSV: ' + (err.message || 'unknown error'), 'error');
