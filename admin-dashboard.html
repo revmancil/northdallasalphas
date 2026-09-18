@@ -6562,9 +6562,9 @@ async function handleAlphaMxCsvUpload(event) {
       if (row.life_member)          payload.life_member          = row.life_member;
       // Derive active/inactive from member_type column (e.g. "Brother-Alumni-Active" / "Brother-Alumni-Inactive")
       // OR from explicit grand_tax_paid / life_member columns
-      const memberTypeRaw = (row.member_type || '').toLowerCase().replace(/[\s_]/g, '');
-      const memberTypeActive   = memberTypeRaw.includes('active')   && !memberTypeRaw.includes('inactive');
+      const memberTypeRaw = (row.member_type || '').toLowerCase();
       const memberTypeInactive = memberTypeRaw.includes('inactive');
+      const memberTypeActive   = memberTypeRaw.includes('active') && !memberTypeInactive;
       if (memberTypeActive || memberTypeInactive) {
         payload.status = memberTypeActive ? 'active' : 'inactive';
       } else {
