@@ -102,7 +102,7 @@ serve(async (req) => {
   const from = `${fromName} <${fromEmail}>`;
   let sent = 0; let failed = 0;
 
-  // Inject unsubscribe footer into HTML
+  // Inject per-recipient unsubscribe footer
   function addUnsub(html: string, email: string): string {
     const token = btoa(email);
     const unsubUrl = `${siteUrl}/unsubscribe.html?t=${encodeURIComponent(token)}`;
@@ -113,39 +113,47 @@ serve(async (req) => {
     return html.replace(/<\/body>/i, footer + "</body>");
   }
 
-  // Send one at a time to capture individual Resend IDs
-  for (const email of emailList) {
+  // Send in batches of 100 using Resend's batch endpoint
+  for (let i = 0; i < emailList.length; i += 100) {
+    const chunk = emailList.slice(i, i + 100);
+    const batchPayload = chunk.map((email) => ({
+      from,
+      to: [email],
+      subject: payload.subject,
+      html: addUnsub(payload.html, email),
+    }));
+
     try {
-      const res = await fetch("https://api.resend.com/emails", {
+      const res = await fetch("https://api.resend.com/emails/batch", {
         method: "POST",
         headers: { Authorization: "Bearer " + resendKey, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from,
-          to: [email],
-          subject: payload.subject,
-          html: addUnsub(payload.html, email),
-        }),
+        body: JSON.stringify(batchPayload),
       });
-      const data: { id?: string } = await res.json().catch(() => ({}));
-      const resendId = data.id ?? null;
-      const status = res.ok ? "sent" : "failed";
-      if (res.ok) sent++; else failed++;
 
-      // Update log with Resend ID and status
-      await fetch(
-        `${supabaseUrl}/rest/v1/newsletter_send_log?batch_id=eq.${batchId}&recipient_email=eq.${encodeURIComponent(email)}`,
-        {
-          method: "PATCH",
-          headers: {
-            apikey: serviceKey, Authorization: "Bearer " + serviceKey,
-            "Content-Type": "application/json", Prefer: "return=minimal",
-          },
-          body: JSON.stringify({ resend_id: resendId, status, status_updated_at: new Date().toISOString() }),
-        }
-      );
+      const data: { data?: Array<{ id: string }> } = await res.json().catch(() => ({}));
+      const results = data.data ?? [];
+
+      // Update each recipient's log row with its Resend ID and status
+      const updateNow = new Date().toISOString();
+      await Promise.allSettled(chunk.map((email, idx) => {
+        const resendId = results[idx]?.id ?? null;
+        const status = res.ok && resendId ? "sent" : "failed";
+        if (res.ok && resendId) sent++; else failed++;
+        return fetch(
+          `${supabaseUrl}/rest/v1/newsletter_send_log?batch_id=eq.${batchId}&recipient_email=eq.${encodeURIComponent(email)}`,
+          {
+            method: "PATCH",
+            headers: {
+              apikey: serviceKey, Authorization: "Bearer " + serviceKey,
+              "Content-Type": "application/json", Prefer: "return=minimal",
+            },
+            body: JSON.stringify({ resend_id: resendId, status, status_updated_at: updateNow }),
+          }
+        );
+      }));
     } catch (err) {
-      console.error("Send error for", email, err);
-      failed++;
+      console.error("Batch send error:", err);
+      failed += chunk.length;
     }
   }
 
