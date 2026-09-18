@@ -9274,6 +9274,37 @@ function nlMoveBlockDown(zone, id) {
   nlRenderCanvas();
 }
 
+// ── Video asset upload ──
+function nlUploadVideoAsset(prop, zone, blockId, kind) {
+  var accept = kind === 'video' ? 'video/*' : 'image/*';
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = accept;
+  input.onchange = async function() {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    var token = getAdminToken();
+    if (!token) { showToast('Admin session required.', 'error'); return; }
+    showToast('Uploading ' + (kind === 'video' ? 'video' : 'image') + '…', 'info');
+    try {
+      var ext = (file.name.split('.').pop() || (kind === 'video' ? 'mp4' : 'jpg')).toLowerCase();
+      var path = 'newsletter-media/' + Date.now() + '-' + Math.random().toString(36).slice(2,6) + '.' + ext;
+      var res = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': file.type, 'x-upsert': 'true' },
+        body: file
+      });
+      if (!res.ok) { var se = await res.json().catch(function(){return{};}); throw new Error(se.message || 'Upload failed'); }
+      var url = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+      nlUpdateProp(zone, blockId, prop, url);
+      showToast((kind === 'video' ? 'Video' : 'Image') + ' uploaded successfully.', 'success');
+    } catch(err) {
+      showToast('Upload failed: ' + (err.message || 'unknown error'), 'error');
+    }
+  };
+  input.click();
+}
+
 // ── Prop updates ──
 function nlUpdateProp(zone, id, prop, value) {
   const block = (nlState.zones[zone] || []).find(function (b) { return b.id === id; });
@@ -9548,8 +9579,20 @@ function nlPropsForm(block, zone) {
       html += field('Height', numInp('height', p.height || 32, 4, 500, 'px'));
       break;
     case 'video':
-      html += field('Thumbnail URL', inp('thumbnailUrl', p.thumbnailUrl || '', 'url'));
-      html += field('Video URL', inp('videoUrl', p.videoUrl || '', 'url'));
+      html += field('Thumbnail Image',
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'
+        + '<button type="button" onclick="nlUploadVideoAsset(\'thumbnailUrl\',\'' + z + '\',\'' + id + '\',\'image\')" style="padding:5px 10px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:5px;font-size:0.75rem;cursor:pointer;white-space:nowrap;"><i class="fas fa-upload"></i> Upload Image</button>'
+        + '<input type="url" value="' + escHtml(p.thumbnailUrl || '') + '" placeholder="or paste image URL" style="flex:1;min-width:80px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.78rem;box-sizing:border-box;" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'thumbnailUrl\',this.value)" />'
+        + '</div>'
+        + (p.thumbnailUrl ? '<div style="margin-top:5px;"><img src="' + escHtml(p.thumbnailUrl) + '" style="max-width:100%;height:50px;object-fit:cover;border-radius:4px;border:1px solid var(--gray-200);" /></div>' : '')
+      );
+      html += field('Video File',
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">'
+        + '<button type="button" onclick="nlUploadVideoAsset(\'videoUrl\',\'' + z + '\',\'' + id + '\',\'video\')" style="padding:5px 10px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);border-radius:5px;font-size:0.75rem;cursor:pointer;white-space:nowrap;"><i class="fas fa-upload"></i> Upload Video</button>'
+        + '<input type="url" value="' + escHtml(p.videoUrl || '') + '" placeholder="or paste video URL" style="flex:1;min-width:80px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:0.78rem;box-sizing:border-box;" onchange="nlUpdateProp(\'' + z + '\',\'' + id + '\',\'videoUrl\',this.value)" />'
+        + '</div>'
+        + (p.videoUrl ? '<div style="margin-top:4px;font-size:0.7rem;color:var(--green);"><i class="fas fa-check-circle"></i> Video uploaded</div>' : '')
+      );
       html += field('Caption', inp('caption', p.caption || ''));
       html += padRow();
       break;
