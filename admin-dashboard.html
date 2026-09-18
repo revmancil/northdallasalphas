@@ -6547,6 +6547,7 @@ async function handleAlphaMxCsvUpload(event) {
     console.log('AlphaMX CSV rows:', rows.length, 'sample alpha_ids:', rows.slice(0,3).map(function(r){return r.alpha_id;}));
     console.log('DB alpha_ids sample:', Object.keys(byAlphaId).slice(0,5));
     console.log('Mapped headers:', mapped);
+    console.log('Sample row data:', rows.slice(0,2).map(function(r){return {alpha_id:r.alpha_id,member_type:r.member_type,imdp:r.imdp_certified,risk:r.risk_mgmt_certified};}));
     showToast('Importing AlphaMX data…', 'info');
     for (const row of rows) {
       const member = byAlphaId[row.alpha_id] || byEmail[row.email];
