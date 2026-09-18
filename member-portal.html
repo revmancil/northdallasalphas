@@ -2474,8 +2474,17 @@ async function init() {
         body: JSON.stringify({ type: 'member_request', name: [meta.first_name||'', meta.last_name||''].filter(Boolean).join(' ') || userEmail, email: userEmail })
       }).catch(function(){});
     } catch(e) {}
+  } else if (currentMember.alpha_id && (currentMember.portal_access === 'pending' || !currentMember.portal_access)) {
+    // Email matched an existing roster member with an Alpha ID — auto-grant Chapter Brother access
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(userEmail), {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ portal_access: 'granted', access_granted_at: new Date().toISOString() })
+      });
+      currentMember.portal_access = 'granted';
+    } catch(e) {}
   }
-  // Never auto-grant — pending stays pending until an admin approves
   const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (userEmail.split('@')[0] || 'Member');
   const lastName  = (currentMember && currentMember.last_name)  ? currentMember.last_name  : '';
   const fullName  = [firstName, lastName].filter(Boolean).join(' ');
