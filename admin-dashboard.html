@@ -1327,6 +1327,9 @@
       <button class="sidebar-link" data-section="meetings" onclick="showPanel('meetings');loadMeetingsPanel()">
         <i class="fas fa-people-group"></i> Meetings
       </button>
+      <button class="sidebar-link" data-section="voting" onclick="showPanel('voting');loadVotingPanel()">
+        <i class="fas fa-vote-yea"></i> Roll Call &amp; Voting
+      </button>
       <button class="sidebar-link" data-section="event-planning" onclick="showPanel('event-planning');loadEventPlanning()">
         <i class="fas fa-project-diagram"></i> Event Planning
       </button>
@@ -2880,6 +2883,109 @@
         <div class="section-card-body">
           <div id="committeesAdminList"><div class="hint-text">Loading committees…</div></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════
+         ROLL CALL & VOTING PANEL
+    ══════════════════════════════════ -->
+    <div class="panel" id="panel-voting">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+        <div>
+          <h2 style="margin:0 0 4px;font-size:1.25rem;font-weight:700;">Roll Call &amp; Chapter Voting</h2>
+          <p style="margin:0;color:var(--gray-500);font-size:0.85rem;">Record attendance and votes on motions. Active brothers only. Results saved to Supabase.</p>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span id="vtgSaveStatus" style="font-size:0.78rem;color:var(--gray-400);"></span>
+          <button class="btn-sm" onclick="vtgNewMeeting()" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);"><i class="fas fa-plus"></i> New Meeting</button>
+          <button class="btn-sm" onclick="vtgSaveMeeting()" id="vtgSaveBtn" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.4);font-weight:700;"><i class="fas fa-save"></i> Save</button>
+          <button class="btn-sm" onclick="vtgExportCsv()" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);"><i class="fas fa-file-csv"></i> CSV</button>
+          <button class="btn-sm" onclick="vtgExportPdf()" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);"><i class="fas fa-file-pdf"></i> PDF</button>
+        </div>
+      </div>
+
+      <!-- Meeting selector card -->
+      <div class="section-card" style="margin-bottom:18px;">
+        <div class="section-card-body" style="padding:14px 18px;">
+          <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;">
+            <div class="field-group" style="margin:0;min-width:220px;">
+              <label>Meeting</label>
+              <select id="vtgPicker" onchange="vtgPickerChange()" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;background:var(--white);color:var(--gray-800);font-size:0.85rem;min-width:220px;"></select>
+            </div>
+            <div class="field-group" style="margin:0;flex:1;min-width:180px;">
+              <label>Title</label>
+              <input type="text" id="vtgTitle" placeholder="e.g. September Chapter Meeting" onchange="vtgFieldChange()" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;width:100%;" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Date</label>
+              <input type="text" id="vtgDate" placeholder="9/19/2026" onchange="vtgFieldChange()" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;width:110px;" />
+            </div>
+            <div class="field-group" style="margin:0;">
+              <label>Quorum target</label>
+              <input type="number" id="vtgQuorum" min="0" step="1" onchange="vtgFieldChange()" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;width:90px;" />
+            </div>
+            <button class="btn-sm" onclick="vtgFinalize()" id="vtgFinalizeBtn" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);">Finalize</button>
+            <button class="btn-sm" onclick="vtgDeleteMeeting()" style="background:transparent;color:var(--gray-400);border-color:var(--gray-300);">Delete</button>
+          </div>
+          <div id="vtgQuorumBadge" style="margin-top:10px;font-size:0.83rem;font-weight:600;color:var(--gray-500);"></div>
+        </div>
+      </div>
+
+      <!-- Tabs: Roll Call / Motions / Records -->
+      <div style="display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:18px;">
+        <button id="vtgTabRollCall" class="vtg-tab active" onclick="vtgSetTab('rollcall')" style="padding:10px 20px;border:none;background:transparent;font-weight:700;font-size:0.88rem;color:var(--gold);border-bottom:2px solid var(--gold);margin-bottom:-2px;cursor:pointer;">Roll Call</button>
+        <button id="vtgTabMotions" class="vtg-tab" onclick="vtgSetTab('motions')" style="padding:10px 20px;border:none;background:transparent;font-weight:700;font-size:0.88rem;color:var(--gray-500);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">Motions</button>
+        <button id="vtgTabRecords" class="vtg-tab" onclick="vtgSetTab('records')" style="padding:10px 20px;border:none;background:transparent;font-weight:700;font-size:0.88rem;color:var(--gray-500);border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;">Records</button>
+      </div>
+
+      <!-- Roll Call tab -->
+      <div id="vtgViewRollCall">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <input type="text" id="vtgAttendSearch" placeholder="Search brothers…" oninput="vtgRenderAttendance()" style="padding:7px 12px;border:1px solid var(--gray-300);border-radius:20px;font-size:0.83rem;width:220px;" />
+          <button class="btn-sm" onclick="vtgMarkAll(true)" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);">Mark All Present</button>
+          <button class="btn-sm" onclick="vtgMarkAll(false)" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">Mark All Absent</button>
+        </div>
+        <div id="vtgAttendGrid" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+      </div>
+
+      <!-- Motions tab -->
+      <div id="vtgViewMotions" style="display:none;">
+        <div style="margin-bottom:16px;">
+          <h3 style="margin:0 0 10px;font-size:1rem;font-weight:700;color:var(--gray-700);">Constitutional Amendments</h3>
+          <div id="vtgMotionsAmendment"></div>
+          <button class="btn-sm" onclick="vtgOpenAddMotion('amendment')" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);margin-top:8px;"><i class="fas fa-plus"></i> Add Constitutional Amendment</button>
+        </div>
+        <div style="margin-top:24px;">
+          <h3 style="margin:0 0 10px;font-size:1rem;font-weight:700;color:var(--gray-700);">Grievance Committee Motions</h3>
+          <div id="vtgMotionsGrievance"></div>
+          <button class="btn-sm" onclick="vtgOpenAddMotion('grievance')" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);margin-top:8px;"><i class="fas fa-plus"></i> Add Grievance Motion</button>
+        </div>
+        <!-- Add motion form -->
+        <div id="vtgAddMotionForm" style="display:none;background:rgba(201,168,76,0.05);border:1px dashed rgba(201,168,76,0.3);border-radius:8px;padding:14px 16px;margin-top:16px;">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
+            <div class="field-group" style="margin:0;flex:2;min-width:200px;"><label>Motion Title</label><input type="text" id="vtgNewMotionTitle" placeholder="Brief title for the record" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
+            <div class="field-group" style="margin:0;min-width:140px;"><label>Threshold</label>
+              <select id="vtgNewMotionThreshold" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">
+                <option value="majority">Majority</option>
+                <option value="twothirds">Two-thirds</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin:0;flex-basis:100%;"><label>Description (optional)</label><textarea id="vtgNewMotionDesc" rows="2" placeholder="Full motion text for the minutes" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;resize:vertical;"></textarea></div>
+            <button class="btn-save" onclick="vtgSubmitMotion()" style="padding:8px 18px;font-size:0.85rem;">Add Motion</button>
+            <button class="btn-sm" onclick="document.getElementById('vtgAddMotionForm').style.display='none';" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Records tab -->
+      <div id="vtgViewRecords" style="display:none;">
+        <div id="vtgRecordsList"></div>
+      </div>
+
+      <div id="vtgEmptyState" style="display:none;text-align:center;padding:48px 20px;color:var(--gray-400);">
+        <i class="fas fa-vote-yea" style="font-size:2rem;margin-bottom:12px;display:block;"></i>
+        <p style="margin:0 0 16px;">No meetings yet. Start one to begin recording roll call and votes.</p>
+        <button class="btn-save" onclick="vtgNewMeeting()" style="padding:10px 22px;">Create First Meeting</button>
       </div>
     </div>
 
@@ -13616,6 +13722,475 @@ async function deleteHelpdeskIssue(id) {
   }
 }
 
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* ================================================================
+   ROLL CALL & VOTING PANEL
+   Saves meetings to chapter_meetings table as JSONB.
+   ================================================================ */
+
+var vtgRoster = [];       // active members from Supabase
+var vtgMeetings = [];     // meetings from Supabase
+var vtgCurrentId = null;  // id of active meeting
+var vtgActiveTab = 'rollcall';
+var vtgAddMotionCategory = 'amendment';
+var vtgDirty = false;
+
+function vtgToken() { return getAdminToken(); }
+
+async function loadVotingPanel() {
+  vtgRoster = [];
+  vtgMeetings = [];
+  vtgCurrentId = null;
+  document.getElementById('vtgEmptyState').style.display = 'none';
+  document.getElementById('vtgSaveStatus').textContent = 'Loading…';
+  try {
+    const tok = vtgToken();
+    const [members, meetings] = await Promise.all([
+      sbGet('members', 'status=eq.active&select=id,alpha_id,first_name,last_name,middle_name,suffix&order=last_name.asc', tok),
+      sbGet('chapter_meetings', 'order=created_at.desc', tok).catch(() => [])
+    ]);
+    vtgRoster = (members || []).map(function(m) {
+      return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '' };
+    });
+    vtgMeetings = (meetings || []).map(function(r) {
+      var d = r.meeting_data || {};
+      return { dbId: r.id, id: r.id, title: r.title || '', date: r.date || '', quorumTarget: r.quorum_target || null, finalizedAt: r.finalized_at || null, attendance: d.attendance || {}, motions: d.motions || [] };
+    });
+    if (vtgMeetings.length) vtgCurrentId = vtgMeetings[0].id;
+    vtgRenderAll();
+    document.getElementById('vtgSaveStatus').textContent = '';
+  } catch(e) {
+    document.getElementById('vtgSaveStatus').textContent = 'Load error: ' + (e.message || 'unknown');
+  }
+}
+
+function vtgCurrent() { return vtgMeetings.find(function(m){ return m.id === vtgCurrentId; }) || null; }
+
+function vtgRenderAll() {
+  vtgRenderPicker();
+  var m = vtgCurrent();
+  if (!m && vtgMeetings.length === 0) {
+    document.getElementById('vtgEmptyState').style.display = 'block';
+    ['vtgPicker','vtgTitle','vtgDate','vtgQuorum','vtgSaveBtn','vtgFinalizeBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=true; });
+    return;
+  }
+  document.getElementById('vtgEmptyState').style.display = 'none';
+  ['vtgPicker','vtgTitle','vtgDate','vtgQuorum','vtgSaveBtn','vtgFinalizeBtn'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=false; });
+  if (m) {
+    document.getElementById('vtgTitle').value = m.title;
+    document.getElementById('vtgDate').value = m.date;
+    document.getElementById('vtgQuorum').value = m.quorumTarget || '';
+    document.getElementById('vtgFinalizeBtn').textContent = m.finalizedAt ? 'Re-finalize' : 'Finalize';
+    vtgRenderAttendance();
+    vtgRenderMotions();
+    vtgRenderRecords();
+    vtgUpdateQuorumBadge();
+  }
+}
+
+function vtgRenderPicker() {
+  var sel = document.getElementById('vtgPicker');
+  if (!sel) return;
+  sel.innerHTML = vtgMeetings.map(function(m){
+    return '<option value="' + escHtml(m.id) + '">' + escHtml(m.title || 'Untitled') + ' — ' + escHtml(m.date) + (m.finalizedAt ? ' ✓' : '') + '</option>';
+  }).join('');
+  if (vtgCurrentId) sel.value = vtgCurrentId;
+}
+
+function vtgPickerChange() {
+  vtgCurrentId = document.getElementById('vtgPicker').value;
+  vtgRenderAll();
+}
+
+function vtgFieldChange() {
+  var m = vtgCurrent(); if (!m) return;
+  m.title = document.getElementById('vtgTitle').value;
+  m.date = document.getElementById('vtgDate').value;
+  var q = document.getElementById('vtgQuorum').value;
+  m.quorumTarget = q === '' ? null : parseInt(q, 10);
+  vtgDirty = true;
+  vtgRenderPicker();
+  vtgUpdateQuorumBadge();
+}
+
+function vtgSetTab(tab) {
+  vtgActiveTab = tab;
+  ['rollcall','motions','records'].forEach(function(t){
+    var btn = document.getElementById('vtgTab' + (t === 'rollcall' ? 'RollCall' : t === 'motions' ? 'Motions' : 'Records'));
+    var view = document.getElementById('vtgView' + (t === 'rollcall' ? 'RollCall' : t === 'motions' ? 'Motions' : 'Records'));
+    var isActive = t === tab;
+    if (btn) { btn.style.color = isActive ? 'var(--gold)' : 'var(--gray-500)'; btn.style.borderBottomColor = isActive ? 'var(--gold)' : 'transparent'; }
+    if (view) view.style.display = isActive ? 'block' : 'none';
+  });
+}
+
+function vtgActiveRoster() {
+  var m = vtgCurrent(); if (!m) return vtgRoster;
+  return vtgRoster;
+}
+
+function vtgFullName(r) { return (r.last || '') + ', ' + [r.first, r.middle].filter(Boolean).join(' ') + (r.suffix ? ' ' + r.suffix : ''); }
+function vtgShortName(r) { return (r.last || '') + (r.first ? ', ' + r.first : ''); }
+
+function vtgUpdateQuorumBadge() {
+  var m = vtgCurrent();
+  var badge = document.getElementById('vtgQuorumBadge');
+  if (!m || !badge) return;
+  var presentCount = vtgRoster.filter(function(r){ return m.attendance[r.id]; }).length;
+  var total = vtgRoster.length;
+  if (m.quorumTarget) {
+    var met = presentCount >= m.quorumTarget;
+    badge.style.color = met ? '#2f6b45' : '#9c3b32';
+    badge.textContent = presentCount + ' of ' + total + ' present — quorum ' + (met ? 'MET' : 'NOT MET') + ' (needs ' + m.quorumTarget + ')';
+  } else {
+    badge.style.color = 'var(--gray-500)';
+    badge.textContent = presentCount + ' of ' + total + ' active brothers present';
+  }
+}
+
+function vtgRenderAttendance() {
+  var m = vtgCurrent();
+  var grid = document.getElementById('vtgAttendGrid');
+  if (!grid || !m) return;
+  var q = (document.getElementById('vtgAttendSearch').value || '').toLowerCase();
+  var list = vtgRoster.filter(function(r){ return !q || vtgFullName(r).toLowerCase().includes(q); });
+  grid.innerHTML = list.map(function(r) {
+    var present = !!m.attendance[r.id];
+    var style = present
+      ? 'padding:7px 13px;border-radius:999px;border:1.5px solid #C9A84C;background:rgba(201,168,76,0.12);font-size:0.82rem;font-weight:600;cursor:pointer;color:#111;display:inline-flex;align-items:center;gap:6px;'
+      : 'padding:7px 13px;border-radius:999px;border:1.5px solid var(--gray-300);background:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--gray-500);display:inline-flex;align-items:center;gap:6px;';
+    var dot = present ? 'width:7px;height:7px;border-radius:50%;background:#C9A84C;flex:none;' : 'width:7px;height:7px;border-radius:50%;background:var(--gray-300);flex:none;';
+    return '<button style="' + style + '" onclick="vtgToggleAttend(\'' + r.id + '\')"><span style="' + dot + '"></span>' + escHtml(vtgShortName(r)) + '</button>';
+  }).join('') || '<p style="color:var(--gray-400);font-size:0.83rem;">No brothers match.</p>';
+  vtgUpdateQuorumBadge();
+}
+
+function vtgToggleAttend(memberId) {
+  var m = vtgCurrent(); if (!m) return;
+  m.attendance[memberId] = !m.attendance[memberId];
+  vtgDirty = true;
+  vtgRenderAttendance();
+  vtgRenderMotions();
+}
+
+function vtgMarkAll(present) {
+  var m = vtgCurrent(); if (!m) return;
+  vtgRoster.forEach(function(r){ m.attendance[r.id] = present; });
+  vtgDirty = true;
+  vtgRenderAttendance();
+  vtgRenderMotions();
+}
+
+/* ---------- Motions ---------- */
+function vtgComputeTally(motion) {
+  var yea=0, nay=0, abstain=0;
+  Object.values(motion.votes || {}).forEach(function(v){ if(v==='yea') yea++; else if(v==='nay') nay++; else if(v==='abstain') abstain++; });
+  var decisive = yea + nay;
+  var passed = null;
+  if (decisive > 0) passed = motion.threshold === 'twothirds' ? (yea / decisive >= 2/3 - 1e-9) : (yea > nay);
+  return {yea, nay, abstain, decisive, passed};
+}
+
+function vtgRenderMotions() {
+  var m = vtgCurrent(); if (!m) return;
+  ['amendment','grievance'].forEach(function(cat) {
+    var container = document.getElementById(cat === 'amendment' ? 'vtgMotionsAmendment' : 'vtgMotionsGrievance');
+    if (!container) return;
+    var motions = m.motions.filter(function(mo){ return mo.category === cat; });
+    if (!motions.length) { container.innerHTML = '<p style="color:var(--gray-400);font-size:0.83rem;margin:0 0 8px;">No ' + (cat === 'amendment' ? 'constitutional amendments' : 'grievance motions') + ' recorded yet.</p>'; return; }
+    container.innerHTML = motions.map(function(motion) { return vtgMotionCardHtml(m, motion); }).join('');
+  });
+}
+
+function vtgMotionCardHtml(m, motion) {
+  var t = vtgComputeTally(motion);
+  var total = t.yea + t.nay + t.abstain || 1;
+  var resultHtml = t.passed === null ? '<span style="background:var(--gray-100);color:var(--gray-500);padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">No votes yet</span>'
+    : t.passed ? '<span style="background:#e3f0e4;color:#2f6b45;padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Passes</span>'
+               : '<span style="background:#fde8e8;color:#c0392b;padding:3px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">Fails</span>';
+  var presentBrothers = vtgRoster.filter(function(r){ return m.attendance[r.id]; });
+  var voteRows = presentBrothers.map(function(r) {
+    var v = motion.votes[r.id];
+    function vbtn(choice, label) {
+      var sel = v === choice;
+      var bg = sel ? (choice==='yea'?'#2f6b45':choice==='nay'?'#c0392b':'#5a6270') : 'transparent';
+      var col = sel ? '#fff' : 'var(--gray-500)';
+      return '<button onclick="vtgCastVote(\'' + escHtml(motion.id) + '\',\'' + r.id + '\',\'' + choice + '\')" style="width:32px;height:26px;border-radius:5px;border:1px solid var(--gray-300);background:' + bg + ';color:' + col + ';font-size:0.75rem;font-weight:700;cursor:pointer;">' + label + '</button>';
+    }
+    return '<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--gray-200);font-size:0.85rem;">'
+      + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escHtml(vtgFullName(r)) + '</span>'
+      + '<div style="display:flex;gap:4px;">' + vbtn('yea','Y') + vbtn('nay','N') + vbtn('abstain','A') + '</div>'
+      + '</div>';
+  }).join('') || '<div style="padding:14px;text-align:center;color:var(--gray-400);font-size:0.83rem;">No present brothers — mark attendance first.</div>';
+  return '<div style="border:1px solid var(--gray-200);border-radius:8px;margin-bottom:14px;overflow:hidden;">'
+    + '<div style="padding:12px 16px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);display:flex;gap:12px;align-items:center;flex-wrap:wrap;">'
+    + '<div style="flex:1;min-width:180px;">'
+    + '<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:#C9A84C;font-weight:700;margin-bottom:3px;">' + (motion.category === 'amendment' ? 'Constitutional Amendment' : 'Grievance Motion') + ' · ' + (motion.threshold === 'twothirds' ? 'Two-thirds required' : 'Majority required') + '</div>'
+    + '<div style="font-weight:700;font-size:0.95rem;">' + escHtml(motion.title || 'Untitled') + '</div>'
+    + (motion.description ? '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:3px;">' + escHtml(motion.description) + '</div>' : '')
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+    + '<span style="color:#2f6b45;font-weight:700;font-size:0.85rem;">Y ' + t.yea + '</span>'
+    + '<span style="color:#c0392b;font-weight:700;font-size:0.85rem;">N ' + t.nay + '</span>'
+    + '<span style="color:#5a6270;font-weight:700;font-size:0.85rem;">A ' + t.abstain + '</span>'
+    + resultHtml
+    + '<select onchange="vtgChangeThreshold(\'' + escHtml(motion.id) + '\',this.value)" style="padding:4px 8px;border-radius:6px;border:1px solid var(--gray-300);font-size:0.78rem;">'
+    + '<option value="majority"' + (motion.threshold==='majority'?' selected':'') + '>Majority</option>'
+    + '<option value="twothirds"' + (motion.threshold==='twothirds'?' selected':'') + '>Two-thirds</option>'
+    + '</select>'
+    + '<button onclick="vtgUnanimous(\'' + escHtml(motion.id) + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid var(--gray-300);background:transparent;font-size:0.78rem;cursor:pointer;color:var(--gray-600);">All Yea</button>'
+    + '<button onclick="vtgClearVotes(\'' + escHtml(motion.id) + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid var(--gray-300);background:transparent;font-size:0.78rem;cursor:pointer;color:var(--gray-600);">Clear</button>'
+    + '<button onclick="vtgRemoveMotion(\'' + escHtml(motion.id) + '\')" style="padding:4px 8px;border-radius:6px;border:none;background:transparent;color:var(--gray-400);font-size:1rem;cursor:pointer;" title="Remove motion">✕</button>'
+    + '</div></div>'
+    + '<div style="max-height:360px;overflow-y:auto;">' + voteRows + '</div>'
+    + '</div>';
+}
+
+function vtgCastVote(motionId, memberId, choice) {
+  var m = vtgCurrent(); if (!m) return;
+  var motion = m.motions.find(function(x){ return x.id === motionId; }); if (!motion) return;
+  if (motion.votes[memberId] === choice) delete motion.votes[memberId]; else motion.votes[memberId] = choice;
+  vtgDirty = true;
+  vtgRenderMotions();
+}
+
+function vtgChangeThreshold(motionId, val) {
+  var m = vtgCurrent(); if (!m) return;
+  var motion = m.motions.find(function(x){ return x.id === motionId; }); if (!motion) return;
+  motion.threshold = val;
+  vtgDirty = true;
+  vtgRenderMotions();
+}
+
+function vtgUnanimous(motionId) {
+  var m = vtgCurrent(); if (!m) return;
+  var motion = m.motions.find(function(x){ return x.id === motionId; }); if (!motion) return;
+  vtgRoster.filter(function(r){ return m.attendance[r.id]; }).forEach(function(r){ motion.votes[r.id] = 'yea'; });
+  vtgDirty = true;
+  vtgRenderMotions();
+}
+
+function vtgClearVotes(motionId) {
+  var m = vtgCurrent(); if (!m) return;
+  var motion = m.motions.find(function(x){ return x.id === motionId; }); if (!motion) return;
+  motion.votes = {};
+  vtgDirty = true;
+  vtgRenderMotions();
+}
+
+function vtgRemoveMotion(motionId) {
+  var m = vtgCurrent(); if (!m) return;
+  if (!confirm('Remove this motion and all its recorded votes?')) return;
+  m.motions = m.motions.filter(function(x){ return x.id !== motionId; });
+  vtgDirty = true;
+  vtgRenderMotions();
+}
+
+function vtgOpenAddMotion(cat) {
+  vtgAddMotionCategory = cat;
+  document.getElementById('vtgNewMotionTitle').value = '';
+  document.getElementById('vtgNewMotionDesc').value = '';
+  document.getElementById('vtgNewMotionThreshold').value = cat === 'amendment' ? 'twothirds' : 'majority';
+  document.getElementById('vtgAddMotionForm').style.display = 'block';
+  document.getElementById('vtgNewMotionTitle').focus();
+}
+
+function vtgSubmitMotion() {
+  var m = vtgCurrent(); if (!m) return;
+  var title = document.getElementById('vtgNewMotionTitle').value.trim();
+  if (!title) { showToast('A motion needs a title.', 'error'); return; }
+  var desc = document.getElementById('vtgNewMotionDesc').value.trim();
+  var threshold = document.getElementById('vtgNewMotionThreshold').value;
+  var id = 'mo-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+  m.motions.push({ id: id, category: vtgAddMotionCategory, title: title, description: desc, threshold: threshold, votes: {} });
+  document.getElementById('vtgAddMotionForm').style.display = 'none';
+  vtgDirty = true;
+  vtgRenderMotions();
+}
+
+/* ---------- Records tab ---------- */
+function vtgRenderRecords() {
+  var list = document.getElementById('vtgRecordsList'); if (!list) return;
+  if (!vtgMeetings.length) { list.innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem;">No meetings recorded yet.</p>'; return; }
+  list.innerHTML = vtgMeetings.map(function(m) {
+    var presentCount = vtgRoster.filter(function(r){ return m.attendance[r.id]; }).length;
+    var passed = m.motions.filter(function(mo){ return vtgComputeTally(mo).passed === true; }).length;
+    var failed = m.motions.filter(function(mo){ return vtgComputeTally(mo).passed === false; }).length;
+    var statusBadge = m.finalizedAt
+      ? '<span style="background:rgba(201,168,76,0.15);color:#C9A84C;padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:700;">Finalized</span>'
+      : '<span style="background:var(--gray-100);color:var(--gray-500);padding:3px 10px;border-radius:999px;font-size:0.75rem;font-weight:600;">In Progress</span>';
+    return '<div style="border:1px solid var(--gray-200);border-radius:8px;padding:14px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">'
+      + '<div style="flex:1;min-width:200px;">'
+      + '<div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">' + escHtml(m.title || 'Untitled') + ' ' + statusBadge + '</div>'
+      + '<div style="font-size:0.78rem;color:var(--gray-500);display:flex;gap:10px;flex-wrap:wrap;">'
+      + '<span>' + escHtml(m.date) + '</span><span>' + presentCount + ' of ' + vtgRoster.length + ' present</span>'
+      + '<span>' + m.motions.length + ' motion' + (m.motions.length===1?'':'s') + '</span>'
+      + (m.motions.length ? '<span>' + passed + ' passed · ' + failed + ' failed</span>' : '')
+      + '</div></div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+      + '<button class="btn-sm" onclick="vtgOpenMeeting(\'' + escHtml(m.id) + '\')" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);">Open</button>'
+      + '<button class="btn-sm" onclick="vtgExportCsvById(\'' + escHtml(m.id) + '\')" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">CSV</button>'
+      + '<button class="btn-sm" onclick="vtgExportPdfById(\'' + escHtml(m.id) + '\')" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">PDF</button>'
+      + '<button class="btn-sm" onclick="vtgDeleteById(\'' + escHtml(m.id) + '\')" style="background:transparent;color:var(--gray-400);border-color:var(--gray-300);">Delete</button>'
+      + '</div></div>';
+  }).join('');
+}
+
+function vtgOpenMeeting(id) {
+  vtgCurrentId = id;
+  vtgSetTab('rollcall');
+  vtgRenderAll();
+}
+
+/* ---------- New / Save / Finalize / Delete ---------- */
+function vtgNewMeeting() {
+  var today = new Date();
+  var date = (today.getMonth()+1) + '/' + today.getDate() + '/' + today.getFullYear();
+  var m = { id: 'local-' + Date.now(), dbId: null, title: 'Chapter Meeting', date: date, quorumTarget: null, finalizedAt: null, attendance: {}, motions: [] };
+  vtgRoster.forEach(function(r){ m.attendance[r.id] = true; });
+  vtgMeetings.unshift(m);
+  vtgCurrentId = m.id;
+  vtgDirty = true;
+  vtgRenderAll();
+  vtgSetTab('rollcall');
+}
+
+async function vtgSaveMeeting() {
+  var m = vtgCurrent(); if (!m) return;
+  document.getElementById('vtgSaveStatus').textContent = 'Saving…';
+  var tok = vtgToken();
+  var payload = {
+    title: m.title,
+    date: m.date,
+    quorum_target: m.quorumTarget || null,
+    finalized_at: m.finalizedAt || null,
+    meeting_data: { attendance: m.attendance, motions: m.motions }
+  };
+  try {
+    if (m.dbId) {
+      await sbPatch('chapter_meetings', 'id=eq.' + encodeURIComponent(m.dbId), payload, tok);
+    } else {
+      var rows = await sbPost('chapter_meetings', payload, tok);
+      if (rows && rows[0] && rows[0].id) { m.dbId = rows[0].id; m.id = rows[0].id; vtgCurrentId = m.id; }
+    }
+    vtgDirty = false;
+    document.getElementById('vtgSaveStatus').textContent = 'Saved ' + new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    showToast('Meeting saved.', 'success');
+    vtgRenderPicker();
+    vtgRenderRecords();
+  } catch(e) {
+    document.getElementById('vtgSaveStatus').textContent = 'Save failed';
+    showToast('Save failed: ' + (e.message || 'error'), 'error');
+  }
+}
+
+function vtgFinalize() {
+  var m = vtgCurrent(); if (!m) return;
+  m.finalizedAt = new Date().toISOString();
+  vtgDirty = true;
+  document.getElementById('vtgFinalizeBtn').textContent = 'Re-finalize';
+  showToast('Meeting finalized. Click Save to record it.', 'success');
+}
+
+async function vtgDeleteMeeting() {
+  var m = vtgCurrent(); if (!m) return;
+  if (!confirm('Delete "' + m.title + '" and all its votes? This cannot be undone.')) return;
+  if (m.dbId) {
+    try { await sbDeleteByFilter('chapter_meetings', 'id=eq.' + encodeURIComponent(m.dbId), vtgToken()); } catch(e) {}
+  }
+  vtgMeetings = vtgMeetings.filter(function(x){ return x.id !== vtgCurrentId; });
+  vtgCurrentId = vtgMeetings.length ? vtgMeetings[0].id : null;
+  vtgRenderAll();
+}
+
+async function vtgDeleteById(id) {
+  var m = vtgMeetings.find(function(x){ return x.id === id; }); if (!m) return;
+  if (!confirm('Delete "' + m.title + '"?')) return;
+  if (m.dbId) {
+    try { await sbDeleteByFilter('chapter_meetings', 'id=eq.' + encodeURIComponent(m.dbId), vtgToken()); } catch(e) {}
+  }
+  vtgMeetings = vtgMeetings.filter(function(x){ return x.id !== id; });
+  if (vtgCurrentId === id) vtgCurrentId = vtgMeetings.length ? vtgMeetings[0].id : null;
+  vtgRenderAll();
+}
+
+/* ---------- Export ---------- */
+function vtgExportCsv() { var m = vtgCurrent(); if (m) vtgExportCsvById(m.id); }
+function vtgExportPdf() { var m = vtgCurrent(); if (m) vtgExportPdfById(m.id); }
+
+function vtgExportCsvById(id) {
+  var m = vtgMeetings.find(function(x){ return x.id === id; }); if (!m) return;
+  var rows = [];
+  rows.push(['Xi Tau Lambda Chapter — Voting Record']);
+  rows.push(['Meeting', m.title]);
+  rows.push(['Date', m.date]);
+  var present = vtgRoster.filter(function(r){ return m.attendance[r.id]; });
+  var absent  = vtgRoster.filter(function(r){ return !m.attendance[r.id]; });
+  rows.push(['Attendance', present.length + ' of ' + vtgRoster.length + ' active brothers present']);
+  if (m.quorumTarget) rows.push(['Quorum target', m.quorumTarget]);
+  rows.push([]);
+  rows.push(['Motion Summary']);
+  rows.push(['Category','Motion','Threshold','Yea','Nay','Abstain','Result']);
+  m.motions.forEach(function(mo){
+    var t = vtgComputeTally(mo);
+    rows.push([mo.category === 'amendment' ? 'Constitutional Amendment' : 'Grievance Motion', mo.title, mo.threshold === 'twothirds' ? 'Two-thirds' : 'Majority', t.yea, t.nay, t.abstain, t.passed===null?'No votes':t.passed?'Passed':'Failed']);
+  });
+  rows.push([]);
+  rows.push(['Vote Detail']);
+  rows.push(['Alpha ID','Last','First'].concat(m.motions.map(function(mo){ return mo.title || 'Untitled'; })));
+  present.sort(function(a,b){ return vtgFullName(a).localeCompare(vtgFullName(b)); }).forEach(function(r){
+    var row = [r.alphaId, r.last, r.first];
+    m.motions.forEach(function(mo){ var v=mo.votes[r.id]; row.push(v==='yea'?'Yea':v==='nay'?'Nay':v==='abstain'?'Abstain':'—'); });
+    rows.push(row);
+  });
+  if (absent.length) { rows.push([]); rows.push(['Absent Active Brothers']); absent.sort(function(a,b){ return vtgFullName(a).localeCompare(vtgFullName(b)); }).forEach(function(r){ rows.push([r.alphaId, r.last, r.first]); }); }
+  var csv = rows.map(function(r){ return r.map(function(v){ var s=String(v==null?'':v); return /[",\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(','); }).join('\r\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'XTL_Voting_' + (m.date||'meeting').replace(/\//g,'-') + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast('CSV downloaded.', 'success');
+}
+
+function vtgExportPdfById(id) {
+  var m = vtgMeetings.find(function(x){ return x.id === id; }); if (!m) return;
+  if (!window.jspdf || !window.jspdf.jsPDF) { showToast('PDF library not loaded.', 'error'); return; }
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({unit:'pt', format:'letter'});
+  var present = vtgRoster.filter(function(r){ return m.attendance[r.id]; }).sort(function(a,b){ return vtgFullName(a).localeCompare(vtgFullName(b)); });
+  var absent  = vtgRoster.filter(function(r){ return !m.attendance[r.id]; }).sort(function(a,b){ return vtgFullName(a).localeCompare(vtgFullName(b)); });
+  doc.setFont('helvetica','bold'); doc.setFontSize(16);
+  doc.text('Xi Tau Lambda Chapter — Voting Record', 40, 46);
+  doc.setFont('helvetica','normal'); doc.setFontSize(11);
+  doc.text(String(m.title || 'Chapter Meeting'), 40, 66);
+  doc.text('Date: ' + (m.date || ''), 40, 82);
+  doc.text(present.length + ' of ' + vtgRoster.length + ' active brothers present' + (m.quorumTarget ? '  ·  quorum target ' + m.quorumTarget : ''), 40, 98);
+  var summaryBody = m.motions.map(function(mo){
+    var t = vtgComputeTally(mo);
+    return [mo.category==='amendment'?'Constitutional':'Grievance', mo.title||'Untitled', mo.threshold==='twothirds'?'2/3':'Majority', String(t.yea), String(t.nay), String(t.abstain), t.passed===null?'No votes':t.passed?'Passed':'Failed'];
+  });
+  doc.autoTable({ startY:116, head:[['Category','Motion','Threshold','Yea','Nay','Abstain','Result']], body: summaryBody.length ? summaryBody : [['—','No motions','—','—','—','—','—']], styles:{fontSize:9,cellPadding:5}, headStyles:{fillColor:[201,168,76],textColor:[28,21,8]}, margin:{left:40,right:40} });
+  if (m.motions.length) {
+    doc.addPage('letter','landscape');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('Vote Detail — Present Brothers', 40, 40);
+    var detailBody = present.map(function(r){ var row=[r.alphaId,r.last,r.first]; m.motions.forEach(function(mo){ var v=mo.votes[r.id]; row.push(v==='yea'?'Yea':v==='nay'?'Nay':v==='abstain'?'Abstain':'—'); }); return row; });
+    doc.autoTable({ startY:54, head:[['Alpha ID','Last','First'].concat(m.motions.map(function(mo){ return mo.title||'Untitled'; }))], body: detailBody.length ? detailBody : [['—','—','—']], styles:{fontSize:8,cellPadding:4}, headStyles:{fillColor:[201,168,76],textColor:[28,21,8]}, margin:{left:40,right:40} });
+  }
+  if (absent.length) {
+    var y = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 100) + 24;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('Absent Active Brothers (' + absent.length + ')', 40, y);
+    doc.setFont('helvetica','normal'); doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(absent.map(function(r){ return vtgFullName(r); }).join('   ·   '), doc.internal.pageSize.getWidth()-80), 40, y+16);
+  }
+  doc.save('XTL_Voting_' + (m.date||'meeting').replace(/\//g,'-') + '.pdf');
+  showToast('PDF downloaded.', 'success');
+}
 </script>
 
 <!-- Help button -->
