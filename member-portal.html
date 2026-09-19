@@ -1587,6 +1587,7 @@ function prefillDuesPayFields() {
 async function startDuesStripeCheckout() {
   var errEl = document.getElementById('duesPayErr');
   if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  await loadDuesWindowConfig();
   if (getDuesStatus().isLocked) {
     if (errEl) { errEl.textContent = 'Dues payment window is not yet open.'; errEl.style.display = 'block'; }
     return;
