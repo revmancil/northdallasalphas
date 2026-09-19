@@ -2180,16 +2180,24 @@ function renderDirectoryPanel() {
   filterDirectory();
 }
 
-function loadDirectory() {
+function loadDirectory(isRetry) {
   const c = document.getElementById('directoryList');
-  sbGet('members', 'status=eq.active&order=last_name.asc', currentSession ? currentSession.access_token : null)
+  if (!isRetry) c.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin" style="color:var(--gold);"></i><p>Loading directory…</p></div>';
+  const token = currentSession ? currentSession.access_token : null;
+  sbGet('members', 'status=eq.active&order=last_name.asc', token)
     .then(function(members) {
       allMembers = members || [];
       document.getElementById('dirCountBadge').textContent = allMembers.length + ' members';
       document.getElementById('statMemberCount').textContent = allMembers.length;
       filterDirectory();
     })
-    .catch(function() { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Could not load directory.</p></div>'; });
+    .catch(function() {
+      if (!isRetry) {
+        setTimeout(function() { loadDirectory(true); }, 800);
+      } else {
+        c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Could not load directory.</p></div>';
+      }
+    });
 }
 
 function parseLocalDate(str) {
