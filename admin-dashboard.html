@@ -4413,6 +4413,22 @@ async function loadChapterAdminPanel() {
   }
 }
 
+async function adminResetPassword(email) {
+  if (!email) return;
+  if (!confirm('Send a password reset email to ' + email + '?')) return;
+  try {
+    var res = await fetch(SUPABASE_URL + '/auth/v1/recover', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: email })
+    });
+    // Supabase returns 200 regardless of whether the email exists
+    showToast('Password reset email sent to ' + email + '.', 'success');
+  } catch(e) {
+    showToast('Could not send reset email: ' + (e.message || 'network error'), 'error');
+  }
+}
+
 async function removeChapterAdminFromBtn(btn) {
   const enc = btn.getAttribute('data-admin-email') || '';
   const email = decodeURIComponent(enc);
@@ -4647,9 +4663,11 @@ function renderAccessTable() {
     } else if (portalAccess === 'chapter_member') {
       actions = '<span style="display:inline-flex;align-items:center;gap:5px;font-size:0.8rem;font-weight:700;color:#16a34a;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.35);padding:4px 10px;border-radius:6px;"><i class="fas fa-check-circle"></i> Chapter Brother</span> ' +
                 (!isAdmin ? '<button class="btn-sm edit" onclick="prefillAdminGrant(\'' + memail + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button> ' : '') +
+                (memail ? '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="adminResetPassword(\'' + memail + '\')" title="Send password reset email"><i class="fas fa-key"></i> Reset Password</button> ' : '') +
                 '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
     } else if (portalAccess === 'granted') {
       actions = '<button class="btn-sm" style="background:rgba(74,222,128,0.15);color:#16a34a;border:1px solid rgba(74,222,128,0.4);" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')" title="Enroll as Chapter Brother and add to directory"><i class="fas fa-home"></i> Enroll as Chapter</button> ' +
+                (memail ? '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="adminResetPassword(\'' + memail + '\')" title="Send password reset email"><i class="fas fa-key"></i> Reset Password</button> ' : '') +
                 '<button class="btn-sm danger" onclick="accessUpdateStatus(\'' + mid + '\',\'revoked\')" title="Revoke portal access"><i class="fas fa-ban"></i> Revoke</button>';
       if (!isAdmin) {
         actions += ' <button class="btn-sm edit" onclick="prefillAdminGrant(\'' + memail + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button>';
