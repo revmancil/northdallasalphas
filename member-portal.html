@@ -2114,7 +2114,7 @@ var escapeHtml = escHtml; // alias — use escHtml everywhere
 function renderDocumentsPanel() {
   const c = document.getElementById('documentsList');
   const token = currentSession ? currentSession.access_token : null;
-  sbGet('documents', 'members_only=eq.true&meeting_id=is.null&status=eq.approved&order=created_at.desc', token)
+  sbGet('documents', 'members_only=eq.true&status=eq.approved&order=created_at.desc', token)
     .then(function(docs) {
       if (!docs || !docs.length) {
         c.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>No documents available yet.</p></div>';
@@ -2132,7 +2132,7 @@ function renderDocumentsPanel() {
           '</div>';
       }).join('');
     })
-    .catch(function() { c.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>Could not load documents.</p></div>'; });
+    .catch(function(err) { c.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>Could not load documents.</p></div>'; console.error('Documents load error:', err); });
 }
 
 function formatMemberFullName(m) {
