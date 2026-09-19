@@ -13774,7 +13774,7 @@ async function loadVotingPanel() {
   try {
     const tok = vtgToken();
     const [members, meetings, scheduledMtgs] = await Promise.all([
-      sbGet('members', 'status=eq.active&select=id,alpha_id,first_name,last_name,middle_name,suffix,email&order=last_name.asc', tok),
+      sbGet('members', 'select=id,alpha_id,first_name,last_name,middle_name,suffix,email,status&order=last_name.asc', tok),
       sbGet('chapter_meetings', 'order=created_at.desc', tok).catch(() => []),
       sbGet('meetings', 'select=id,title,meeting_date&order=meeting_date.desc', tok).catch(() => [])
     ]);
@@ -13874,7 +13874,7 @@ async function vtgSyncCheckins() {
     // Look up member IDs for any emails not already resolved by member_id
     var memberIdsByEmail = {};
     if (attendedEmails.length) {
-      var emailFilter = 'email=in.(' + attendedEmails.map(encodeURIComponent).join(',') + ')&select=id,email&status=eq.active';
+      var emailFilter = 'email=in.(' + attendedEmails.map(encodeURIComponent).join(',') + ')&select=id,email';
       var emailMatches = await sbGet('members', emailFilter, vtgToken()).catch(function(){ return []; });
       (emailMatches || []).forEach(function(r){ if (r.email) memberIdsByEmail[r.email.toLowerCase()] = r.id; });
     }
