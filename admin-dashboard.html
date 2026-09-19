@@ -2220,6 +2220,7 @@
             <button class="nl-tab-btn" id="nlTabBtn-sections" onclick="nlShowTab('sections')">Sections</button>
             <button class="nl-tab-btn" id="nlTabBtn-styles" onclick="nlShowTab('styles')">Styles</button>
             <button class="nl-tab-btn" id="nlTabBtn-templates" onclick="nlShowTab('templates')">Templates</button>
+            <button class="nl-tab-btn" id="nlTabBtn-drafts" onclick="nlShowTab('drafts')">Drafts</button>
             <button class="nl-tab-btn" id="nlTabBtn-history" onclick="nlShowTab('history')">History</button>
           </div>
           <!-- Blocks tab -->
@@ -2244,6 +2245,7 @@
           <div id="nlTab-styles" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
           <!-- Templates tab -->
           <div id="nlTab-templates" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
+          <div id="nlTab-drafts" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
           <div id="nlTab-history" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
               <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);">Send History</span>
@@ -9085,7 +9087,7 @@ function nlNewNewsletter() {
 
 // ── Tab switching ──
 function nlShowTab(tab) {
-  ['blocks', 'sections', 'styles', 'templates', 'history'].forEach(function (t) {
+  ['blocks', 'sections', 'styles', 'templates', 'drafts', 'history'].forEach(function (t) {
     const panel = document.getElementById('nlTab-' + t);
     const btn = document.getElementById('nlTabBtn-' + t);
     if (panel) panel.hidden = (t !== tab);
@@ -9094,6 +9096,7 @@ function nlShowTab(tab) {
   if (tab === 'sections') nlRenderSectionsTab();
   if (tab === 'styles') nlRenderStylesTab();
   if (tab === 'templates') nlRenderTemplatesTab().catch(function () { });
+  if (tab === 'drafts') nlLoadDrafts().catch(function () { });
   if (tab === 'history') nlLoadHistory().catch(function () { });
 }
 
@@ -9981,6 +9984,80 @@ async function nlSendNewsletter() {
     showToast('Send failed: ' + (err.message || 'unknown'), 'error');
   } finally {
     if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Now'; }
+  }
+}
+
+// ── Drafts ──
+async function nlLoadDrafts() {
+  const panel = document.getElementById('nlTab-drafts');
+  if (!panel) return;
+  panel.innerHTML = '<div style="color:var(--gray-400);font-size:0.8rem;padding:8px 0;">Loading drafts…</div>';
+  const token = getAdminToken();
+  try {
+    const drafts = await sbGet('newsletters', 'status=eq.draft&order=updated_at.desc&limit=30', token);
+    if (!drafts || !drafts.length) {
+      panel.innerHTML = '<div style="color:var(--gray-400);font-size:0.8rem;padding:8px 0;">No saved drafts.</div>';
+      return;
+    }
+    panel.innerHTML = drafts.map(function(d) {
+      const date = d.updated_at ? new Date(d.updated_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' }) : '';
+      const isActive = nlState.draftId === d.id;
+      return '<div style="padding:10px;border:1px solid ' + (isActive ? 'var(--gold)' : 'var(--gray-200)') + ';border-radius:6px;margin-bottom:8px;background:' + (isActive ? 'rgba(201,168,76,0.05)' : 'var(--white)') + ';">'
+        + '<div style="font-weight:600;font-size:0.82rem;color:var(--gray-800);margin-bottom:3px;">' + escHtml(d.subject || 'Untitled Draft') + '</div>'
+        + '<div style="font-size:0.72rem;color:var(--gray-400);margin-bottom:8px;">' + escHtml(date) + (isActive ? ' <span style="color:var(--gold);font-weight:700;">· Current</span>' : '') + '</div>'
+        + '<div style="display:flex;gap:6px;">'
+        + '<button class="btn-sm" onclick="nlOpenDraft(\'' + escHtml(d.id) + '\')" style="font-size:0.72rem;padding:3px 10px;background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);">Open</button>'
+        + '<button class="btn-sm danger" onclick="nlDeleteDraft(\'' + escHtml(d.id) + '\')" style="font-size:0.72rem;padding:3px 10px;">Delete</button>'
+        + '</div></div>';
+    }).join('');
+  } catch(e) {
+    panel.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load drafts.</div>';
+  }
+}
+
+async function nlOpenDraft(id) {
+  if (!confirm('Open this draft? Your current canvas will be replaced.')) return;
+  const token = getAdminToken();
+  try {
+    const rows = await sbGet('newsletters', 'id=eq.' + encodeURIComponent(id) + '&limit=1', token);
+    const d = rows && rows[0];
+    if (!d) { showToast('Draft not found.', 'error'); return; }
+    if (d.content_json) {
+      const saved = JSON.parse(d.content_json);
+      nlState.subject   = saved.subject   || d.subject   || '';
+      nlState.preheader = saved.preheader || d.preheader || '';
+      nlState.gs        = saved.gs        || nlState.gs;
+      nlState.zoneBg    = saved.zoneBg    || nlState.zoneBg;
+      nlState.zones     = saved.zones     || { header: [], body: [], footer: [] };
+    } else {
+      nlState.subject   = d.subject   || '';
+      nlState.preheader = d.preheader || '';
+    }
+    nlState.draftId = d.id;
+    nlState.sel = null;
+    const si = document.getElementById('nlSubjectInput');
+    const pi = document.getElementById('nlPreheaderInput');
+    if (si) si.value = nlState.subject;
+    if (pi) pi.value = nlState.preheader;
+    nlShowTab('blocks');
+    nlRenderCanvas();
+    nlRenderProps();
+    showToast('Draft loaded.', 'success');
+  } catch(e) {
+    showToast('Could not open draft: ' + (e.message || 'error'), 'error');
+  }
+}
+
+async function nlDeleteDraft(id) {
+  if (!confirm('Delete this draft? This cannot be undone.')) return;
+  const token = getAdminToken();
+  try {
+    await sbDeleteByFilter('newsletters', 'id=eq.' + encodeURIComponent(id), token);
+    if (nlState.draftId === id) { nlState.draftId = null; }
+    showToast('Draft deleted.', 'success');
+    nlLoadDrafts();
+  } catch(e) {
+    showToast('Could not delete draft.', 'error');
   }
 }
 
