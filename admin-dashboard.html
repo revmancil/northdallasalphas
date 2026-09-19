@@ -2950,27 +2950,21 @@
 
       <!-- Motions tab -->
       <div id="vtgViewMotions" style="display:none;">
-        <div style="margin-bottom:16px;">
-          <h3 style="margin:0 0 10px;font-size:1rem;font-weight:700;color:var(--gray-700);">Constitutional Amendments</h3>
-          <div id="vtgMotionsAmendment"></div>
-          <button class="btn-sm" onclick="vtgOpenAddMotion('amendment')" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);margin-top:8px;"><i class="fas fa-plus"></i> Add Constitutional Amendment</button>
-        </div>
-        <div style="margin-top:24px;">
-          <h3 style="margin:0 0 10px;font-size:1rem;font-weight:700;color:var(--gray-700);">Grievance Committee Motions</h3>
-          <div id="vtgMotionsGrievance"></div>
-          <button class="btn-sm" onclick="vtgOpenAddMotion('grievance')" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);margin-top:8px;"><i class="fas fa-plus"></i> Add Grievance Motion</button>
-        </div>
+        <div id="vtgMotionsList"></div>
+        <button class="btn-sm" onclick="vtgOpenAddMotion()" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);margin-top:8px;"><i class="fas fa-plus"></i> Add Motion</button>
         <!-- Add motion form -->
-        <div id="vtgAddMotionForm" style="display:none;background:rgba(201,168,76,0.05);border:1px dashed rgba(201,168,76,0.3);border-radius:8px;padding:14px 16px;margin-top:16px;">
+        <div id="vtgAddMotionForm" style="display:none;background:rgba(201,168,76,0.05);border:1px dashed rgba(201,168,76,0.3);border-radius:8px;padding:14px 16px;margin-top:14px;">
           <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
-            <div class="field-group" style="margin:0;flex:2;min-width:200px;"><label>Motion Title</label><input type="text" id="vtgNewMotionTitle" placeholder="Brief title for the record" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
+            <div class="field-group" style="margin:0;flex:2;min-width:200px;"><label>Motion Title / Type</label><input type="text" id="vtgNewMotionTitle" placeholder="e.g. Approve 2026 Budget, Amend Article IV…" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
             <div class="field-group" style="margin:0;min-width:140px;"><label>Threshold</label>
               <select id="vtgNewMotionThreshold" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">
                 <option value="majority">Majority</option>
                 <option value="twothirds">Two-thirds</option>
               </select>
             </div>
-            <div class="field-group" style="margin:0;flex-basis:100%;"><label>Description (optional)</label><textarea id="vtgNewMotionDesc" rows="2" placeholder="Full motion text for the minutes" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;resize:vertical;"></textarea></div>
+            <div class="field-group" style="margin:0;min-width:200px;"><label>Moved by</label><input type="text" id="vtgNewMotionMover" placeholder="Brother's name" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
+            <div class="field-group" style="margin:0;min-width:200px;"><label>Seconded by</label><input type="text" id="vtgNewMotionSeconder" placeholder="Brother's name" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
+            <div class="field-group" style="margin:0;flex-basis:100%;"><label>Motion Text (optional)</label><textarea id="vtgNewMotionDesc" rows="2" placeholder="Full motion text for the minutes" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;resize:vertical;"></textarea></div>
             <button class="btn-save" onclick="vtgSubmitMotion()" style="padding:8px 18px;font-size:0.85rem;">Add Motion</button>
             <button class="btn-sm" onclick="document.getElementById('vtgAddMotionForm').style.display='none';" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">Cancel</button>
           </div>
@@ -13736,7 +13730,7 @@ var vtgRoster = [];       // active members from Supabase
 var vtgMeetings = [];     // meetings from Supabase
 var vtgCurrentId = null;  // id of active meeting
 var vtgActiveTab = 'rollcall';
-var vtgAddMotionCategory = 'amendment';
+var vtgAddMotionCategory = '';
 var vtgDirty = false;
 
 function vtgToken() { return getAdminToken(); }
@@ -13896,14 +13890,11 @@ function vtgComputeTally(motion) {
 }
 
 function vtgRenderMotions() {
-  var m = vtgCurrent(); if (!m) return;
-  ['amendment','grievance'].forEach(function(cat) {
-    var container = document.getElementById(cat === 'amendment' ? 'vtgMotionsAmendment' : 'vtgMotionsGrievance');
-    if (!container) return;
-    var motions = m.motions.filter(function(mo){ return mo.category === cat; });
-    if (!motions.length) { container.innerHTML = '<p style="color:var(--gray-400);font-size:0.83rem;margin:0 0 8px;">No ' + (cat === 'amendment' ? 'constitutional amendments' : 'grievance motions') + ' recorded yet.</p>'; return; }
-    container.innerHTML = motions.map(function(motion) { return vtgMotionCardHtml(m, motion); }).join('');
-  });
+  var m = vtgCurrent();
+  var container = document.getElementById('vtgMotionsList');
+  if (!container || !m) return;
+  if (!m.motions.length) { container.innerHTML = '<p style="color:var(--gray-400);font-size:0.83rem;margin:0 0 8px;">No motions recorded yet. Click Add Motion to begin.</p>'; return; }
+  container.innerHTML = m.motions.map(function(motion) { return vtgMotionCardHtml(m, motion); }).join('');
 }
 
 function vtgMotionCardHtml(m, motion) {
@@ -13929,8 +13920,12 @@ function vtgMotionCardHtml(m, motion) {
   return '<div style="border:1px solid var(--gray-200);border-radius:8px;margin-bottom:14px;overflow:hidden;">'
     + '<div style="padding:12px 16px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);display:flex;gap:12px;align-items:center;flex-wrap:wrap;">'
     + '<div style="flex:1;min-width:180px;">'
-    + '<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:#C9A84C;font-weight:700;margin-bottom:3px;">' + (motion.category === 'amendment' ? 'Constitutional Amendment' : 'Grievance Motion') + ' · ' + (motion.threshold === 'twothirds' ? 'Two-thirds required' : 'Majority required') + '</div>'
+    + '<div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.04em;color:#C9A84C;font-weight:700;margin-bottom:3px;">' + (motion.threshold === 'twothirds' ? 'Two-thirds required' : 'Majority required') + '</div>'
     + '<div style="font-weight:700;font-size:0.95rem;">' + escHtml(motion.title || 'Untitled') + '</div>'
+    + '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;display:flex;gap:14px;flex-wrap:wrap;">'
+    + (motion.mover ? '<span><strong>Moved by:</strong> ' + escHtml(motion.mover) + '</span>' : '')
+    + (motion.seconder ? '<span><strong>Seconded by:</strong> ' + escHtml(motion.seconder) + '</span>' : '')
+    + '</div>'
     + (motion.description ? '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:3px;">' + escHtml(motion.description) + '</div>' : '')
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
@@ -13990,11 +13985,12 @@ function vtgRemoveMotion(motionId) {
   vtgRenderMotions();
 }
 
-function vtgOpenAddMotion(cat) {
-  vtgAddMotionCategory = cat;
+function vtgOpenAddMotion() {
   document.getElementById('vtgNewMotionTitle').value = '';
   document.getElementById('vtgNewMotionDesc').value = '';
-  document.getElementById('vtgNewMotionThreshold').value = cat === 'amendment' ? 'twothirds' : 'majority';
+  document.getElementById('vtgNewMotionMover').value = '';
+  document.getElementById('vtgNewMotionSeconder').value = '';
+  document.getElementById('vtgNewMotionThreshold').value = 'majority';
   document.getElementById('vtgAddMotionForm').style.display = 'block';
   document.getElementById('vtgNewMotionTitle').focus();
 }
@@ -14004,9 +14000,11 @@ function vtgSubmitMotion() {
   var title = document.getElementById('vtgNewMotionTitle').value.trim();
   if (!title) { showToast('A motion needs a title.', 'error'); return; }
   var desc = document.getElementById('vtgNewMotionDesc').value.trim();
+  var mover = document.getElementById('vtgNewMotionMover').value.trim();
+  var seconder = document.getElementById('vtgNewMotionSeconder').value.trim();
   var threshold = document.getElementById('vtgNewMotionThreshold').value;
   var id = 'mo-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
-  m.motions.push({ id: id, category: vtgAddMotionCategory, title: title, description: desc, threshold: threshold, votes: {} });
+  m.motions.push({ id: id, title: title, description: desc, mover: mover, seconder: seconder, threshold: threshold, votes: {} });
   document.getElementById('vtgAddMotionForm').style.display = 'none';
   vtgDirty = true;
   vtgRenderMotions();
@@ -14134,10 +14132,10 @@ function vtgExportCsvById(id) {
   if (m.quorumTarget) rows.push(['Quorum target', m.quorumTarget]);
   rows.push([]);
   rows.push(['Motion Summary']);
-  rows.push(['Category','Motion','Threshold','Yea','Nay','Abstain','Result']);
+  rows.push(['Motion','Moved by','Seconded by','Threshold','Yea','Nay','Abstain','Result']);
   m.motions.forEach(function(mo){
     var t = vtgComputeTally(mo);
-    rows.push([mo.category === 'amendment' ? 'Constitutional Amendment' : 'Grievance Motion', mo.title, mo.threshold === 'twothirds' ? 'Two-thirds' : 'Majority', t.yea, t.nay, t.abstain, t.passed===null?'No votes':t.passed?'Passed':'Failed']);
+    rows.push([mo.title, mo.mover||'', mo.seconder||'', mo.threshold === 'twothirds' ? 'Two-thirds' : 'Majority', t.yea, t.nay, t.abstain, t.passed===null?'No votes':t.passed?'Passed':'Failed']);
   });
   rows.push([]);
   rows.push(['Vote Detail']);
@@ -14171,9 +14169,9 @@ function vtgExportPdfById(id) {
   doc.text(present.length + ' of ' + vtgRoster.length + ' active brothers present' + (m.quorumTarget ? '  ·  quorum target ' + m.quorumTarget : ''), 40, 98);
   var summaryBody = m.motions.map(function(mo){
     var t = vtgComputeTally(mo);
-    return [mo.category==='amendment'?'Constitutional':'Grievance', mo.title||'Untitled', mo.threshold==='twothirds'?'2/3':'Majority', String(t.yea), String(t.nay), String(t.abstain), t.passed===null?'No votes':t.passed?'Passed':'Failed'];
+    return [mo.title||'Untitled', mo.mover||'—', mo.seconder||'—', mo.threshold==='twothirds'?'2/3':'Majority', String(t.yea), String(t.nay), String(t.abstain), t.passed===null?'No votes':t.passed?'Passed':'Failed'];
   });
-  doc.autoTable({ startY:116, head:[['Category','Motion','Threshold','Yea','Nay','Abstain','Result']], body: summaryBody.length ? summaryBody : [['—','No motions','—','—','—','—','—']], styles:{fontSize:9,cellPadding:5}, headStyles:{fillColor:[201,168,76],textColor:[28,21,8]}, margin:{left:40,right:40} });
+  doc.autoTable({ startY:116, head:[['Motion','Moved by','Seconded by','Threshold','Yea','Nay','Abstain','Result']], body: summaryBody.length ? summaryBody : [['No motions recorded','—','—','—','—','—','—','—']], styles:{fontSize:9,cellPadding:5}, headStyles:{fillColor:[201,168,76],textColor:[28,21,8]}, margin:{left:40,right:40} });
   if (m.motions.length) {
     doc.addPage('letter','landscape');
     doc.setFont('helvetica','bold'); doc.setFontSize(13);
