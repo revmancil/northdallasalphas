@@ -2924,6 +2924,13 @@
               <label>Quorum target</label>
               <input type="number" id="vtgQuorum" min="0" step="1" onchange="vtgFieldChange()" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;width:90px;" />
             </div>
+            <div class="field-group" style="margin:0;min-width:200px;">
+              <label>Linked Scheduled Meeting</label>
+              <select id="vtgLinkedMtg" onchange="vtgLinkedMtgChange()" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;background:var(--white);color:var(--gray-800);font-size:0.85rem;min-width:200px;">
+                <option value="">— None —</option>
+              </select>
+            </div>
+            <button class="btn-sm" onclick="vtgSyncCheckins()" id="vtgSyncBtn" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);display:none;" title="Pull check-ins from the linked scheduled meeting"><i class="fas fa-sync-alt"></i> Sync Check-ins</button>
             <button class="btn-sm" onclick="vtgFinalize()" id="vtgFinalizeBtn" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);">Finalize</button>
             <button class="btn-sm" onclick="vtgDeleteMeeting()" style="background:transparent;color:var(--gray-400);border-color:var(--gray-300);">Delete</button>
           </div>
@@ -13726,9 +13733,10 @@ async function deleteHelpdeskIssue(id) {
    Saves meetings to chapter_meetings table as JSONB.
    ================================================================ */
 
-var vtgRoster = [];       // active members from Supabase
-var vtgMeetings = [];     // meetings from Supabase
-var vtgCurrentId = null;  // id of active meeting
+var vtgRoster = [];          // active members from Supabase
+var vtgMeetings = [];        // chapter_meetings from Supabase
+var vtgScheduledMtgs = [];   // meetings table (for linking check-ins)
+var vtgCurrentId = null;     // id of active meeting
 var vtgActiveTab = 'rollcall';
 var vtgAddMotionCategory = '';
 var vtgDirty = false;
@@ -13743,16 +13751,20 @@ async function loadVotingPanel() {
   document.getElementById('vtgSaveStatus').textContent = 'Loading…';
   try {
     const tok = vtgToken();
-    const [members, meetings] = await Promise.all([
+    const [members, meetings, scheduledMtgs] = await Promise.all([
       sbGet('members', 'status=eq.active&select=id,alpha_id,first_name,last_name,middle_name,suffix&order=last_name.asc', tok),
-      sbGet('chapter_meetings', 'order=created_at.desc', tok).catch(() => [])
+      sbGet('chapter_meetings', 'order=created_at.desc', tok).catch(() => []),
+      sbGet('meetings', 'select=id,title,meeting_date&order=meeting_date.desc', tok).catch(() => [])
     ]);
     vtgRoster = (members || []).map(function(m) {
       return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '' };
     });
+    vtgScheduledMtgs = (scheduledMtgs || []).map(function(s) {
+      return { id: s.id, title: s.title || '', date: s.meeting_date || '' };
+    });
     vtgMeetings = (meetings || []).map(function(r) {
       var d = r.meeting_data || {};
-      return { dbId: r.id, id: r.id, title: r.title || '', date: r.date || '', quorumTarget: r.quorum_target || null, finalizedAt: r.finalized_at || null, attendance: d.attendance || {}, motions: d.motions || [] };
+      return { dbId: r.id, id: r.id, title: r.title || '', date: r.date || '', quorumTarget: r.quorum_target || null, finalizedAt: r.finalized_at || null, linkedMeetingId: r.linked_meeting_id || null, attendance: d.attendance || {}, motions: d.motions || [] };
     });
     if (vtgMeetings.length) vtgCurrentId = vtgMeetings[0].id;
     vtgRenderAll();
@@ -13779,6 +13791,7 @@ function vtgRenderAll() {
     document.getElementById('vtgDate').value = m.date;
     document.getElementById('vtgQuorum').value = m.quorumTarget || '';
     document.getElementById('vtgFinalizeBtn').textContent = m.finalizedAt ? 'Re-finalize' : 'Finalize';
+    vtgRenderLinkedMtgPicker(m);
     vtgRenderAttendance();
     vtgRenderMotions();
     vtgRenderRecords();
@@ -13798,6 +13811,51 @@ function vtgRenderPicker() {
 function vtgPickerChange() {
   vtgCurrentId = document.getElementById('vtgPicker').value;
   vtgRenderAll();
+}
+
+function vtgRenderLinkedMtgPicker(m) {
+  var sel = document.getElementById('vtgLinkedMtg');
+  var btn = document.getElementById('vtgSyncBtn');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— None —</option>' + vtgScheduledMtgs.map(function(s) {
+    var label = s.title + (s.date ? ' (' + s.date.substring(0,10) + ')' : '');
+    return '<option value="' + escHtml(s.id) + '">' + escHtml(label) + '</option>';
+  }).join('');
+  sel.value = m.linkedMeetingId || '';
+  btn.style.display = m.linkedMeetingId ? '' : 'none';
+}
+
+function vtgLinkedMtgChange() {
+  var m = vtgCurrent(); if (!m) return;
+  m.linkedMeetingId = document.getElementById('vtgLinkedMtg').value || null;
+  document.getElementById('vtgSyncBtn').style.display = m.linkedMeetingId ? '' : 'none';
+  vtgDirty = true;
+}
+
+async function vtgSyncCheckins() {
+  var m = vtgCurrent(); if (!m || !m.linkedMeetingId) return;
+  var btn = document.getElementById('vtgSyncBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing…';
+  try {
+    var attended = await sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(m.linkedMeetingId) + '&select=member_id', vtgToken());
+    var checkedIn = new Set((attended || []).map(function(r){ return String(r.member_id || ''); }));
+    var count = 0;
+    vtgRoster.forEach(function(r) {
+      if (checkedIn.has(String(r.id))) {
+        if (!m.attendance[r.id]) count++;
+        m.attendance[r.id] = true;
+      }
+    });
+    vtgDirty = true;
+    vtgRenderAttendance();
+    vtgUpdateQuorumBadge();
+    showToast(count + ' brother' + (count !== 1 ? 's' : '') + ' synced from check-ins.', 'success');
+  } catch(e) {
+    showToast('Sync failed: ' + (e.message || 'error'), 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync Check-ins';
 }
 
 function vtgFieldChange() {
@@ -14048,7 +14106,7 @@ function vtgOpenMeeting(id) {
 function vtgNewMeeting() {
   var today = new Date();
   var date = (today.getMonth()+1) + '/' + today.getDate() + '/' + today.getFullYear();
-  var m = { id: 'local-' + Date.now(), dbId: null, title: 'Chapter Meeting', date: date, quorumTarget: null, finalizedAt: null, attendance: {}, motions: [] };
+  var m = { id: 'local-' + Date.now(), dbId: null, title: 'Chapter Meeting', date: date, quorumTarget: null, finalizedAt: null, linkedMeetingId: null, attendance: {}, motions: [] };
   vtgRoster.forEach(function(r){ m.attendance[r.id] = true; });
   vtgMeetings.unshift(m);
   vtgCurrentId = m.id;
@@ -14066,6 +14124,7 @@ async function vtgSaveMeeting() {
     date: m.date,
     quorum_target: m.quorumTarget || null,
     finalized_at: m.finalizedAt || null,
+    linked_meeting_id: m.linkedMeetingId || null,
     meeting_data: { attendance: m.attendance, motions: m.motions }
   };
   try {
