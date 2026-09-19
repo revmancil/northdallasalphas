@@ -5711,7 +5711,7 @@ function renderRosterGroup(m) {
     '<div class="roster-row-label">Compliance &amp; Certifications</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Risk Mgmt Certified</div>'  + rosterVal(normalizeOptionalDateValue(m.risk_mgmt_certified)) + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">IMDP Certified</div>'       + rosterVal(normalizeOptionalDateValue(m.imdp_certified))      + '</div>' +
-    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + (isLife ? '<span class="roster-cell-val missing">N/A — Life Member</span>' : rosterYesNo(m.grand_tax_paid)) + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + (isLife ? '<span class="roster-badge" style="background:rgba(201,168,76,0.15);color:#C9A84C;border:1px solid rgba(201,168,76,0.4);font-weight:700;">Life Member</span>' : rosterYesNo(m.grand_tax_paid)) + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>'    + rosterYesNo(m.dues_current)                                  + '</div>' +
     '</div>' +
     '</div>';
