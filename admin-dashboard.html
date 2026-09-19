@@ -10962,6 +10962,9 @@ async function loadAllPendingCounts() {
       const presPhotoEl = document.getElementById('presPhoto');
       if (presPhotoEl && presPhotoEl.value) updatePresPhotoPreview();
     }, 200);
+    // Hash-based deep linking (e.g. admin-dashboard.html#voting)
+    var hash = (window.location.hash || '').replace('#', '');
+    if (hash === 'voting') { showPanel('voting'); loadVotingPanel(); }
   });
 })();
 

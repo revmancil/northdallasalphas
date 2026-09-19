@@ -261,6 +261,11 @@
       <div class="success-title">Checked In!</div>
       <p class="success-body" id="successMsg">Your attendance has been recorded.</p>
       <p style="font-size:0.72rem;color:rgba(255,255,255,0.2);margin-top:16px;">You may close this page.</p>
+      <div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+        <button class="btn-outline" onclick="openAdminMode()" style="font-size:0.78rem;padding:9px;">
+          <i class="fas fa-shield-halved"></i> Admin Check-In Mode
+        </button>
+      </div>
     </div>
   </div>
 
@@ -270,6 +275,11 @@
       <i class="fas fa-circle-check" style="font-size:2.2rem;color:var(--green);display:block;margin-bottom:14px;"></i>
       <div style="font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:8px;">Already Checked In</div>
       <p style="font-size:0.85rem;color:rgba(255,255,255,0.4);line-height:1.6;" id="alreadyMsg">Your attendance for this meeting is already recorded.</p>
+      <div style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
+        <button class="btn-outline" onclick="openAdminMode()" style="font-size:0.78rem;padding:9px;">
+          <i class="fas fa-shield-halved"></i> Admin Check-In Mode
+        </button>
+      </div>
     </div>
   </div>
 
@@ -584,6 +594,31 @@ async function doVisitorCheckIn() {
 var adminToken = null;
 var adminRoster = [];       // { id, first_name, last_name, alpha_id, email }
 var adminCheckedIn = {};    // member_id → true
+
+function openAdminMode() {
+  // If already authenticated as admin (same session), skip login and load roster directly
+  if (adminToken) {
+    showScreen('screenMain');
+    showPanel('panelAdmin');
+    return;
+  }
+  // If the member's own auth token might be an admin, try using it
+  var tok = authToken;
+  if (tok) {
+    adminToken = tok;
+    showScreen('screenMain');
+    showPanel('panelAdmin');
+    loadAdminRoster().catch(function() {
+      // Not an admin — fall back to login form
+      adminToken = null;
+      document.getElementById('adminLoginSection').style.display = 'block';
+      document.getElementById('adminRosterSection').style.display = 'none';
+    });
+    return;
+  }
+  showScreen('screenMain');
+  showPanel('panelAdmin');
+}
 
 async function doAdminLogin() {
   hideMsg('adminLoginErr');
