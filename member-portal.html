@@ -2118,10 +2118,10 @@ function renderDocumentsPanel() {
     .then(function(docs) {
       if (!docs || !docs.length) {
         c.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><p>No documents available yet.</p></div>';
-        document.getElementById('statDocCount').textContent = '0';
+        var statDocCount = document.getElementById('statDocCount'); if (statDocCount) statDocCount.textContent = '0';
         return;
       }
-      document.getElementById('statDocCount').textContent = docs.length;
+      var statDocCount = document.getElementById('statDocCount'); if (statDocCount) statDocCount.textContent = docs.length;
       const icons = {'general':'file-alt','pdf':'file-pdf','form':'file-signature','minutes':'file-contract','policy':'file-shield'};
       c.innerHTML = docs.map(function(doc) {
         return '<div class="doc-item">' +
