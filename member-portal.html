@@ -282,9 +282,6 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('profile')" id="nav-profile"><i class="fas fa-user-circle"></i> My Profile</button>
     <button class="nav-item" onclick="showPanel('my-issues');loadMyHelpdeskIssues()" id="nav-my-issues"><i class="fas fa-life-ring"></i> My Help Desk Issues</button>
     <div class="nav-section-label" id="navAdminSection" style="display:none;">Chapter Administration</div>
-    <a href="admin-dashboard.html#voting" class="nav-item" id="navRollCallLink" style="display:none;text-decoration:none;">
-      <i class="fas fa-vote-yea"></i> Roll Call &amp; Voting
-    </a>
     <a href="admin-dashboard.html" class="nav-item" id="navAdminDashLink" style="display:none;text-decoration:none;">
       <i class="fas fa-shield-halved"></i> Admin Dashboard
     </a>
@@ -2568,7 +2565,6 @@ async function init() {
     .then(function(rows) {
       if (rows && rows.length) {
         document.getElementById('navAdminSection').style.display = '';
-        document.getElementById('navRollCallLink').style.display = '';
         document.getElementById('navAdminDashLink').style.display = '';
       }
     }).catch(function(){});
