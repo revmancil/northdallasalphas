@@ -13838,7 +13838,7 @@ async function vtgSyncCheckins() {
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing…';
   try {
-    var attended = await sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(m.linkedMeetingId) + '&select=member_id', vtgToken());
+    var attended = await sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(m.linkedMeetingId) + '&order=checked_in_at.asc', vtgToken());
     var checkedIn = new Set((attended || []).map(function(r){ return String(r.member_id || ''); }));
     var count = 0;
     vtgRoster.forEach(function(r) {
