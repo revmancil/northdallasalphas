@@ -13756,12 +13756,12 @@ async function loadVotingPanel() {
   try {
     const tok = vtgToken();
     const [members, meetings, scheduledMtgs] = await Promise.all([
-      sbGet('members', 'status=eq.active&select=id,alpha_id,first_name,last_name,middle_name,suffix&order=last_name.asc', tok),
+      sbGet('members', 'status=eq.active&select=id,alpha_id,first_name,last_name,middle_name,suffix,email&order=last_name.asc', tok),
       sbGet('chapter_meetings', 'order=created_at.desc', tok).catch(() => []),
       sbGet('meetings', 'select=id,title,meeting_date&order=meeting_date.desc', tok).catch(() => [])
     ]);
     vtgRoster = (members || []).map(function(m) {
-      return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '' };
+      return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '', email: (m.email || '').toLowerCase() };
     });
     vtgScheduledMtgs = (scheduledMtgs || []).map(function(s) {
       return { id: s.id, title: s.title || '', date: s.meeting_date || '' };
@@ -13843,10 +13843,12 @@ async function vtgSyncCheckins() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing…';
   try {
     var attended = await sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(m.linkedMeetingId) + '&order=checked_in_at.asc', vtgToken());
-    var checkedIn = new Set((attended || []).map(function(r){ return String(r.member_id || ''); }));
+    var checkedIds = new Set((attended || []).filter(function(r){ return r.member_id; }).map(function(r){ return String(r.member_id); }));
+    var checkedEmails = new Set((attended || []).filter(function(r){ return r.member_email; }).map(function(r){ return r.member_email.toLowerCase(); }));
     var count = 0;
     vtgRoster.forEach(function(r) {
-      if (checkedIn.has(String(r.id))) {
+      var matched = checkedIds.has(String(r.id)) || (r.email && checkedEmails.has(r.email));
+      if (matched) {
         if (!m.attendance[r.id]) count++;
         m.attendance[r.id] = true;
       }
