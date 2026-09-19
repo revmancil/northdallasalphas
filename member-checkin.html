@@ -77,6 +77,16 @@
     .divider { display:flex; align-items:center; gap:10px; margin:18px 0; }
     .divider span { font-size:0.72rem; color:rgba(255,255,255,0.2); white-space:nowrap; }
     .divider::before, .divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,0.08); }
+
+    /* Admin roster */
+    .admin-row { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:7px; border:1px solid rgba(255,255,255,0.07); background:rgba(255,255,255,0.03); cursor:pointer; transition:all 0.15s; gap:10px; }
+    .admin-row:hover { background:rgba(201,168,76,0.08); border-color:rgba(201,168,76,0.25); }
+    .admin-row.checked { background:rgba(39,174,96,0.08); border-color:rgba(39,174,96,0.3); cursor:default; }
+    .admin-row-name { font-size:0.88rem; font-weight:600; color:var(--white); }
+    .admin-row-sub { font-size:0.72rem; color:rgba(255,255,255,0.35); margin-top:1px; }
+    .admin-row-badge { font-size:0.7rem; font-weight:700; padding:3px 9px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+    .admin-row-badge.present { background:rgba(39,174,96,0.15); color:#4ade80; border:1px solid rgba(39,174,96,0.3); }
+    .admin-row-badge.tap { background:rgba(201,168,76,0.12); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
   </style>
 </head>
 <body>
@@ -151,6 +161,11 @@
         <button class="btn-outline" onclick="showPanel('panelVisitor')">
           <i class="fas fa-handshake"></i> I'm a Visiting Brother
         </button>
+        <div style="text-align:center;margin-top:20px;">
+          <button class="btn-text" onclick="showPanel('panelAdmin')" style="font-size:0.72rem;color:rgba(255,255,255,0.2);">
+            <i class="fas fa-shield-halved"></i> Recording Secretary / Admin Check-In
+          </button>
+        </div>
       </div>
 
       <!-- VISITING BROTHER (no account) -->
@@ -190,6 +205,48 @@
           <i class="fas fa-paper-plane"></i> Send Reset Link
         </button>
         <button class="btn-outline" onclick="showPanel('panelLogin')">
+          <i class="fas fa-arrow-left"></i> Back to Sign In
+        </button>
+      </div>
+
+      <!-- ADMIN MANUAL CHECK-IN -->
+      <div class="screen" id="panelAdmin">
+        <div id="adminLoginSection">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <i class="fas fa-shield-halved" style="color:var(--gold);"></i>
+            <span style="font-size:0.8rem;font-weight:700;color:var(--gold);letter-spacing:0.06em;text-transform:uppercase;">Admin Check-In Mode</span>
+          </div>
+          <p style="color:rgba(255,255,255,0.4);font-size:0.8rem;line-height:1.5;margin-bottom:14px;">Sign in with your admin credentials to manually check in brothers.</p>
+          <div class="msg error" id="adminLoginErr"><i class="fas fa-exclamation-circle"></i><span id="adminLoginErrText"></span></div>
+          <label class="form-label">Admin Email</label>
+          <div class="input-wrap">
+            <i class="fas fa-envelope icon"></i>
+            <input type="email" id="adminEmail" placeholder="your@email.com" autocomplete="email" />
+          </div>
+          <label class="form-label">Password</label>
+          <div class="input-wrap">
+            <i class="fas fa-lock icon"></i>
+            <input type="password" id="adminPassword" placeholder="Enter password" autocomplete="current-password" />
+          </div>
+          <button class="btn-gold" id="adminLoginBtn" onclick="doAdminLogin()">
+            <i class="fas fa-sign-in-alt"></i> Sign In as Admin
+          </button>
+        </div>
+
+        <div id="adminRosterSection" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <span style="font-size:0.75rem;font-weight:700;color:var(--gold);letter-spacing:0.08em;text-transform:uppercase;"><i class="fas fa-shield-halved"></i> Manual Check-In</span>
+            <button class="btn-text" onclick="doAdminLogout()" style="font-size:0.72rem;"><i class="fas fa-right-from-bracket"></i> Exit</button>
+          </div>
+          <div class="input-wrap" style="margin-bottom:12px;">
+            <i class="fas fa-magnifying-glass icon"></i>
+            <input type="text" id="adminSearch" placeholder="Search brothers…" oninput="renderAdminRoster()" style="padding-left:36px;" />
+          </div>
+          <div id="adminCheckedCount" style="font-size:0.75rem;color:rgba(201,168,76,0.6);margin-bottom:10px;"></div>
+          <div id="adminRosterList" style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;"></div>
+        </div>
+
+        <button class="btn-outline" onclick="showPanel('panelLogin')" id="adminBackBtn" style="margin-top:14px;">
           <i class="fas fa-arrow-left"></i> Back to Sign In
         </button>
       </div>
@@ -242,7 +299,7 @@ function showScreen(id) {
 }
 
 function showPanel(id) {
-  ['panelConfirm','panelLogin','panelForgot','panelVisitor'].forEach(function(p) {
+  ['panelConfirm','panelLogin','panelForgot','panelVisitor','panelAdmin'].forEach(function(p) {
     var el = document.getElementById(p);
     if (el) el.classList.toggle('active', p === id);
   });
@@ -520,6 +577,131 @@ async function doVisitorCheckIn() {
     setLoading('visitorBtn', false, '<i class="fas fa-door-open"></i> Check In as Visiting Brother');
     showMsg('visitorErr', 'error', e.message || 'Could not complete check-in. Please try again.');
   }
+}
+
+// ── Admin manual check-in ─────────────────────────────────────────────────────
+
+var adminToken = null;
+var adminRoster = [];       // { id, first_name, last_name, alpha_id, email }
+var adminCheckedIn = {};    // member_id → true
+
+async function doAdminLogin() {
+  hideMsg('adminLoginErr');
+  var email    = (document.getElementById('adminEmail').value || '').trim();
+  var password = document.getElementById('adminPassword').value;
+  if (!email || !password) { showMsg('adminLoginErr', 'error', 'Please enter email and password.'); return; }
+  setLoading('adminLoginBtn', true, '<i class="fas fa-sign-in-alt"></i> Sign In as Admin');
+  try {
+    var res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email: email, password: password })
+    });
+    var data = await res.json();
+    if (!res.ok || !data.access_token) {
+      showMsg('adminLoginErr', 'error', (data && (data.error_description || data.error)) || 'Invalid credentials.');
+      setLoading('adminLoginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In as Admin');
+      return;
+    }
+    // Verify they are an admin
+    var adminCheck = await fetch(SUPABASE_URL + '/rest/v1/chapter_admins?email=eq.' + encodeURIComponent(email) + '&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + data.access_token }
+    });
+    var adminRows = await adminCheck.json();
+    if (!Array.isArray(adminRows) || !adminRows.length) {
+      showMsg('adminLoginErr', 'error', 'This account does not have admin access.');
+      setLoading('adminLoginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In as Admin');
+      return;
+    }
+    adminToken = data.access_token;
+    await loadAdminRoster();
+  } catch(e) {
+    showMsg('adminLoginErr', 'error', 'Network error. Please try again.');
+    setLoading('adminLoginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In as Admin');
+  }
+}
+
+async function loadAdminRoster() {
+  try {
+    var [membersRes, attendedRes] = await Promise.all([
+      fetch(SUPABASE_URL + '/rest/v1/members?status=eq.active&select=id,first_name,last_name,alpha_id,email&order=last_name.asc', {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + adminToken }
+      }),
+      fetch(SUPABASE_URL + '/rest/v1/meeting_attendance?meeting_id=eq.' + encodeURIComponent(meetingId) + '&select=member_id,member_email', {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + adminToken }
+      })
+    ]);
+    adminRoster = await membersRes.json();
+    var attended = await attendedRes.json();
+    adminCheckedIn = {};
+    (attended || []).forEach(function(r) {
+      if (r.member_id) adminCheckedIn[r.member_id] = true;
+      if (r.member_email) adminCheckedIn[r.member_email.toLowerCase()] = true;
+    });
+    document.getElementById('adminLoginSection').style.display = 'none';
+    document.getElementById('adminRosterSection').style.display = 'block';
+    document.getElementById('adminBackBtn').style.display = 'none';
+    renderAdminRoster();
+  } catch(e) {
+    showMsg('adminLoginErr', 'error', 'Failed to load roster. Please try again.');
+    setLoading('adminLoginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In as Admin');
+  }
+}
+
+function renderAdminRoster() {
+  var q = (document.getElementById('adminSearch').value || '').toLowerCase();
+  var filtered = adminRoster.filter(function(m) {
+    var name = ((m.first_name || '') + ' ' + (m.last_name || '')).toLowerCase();
+    return !q || name.includes(q) || (m.alpha_id || '').toLowerCase().includes(q);
+  });
+  var checkedCount = adminRoster.filter(function(m){ return adminCheckedIn[m.id] || (m.email && adminCheckedIn[m.email.toLowerCase()]); }).length;
+  document.getElementById('adminCheckedCount').textContent = checkedCount + ' of ' + adminRoster.length + ' brothers checked in';
+  document.getElementById('adminRosterList').innerHTML = filtered.map(function(m) {
+    var isIn = adminCheckedIn[m.id] || (m.email && adminCheckedIn[m.email.toLowerCase()]);
+    var name = ((m.first_name || '') + ' ' + (m.last_name || '')).trim();
+    return '<div class="admin-row' + (isIn ? ' checked' : '') + '" onclick="' + (isIn ? '' : 'doAdminCheckIn(\'' + m.id + '\',\'' + esc(name) + '\',\'' + esc(m.email || '') + '\')') + '">' +
+      '<div><div class="admin-row-name">' + esc(name) + '</div>' +
+      (m.alpha_id ? '<div class="admin-row-sub">Alpha ID: ' + esc(m.alpha_id) + '</div>' : '') +
+      '</div>' +
+      '<span class="admin-row-badge ' + (isIn ? 'present' : 'tap') + '">' + (isIn ? '<i class="fas fa-check"></i> Checked In' : 'Tap to Check In') + '</span>' +
+      '</div>';
+  }).join('');
+}
+
+async function doAdminCheckIn(memberId, memberName, memberEmail) {
+  if (adminCheckedIn[memberId]) return;
+  var payload = { meeting_id: meetingId, member_name: memberName, member_id: memberId || undefined };
+  if (memberEmail) payload.member_email = memberEmail;
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + adminToken, 'Prefer': 'return=minimal' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok && res.status !== 409) {
+      var ed = await res.json().catch(function(){ return {}; });
+      alert('Check-in failed: ' + (ed.message || 'Unknown error'));
+      return;
+    }
+    adminCheckedIn[memberId] = true;
+    if (memberEmail) adminCheckedIn[memberEmail.toLowerCase()] = true;
+    renderAdminRoster();
+  } catch(e) {
+    alert('Network error. Please try again.');
+  }
+}
+
+function doAdminLogout() {
+  adminToken = null;
+  adminRoster = [];
+  adminCheckedIn = {};
+  document.getElementById('adminLoginSection').style.display = 'block';
+  document.getElementById('adminRosterSection').style.display = 'none';
+  document.getElementById('adminBackBtn').style.display = 'block';
+  document.getElementById('adminEmail').value = '';
+  document.getElementById('adminPassword').value = '';
+  hideMsg('adminLoginErr');
+  setLoading('adminLoginBtn', false, '<i class="fas fa-sign-in-alt"></i> Sign In as Admin');
 }
 
 // Enter key support
