@@ -3659,9 +3659,21 @@
         <button id="duesAdminTabRecord" onclick="switchDuesTab('record')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
           <i class="fas fa-plus-circle"></i> Record Payment
         </button>
+        <button id="duesAdminTabZelle" onclick="switchDuesTab('zelle')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
+          <i class="fas fa-mobile-alt"></i> Pending Zelle <span id="zelleAdminBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:4px;vertical-align:middle;"></span>
+        </button>
         <button id="duesAdminTabConfig" onclick="switchDuesTab('config')" style="padding:10px 20px;border:none;background:none;font-weight:700;font-size:0.88rem;cursor:pointer;border-bottom:3px solid transparent;color:var(--gray-400);">
           <i class="fas fa-sliders-h"></i> Configure
         </button>
+      </div>
+
+      <!-- Pending Zelle tab -->
+      <div id="duesAdminPaneZelle" style="display:none;">
+        <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:0.85rem;color:var(--gray-500);">Brothers who submitted a Zelle payment notification awaiting your confirmation.</div>
+          <button onclick="loadPendingZelle()" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;color:var(--gray-500);"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div id="zelleAdminList"><div style="padding:30px;text-align:center;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
       </div>
 
       <!-- Payment History tab -->
@@ -12806,9 +12818,21 @@ async function loadDuesAdminPanel() {
   await Promise.allSettled([
     _fetchDuesPayments(),
     _fetchDuesMembersForSelect(),
-    _loadDuesConfig()
+    _loadDuesConfig(),
+    _loadZelleBadge()
   ]);
   _panelLoaded.duesAdmin = true;
+}
+
+async function _loadZelleBadge() {
+  try {
+    var token = getAdminToken();
+    var rows = await sbGet('dues', 'paid=eq.false&payment_method=eq.zelle&select=id', token);
+    var badge = document.getElementById('zelleAdminBadge');
+    if (!badge) return;
+    if (rows && rows.length) { badge.textContent = rows.length; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  } catch(e) {}
 }
 
 async function _fetchDuesPayments() {
@@ -12946,7 +12970,7 @@ function renderDuesPayments() {
 function filterDuesPayments() { renderDuesPayments(); }
 
 function switchDuesTab(tab) {
-  var tabs = ['history','record','config'];
+  var tabs = ['history','record','zelle','config'];
   tabs.forEach(function(t) {
     var btn = document.getElementById('duesAdminTab' + t.charAt(0).toUpperCase() + t.slice(1));
     var pane = document.getElementById('duesAdminPane' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -12954,6 +12978,78 @@ function switchDuesTab(tab) {
     if (btn) { btn.style.borderBottomColor = active ? 'var(--gold)' : 'transparent'; btn.style.color = active ? 'var(--gold)' : 'var(--gray-400)'; }
     if (pane) pane.style.display = active ? '' : 'none';
   });
+  if (tab === 'zelle') loadPendingZelle();
+}
+
+async function loadPendingZelle() {
+  var list = document.getElementById('zelleAdminList');
+  var badge = document.getElementById('zelleAdminBadge');
+  if (!list) return;
+  list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray-400);"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+  try {
+    var token = getAdminToken();
+    var rows = await sbGet('dues', 'paid=eq.false&payment_method=eq.zelle&order=created_at.desc', token);
+    if (!rows || !rows.length) {
+      list.innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray-400);">No pending Zelle payments.</div>';
+      badge.style.display = 'none';
+      return;
+    }
+    badge.textContent = rows.length;
+    badge.style.display = '';
+    // Fetch member names
+    var memberIds = rows.map(function(r){ return r.member_id; }).filter(Boolean);
+    var membersMap = {};
+    if (memberIds.length) {
+      var mrows = await sbGet('members', 'id=in.(' + memberIds.map(encodeURIComponent).join(',') + ')&select=id,first_name,last_name,email', token);
+      (mrows||[]).forEach(function(m){ membersMap[m.id] = m; });
+    }
+    list.innerHTML = rows.map(function(r) {
+      var m = membersMap[r.member_id] || {};
+      var name = [m.first_name, m.last_name].filter(Boolean).join(' ') || '—';
+      var email = m.email || '—';
+      var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      var notes = escHtml(r.notes || '');
+      return '<div style="display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border-bottom:1px solid var(--gray-100);background:#fff;flex-wrap:wrap;">' +
+        '<div style="flex:1;min-width:200px;">' +
+        '<div style="font-weight:700;font-size:0.9rem;color:#111;">' + escHtml(name) + '</div>' +
+        '<div style="font-size:0.78rem;color:#888;margin-top:2px;">' + escHtml(email) + ' · FY ' + escHtml(r.year||'') + ' · ' + date + '</div>' +
+        (notes ? '<div style="font-size:0.78rem;color:#666;margin-top:6px;font-style:italic;">' + notes + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;flex-shrink:0;align-items:center;">' +
+        '<button onclick="confirmZellePayment(\'' + r.id + '\',\'' + escHtml(r.member_id||'') + '\',\'' + escHtml(r.year||'') + '\')" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;padding:8px 16px;cursor:pointer;"><i class="fas fa-check"></i> Confirm Paid</button>' +
+        '<button onclick="dismissZellePayment(\'' + r.id + '\')" style="background:none;border:1px solid #ddd;border-radius:6px;font-size:0.82rem;padding:8px 12px;cursor:pointer;color:#888;" title="Dismiss without confirming"><i class="fas fa-times"></i></button>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:#c00;">Error: ' + escHtml(e.message||'') + '</div>';
+  }
+}
+
+async function confirmZellePayment(duesId, memberId, fiscalYear) {
+  if (!confirm('Confirm this Zelle payment as received and mark the brother as paid?')) return;
+  var token = getAdminToken();
+  try {
+    await sbPatch('dues', 'id=eq.' + duesId, { paid: true, paid_date: new Date().toISOString() }, token);
+    if (memberId) {
+      await sbPatch('members', 'id=eq.' + memberId, { dues_paid_year: fiscalYear, dues_current: true }, token);
+    }
+    showToast && showToast('Payment confirmed.');
+    loadPendingZelle();
+  } catch(e) {
+    alert('Failed to confirm: ' + (e.message||''));
+  }
+}
+
+async function dismissZellePayment(duesId) {
+  if (!confirm('Dismiss this Zelle notification without confirming payment?')) return;
+  var token = getAdminToken();
+  try {
+    await sbDeleteByFilter('dues', 'id=eq.' + duesId, token);
+    loadPendingZelle();
+  } catch(e) {
+    alert('Failed to dismiss: ' + (e.message||''));
+  }
 }
 
 async function submitDuesRecord() {

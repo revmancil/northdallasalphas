@@ -449,6 +449,33 @@ backdrop-filter:blur(4px);}
           <p id="duesPayErr" style="display:none;color:var(--red);font-size:0.82rem;margin-top:12px;"></p>
         </div>
       </div>
+      <!-- Zelle Payment -->
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header"><h3><i class="fas fa-mobile-alt"></i> Pay dues via Zelle</h3></div>
+        <div class="section-card-body">
+          <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;">Send your dues payment via Zelle to the chapter treasurer. Once sent, submit the form below and an admin will confirm your payment.</p>
+          <div style="margin:16px 0;padding:16px 20px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.25);border-radius:8px;display:flex;align-items:center;gap:14px;">
+            <div style="width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <i class="fas fa-mobile-alt" style="color:var(--gold);font-size:1.1rem;"></i>
+            </div>
+            <div>
+              <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-500);margin-bottom:3px;">Zelle to</div>
+              <div style="font-size:1rem;font-weight:700;color:var(--gold);letter-spacing:0.01em;">treasurer@northdallasalphas.org</div>
+              <div style="font-size:0.78rem;color:var(--gray-500);margin-top:2px;">Xi Tau Lambda Chapter · Alpha Phi Alpha</div>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Zelle confirmation / memo <span style="color:var(--gray-600);font-weight:400;text-transform:none;">(optional)</span></label>
+            <input type="text" id="zelleConfirmation" placeholder="e.g. confirmation code or memo you included"
+              style="width:100%;box-sizing:border-box;background:var(--input-bg,rgba(255,255,255,0.06));border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:0.85rem;color:var(--white);outline:none;" />
+          </div>
+          <button type="button" class="btn-gold" style="margin-top:6px;" id="zelleSubmitBtn" onclick="submitZelleNotification()">
+            <i class="fas fa-paper-plane"></i> I've sent my Zelle payment
+          </button>
+          <p id="zelleMsg" style="display:none;font-size:0.82rem;margin-top:12px;"></p>
+        </div>
+      </div>
+
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-dollar-sign"></i> Your Dues History</h3></div>
         <div class="section-card-body" id="duesList"><div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Loading dues records...</p></div></div>
@@ -1665,6 +1692,48 @@ async function startDuesStripeCheckout() {
   } catch (e) {
     if (errEl) { errEl.textContent = (e && e.message) ? e.message : 'Payment could not be started.'; errEl.style.display = 'block'; }
   } finally {
+    btn.disabled = false;
+  }
+}
+
+async function submitZelleNotification() {
+  var btn = document.getElementById('zelleSubmitBtn');
+  var msg = document.getElementById('zelleMsg');
+  var confirmation = (document.getElementById('zelleConfirmation').value || '').trim();
+  if (!currentMember || !currentSession) return;
+  var name = [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ');
+  var email = currentMember.email || _userEmail || '';
+  var fiscalYear = new Date().getFullYear().toString();
+  btn.disabled = true;
+  msg.style.display = 'none';
+  try {
+    // Record pending Zelle payment in dues table
+    await fetch(SUPABASE_URL + '/rest/v1/dues', {
+      method: 'POST',
+      headers: Object.assign({}, sbHeaders(currentSession.access_token), { 'Prefer': 'return=minimal,resolution=ignore-duplicates', 'on_conflict': 'member_id,year' }),
+      body: JSON.stringify({
+        member_id:      currentMember.id,
+        year:           fiscalYear,
+        amount:         null,
+        paid:           false,
+        payment_method: 'zelle',
+        notes:          'Zelle payment submitted — pending admin confirmation' + (confirmation ? '. Memo: ' + confirmation : ''),
+      })
+    });
+    // Notify admins
+    await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+      body: JSON.stringify({ type: 'zelle_payment', memberName: name, email: email, fiscalYear: fiscalYear, confirmation: confirmation || '(none provided)' })
+    }).catch(function(){});
+    msg.textContent = 'Thank you, Brother ' + (currentMember.first_name || '') + '. Your Zelle payment notification has been sent to chapter leadership for confirmation.';
+    msg.style.color = '#27ae60';
+    msg.style.display = 'block';
+    btn.textContent = 'Notification sent';
+  } catch(e) {
+    msg.textContent = 'Could not send notification. Please contact the Financial Secretary directly.';
+    msg.style.color = 'var(--red)';
+    msg.style.display = 'block';
     btn.disabled = false;
   }
 }

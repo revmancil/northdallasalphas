@@ -404,6 +404,35 @@ serve(async (req) => {
     return json({ sent: ok, recipients: recipients.length });
   }
 
+  // ── Zelle payment notification → Finance admins ──────────────────────────
+  if (type === "zelle_payment") {
+    const name         = String(payload.memberName ?? payload.name ?? "A member").trim();
+    const email        = String(payload.email      ?? "").trim();
+    const fiscalYear   = String(payload.fiscalYear ?? "").trim();
+    const confirmation = String(payload.confirmation ?? "(none provided)").trim();
+    const { subject, html } = {
+      subject: `Zelle Payment Submitted — ${name}`,
+      html: emailShell(
+        "💸",
+        "Zelle Payment Submitted",
+        "North Dallas Alphas — Finance Alert",
+        `<strong style="color:#fff;">${esc(name)}</strong> submitted a Zelle payment notification and is awaiting confirmation.<br><br>
+         <strong style="color:${gold};">Email:</strong> ${esc(email)}<br>
+         <strong style="color:${gold};">Fiscal Year:</strong> ${esc(fiscalYear)}<br>
+         <strong style="color:${gold};">Memo / Confirmation:</strong> ${esc(confirmation)}<br><br>
+         Please verify the Zelle payment was received at <strong style="color:${gold};">treasurer@northdallasalphas.org</strong> and confirm in the admin dashboard.`,
+        "Confirm Payment in Dashboard",
+        dashboardUrl + "#finance-payments",
+      ),
+    };
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "finance")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
   // ── Member / visitor request → Membership admins ─────────────────────────
   if (type === "member_request" || type === "visitor_request") {
     const name    = String(payload.name    ?? "").trim();
