@@ -236,6 +236,12 @@ backdrop-filter:blur(4px);}
   </style>
 </head>
 <body>
+<!-- Impersonation Banner -->
+<div id="impersonationBanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99998;background:#C9A84C;color:#000;font-family:Arial,sans-serif;font-size:0.83rem;font-weight:700;padding:8px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;">
+  <span><i class="fas fa-user-secret"></i> Admin View — Viewing portal as <span id="impersonationBannerName"></span></span>
+  <button onclick="exitImpersonation()" style="background:#000;color:#C9A84C;border:none;border-radius:4px;font-weight:700;font-size:0.78rem;padding:5px 12px;cursor:pointer;">Exit &amp; Return to Dashboard</button>
+</div>
+
 <div id="maintenanceOverlay" style="display:none;position:fixed;inset:0;background:#0a0a0a;z-index:99999;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:20px;">
   <img src="images/xtl-logo.png" style="width:72px;height:72px;border-radius:50%;border:2px solid #C9A84C;opacity:0.9;">
   <div style="font-family:'Playfair Display',serif;font-size:1.6rem;color:#C9A84C;">Xi Tau Lambda Chapter</div>
@@ -1205,6 +1211,31 @@ function getSession() {
     if (s.expires_at && Math.floor(Date.now() / 1000) > s.expires_at) return null;
     return s;
   } catch(e) { return null; }
+}
+
+function isImpersonating() {
+  try {
+    var s = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
+    return !!(s && s._impersonating);
+  } catch(e) { return false; }
+}
+
+function showImpersonationBanner(memberData) {
+  var banner = document.getElementById('impersonationBanner');
+  var nameEl = document.getElementById('impersonationBannerName');
+  if (!banner) return;
+  var name = [memberData.first_name, memberData.last_name].filter(Boolean).join(' ');
+  if (nameEl) nameEl.textContent = name;
+  banner.style.display = 'flex';
+  // Push portal content down so banner doesn't overlap
+  document.body.style.paddingTop = '40px';
+}
+
+function exitImpersonation() {
+  localStorage.removeItem(MEMBER_SESSION_KEY);
+  window.close();
+  // Fallback if window.close() is blocked
+  setTimeout(function() { window.location.href = 'admin-dashboard.html#helpdesk'; }, 300);
 }
 
 function logout() {
@@ -2463,41 +2494,66 @@ async function init() {
   if (await checkMaintenanceMode()) return;
   currentSession = getSession();
   if (!currentSession) { window.location.href = 'member-login.html'; return; }
-  const userEmail = (currentSession.user && currentSession.user.email) ? currentSession.user.email : '';
-  try {
-    const rows = await sbGet('events', 'order=sort_order.asc', SUPABASE_ANON_KEY);
-    const todayIso = portalLocalTodayIso();
-    allEvents = (rows || []).filter(function(ev) { return !portalIsArchivedEvent(ev, todayIso); });
-  } catch (e) {
-    allEvents = [];
-  }
-  try {
-    const members = await sbGet('members', 'email=eq.' + encodeURIComponent(userEmail) + '&limit=1', currentSession.access_token);
-    currentMember = (members && members.length) ? members[0] : null;
-  } catch(e) { currentMember = null; }
-  if (!currentMember) {
-    // No existing member record — create new one as pending and notify admins
+
+  // Impersonation mode — admin viewing portal as a specific brother
+  if (currentSession._impersonating) {
+    showImpersonationBanner(currentSession._impersonating);
+    const impId = currentSession._impersonating.id;
     try {
-      const meta = (currentSession.user && currentSession.user.user_metadata) ? currentSession.user.user_metadata : {};
-      const created = await sbPost('members', { email:userEmail, first_name:meta.first_name||'', last_name:meta.last_name||'', phone:meta.phone||'', portal_access:'pending' }, currentSession.access_token);
-      currentMember = Array.isArray(created) ? created[0] : created;
-      fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
-        body: JSON.stringify({ type: 'member_request', name: [meta.first_name||'', meta.last_name||''].filter(Boolean).join(' ') || userEmail, email: userEmail })
-      }).catch(function(){});
-    } catch(e) {}
-  } else if (currentMember.alpha_id && (currentMember.portal_access === 'pending' || !currentMember.portal_access)) {
-    // Email matched an existing roster member with an Alpha ID — auto-grant Chapter Brother access
+      const rows = await sbGet('events', 'order=sort_order.asc', SUPABASE_ANON_KEY);
+      const todayIso = portalLocalTodayIso();
+      allEvents = (rows || []).filter(function(ev) { return !portalIsArchivedEvent(ev, todayIso); });
+    } catch(e) { allEvents = []; }
     try {
-      await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(userEmail), {
-        method: 'PATCH',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-        body: JSON.stringify({ portal_access: 'chapter_member', access_granted_at: new Date().toISOString() })
-      });
-      currentMember.portal_access = 'chapter_member';
-    } catch(e) {}
-  }
+      const members = await sbGet('members', 'id=eq.' + encodeURIComponent(impId) + '&limit=1', currentSession.access_token);
+      currentMember = (members && members.length) ? members[0] : null;
+    } catch(e) { currentMember = null; }
+    if (!currentMember) {
+      document.getElementById('loadingOverlay') && (document.getElementById('loadingOverlay').style.display = 'none');
+      alert('Could not load member data for impersonation.');
+      return;
+    }
+    currentSession.user = currentSession.user || {};
+    currentSession.user.email = currentMember.email || '';
+    // Fall through to shared portal render below
+  } else {
+    // Normal (non-impersonation) member load
+    const userEmail = (currentSession.user && currentSession.user.email) ? currentSession.user.email : '';
+    try {
+      const rows = await sbGet('events', 'order=sort_order.asc', SUPABASE_ANON_KEY);
+      const todayIso = portalLocalTodayIso();
+      allEvents = (rows || []).filter(function(ev) { return !portalIsArchivedEvent(ev, todayIso); });
+    } catch (e) {
+      allEvents = [];
+    }
+    try {
+      const members = await sbGet('members', 'email=eq.' + encodeURIComponent(userEmail) + '&limit=1', currentSession.access_token);
+      currentMember = (members && members.length) ? members[0] : null;
+    } catch(e) { currentMember = null; }
+    if (!currentMember) {
+      // No existing member record — create new one as pending and notify admins
+      try {
+        const meta = (currentSession.user && currentSession.user.user_metadata) ? currentSession.user.user_metadata : {};
+        const created = await sbPost('members', { email:userEmail, first_name:meta.first_name||'', last_name:meta.last_name||'', phone:meta.phone||'', portal_access:'pending' }, currentSession.access_token);
+        currentMember = Array.isArray(created) ? created[0] : created;
+        fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
+          body: JSON.stringify({ type: 'member_request', name: [meta.first_name||'', meta.last_name||''].filter(Boolean).join(' ') || userEmail, email: userEmail })
+        }).catch(function(){});
+      } catch(e) {}
+    } else if (currentMember.alpha_id && (currentMember.portal_access === 'pending' || !currentMember.portal_access)) {
+      // Email matched an existing roster member with an Alpha ID — auto-grant Chapter Brother access
+      try {
+        await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(userEmail), {
+          method: 'PATCH',
+          headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+          body: JSON.stringify({ portal_access: 'chapter_member', access_granted_at: new Date().toISOString() })
+        });
+        currentMember.portal_access = 'chapter_member';
+      } catch(e) {}
+    }
+  } // end normal member load
   const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (userEmail.split('@')[0] || 'Member');
   const lastName  = (currentMember && currentMember.last_name)  ? currentMember.last_name  : '';
   const fullName  = [firstName, lastName].filter(Boolean).join(' ');
