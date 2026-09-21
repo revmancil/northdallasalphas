@@ -133,13 +133,26 @@ serve(async (req) => {
     const ignorableFP = fpErr?.code === "23505" || /duplicate key/i.test(String(fpErr?.message ?? ""));
     if (fpErr && !ignorableFP) console.error("finance_payments insert:", fpErr);
 
-    // Update member dues_paid_year if member_id is a UUID
+    // Update member dues_paid_year and upsert dues table row
     if (memberId && /^[0-9a-f-]{36}$/i.test(memberId)) {
       const { error: memErr } = await admin
         .from("members")
         .update({ dues_paid_year: fiscalYear, dues_current: true })
         .eq("id", memberId);
       if (memErr) console.warn("members dues_paid_year update:", memErr);
+
+      // Write to dues table so member portal history panel shows the payment
+      const duesAmount = amountCents / 100;
+      const { error: duesErr } = await admin.from("dues").upsert({
+        member_id:      memberId,
+        year:           fiscalYear,
+        amount:         duesAmount,
+        paid:           true,
+        paid_date:      new Date().toISOString(),
+        payment_method: "stripe",
+        notes:          `Stripe session ${sessionId}`,
+      }, { onConflict: "member_id,year" });
+      if (duesErr) console.warn("dues upsert:", duesErr);
     }
 
     // Notify finance admins
