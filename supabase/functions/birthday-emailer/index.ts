@@ -136,7 +136,7 @@ serve(async (_req) => {
 
   const { data: members, error } = await admin
     .from("members")
-    .select("id,first_name,last_name,email,birthday,initiation_date,profile_photo")
+    .select("id,first_name,last_name,email,birthday,initiation_date,photo")
     .not("email", "is", null);
 
   if (error || !members) {
@@ -159,7 +159,7 @@ serve(async (_req) => {
 
   for (const m of members) {
     if (!m.email || !m.first_name) continue;
-    const photo = m.profile_photo || null;
+    const photo = m.photo || null;
 
     const bday = parseMonthDay(m.birthday);
     if (bday && bday.month === todayMonth && bday.day === todayDay) {
