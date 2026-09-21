@@ -13791,11 +13791,12 @@ async function runImpersonateSearch() {
       box.style.display = '';
       return;
     }
-    box.innerHTML = rows.map(function(m) {
+    window._impersonateCandidates = rows;
+    box.innerHTML = rows.map(function(m, idx) {
       var name = [m.first_name, m.last_name].filter(Boolean).join(' ');
       return '<div style="padding:10px 14px;font-size:0.83rem;color:#111;cursor:pointer;border-bottom:1px solid #f0f0f0;" ' +
         'onmouseover="this.style.background=\'#fffbf0\'" onmouseout="this.style.background=\'#fff\'" ' +
-        'onclick="selectImpersonateMember(' + JSON.stringify(JSON.stringify(m)) + ')">' +
+        'onclick="selectImpersonateMember(' + idx + ')">' +
         '<strong>' + escHtml(name) + '</strong> <span style="color:#888;font-size:0.78rem;">' + escHtml(m.email||'') + '</span>' +
         '</div>';
     }).join('');
@@ -13806,8 +13807,9 @@ async function runImpersonateSearch() {
   }
 }
 
-function selectImpersonateMember(jsonStr) {
-  var m = JSON.parse(jsonStr);
+function selectImpersonateMember(idx) {
+  var m = (window._impersonateCandidates || [])[idx];
+  if (!m) return;
   _impersonateSelected = m;
   var name = [m.first_name, m.last_name].filter(Boolean).join(' ');
   document.getElementById('impersonateSelectedName').textContent = name;
