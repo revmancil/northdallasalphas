@@ -20,14 +20,10 @@ function emailHtml(
   type: "birthday" | "alphaversary",
   firstName: string,
   lastName: string,
-  photoUrl: string | null,
   years?: number,
 ): string {
-  const imageBlock = photoUrl
-    ? `<img src="${esc(photoUrl)}" alt="${esc(firstName)} ${esc(lastName)}" width="88" height="88"
-        style="width:88px;height:88px;border-radius:50%;border:3px solid #C9A84C;object-fit:cover;display:block;margin:0 auto 16px;" />`
-    : `<img src="${LOGO_URL}" alt="Xi Tau Lambda" width="72" height="72"
-        style="width:72px;height:72px;border-radius:50%;border:3px solid #C9A84C;object-fit:contain;display:block;margin:0 auto 16px;background:rgba(201,168,76,0.08);padding:8px;" />`;
+  const imageBlock = `<img src="${LOGO_URL}" alt="Xi Tau Lambda" width="72" height="72"
+      style="width:72px;height:72px;border-radius:50%;border:3px solid #C9A84C;object-fit:contain;display:block;margin:0 auto 16px;background:rgba(201,168,76,0.08);padding:8px;" />`;
 
   const footer = `
     <tr><td style="text-align:center;padding-top:20px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:rgba(255,255,255,0.22);line-height:1.6;">
@@ -136,7 +132,7 @@ serve(async (_req) => {
 
   const { data: members, error } = await admin
     .from("members")
-    .select("id,first_name,last_name,email,birthday,initiation_date,photo")
+    .select("id,first_name,last_name,email,birthday,initiation_date")
     .not("email", "is", null);
 
   if (error || !members) {
@@ -159,14 +155,13 @@ serve(async (_req) => {
 
   for (const m of members) {
     if (!m.email || !m.first_name) continue;
-    const photo = m.photo || null;
 
     const bday = parseMonthDay(m.birthday);
     if (bday && bday.month === todayMonth && bday.day === todayDay) {
       await send(
         m.email,
         `Happy Birthday, Brother ${m.first_name}! 🎂`,
-        emailHtml("birthday", m.first_name, m.last_name || "", photo),
+        emailHtml("birthday", m.first_name, m.last_name || ""),
       );
     }
 
@@ -176,7 +171,7 @@ serve(async (_req) => {
       await send(
         m.email,
         `Happy Alphaversary, Brother ${m.first_name}! ⚔️`,
-        emailHtml("alphaversary", m.first_name, m.last_name || "", photo, years),
+        emailHtml("alphaversary", m.first_name, m.last_name || "", years),
       );
     }
   }
