@@ -2554,7 +2554,8 @@ async function init() {
       } catch(e) {}
     }
   } // end normal member load
-  const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (userEmail.split('@')[0] || 'Member');
+  const _userEmail = (currentSession.user && currentSession.user.email) ? currentSession.user.email : '';
+  const firstName = (currentMember && currentMember.first_name) ? currentMember.first_name : (_userEmail.split('@')[0] || 'Member');
   const lastName  = (currentMember && currentMember.last_name)  ? currentMember.last_name  : '';
   const fullName  = [firstName, lastName].filter(Boolean).join(' ');
   const initials  = (firstName[0]||'') + (lastName[0]||'') || '?';
@@ -2565,7 +2566,7 @@ async function init() {
 
   // Gate: pending users see a holding screen and cannot access portal content
   if (isPending) {
-    document.getElementById('sidebarName').textContent = fullName || userEmail;
+    document.getElementById('sidebarName').textContent = fullName || _userEmail;
     document.getElementById('statusText').textContent  = 'Pending Approval';
     document.getElementById('statusDot').className = 'status-dot pending';
     document.querySelector('.main').innerHTML =
@@ -2574,7 +2575,7 @@ async function init() {
       '<i class="fas fa-clock" style="font-size:1.8rem;color:#f59e0b;"></i></div>' +
       '<h2 style="font-size:1.25rem;font-weight:700;color:var(--gray-800);margin-bottom:10px;">Request Under Review</h2>' +
       '<p style="color:var(--gray-500);font-size:0.9rem;line-height:1.6;margin-bottom:24px;">Your access request has been received and is awaiting approval from chapter leadership. You\'ll receive an email once your account is approved.</p>' +
-      '<p style="color:var(--gray-400);font-size:0.8rem;">Signed in as <strong>' + escHtml(userEmail) + '</strong></p>' +
+      '<p style="color:var(--gray-400);font-size:0.8rem;">Signed in as <strong>' + escHtml(_userEmail) + '</strong></p>' +
       '<button onclick="logout()" style="margin-top:20px;padding:10px 24px;border-radius:8px;background:var(--gray-100);border:1px solid var(--gray-300);color:var(--gray-600);font-size:0.85rem;cursor:pointer;">Sign Out</button>' +
       '</div>';
     return;
@@ -2614,11 +2615,11 @@ async function init() {
       : 'First login';
   }
   if (currentMember && currentSession && currentSession.access_token) {
-    sbPatch('members', 'email=eq.' + encodeURIComponent(userEmail), { last_login_at: new Date().toISOString() }, currentSession.access_token).catch(function(){});
+    sbPatch('members', 'email=eq.' + encodeURIComponent(_userEmail), { last_login_at: new Date().toISOString() }, currentSession.access_token).catch(function(){});
   }
 
   // Show admin nav links if user is a chapter admin
-  sbGet('chapter_admins', 'email=eq.' + encodeURIComponent(userEmail) + '&limit=1', currentSession.access_token)
+  sbGet('chapter_admins', 'email=eq.' + encodeURIComponent(_userEmail) + '&limit=1', currentSession.access_token)
     .then(function(rows) {
       if (rows && rows.length) {
         document.getElementById('navAdminSection').style.display = '';
