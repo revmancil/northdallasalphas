@@ -1126,6 +1126,20 @@ backdrop-filter:blur(4px);}
           </form>
         </div>
       </div>
+      <div class="section-card">
+        <div class="section-card-header"><h3><i class="fas fa-envelope"></i> Change Email Address</h3></div>
+        <div class="section-card-body">
+          <p style="font-size:0.83rem;color:rgba(255,255,255,0.5);margin:0 0 16px;line-height:1.6;">Enter your new email address below. Supabase will send a confirmation link to the new address — the change takes effect once you click that link.</p>
+          <form id="changeEmailForm" novalidate>
+            <div class="profile-grid" style="max-width:500px;">
+              <div class="pfield"><label>New Email Address</label><input type="email" id="newEmail" placeholder="your@email.com" autocomplete="email" /></div>
+              <div class="pfield"><label>Confirm New Email</label><input type="email" id="confirmEmail" placeholder="Repeat new email" autocomplete="email" /></div>
+            </div>
+            <div id="emailChangeMsg" style="font-size:0.82rem;margin:10px 0;display:none;"></div>
+            <button type="submit" class="btn-gold" style="margin-top:8px;"><i class="fas fa-envelope"></i> Update Email</button>
+          </form>
+        </div>
+      </div>
     </div>
     <!-- MY HELP DESK ISSUES PANEL -->
     <div class="panel" id="panel-my-issues">
@@ -2543,6 +2557,43 @@ document.getElementById('changePassForm').addEventListener('submit', async funct
     document.getElementById('confirmPass').value='';
     showToast('Password updated!');
   } catch(err) { msgEl.style.display='block'; msgEl.style.color='var(--red)'; msgEl.textContent='Error: ' + err.message; }
+});
+
+document.getElementById('changeEmailForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const msgEl = document.getElementById('emailChangeMsg');
+  const ne = document.getElementById('newEmail').value.trim();
+  const ce = document.getElementById('confirmEmail').value.trim();
+  msgEl.style.display = 'none';
+  if (!ne || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(ne)) {
+    msgEl.style.display='block'; msgEl.style.color='var(--red)'; msgEl.textContent='Please enter a valid email address.'; return;
+  }
+  if (ne !== ce) {
+    msgEl.style.display='block'; msgEl.style.color='var(--red)'; msgEl.textContent='Email addresses do not match.'; return;
+  }
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+  try {
+    const r = await fetch(SUPABASE_URL + '/auth/v1/user', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer ' + currentSession.access_token},
+      body: JSON.stringify({ email: ne })
+    });
+    if (!r.ok) { const t = await r.text(); throw new Error(t); }
+    msgEl.style.display='block'; msgEl.style.color='var(--green)';
+    msgEl.textContent='Confirmation email sent to ' + ne + '. Click the link in that email to complete the change.';
+    document.getElementById('newEmail').value='';
+    document.getElementById('confirmEmail').value='';
+    showToast('Confirmation email sent!');
+  } catch(err) {
+    let msg = err.message;
+    try { msg = JSON.parse(msg).msg || msg; } catch(_){}
+    msgEl.style.display='block'; msgEl.style.color='var(--red)'; msgEl.textContent='Error: ' + msg;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-envelope"></i> Update Email';
+  }
 });
 
 async function loadAnnouncements() {
