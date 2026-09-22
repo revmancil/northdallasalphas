@@ -433,6 +433,40 @@ serve(async (req) => {
     return json({ sent: ok, recipients: recipients.length });
   }
 
+  // ── Meeting request → Communications admins ──────────────────────────────
+  if (type === "meeting_request") {
+    const name      = String(payload.memberName ?? payload.name ?? "A brother").trim();
+    const email     = String(payload.email      ?? "").trim();
+    const title     = String(payload.title      ?? "Untitled").trim();
+    const committee = String(payload.committee  ?? "").trim();
+    const date      = String(payload.date       ?? "TBD").trim();
+    const location  = String(payload.location   ?? "TBD").trim();
+    const purpose   = String(payload.purpose    ?? "").trim();
+    const { subject, html } = {
+      subject: `Meeting Request — ${title}`,
+      html: emailShell(
+        "📅",
+        "New Meeting Request",
+        "North Dallas Alphas — Communications Alert",
+        `<strong style="color:#fff;">${esc(name)}</strong> has submitted a meeting request for leadership review.<br><br>
+         <strong style="color:${gold};">Title:</strong> ${esc(title)}<br>
+         <strong style="color:${gold};">Committee:</strong> ${esc(committee)}<br>
+         <strong style="color:${gold};">Proposed Date:</strong> ${esc(date)}<br>
+         <strong style="color:${gold};">Location:</strong> ${esc(location)}<br>
+         <strong style="color:${gold};">Email:</strong> ${esc(email)}` +
+        (purpose ? `<br><br><strong style="color:${gold};">Purpose / Notes:</strong><br>${esc(purpose)}` : ""),
+        "Review in Dashboard",
+        dashboardUrl + "#meetings",
+      ),
+    };
+    const to = supabaseUrl && serviceKey
+      ? await getAdminEmails(supabaseUrl, serviceKey, "communications")
+      : [fallbackEmail];
+    const recipients = to.length ? to : [fallbackEmail];
+    const ok = await sendEmail(resendKey, from, recipients, subject, html);
+    return json({ sent: ok, recipients: recipients.length });
+  }
+
   // ── Member / visitor request → Membership admins ─────────────────────────
   if (type === "member_request" || type === "visitor_request") {
     const name    = String(payload.name    ?? "").trim();

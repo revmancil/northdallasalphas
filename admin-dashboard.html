@@ -2600,6 +2600,17 @@
         </div>
       </div>
 
+      <!-- Meeting Requests -->
+      <div class="section-card" style="margin-bottom:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-calendar-plus" style="color:var(--gold);margin-right:8px;"></i>Meeting Requests <span id="mtgReqBadge" style="display:none;background:#e74c3c;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;"></span></h3>
+          <button class="btn-sm view" onclick="loadMeetingRequests()" style="font-size:0.75rem;padding:4px 10px;"><i class="fas fa-rotate-right"></i> Refresh</button>
+        </div>
+        <div class="section-card-body">
+          <div id="meetingRequestsList"><div class="hint-text">Loading requests…</div></div>
+        </div>
+      </div>
+
       <!-- Meeting List -->
       <div class="section-card">
         <div class="section-card-header">
@@ -4153,7 +4164,7 @@ function showPanel(id) {
   if (id === 'newsletter')     nlInitPanel();
   if (id === 'gallery')        { if (!_panelLoaded.gallery)       loadEventGalleryPanel(); }
   if (id === 'pages')          setPageEditorStorageNotice('', '');
-  if (id === 'meetings')       loadMeetingsPanel();
+  if (id === 'meetings')       { loadMeetingRequests(); loadMeetingsPanel(); }
   if (id === 'chapter-news')   { if (!_panelLoaded.chapterNews)   loadChapterNewsPanel(); }
   if (id === 'settings')       { if (!_panelLoaded.settings)      loadSettings(); }
   if (id === 'dashboard')      updateDashboardStats();
@@ -5325,13 +5336,85 @@ function time24ToAmPm(t) {
   return h + ':' + min + ' ' + ampm;
 }
 
+async function loadMeetingRequests() {
+  const el = document.getElementById('meetingRequestsList');
+  if (!el) return;
+  const token = getAdminToken();
+  try {
+    const requests = await sbGet('meetings', 'archived=eq.false&status=eq.requested&order=created_at.desc', token);
+    const badge = document.getElementById('mtgReqBadge');
+    if (!requests || !requests.length) {
+      el.innerHTML = '<div class="hint-text">No pending meeting requests.</div>';
+      if (badge) badge.style.display = 'none';
+      return;
+    }
+    if (badge) { badge.style.display = 'inline'; badge.textContent = requests.length; }
+    el.innerHTML = requests.map(function(m) {
+      const dateStr = m.meeting_date ? new Date(m.meeting_date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'long', day:'numeric', year:'numeric' }) : 'Date TBD';
+      const timeStr = m.start_time ? time24ToAmPm(m.start_time) : '';
+      // Parse committee/requestor from agenda prefix
+      let committee = '', requestedBy = '', notes = m.agenda || '';
+      const comMatch = notes.match(/\[COMMITTEE:\s*([^\]]+)\]/);
+      const byMatch  = notes.match(/\[REQUESTED BY:\s*([^\]]+)\]/);
+      if (comMatch) { committee = comMatch[1]; notes = notes.replace(comMatch[0], ''); }
+      if (byMatch)  { requestedBy = byMatch[1]; notes = notes.replace(byMatch[0], ''); }
+      notes = notes.replace(/^\n+/, '').trim();
+      return '<div style="border:1px solid rgba(201,168,76,0.25);border-radius:8px;padding:16px;margin-bottom:10px;background:rgba(201,168,76,0.04);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:10px;">' +
+        '<div>' +
+        '<div style="font-size:0.95rem;font-weight:700;color:var(--gray-800);">' + escHtml(m.title) + '</div>' +
+        '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:3px;">' +
+        (requestedBy ? '<i class="fas fa-user" style="width:14px;"></i> ' + escHtml(requestedBy) + ' &nbsp;·&nbsp; ' : '') +
+        (committee ? '<i class="fas fa-sitemap" style="width:14px;"></i> ' + escHtml(committee) + ' &nbsp;·&nbsp; ' : '') +
+        '<i class="fas fa-calendar" style="width:14px;"></i> ' + escHtml(dateStr) +
+        (timeStr ? ' at ' + escHtml(timeStr) : '') +
+        (m.location ? ' &nbsp;·&nbsp; <i class="fas fa-map-marker-alt" style="width:14px;"></i> ' + escHtml(m.location) : '') +
+        '</div>' +
+        (notes ? '<div style="font-size:0.82rem;color:var(--gray-600);margin-top:6px;white-space:pre-wrap;">' + escHtml(notes) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' +
+        '<button class="btn-sm success" onclick="approveMeetingRequest(\'' + escHtml(m.id) + '\')"><i class="fas fa-check"></i> Approve</button>' +
+        '<button class="btn-sm danger"  onclick="denyMeetingRequest(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-times"></i> Deny</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    }).join('');
+  } catch(err) {
+    el.innerHTML = '<div style="color:var(--red);">Could not load requests: ' + escHtml(err.message || 'error') + '</div>';
+  }
+}
+
+async function approveMeetingRequest(id) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), { status: 'scheduled', is_public: false }, token);
+    showToast('Meeting request approved and added to Scheduled Meetings.', 'success');
+    loadMeetingRequests();
+    loadMeetingsPanel();
+  } catch(err) {
+    showToast('Could not approve: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function denyMeetingRequest(id, title) {
+  if (!confirm('Deny the request for "' + title + '"? This will delete the pending request.')) return;
+  const token = getAdminToken();
+  try {
+    await sbDeleteByFilter('meetings', 'id=eq.' + encodeURIComponent(id), token);
+    showToast('Meeting request denied and removed.', 'success');
+    loadMeetingRequests();
+  } catch(err) {
+    showToast('Could not deny: ' + (err.message || 'error'), 'error');
+  }
+}
+
 async function loadMeetingsPanel() {
   const el = document.getElementById('meetingsList');
   if (!el) return;
   const token = getAdminToken();
   el.innerHTML = '<div class="hint-text">Loading…</div>';
   try {
-    const meetings = await sbGet('meetings', 'archived=eq.false&order=meeting_date.desc', token);
+    const meetings = await sbGet('meetings', 'archived=eq.false&or=(status.eq.scheduled,status.is.null)&order=meeting_date.desc', token);
     if (!meetings || !meetings.length) {
       el.innerHTML = '<div class="hint-text">No meetings scheduled yet.</div>';
       return;
