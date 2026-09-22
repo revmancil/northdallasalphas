@@ -652,8 +652,48 @@ backdrop-filter:blur(4px);}
     <div class="panel" id="panel-committees">
       <div class="section-card">
         <div class="section-card-header"><h3><i class="fas fa-sitemap" style="color:var(--gold);margin-right:8px;"></i>Chapter Committees</h3></div>
-        <div class="section-card-body">
+        <div class="section-card-body" style="padding:16px;">
           <div id="committeesPortalList"><div class="hint-text">Loading committees…</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Committee Details Modal -->
+    <div id="committeeDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:2000;overflow:auto;padding:20px;align-items:flex-start;justify-content:center;">
+      <div style="max-width:560px;width:100%;margin:40px auto;background:#111;border:1px solid #2a2a2a;border-radius:14px;overflow:hidden;position:relative;">
+        <!-- image placeholder -->
+        <div id="cdImg" style="width:100%;aspect-ratio:16/9;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid #222;position:relative;overflow:hidden;">
+          <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,0.015) 12px,rgba(255,255,255,0.015) 13px);"></div>
+          <div id="cdImgIcon" style="font-size:36px;opacity:0.3;position:relative;"></div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#555;position:relative;">Photo Placeholder</div>
+        </div>
+        <button onclick="closeCommitteeDetail()" style="position:absolute;top:12px;right:14px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);color:#fff;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;">✕</button>
+        <div style="padding:22px 24px 24px;">
+          <div id="cdTag" style="display:inline-block;font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#C9A84C;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.25);border-radius:4px;padding:3px 8px;margin-bottom:10px;"></div>
+          <h2 id="cdName" style="font-size:1.2rem;font-weight:800;color:#fff;line-height:1.3;margin-bottom:10px;"></h2>
+          <p id="cdDesc" style="font-size:0.85rem;color:#aaa;line-height:1.7;margin-bottom:18px;"></p>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;">
+              <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;margin-bottom:4px;">Chair</div>
+              <div id="cdChair" style="font-size:0.88rem;font-weight:600;color:#fff;">—</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;">
+              <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;margin-bottom:4px;">Co-Chair</div>
+              <div id="cdCochair" style="font-size:0.88rem;font-weight:600;color:#fff;">—</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;grid-column:span 2;">
+              <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;margin-bottom:4px;">Meeting Schedule</div>
+              <div id="cdSchedule" style="font-size:0.88rem;color:#fff;">—</div>
+            </div>
+          </div>
+
+          <div style="margin-bottom:18px;">
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#888;margin-bottom:10px;">Members</div>
+            <div id="cdMembers" style="font-size:0.83rem;color:#bbb;line-height:1.8;">Loading…</div>
+          </div>
+
+          <button id="cdJoinBtn" onclick="toggleCommitteeMembershipFromDetail()" style="width:100%;padding:12px;border:none;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;transition:opacity 0.15s;"></button>
         </div>
       </div>
     </div>
@@ -3608,6 +3648,49 @@ document.addEventListener('DOMContentLoaded', function() {
 // ═══════════════════════════════════════════
 let _mpCommittees = [];
 let _mpMyMemberships = [];
+let _mpNameMap = {};
+let _mpCountMap = {};
+let _cdCurrentId = null;
+
+// Committee descriptions keyed by normalized name fragment
+const COMMITTEE_META = {
+  'alpha legacy scholarship': { tag:'Signature Event', icon:'🎗️' },
+  'alpha legacy group':       { tag:'Youth Mentorship', icon:'🤝' },
+  'awards':                   { tag:'Recognition', icon:'🏆' },
+  'big brothers':             { tag:'Mentoring', icon:'👦' },
+  'brother\'s keeper':        { tag:'Brotherhood & Wellness', icon:'💛' },
+  'website':                  { tag:'Communications', icon:'💻' },
+  'social media':             { tag:'Communications', icon:'💻' },
+  'community service':        { tag:'Service', icon:'🌍' },
+  'constitution':             { tag:'Governance', icon:'📜' },
+  'education':                { tag:'Scholarships', icon:'🎓' },
+  'election':                 { tag:'Governance', icon:'🗳️' },
+  'executive':                { tag:'Leadership', icon:'⭐' },
+  'investment':               { tag:'Finance', icon:'📈' },
+  'go-to-high':               { tag:'Education', icon:'🏫' },
+  'housing':                  { tag:'Infrastructure', icon:'🏠' },
+  'imdp':                     { tag:'Membership Intake', icon:'🔰' },
+  'march for babies':         { tag:'Philanthropy', icon:'👣' },
+  'nphc':                     { tag:'Interfraternal', icon:'🤜' },
+  'professional development': { tag:'Growth', icon:'💼' },
+  'project alpha':            { tag:'Youth Health', icon:'❤️' },
+  'protocol':                 { tag:'Standards', icon:'🎩' },
+  'ritual':                   { tag:'Tradition', icon:'🕯️' },
+  'senior brothers':          { tag:'Brotherhood', icon:'🏅' },
+  'social action':            { tag:'Advocacy', icon:'✊' },
+  'social & reclamation':     { tag:'Engagement', icon:'🎉' },
+  'social and reclamation':   { tag:'Engagement', icon:'🎉' },
+  'undergraduate':            { tag:'Mentorship', icon:'📚' },
+  'voteless':                 { tag:'Civic Engagement', icon:'🗽' },
+};
+
+function getCommitteeMeta(name) {
+  const lower = (name||'').toLowerCase();
+  for (const key of Object.keys(COMMITTEE_META)) {
+    if (lower.includes(key)) return COMMITTEE_META[key];
+  }
+  return { tag:'Committee', icon:'📋' };
+}
 
 async function loadMemberCommittees() {
   const token = currentSession && currentSession.access_token;
@@ -3623,36 +3706,108 @@ async function loadMemberCommittees() {
     ]);
     _mpCommittees = committees||[];
     _mpMyMemberships = (myRows||[]).map(function(r){return r.committee_id;});
-    const countMap={};
-    (allRows||[]).forEach(function(r){countMap[r.committee_id]=(countMap[r.committee_id]||0)+1;});
+    _mpCountMap = {};
+    (allRows||[]).forEach(function(r){_mpCountMap[r.committee_id]=(_mpCountMap[r.committee_id]||0)+1;});
     const memberIds=[...new Set(_mpCommittees.flatMap(function(c){return[c.chair_id,c.cochair_id].filter(Boolean);}))];
-    let nameMap={};
+    _mpNameMap = {};
     if (memberIds.length) {
       const mems = await sbGet('members','id=in.('+memberIds.join(',')+')'+'&select=id,first_name,last_name',token).catch(()=>[]);
-      (mems||[]).forEach(function(m){nameMap[m.id]=[m.first_name,m.last_name].filter(Boolean).join(' ');});
+      (mems||[]).forEach(function(m){_mpNameMap[m.id]=[m.first_name,m.last_name].filter(Boolean).join(' ');});
     }
-    container.innerHTML = _mpCommittees.map(function(c){
-      const isMember = _mpMyMemberships.includes(c.id);
-      const count = countMap[c.id]||0;
-      const chair = c.chair_id ? (nameMap[c.chair_id]||'—') : '—';
-      const cochair = c.cochair_id ? (nameMap[c.cochair_id]||'—') : '—';
-      return '<div style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;margin-bottom:10px;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">' +
-          '<div>' +
-            '<div style="font-weight:700;font-size:0.95rem;color:var(--white);">'+escHtml(c.name)+'</div>' +
-            '<div style="font-size:0.78rem;color:var(--gray-400);margin-top:4px;">Chair: <strong style="color:var(--white);">'+escHtml(chair)+'</strong></div>' +
-            '<div style="font-size:0.78rem;color:var(--gray-400);">Co-Chair: <strong style="color:var(--white);">'+escHtml(cochair)+'</strong></div>' +
-            '<div style="font-size:0.75rem;color:var(--gray-400);margin-top:4px;">'+count+' member'+(count!==1?'s':'')+'</div>' +
+    if (!_mpCommittees.length) {
+      container.innerHTML = '<div class="hint-text">No committees found.</div>';
+      return;
+    }
+    container.innerHTML =
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">' +
+      _mpCommittees.map(function(c){
+        const isMember = _mpMyMemberships.includes(c.id);
+        const count = _mpCountMap[c.id]||0;
+        const meta = getCommitteeMeta(c.name);
+        return '<div style="background:#111;border:1px solid '+(isMember?'rgba(201,168,76,0.45)':'#242424')+';border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:border-color 0.2s;">' +
+          '<div style="width:100%;aspect-ratio:16/9;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-bottom:1px solid #222;position:relative;overflow:hidden;">' +
+            '<div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,0.015) 12px,rgba(255,255,255,0.015) 13px);"></div>' +
+            '<div style="font-size:26px;opacity:0.3;position:relative;">'+meta.icon+'</div>' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#444;position:relative;">Photo Placeholder</div>' +
+            (isMember ? '<div style="position:absolute;top:8px;left:8px;background:rgba(201,168,76,0.9);color:#000;font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;border-radius:4px;padding:2px 6px;">Member</div>' : '') +
           '</div>' +
-          '<button class="btn-sm '+(isMember?'danger':'success')+'" onclick="toggleCommitteeMembership(\''+escHtml(c.id)+'\','+isMember+')">' +
-            '<i class="fas fa-'+(isMember?'minus':'plus')+'"></i> '+(isMember?'Leave':'Join') +
-          '</button>' +
-        '</div>' +
+          '<div style="padding:12px;flex:1;display:flex;flex-direction:column;gap:8px;">' +
+            '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:4px;padding:2px 7px;width:fit-content;">'+escHtml(meta.tag)+'</div>' +
+            '<div style="font-weight:700;font-size:0.88rem;color:#fff;line-height:1.3;flex:1;">'+escHtml(c.name)+'</div>' +
+            '<div style="font-size:0.75rem;color:#666;">'+count+' member'+(count!==1?'s':'')+'</div>' +
+            '<button onclick="openCommitteeDetail(\''+escHtml(c.id)+'\')" style="width:100%;padding:8px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;border-radius:7px;font-weight:700;font-size:0.8rem;cursor:pointer;transition:background 0.15s;">Details →</button>' +
+          '</div>' +
+        '</div>';
+      }).join('') +
       '</div>';
-    }).join('');
   } catch(e) {
     container.innerHTML = '<div class="hint-text" style="color:var(--red);">Could not load committees: '+escHtml(e.message)+'</div>';
   }
+}
+
+async function openCommitteeDetail(committeeId) {
+  const c = _mpCommittees.find(function(x){return x.id===committeeId;});
+  if (!c) return;
+  _cdCurrentId = committeeId;
+  const isMember = _mpMyMemberships.includes(committeeId);
+  const meta = getCommitteeMeta(c.name);
+
+  document.getElementById('cdImgIcon').textContent = meta.icon;
+  document.getElementById('cdTag').textContent = meta.tag;
+  document.getElementById('cdName').textContent = c.name;
+  document.getElementById('cdDesc').textContent = c.description || '';
+  document.getElementById('cdChair').textContent = c.chair_id ? (_mpNameMap[c.chair_id]||'—') : '—';
+  document.getElementById('cdCochair').textContent = c.cochair_id ? (_mpNameMap[c.cochair_id]||'—') : '—';
+
+  const schedParts = [];
+  if (c.meeting_day) schedParts.push(c.meeting_day);
+  if (c.meeting_time) schedParts.push(c.meeting_time);
+  if (c.meeting_frequency) schedParts.push('(' + c.meeting_frequency + ')');
+  document.getElementById('cdSchedule').textContent = schedParts.length ? schedParts.join(' · ') : 'TBD';
+
+  const btn = document.getElementById('cdJoinBtn');
+  if (isMember) {
+    btn.textContent = 'Leave Committee';
+    btn.style.cssText = 'width:100%;padding:12px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,80,80,0.08);color:#ff6b6b;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;';
+  } else {
+    btn.textContent = 'Join Committee';
+    btn.style.cssText = 'width:100%;padding:12px;border:none;background:#C9A84C;color:#000;border-radius:8px;font-weight:700;font-size:0.9rem;cursor:pointer;';
+  }
+
+  document.getElementById('cdMembers').innerHTML = '<span style="color:#555;font-style:italic;">Loading members…</span>';
+  const modal = document.getElementById('committeeDetailModal');
+  modal.style.display = 'flex';
+
+  // Load member list
+  const token = currentSession && currentSession.access_token;
+  try {
+    const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=member_id',token);
+    const ids = (rows||[]).map(function(r){return r.member_id;});
+    if (!ids.length) {
+      document.getElementById('cdMembers').innerHTML = '<span style="color:#555;font-style:italic;">No members yet.</span>';
+      return;
+    }
+    const mems = await sbGet('members','id=in.('+ids.join(',')+')'+'&select=id,first_name,last_name&order=last_name.asc',token);
+    document.getElementById('cdMembers').innerHTML = (mems||[]).map(function(m){
+      return '<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.05);color:'+(m.id===currentMember.id?'#C9A84C':'#ccc')+';font-size:0.85rem;">' +
+        escHtml([m.first_name,m.last_name].filter(Boolean).join(' ')) +
+        (m.id===currentMember.id ? ' <span style="font-size:0.72rem;color:#C9A84C;font-style:italic;">(you)</span>' : '') +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    document.getElementById('cdMembers').innerHTML = '<span style="color:#888;">Could not load members.</span>';
+  }
+}
+
+function closeCommitteeDetail() {
+  document.getElementById('committeeDetailModal').style.display = 'none';
+  _cdCurrentId = null;
+}
+
+async function toggleCommitteeMembershipFromDetail() {
+  if (!_cdCurrentId) return;
+  await toggleCommitteeMembership(_cdCurrentId, _mpMyMemberships.includes(_cdCurrentId));
+  closeCommitteeDetail();
 }
 
 async function toggleCommitteeMembership(committeeId, isMember) {
