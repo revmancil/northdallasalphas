@@ -2568,6 +2568,33 @@
             </label>
             <span style="font-size:0.78rem;color:var(--gray-400);">Uncheck to keep this meeting off the public events page (e.g. ALSG, leadership meetings)</span>
           </div>
+
+          <!-- Recurring toggle -->
+          <div style="margin-top:14px;border-top:1px solid var(--gray-200);padding-top:14px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;color:var(--gray-700);user-select:none;">
+              <input type="checkbox" id="mtgRecurring" style="width:16px;height:16px;accent-color:var(--gold);" onchange="toggleRecurringOptions()" />
+              <span style="font-weight:600;"><i class="fas fa-rotate" style="color:var(--gold);margin-right:4px;"></i> Recurring Meeting</span>
+            </label>
+            <div id="mtgRecurringOptions" style="display:none;margin-top:12px;display:none;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+                <div class="field-group" style="margin:0;">
+                  <label>Frequency</label>
+                  <select id="mtgFrequency" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">
+                    <option value="weekly">Weekly</option>
+                    <option value="biweekly">Every 2 Weeks</option>
+                    <option value="monthly" selected>Monthly (same day of week)</option>
+                    <option value="monthly-date">Monthly (same date)</option>
+                  </select>
+                </div>
+                <div class="field-group" style="margin:0;">
+                  <label>Number of Meetings</label>
+                  <input type="number" id="mtgOccurrences" value="6" min="2" max="24" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" />
+                </div>
+              </div>
+              <div id="mtgRecurringPreview" style="margin-top:10px;font-size:0.8rem;color:var(--gray-500);"></div>
+            </div>
+          </div>
+
           <div id="mtgFormMsg" style="display:none;margin-top:10px;font-size:0.83rem;"></div>
           <button class="btn-save" style="margin-top:16px;" onclick="saveMeeting()"><i class="fas fa-calendar-plus"></i> Schedule Meeting</button>
         </div>
@@ -5377,6 +5404,7 @@ async function loadMeetingsPanel() {
         '</div>' +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
         (m.is_public === false ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(156,163,175,0.15);color:var(--gray-500);border:1px solid var(--gray-200);" title="Hidden from public website"><i class="fas fa-eye-slash"></i> Private</span>' : '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.25);" title="Visible on public website"><i class="fas fa-globe"></i> Public</span>') +
+        (m.series_id ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(201,168,76,0.08);color:var(--gold);border:1px solid rgba(201,168,76,0.2);" title="Part of a recurring series"><i class="fas fa-rotate"></i> Recurring</span>' : '') +
         '<button class="btn-sm view" onclick="showMtgQr(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\',\'' + escHtml(dateStr) + '\')"><i class="fas fa-qrcode"></i> QR Check-In</button>' +
         '<button class="btn-sm view" onclick="showMtgAttendance(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-clipboard-check"></i> Attendance</button>' +
         '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="openEditMeetingModal(\'' + escHtml(m.id) + '\')"><i class="fas fa-pencil-alt"></i> Edit</button>' +
@@ -5400,6 +5428,60 @@ async function loadMeetingsPanel() {
   }
 }
 
+function toggleRecurringOptions() {
+  const checked = document.getElementById('mtgRecurring').checked;
+  const opts = document.getElementById('mtgRecurringOptions');
+  opts.style.display = checked ? 'block' : 'none';
+  if (checked) updateRecurringPreview();
+}
+
+function recurringDates(startDate, frequency, count) {
+  const dates = [];
+  const d = new Date(startDate + 'T12:00:00');
+  for (let i = 0; i < count; i++) {
+    dates.push(d.toISOString().slice(0, 10));
+    if (frequency === 'weekly') {
+      d.setDate(d.getDate() + 7);
+    } else if (frequency === 'biweekly') {
+      d.setDate(d.getDate() + 14);
+    } else if (frequency === 'monthly') {
+      // Same day-of-week of the same week-of-month, next month
+      const dayOfWeek = d.getDay();
+      const weekNum = Math.floor((d.getDate() - 1) / 7); // 0-indexed
+      d.setMonth(d.getMonth() + 1, 1);
+      // Find first occurrence of dayOfWeek in this month
+      while (d.getDay() !== dayOfWeek) d.setDate(d.getDate() + 1);
+      d.setDate(d.getDate() + weekNum * 7);
+    } else { // monthly-date
+      d.setMonth(d.getMonth() + 1);
+    }
+  }
+  return dates;
+}
+
+function updateRecurringPreview() {
+  const date  = (document.getElementById('mtgDate') || {}).value;
+  const freq  = (document.getElementById('mtgFrequency') || {}).value;
+  const count = parseInt((document.getElementById('mtgOccurrences') || {}).value) || 6;
+  const prev  = document.getElementById('mtgRecurringPreview');
+  if (!prev) return;
+  if (!date) { prev.textContent = 'Select a start date to see the schedule.'; return; }
+  const dates = recurringDates(date, freq, Math.min(count, 24));
+  const fmt = function(s) { return new Date(s + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' }); };
+  prev.innerHTML = '<strong style="color:var(--gray-700);">Preview (' + dates.length + ' meetings):</strong> ' + dates.map(fmt).join(' &nbsp;·&nbsp; ');
+}
+
+// Wire up live preview
+(function() {
+  function maybePreview() {
+    if ((document.getElementById('mtgRecurring') || {}).checked) updateRecurringPreview();
+  }
+  ['mtgDate','mtgFrequency','mtgOccurrences'].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', maybePreview);
+  });
+})();
+
 async function saveMeeting() {
   const title    = (document.getElementById('mtgTitle')    || {}).value?.trim();
   const date     = (document.getElementById('mtgDate')     || {}).value;
@@ -5408,7 +5490,10 @@ async function saveMeeting() {
   const location = (document.getElementById('mtgLocation') || {}).value?.trim();
   const agenda    = (document.getElementById('mtgAgenda')   || {}).value?.trim();
   const isPublic  = !!(document.getElementById('mtgIsPublic') || {}).checked;
-  const msgEl     = document.getElementById('mtgFormMsg');
+  const isRecurring = !!(document.getElementById('mtgRecurring') || {}).checked;
+  const frequency   = (document.getElementById('mtgFrequency') || {}).value || 'monthly';
+  const occurrences = Math.min(parseInt((document.getElementById('mtgOccurrences') || {}).value) || 6, 24);
+  const msgEl = document.getElementById('mtgFormMsg');
   function mtgMsg(text, ok) {
     if (!msgEl) return;
     msgEl.style.display = 'block';
@@ -5418,15 +5503,45 @@ async function saveMeeting() {
   if (!title) { mtgMsg('Please enter a meeting title.', false); return; }
   if (!date)  { mtgMsg('Please select a date.', false); return; }
   const token = getAdminToken();
+  const btn = document.querySelector('[onclick="saveMeeting()"]');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…'; }
   try {
-    await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic }, token);
-    mtgMsg('Meeting scheduled!', true);
+    if (isRecurring) {
+      const dates   = recurringDates(date, frequency, occurrences);
+      const seriesId = crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+      const freqLabels = { weekly:'Weekly', biweekly:'Every 2 Weeks', monthly:'Monthly', 'monthly-date':'Monthly' };
+      let saved = 0;
+      for (let i = 0; i < dates.length; i++) {
+        const d = dates[i];
+        const mtgTitle = title; // keep same title; date distinguishes them
+        const row = { title: mtgTitle, meeting_date: d, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic, series_id: seriesId };
+        try {
+          await sbPost('meetings', row, token);
+        } catch(e) {
+          // series_id column may not exist — retry without it
+          if (/series_id|column/i.test(e.message || '')) {
+            const rowFallback = { title: mtgTitle, meeting_date: d, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic };
+            await sbPost('meetings', rowFallback, token);
+          } else { throw e; }
+        }
+        saved++;
+      }
+      mtgMsg(saved + ' meetings scheduled (' + (freqLabels[frequency] || frequency) + ')!', true);
+    } else {
+      await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic }, token);
+      mtgMsg('Meeting scheduled!', true);
+    }
     ['mtgTitle','mtgDate','mtgStart','mtgEnd','mtgLocation','mtgAgenda'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.value = '';
     });
+    document.getElementById('mtgRecurring').checked = false;
+    document.getElementById('mtgRecurringOptions').style.display = 'none';
+    document.getElementById('mtgRecurringPreview').textContent = '';
     loadMeetingsPanel();
   } catch(err) {
     mtgMsg('Error: ' + (err.message || 'could not save meeting.'), false);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-calendar-plus"></i> Schedule Meeting'; }
   }
 }
 
