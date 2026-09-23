@@ -10665,13 +10665,14 @@ async function nlArchiveSurveyGroup(newsletterId, surveyId) {
   if (!token) return;
   try {
     const nlFilter = newsletterId ? 'newsletter_id=eq.' + encodeURIComponent(newsletterId) : 'newsletter_id=is.null';
-    await fetch(SUPABASE_URL + '/rest/v1/newsletter_survey_responses?' + nlFilter + '&survey_id=eq.' + encodeURIComponent(surveyId), {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/newsletter_survey_responses?' + nlFilter + '&survey_id=eq.' + encodeURIComponent(surveyId), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ archived: true })
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
     nlLoadSurveyResults();
-  } catch(e) { showToast('Could not archive.', 'error'); }
+  } catch(e) { showToast('Could not archive: ' + e.message, 'error'); }
 }
 
 async function nlArchiveRsvpGroup(newsletterId, rsvpId) {
@@ -10679,13 +10680,14 @@ async function nlArchiveRsvpGroup(newsletterId, rsvpId) {
   if (!token) return;
   try {
     const nlFilter = newsletterId ? 'newsletter_id=eq.' + encodeURIComponent(newsletterId) : 'newsletter_id=is.null';
-    await fetch(SUPABASE_URL + '/rest/v1/newsletter_rsvp_responses?' + nlFilter + '&rsvp_id=eq.' + encodeURIComponent(rsvpId), {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/newsletter_rsvp_responses?' + nlFilter + '&rsvp_id=eq.' + encodeURIComponent(rsvpId), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ archived: true })
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
     nlLoadSurveyResults();
-  } catch(e) { showToast('Could not archive.', 'error'); }
+  } catch(e) { showToast('Could not archive: ' + e.message, 'error'); }
 }
 
 function nlToggleArchivedResults() {
@@ -10700,7 +10702,7 @@ async function nlLoadSurveyResults() {
   const token = getAdminToken();
   if (!token) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Sign in to see results.</div>'; return; }
   try {
-    const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=not.eq.true';
+    const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=not.is.true';
     const [responses, newsletters] = await Promise.all([
       sbGet('newsletter_survey_responses', archiveFilter + '&order=responded_at.desc', token).catch(function() { return []; }),
       sbGet('newsletters', 'order=created_at.desc&limit=50&select=id,subject', token).catch(function() { return []; })
@@ -10764,7 +10766,7 @@ async function nlLoadSurveyResults() {
 }
 
 async function nlLoadRsvpResults(container, token, newsletters, toggleBtn) {
-  const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=not.eq.true';
+  const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=not.is.true';
   const rsvps = await sbGet('newsletter_rsvp_responses', archiveFilter + '&order=responded_at.desc', token).catch(function() { return []; });
   if (!rsvps || !rsvps.length) return;
   const nlMap = {};
@@ -10809,13 +10811,14 @@ async function nlArchiveHistoryBatch(batchId) {
   const token = getAdminToken();
   if (!token) return;
   try {
-    await fetch(SUPABASE_URL + '/rest/v1/newsletter_send_log?batch_id=eq.' + encodeURIComponent(batchId), {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/newsletter_send_log?batch_id=eq.' + encodeURIComponent(batchId), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ archived: true })
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + await res.text());
     nlLoadHistory();
-  } catch(e) { showToast('Could not archive.', 'error'); }
+  } catch(e) { showToast('Could not archive: ' + e.message, 'error'); }
 }
 
 function nlToggleArchivedHistory() {
@@ -10829,7 +10832,7 @@ async function nlLoadHistory() {
   el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Loading…</div>';
   const token = getAdminToken();
   try {
-    const archiveFilter = _nlShowArchivedHistory ? 'archived=eq.true' : 'archived=not.eq.true';
+    const archiveFilter = _nlShowArchivedHistory ? 'archived=eq.true' : 'archived=not.is.true';
     const rows = await sbGet('newsletter_send_log', 'select=batch_id,subject,sent_by,sent_at,status,recipient_email&' + archiveFilter + '&order=sent_at.desc&limit=500', token);
 
     const toggleBtn = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'
