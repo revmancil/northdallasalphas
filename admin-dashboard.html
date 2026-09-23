@@ -2265,6 +2265,7 @@
               </button>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
                 <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'survey')"><i class="fas fa-poll"></i>Survey</div>
+                <div class="nl-palette-tile" draggable="true" ondragstart="nlOnDragStartTile(event,'rsvp')"><i class="fas fa-calendar-check"></i>RSVP</div>
               </div>
             </div>
 
@@ -9593,6 +9594,7 @@ function nlDefaultProps(type) {
     case 'video':     return { thumbnailUrl: '', videoUrl: '', caption: '', paddingTop: 8, paddingBottom: 8 };
     case 'social':    return { links: [{ platform: 'facebook', url: '' }, { platform: 'instagram', url: '' }, { platform: 'twitter', url: '' }], iconSize: 28, align: 'center', paddingTop: 16, paddingBottom: 16 };
     case 'survey':    return { question: 'How are we doing?', options: ['Excellent', 'Good', 'Needs Improvement'], align: 'center', paddingTop: 16, paddingBottom: 16 };
+    case 'rsvp':      return { eventName: 'Chapter Event', eventDate: '', eventLocation: '', align: 'center', paddingTop: 16, paddingBottom: 16 };
     case 'footer':    return { line1: 'North Dallas Alphas', line2: 'Dallas, TX', unsubscribeText: 'Unsubscribe', copyright: '© 2026 North Dallas Alphas', textColor: '#666666', bgColor: '#F4F4F4', fontSize: 12, paddingTop: 24, paddingBottom: 24 };
     default:          return {};
   }
@@ -10054,6 +10056,21 @@ function nlBlockVisual(b) {
       }).join('');
       return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '"><div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;">' + escHtml(p.question || 'Survey question') + '</div><div>' + opts + '</div></div>';
     }
+    case 'rsvp': {
+      const rsvpId = b.id || 'rsvp';
+      const newsletterId = nlState.draftId || 'draft';
+      const rsvpBase = 'https://northdallasalphas.com/rsvp-form.html';
+      const rsvpParams = '?newsletter_id=' + encodeURIComponent(newsletterId) + '&rsvp_id=' + encodeURIComponent(rsvpId) + '&event=' + encodeURIComponent(p.eventName || '') + '&date=' + encodeURIComponent(p.eventDate || '') + '&location=' + encodeURIComponent(p.eventLocation || '');
+      const btnStyle = 'display:inline-block;margin:4px;padding:6px 16px;border-radius:4px;font-size:0.78rem;font-weight:700;text-decoration:none;';
+      return '<div style="text-align:' + (p.align||'center') + ';padding:' + ptop + ' 0 ' + pbot + ';border:1px solid rgba(201,168,76,0.3);border-radius:8px;background:rgba(201,168,76,0.04);">'
+        + '<div style="font-weight:700;font-size:0.95rem;margin-bottom:4px;">' + escHtml(p.eventName || 'Event') + '</div>'
+        + (p.eventDate ? '<div style="font-size:0.78rem;color:var(--gray-500);margin-bottom:2px;"><i class="fas fa-calendar" style="margin-right:4px;"></i>' + escHtml(p.eventDate) + '</div>' : '')
+        + (p.eventLocation ? '<div style="font-size:0.78rem;color:var(--gray-500);margin-bottom:10px;"><i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>' + escHtml(p.eventLocation) + '</div>' : '<div style="margin-bottom:10px;"></div>')
+        + '<a href="' + rsvpBase + rsvpParams + '&response=yes" style="' + btnStyle + 'background:#16a34a;color:#fff;">✓ Yes</a>'
+        + '<a href="' + rsvpBase + rsvpParams + '&response=maybe" style="' + btnStyle + 'background:#C9A84C;color:#000;">~ Maybe</a>'
+        + '<a href="' + rsvpBase + rsvpParams + '&response=no" style="' + btnStyle + 'background:#6b7280;color:#fff;">✗ No</a>'
+        + '</div>';
+    }
     case 'footer': {
       return '<div style="text-align:center;background:' + (p.bgColor || '#F4F4F4') + ';padding:' + ptop + ' 16px ' + pbot + ';font-size:' + (p.fontSize || 12) + 'px;color:' + (p.textColor || '#666') + ';"><div>' + escHtml(p.line1 || '') + '</div><div>' + escHtml(p.line2 || '') + '</div><div style="margin-top:6px;">' + escHtml(p.copyright || '') + ' · <span style="text-decoration:underline;cursor:pointer;">' + escHtml(p.unsubscribeText || 'Unsubscribe') + '</span></div></div>';
     }
@@ -10195,6 +10212,14 @@ function nlPropsForm(block, zone) {
       }).join('');
       html += field('Social Links', linkRows + '<button type="button" onclick="nlAddSocialPlatform(\'' + z + '\',\'' + id + '\')" style="padding:4px 10px;background:var(--gray-100);border:1px solid var(--gray-200);border-radius:4px;font-size:0.75rem;cursor:pointer;"><i class="fas fa-plus"></i> Add Platform</button>');
       html += field('Icon Size', numInp('iconSize', p.iconSize || 28, 16, 64, 'px'));
+      html += field('Alignment', alignBtns('align', p.align || 'center'));
+      html += padRow();
+      break;
+    }
+    case 'rsvp': {
+      html += field('Event Name', inp('eventName', p.eventName || ''));
+      html += field('Date', inp('eventDate', p.eventDate || ''));
+      html += field('Location', inp('eventLocation', p.eventLocation || ''));
       html += field('Alignment', alignBtns('align', p.align || 'center'));
       html += padRow();
       break;
@@ -10681,11 +10706,48 @@ async function nlLoadSurveyResults() {
         + '<div style="font-size:0.7rem;color:var(--gray-400);margin-top:6px;text-align:right;">' + total + ' response' + (total !== 1 ? 's' : '') + '</div>'
         + '</div>';
     });
-    el.innerHTML = html;
+    el.innerHTML = html || '<div class="hint-text" style="margin:0;font-size:0.8rem;">No survey responses yet.</div>';
+
+    // Also load RSVP results below survey results
+    await nlLoadRsvpResults(el, token, newsletters);
   } catch(e) {
     el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load results: ' + escHtml(e.message || 'error') + '</div>';
   }
 }
+
+async function nlLoadRsvpResults(container, token, newsletters) {
+  const rsvps = await sbGet('newsletter_rsvp_responses', 'order=responded_at.desc', token).catch(function() { return []; });
+  if (!rsvps || !rsvps.length) return;
+  const nlMap = {};
+  (newsletters || []).forEach(function(n) { nlMap[n.id] = n.subject; });
+  // Group by newsletter_id + rsvp_id
+  const groups = {};
+  rsvps.forEach(function(r) {
+    const key = (r.newsletter_id || 'unknown') + '::' + (r.rsvp_id || 'rsvp');
+    if (!groups[key]) groups[key] = { newsletter_id: r.newsletter_id, rsvp_id: r.rsvp_id, event_name: r.event_name || 'Event', yes: [], maybe: [], no: [] };
+    const bucket = r.response === 'yes' ? 'yes' : r.response === 'maybe' ? 'maybe' : 'no';
+    groups[key][bucket].push(r.name || 'Anonymous');
+  });
+  let html = '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);margin:14px 0 8px;">RSVP Responses</div>';
+  Object.values(groups).forEach(function(g) {
+    const nlTitle = nlMap[g.newsletter_id] || 'Unknown Newsletter';
+    const total = g.yes.length + g.maybe.length + g.no.length;
+    const nameList = function(arr, color) {
+      if (!arr.length) return '<span style="color:var(--gray-400);font-style:italic;font-size:0.72rem;">None</span>';
+      return arr.map(function(n) { return '<span style="display:inline-block;background:' + color + ';color:#fff;border-radius:3px;padding:1px 6px;font-size:0.7rem;margin:1px;">' + escHtml(n) + '</span>'; }).join('');
+    };
+    html += '<div style="border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:10px;background:var(--white);">'
+      + '<div style="font-size:0.7rem;color:var(--gray-400);margin-bottom:2px;">' + escHtml(nlTitle) + '</div>'
+      + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:10px;">' + escHtml(g.event_name) + '</div>'
+      + '<div style="margin-bottom:6px;"><div style="font-size:0.72rem;font-weight:700;color:#16a34a;margin-bottom:3px;">✓ Yes (' + g.yes.length + ')</div>' + nameList(g.yes, '#16a34a') + '</div>'
+      + '<div style="margin-bottom:6px;"><div style="font-size:0.72rem;font-weight:700;color:#b45309;margin-bottom:3px;">~ Maybe (' + g.maybe.length + ')</div>' + nameList(g.maybe, '#C9A84C') + '</div>'
+      + '<div style="margin-bottom:6px;"><div style="font-size:0.72rem;font-weight:700;color:var(--gray-500);margin-bottom:3px;">✗ No (' + g.no.length + ')</div>' + nameList(g.no, '#6b7280') + '</div>'
+      + '<div style="font-size:0.7rem;color:var(--gray-400);margin-top:6px;text-align:right;">' + total + ' total response' + (total !== 1 ? 's' : '') + '</div>'
+      + '</div>';
+  });
+  container.innerHTML += html;
+}
+
 
 // ── Send History ──
 async function nlLoadHistory() {
@@ -10836,6 +10898,24 @@ function nlBlockToEmailRow(b, gs) {
         return '<a href="' + href + '" style="display:inline-block;margin:4px;padding:8px 18px;border:1px solid #C9A84C;border-radius:4px;color:#C9A84C;text-decoration:none;font-size:13px;font-family:' + gs.font + ';">' + escHtml(o) + '</a>';
       }).join('');
       return tdWrap('<div style="text-align:' + (p.align || 'center') + ';"><p style="font-weight:600;font-size:16px;color:' + gs.textColor + ';margin:0 0 10px;font-family:' + gs.font + ';">' + escHtml(p.question || '') + '</p><div>' + opts + '</div></div>');
+    }
+    case 'rsvp': {
+      const rsvpId = b.id || 'rsvp';
+      const newsletterId = nlState.draftId || '';
+      const rsvpBase = 'https://northdallasalphas.com/rsvp-form.html';
+      const rsvpParams = '?newsletter_id=' + encodeURIComponent(newsletterId) + '&rsvp_id=' + encodeURIComponent(rsvpId) + '&event=' + encodeURIComponent(p.eventName || '') + '&date=' + encodeURIComponent(p.eventDate || '') + '&location=' + encodeURIComponent(p.eventLocation || '');
+      const btnBase = 'display:inline-block;margin:4px;padding:10px 22px;border-radius:4px;font-size:14px;font-weight:700;text-decoration:none;font-family:' + gs.font + ';';
+      return tdWrap(
+        '<div style="text-align:' + (p.align||'center') + ';border:1px solid #C9A84C;border-radius:8px;padding:20px 16px;background:#0a0a0a;">'
+        + '<p style="font-weight:700;font-size:18px;color:#fff;margin:0 0 6px;font-family:' + gs.font + ';">' + escHtml(p.eventName || 'Event') + '</p>'
+        + (p.eventDate ? '<p style="font-size:13px;color:#C9A84C;margin:0 0 3px;font-family:' + gs.font + ';">📅 ' + escHtml(p.eventDate) + '</p>' : '')
+        + (p.eventLocation ? '<p style="font-size:13px;color:#C9A84C;margin:0 0 14px;font-family:' + gs.font + ';">📍 ' + escHtml(p.eventLocation) + '</p>' : '<p style="margin:0 0 14px;"></p>')
+        + '<p style="font-size:13px;color:#aaa;margin:0 0 12px;font-family:' + gs.font + ';">Will you attend? Click to RSVP:</p>'
+        + '<a href="' + rsvpBase + rsvpParams + '&response=yes" style="' + btnBase + 'background:#16a34a;color:#fff;">✓ Yes</a>'
+        + '<a href="' + rsvpBase + rsvpParams + '&response=maybe" style="' + btnBase + 'background:#C9A84C;color:#000;">~ Maybe</a>'
+        + '<a href="' + rsvpBase + rsvpParams + '&response=no" style="' + btnBase + 'background:#4b5563;color:#fff;">✗ No</a>'
+        + '</div>'
+      );
     }
     case 'footer': {
       return '<tr><td style="padding:' + ptop + 'px 24px ' + pbot + 'px;background:' + (p.bgColor || '#F4F4F4') + ';text-align:center;font-size:' + (p.fontSize || 12) + 'px;color:' + (p.textColor || '#666666') + ';font-family:' + gs.font + ';">'
