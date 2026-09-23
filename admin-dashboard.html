@@ -13504,8 +13504,8 @@ async function deleteDuesPayment(id) {
 const COMMITTEE_SEED = [
   'Alpha Legacy Celebration','Alpha Legacy Group','Awards & Recognition',
   'Big Brothers Big Sisters',"Brother's Keeper",'Community Service',
-  'Constitution','Go-to-High School Go-to-College','Chapter Website',
-  'Housing','IMDP','March for Babies','NPHC','Professional Development',
+  'Constitution','Education','Elections','Go-to-High School Go-to-College','Chapter Website',
+  'Housing','IMDP','Investment','March for Babies','NPHC','Professional Development',
   'Project Alpha','Protocol & Etiquette','Social Action','Social Reclamation',
   'Undergraduate Relations','Voteless People is a Hopeless People'
 ];
@@ -13678,7 +13678,7 @@ async function removeCommitteeMember(rowId, committeeId) {
 }
 
 async function seedCommittees() {
-  if (!confirm('Seed the default 20 committees? Existing ones will not be duplicated.')) return;
+  if (!confirm('Seed the default 22 committees? Existing ones will not be duplicated.')) return;
   const token = getAdminToken();
   let created = 0;
   for (const name of COMMITTEE_SEED) {
