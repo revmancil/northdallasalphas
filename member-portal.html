@@ -3700,8 +3700,8 @@ async function loadMemberCommittees() {
   try {
     const [committees, myRows, allRows] = await Promise.all([
       sbGet('committees','order=name.asc',token),
-      sbGet('committee_members','member_id=eq.'+currentMember.id+'&select=committee_id',token),
-      sbGet('committee_members','select=committee_id,member_id',token)
+      sbGet('committee_members','member_id=eq.'+currentMember.id+'&select=committee_id',token).catch(()=>[]),
+      sbGet('committee_members','select=committee_id,member_id',token).catch(()=>[])
     ]);
     _mpCommittees = committees||[];
     _mpMyMemberships = (myRows||[]).map(function(r){return r.committee_id;});
