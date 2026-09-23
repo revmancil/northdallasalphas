@@ -10657,7 +10657,40 @@ async function nlDeleteDraft(id) {
   }
 }
 
-// ── Survey Results ──
+// ── Survey & RSVP Results ──
+var _nlShowArchivedResults = false;
+
+async function nlArchiveSurveyGroup(newsletterId, surveyId) {
+  const token = getAdminToken();
+  if (!token) return;
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/newsletter_survey_responses?newsletter_id=eq.' + encodeURIComponent(newsletterId || '') + '&survey_id=eq.' + encodeURIComponent(surveyId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ archived: true })
+    });
+    nlLoadSurveyResults();
+  } catch(e) { showToast('Could not archive.', 'error'); }
+}
+
+async function nlArchiveRsvpGroup(newsletterId, rsvpId) {
+  const token = getAdminToken();
+  if (!token) return;
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/newsletter_rsvp_responses?newsletter_id=eq.' + encodeURIComponent(newsletterId || '') + '&rsvp_id=eq.' + encodeURIComponent(rsvpId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ archived: true })
+    });
+    nlLoadSurveyResults();
+  } catch(e) { showToast('Could not archive.', 'error'); }
+}
+
+function nlToggleArchivedResults() {
+  _nlShowArchivedResults = !_nlShowArchivedResults;
+  nlLoadSurveyResults();
+}
+
 async function nlLoadSurveyResults() {
   const el = document.getElementById('nlSurveyResultsList');
   if (!el) return;
@@ -10665,15 +10698,23 @@ async function nlLoadSurveyResults() {
   const token = getAdminToken();
   if (!token) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Sign in to see results.</div>'; return; }
   try {
+    const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=eq.false';
     const [responses, newsletters] = await Promise.all([
-      sbGet('newsletter_survey_responses', 'order=responded_at.desc', token).catch(function() { return []; }),
+      sbGet('newsletter_survey_responses', archiveFilter + '&order=responded_at.desc', token).catch(function() { return []; }),
       sbGet('newsletters', 'order=created_at.desc&limit=50&select=id,subject', token).catch(function() { return []; })
     ]);
+
+    const toggleBtn = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'
+      + '<button onclick="nlToggleArchivedResults()" style="font-size:0.7rem;padding:3px 10px;background:none;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;color:var(--gray-500);">'
+      + (_nlShowArchivedResults ? '<i class="fas fa-inbox"></i> Show Active' : '<i class="fas fa-archive"></i> Show Archived')
+      + '</button></div>';
+
     if (!responses || !responses.length) {
-      el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No survey responses yet. Survey buttons in sent newsletters will collect responses here.</div>';
+      el.innerHTML = toggleBtn + '<div class="hint-text" style="margin:0;font-size:0.8rem;">' + (_nlShowArchivedResults ? 'No archived surveys.' : 'No survey responses yet.') + '</div>';
+      await nlLoadRsvpResults(el, token, newsletters, toggleBtn);
       return;
     }
-    // Group by newsletter_id + survey_id
+
     const groups = {};
     responses.forEach(function(r) {
       const key = (r.newsletter_id || 'unknown') + '::' + (r.survey_id || 'survey');
@@ -10683,7 +10724,9 @@ async function nlLoadSurveyResults() {
     });
     const nlMap = {};
     (newsletters || []).forEach(function(n) { nlMap[n.id] = n.subject; });
-    let html = '';
+
+    let html = toggleBtn;
+    html += '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);margin-bottom:8px;">Surveys</div>';
     Object.values(groups).forEach(function(g) {
       const total = Object.values(g.tally).reduce(function(a,b){ return a+b; }, 0);
       const nlTitle = nlMap[g.newsletter_id] || g.newsletter_id || 'Unknown Newsletter';
@@ -10699,28 +10742,31 @@ async function nlLoadSurveyResults() {
           + '<div style="background:#C9A84C;height:100%;width:' + pct + '%;border-radius:3px;"></div>'
           + '</div></div>';
       }).join('');
+      const nlId = escHtml(g.newsletter_id || '');
+      const svId = escHtml(g.survey_id || '');
       html += '<div style="border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:10px;background:var(--white);">'
-        + '<div style="font-size:0.7rem;color:var(--gray-400);margin-bottom:4px;">' + escHtml(nlTitle) + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">'
+        + '<div style="font-size:0.7rem;color:var(--gray-400);">' + escHtml(nlTitle) + '</div>'
+        + (!_nlShowArchivedResults ? '<button onclick="nlArchiveSurveyGroup(\'' + nlId + '\',\'' + svId + '\')" style="font-size:0.65rem;padding:2px 7px;background:none;border:1px solid var(--gray-200);border-radius:3px;cursor:pointer;color:var(--gray-400);white-space:nowrap;"><i class="fas fa-archive"></i> Archive</button>' : '')
+        + '</div>'
         + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:8px;">' + escHtml(g.question || 'Survey') + '</div>'
         + bars
         + '<div style="font-size:0.7rem;color:var(--gray-400);margin-top:6px;text-align:right;">' + total + ' response' + (total !== 1 ? 's' : '') + '</div>'
         + '</div>';
     });
-    el.innerHTML = html || '<div class="hint-text" style="margin:0;font-size:0.8rem;">No survey responses yet.</div>';
-
-    // Also load RSVP results below survey results
-    await nlLoadRsvpResults(el, token, newsletters);
+    el.innerHTML = html;
+    await nlLoadRsvpResults(el, token, newsletters, '');
   } catch(e) {
     el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load results: ' + escHtml(e.message || 'error') + '</div>';
   }
 }
 
-async function nlLoadRsvpResults(container, token, newsletters) {
-  const rsvps = await sbGet('newsletter_rsvp_responses', 'order=responded_at.desc', token).catch(function() { return []; });
+async function nlLoadRsvpResults(container, token, newsletters, toggleBtn) {
+  const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=eq.false';
+  const rsvps = await sbGet('newsletter_rsvp_responses', archiveFilter + '&order=responded_at.desc', token).catch(function() { return []; });
   if (!rsvps || !rsvps.length) return;
   const nlMap = {};
   (newsletters || []).forEach(function(n) { nlMap[n.id] = n.subject; });
-  // Group by newsletter_id + rsvp_id
   const groups = {};
   rsvps.forEach(function(r) {
     const key = (r.newsletter_id || 'unknown') + '::' + (r.rsvp_id || 'rsvp');
@@ -10728,7 +10774,7 @@ async function nlLoadRsvpResults(container, token, newsletters) {
     const bucket = r.response === 'yes' ? 'yes' : r.response === 'maybe' ? 'maybe' : 'no';
     groups[key][bucket].push(r.name || 'Anonymous');
   });
-  let html = '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);margin:14px 0 8px;">RSVP Responses</div>';
+  let html = '<div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);margin:14px 0 8px;">RSVPs</div>';
   Object.values(groups).forEach(function(g) {
     const nlTitle = nlMap[g.newsletter_id] || 'Unknown Newsletter';
     const total = g.yes.length + g.maybe.length + g.no.length;
@@ -10736,8 +10782,13 @@ async function nlLoadRsvpResults(container, token, newsletters) {
       if (!arr.length) return '<span style="color:var(--gray-400);font-style:italic;font-size:0.72rem;">None</span>';
       return arr.map(function(n) { return '<span style="display:inline-block;background:' + color + ';color:#fff;border-radius:3px;padding:1px 6px;font-size:0.7rem;margin:1px;">' + escHtml(n) + '</span>'; }).join('');
     };
+    const nlId = escHtml(g.newsletter_id || '');
+    const rvId = escHtml(g.rsvp_id || '');
     html += '<div style="border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:10px;background:var(--white);">'
-      + '<div style="font-size:0.7rem;color:var(--gray-400);margin-bottom:2px;">' + escHtml(nlTitle) + '</div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px;">'
+      + '<div style="font-size:0.7rem;color:var(--gray-400);">' + escHtml(nlTitle) + '</div>'
+      + (!_nlShowArchivedResults ? '<button onclick="nlArchiveRsvpGroup(\'' + nlId + '\',\'' + rvId + '\')" style="font-size:0.65rem;padding:2px 7px;background:none;border:1px solid var(--gray-200);border-radius:3px;cursor:pointer;color:var(--gray-400);white-space:nowrap;"><i class="fas fa-archive"></i> Archive</button>' : '')
+      + '</div>'
       + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:10px;">' + escHtml(g.event_name) + '</div>'
       + '<div style="margin-bottom:6px;"><div style="font-size:0.72rem;font-weight:700;color:#16a34a;margin-bottom:3px;">✓ Yes (' + g.yes.length + ')</div>' + nameList(g.yes, '#16a34a') + '</div>'
       + '<div style="margin-bottom:6px;"><div style="font-size:0.72rem;font-weight:700;color:#b45309;margin-bottom:3px;">~ Maybe (' + g.maybe.length + ')</div>' + nameList(g.maybe, '#C9A84C') + '</div>'
