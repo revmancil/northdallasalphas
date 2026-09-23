@@ -10528,6 +10528,8 @@ async function nlSendNewsletter() {
       document.querySelectorAll('#nlMemberList input[type="checkbox"]:checked').forEach(function (c) { if (c.value) recipients.push(c.value); });
     }
     if (!recipients.length) { showToast('No recipients selected.', 'error'); return; }
+    // Save first so survey links have a real newsletter_id baked into the email HTML
+    await nlSaveDraft().catch(function () { });
     const html = nlBuildHtml();
     const res = await fetch(SUPABASE_URL + '/functions/v1/send-newsletter', {
       method: 'POST',
@@ -10536,7 +10538,6 @@ async function nlSendNewsletter() {
     });
     const data = await res.json().catch(function () { return {}; });
     if (!res.ok) throw new Error(data.error || 'Send failed');
-    if (modeVal !== 'test') await nlSaveDraft().catch(function () { });
     nlCloseSendModal();
     const sent = data.sent ?? recipients.length;
     const failed = data.failed ?? 0;
