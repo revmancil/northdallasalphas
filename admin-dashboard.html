@@ -7408,12 +7408,14 @@ function normalizeAdminEventRecord(ev) {
     sponsorEnabled: !!(ev.sponsor_enabled ?? ev.sponsorEnabled),
     sponsorUrl: String(ev.sponsor_url || ev.sponsorUrl || '').trim(),
     sponsorLabel: String(ev.sponsor_label || ev.sponsorLabel || 'Become a Sponsor').trim() || 'Become a Sponsor',
-    membersOnly: !!(ev.members_only ?? ev.membersOnly)
+    membersOnly: !!(ev.members_only ?? ev.membersOnly),
+    rsvpEnabled: !!(ev.rsvp_enabled ?? ev.rsvpEnabled)
   };
 }
 
 function eventHasRegistrationOptions(ev) {
   if (!ev) return false;
+  if (ev.rsvpEnabled) return true;
   if ((ev.freeRegistrationUrl || '').trim()) return true;
   if ((ev.registrationUrl || '').trim()) return true;
   if (ev.freeRegistrationEnabled) return true;
@@ -7553,6 +7555,7 @@ async function loadEventsList() {
     showToast('Could not load events from Supabase. Showing defaults.', 'error');
   }
   renderEventsList();
+  loadEventRsvpTallies();
 }
 
 function renderEventsList() {
@@ -7656,6 +7659,15 @@ function renderEventsList() {
             <span><strong style="color:#b45309;">Brothers Only</strong> — hides the Register button on the public Events page. Registration is only available through the Member Portal.</span>
           </label>
         </div>
+        <div style="padding:12px 14px;border:1px solid rgba(201,168,76,0.35);border-radius:8px;background:rgba(201,168,76,0.04);margin-bottom:12px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;margin-bottom:8px;">
+            <input type="checkbox" id="rsvp-enabled-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.rsvpEnabled ? 'checked' : ''} onchange="eventsData[${i}].rsvpEnabled=this.checked" />
+            <span><strong style="color:var(--gold);">Brothers RSVP</strong> — enables a Yes / No / Maybe RSVP in the Member Portal for this event. Responses are tallied below and visible here.</span>
+          </label>
+          <div id="rsvp-tally-${i}" style="display:flex;gap:18px;font-size:0.82rem;padding-top:6px;border-top:1px solid rgba(201,168,76,0.15);">
+            <span style="color:var(--gray-400);font-style:italic;">Loading tally…</span>
+          </div>
+        </div>
         <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);margin-bottom:12px;">
           <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);line-height:1.45;margin-bottom:10px;">
             <input type="checkbox" id="free-reg-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.freeRegistrationEnabled ? 'checked' : ''} onchange="eventsData[${i}].freeRegistrationEnabled=this.checked" />
@@ -7703,6 +7715,27 @@ function renderEventsList() {
 
   document.getElementById('eventsCountLabel').textContent = eventsData.length + ' event' + (eventsData.length !== 1 ? 's' : '');
   document.getElementById('statEventCount').textContent = eventsData.length;
+}
+
+async function loadEventRsvpTallies() {
+  const token = getAdminToken();
+  if (!token) return;
+  let rows = [];
+  try { rows = await sbGet('event_rsvps', 'select=event_id,response', token); } catch(e) { return; }
+  const tallyMap = {};
+  (rows || []).forEach(function(r) {
+    if (!tallyMap[r.event_id]) tallyMap[r.event_id] = { yes:0, no:0, maybe:0 };
+    if (tallyMap[r.event_id][r.response] !== undefined) tallyMap[r.event_id][r.response]++;
+  });
+  eventsData.forEach(function(ev, i) {
+    const el = document.getElementById('rsvp-tally-' + i);
+    if (!el) return;
+    const t = tallyMap[ev.id] || { yes:0, no:0, maybe:0 };
+    el.innerHTML =
+      '<span style="color:#16a34a;font-weight:600;">✓ ' + t.yes + ' Yes</span>' +
+      '<span style="color:var(--gray-400);">~ ' + t.maybe + ' Maybe</span>' +
+      '<span style="color:#dc2626;">✗ ' + t.no + ' No</span>';
+  });
 }
 
 function toggleFeatured(i) {
@@ -7927,6 +7960,7 @@ function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
         ? Math.max(0, parseInt(String(ev.registrationFeeCents ?? 0), 10) || 0)
         : 0;
       row.members_only = !!ev.membersOnly;
+      row.rsvp_enabled = !!ev.rsvpEnabled;
     }
     if (includeSponsorFields) {
       row.sponsor_enabled = !!ev.sponsorEnabled;
@@ -7989,6 +8023,8 @@ async function saveEvents() {
       if (feeEl) eventsData[i].registrationFeeCents = Math.round((parseFloat(feeEl.value) || 0) * 100);
       const membersOnlyEl = document.getElementById('members-only-' + i);
       if (membersOnlyEl) eventsData[i].membersOnly = membersOnlyEl.checked;
+      const rsvpEnabledEl = document.getElementById('rsvp-enabled-' + i);
+      if (rsvpEnabledEl) eventsData[i].rsvpEnabled = rsvpEnabledEl.checked;
       if (sponsorEnabled) eventsData[i].sponsorEnabled = sponsorEnabled.checked;
       if (sponsorUrl) eventsData[i].sponsorUrl = sponsorUrl.value.trim();
       if (sponsorLabel) eventsData[i].sponsorLabel = sponsorLabel.value.trim() || 'Become a Sponsor';
