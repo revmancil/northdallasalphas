@@ -241,6 +241,14 @@ document.getElementById('loginForm').addEventListener('submit', async function(e
       expires_at: Math.floor(Date.now()/1000) + data.expires_in,
       user: data.user
     }));
+    // Ensure auth_user_id is linked on this member record
+    try {
+      await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + data.access_token, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ auth_user_id: data.user.id })
+      });
+    } catch(e) { /* non-critical, proceed */ }
     showMsg('loginSuccess','success');
     setTimeout(() => { window.location.href = 'member-portal.html'; }, 1200);
   } catch(err) {
