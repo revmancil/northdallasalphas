@@ -8,6 +8,7 @@ serve(async (req: Request) => {
   const newsletterId = url.searchParams.get("newsletter_id") || null;
   const surveyId = url.searchParams.get("survey_id") || null;
   const response = url.searchParams.get("response") || null;
+  const question = url.searchParams.get("question") || null;
 
   if (!surveyId || !response) {
     return new Response("Missing required parameters.", { status: 400 });
@@ -26,6 +27,7 @@ serve(async (req: Request) => {
         newsletter_id: newsletterId,
         survey_id: surveyId,
         response: response,
+        question: question,
         ip_hash: await hashIp(req.headers.get("x-forwarded-for") || ""),
         responded_at: new Date().toISOString(),
       },

@@ -10047,8 +10047,9 @@ function nlBlockVisual(b) {
       const surveyId = b.id || 'survey';
       const newsletterId = nlState.draftId || 'draft';
       const baseUrl = SUPABASE_URL + '/functions/v1/record-survey-response';
+      const question = encodeURIComponent(p.question || '');
       const opts = (p.options || []).map(function (o) {
-        const href = baseUrl + '?newsletter_id=' + encodeURIComponent(newsletterId) + '&survey_id=' + encodeURIComponent(surveyId) + '&response=' + encodeURIComponent(o);
+        const href = baseUrl + '?newsletter_id=' + encodeURIComponent(newsletterId) + '&survey_id=' + encodeURIComponent(surveyId) + '&response=' + encodeURIComponent(o) + '&question=' + question;
         return '<a href="' + href + '" style="display:inline-block;margin:3px;padding:6px 14px;border:1px solid #C9A84C;border-radius:4px;font-size:0.78rem;color:#C9A84C;text-decoration:none;font-weight:600;">' + escHtml(o) + '</a>';
       }).join('');
       return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '"><div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;">' + escHtml(p.question || 'Survey question') + '</div><div>' + opts + '</div></div>';
@@ -10530,6 +10531,11 @@ async function nlSendNewsletter() {
     if (!recipients.length) { showToast('No recipients selected.', 'error'); return; }
     // Save first so survey links have a real newsletter_id baked into the email HTML
     await nlSaveDraft().catch(function () { });
+    if (!nlState.draftId) {
+      showToast('Could not save newsletter before sending — survey links may not work. Try again.', 'error');
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'Send Now'; }
+      return;
+    }
     const html = nlBuildHtml();
     const res = await fetch(SUPABASE_URL + '/functions/v1/send-newsletter', {
       method: 'POST',
@@ -10821,8 +10827,13 @@ function nlBlockToEmailRow(b, gs) {
       return tdWrap('<div style="text-align:' + (p.align || 'center') + ';">' + links + '</div>');
     }
     case 'survey': {
+      const surveyId = b.id || 'survey';
+      const newsletterId = nlState.draftId || '';
+      const baseUrl = SUPABASE_URL + '/functions/v1/record-survey-response';
+      const question = encodeURIComponent(p.question || '');
       const opts = (p.options || []).map(function (o) {
-        return '<a href="#" style="display:inline-block;margin:4px;padding:8px 18px;border:1px solid #C9A84C;border-radius:4px;color:#C9A84C;text-decoration:none;font-size:13px;font-family:' + gs.font + ';">' + escHtml(o) + '</a>';
+        const href = baseUrl + '?newsletter_id=' + encodeURIComponent(newsletterId) + '&survey_id=' + encodeURIComponent(surveyId) + '&response=' + encodeURIComponent(o) + '&question=' + question;
+        return '<a href="' + href + '" style="display:inline-block;margin:4px;padding:8px 18px;border:1px solid #C9A84C;border-radius:4px;color:#C9A84C;text-decoration:none;font-size:13px;font-family:' + gs.font + ';">' + escHtml(o) + '</a>';
       }).join('');
       return tdWrap('<div style="text-align:' + (p.align || 'center') + ';"><p style="font-weight:600;font-size:16px;color:' + gs.textColor + ';margin:0 0 10px;font-family:' + gs.font + ';">' + escHtml(p.question || '') + '</p><div>' + opts + '</div></div>');
     }
