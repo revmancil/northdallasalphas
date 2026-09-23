@@ -13576,6 +13576,25 @@ async function renderCommitteesAdminList(token) {
             '<div><label style="font-size:0.78rem;color:var(--gray-500);display:block;margin-bottom:4px;">Co-Chair</label>' +
             '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'cochair_id\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">'+memberOptions.replace('value="'+(c.cochair_id||'')+'"','value="'+(c.cochair_id||'')+'" selected')+'</select></div>' +
           '</div>' +
+          '<div style="font-size:0.82rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">Meeting Schedule</div>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">' +
+            '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:4px;">Day</label>' +
+            '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_day\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;">' +
+              '<option value="">— None —</option>' +
+              ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(d){
+                return '<option value="'+d+'"'+(c.meeting_day===d?' selected':'')+'>'+d+'</option>';
+              }).join('') +
+            '</select></div>' +
+            '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:4px;">Time</label>' +
+            '<input type="time" value="'+escHtml(c.meeting_time||'')+'" onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_time\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;" /></div>' +
+            '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:4px;">Frequency</label>' +
+            '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_frequency\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;">' +
+              '<option value="">— None —</option>' +
+              ['Weekly','Bi-Weekly','Monthly','Quarterly','As Needed'].map(function(f){
+                return '<option value="'+f+'"'+(c.meeting_frequency===f?' selected':'')+'>'+f+'</option>';
+              }).join('') +
+            '</select></div>' +
+          '</div>' +
           '<div style="margin-bottom:10px;font-size:0.82rem;font-weight:600;color:var(--gray-600);">Members</div>' +
           '<div id="cm-list-'+escHtml(c.id)+'" style="margin-bottom:12px;"></div>' +
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
@@ -13639,6 +13658,18 @@ async function assignCommitteeRole(committeeId, field, memberId) {
     if (c) c[field] = memberId || null;
     showToast('Role updated.','success');
   } catch(e) { showToast('Could not update role: '+escHtml(e.message),'error'); }
+}
+
+async function saveCommitteeSchedule(committeeId, field, value) {
+  const token = getAdminToken();
+  const payload = {};
+  payload[field] = value || null;
+  try {
+    await sbPatch('committees','id=eq.'+committeeId,payload,token);
+    const c = _committees.find(function(x){return x.id===committeeId;});
+    if (c) c[field] = value || null;
+    showToast('Schedule saved.','success');
+  } catch(e) { showToast('Could not save schedule: '+escHtml(e.message),'error'); }
 }
 
 async function addCommitteeMember(committeeId) {
