@@ -3717,31 +3717,84 @@ async function loadMemberCommittees() {
       container.innerHTML = '<div class="hint-text">No committees found.</div>';
       return;
     }
-    container.innerHTML =
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">' +
-      _mpCommittees.map(function(c){
-        const isMember = _mpMyMemberships.includes(c.id);
-        const count = _mpCountMap[c.id]||0;
-        const meta = getCommitteeMeta(c.name);
-        return '<div style="background:#111;border:1px solid '+(isMember?'rgba(201,168,76,0.45)':'#242424')+';border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:border-color 0.2s;">' +
-          '<div style="width:100%;aspect-ratio:16/9;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border-bottom:1px solid #222;position:relative;overflow:hidden;">' +
-            '<div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,0.015) 12px,rgba(255,255,255,0.015) 13px);"></div>' +
-            '<div style="font-size:26px;opacity:0.3;position:relative;">'+meta.icon+'</div>' +
-            '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#444;position:relative;">Photo Placeholder</div>' +
-            (isMember ? '<div style="position:absolute;top:8px;left:8px;background:rgba(201,168,76,0.9);color:#000;font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;border-radius:4px;padding:2px 6px;">Member</div>' : '') +
-          '</div>' +
-          '<div style="padding:12px;flex:1;display:flex;flex-direction:column;gap:8px;">' +
-            '<div style="font-size:9px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);border-radius:4px;padding:2px 7px;width:fit-content;">'+escHtml(meta.tag)+'</div>' +
-            '<div style="font-weight:700;font-size:0.88rem;color:#fff;line-height:1.3;flex:1;">'+escHtml(c.name)+'</div>' +
-            '<div style="font-size:0.75rem;color:#666;">'+count+' member'+(count!==1?'s':'')+'</div>' +
-            '<button onclick="openCommitteeDetail(\''+escHtml(c.id)+'\')" style="width:100%;padding:8px;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;border-radius:7px;font-weight:700;font-size:0.8rem;cursor:pointer;transition:background 0.15s;">Details →</button>' +
-          '</div>' +
-        '</div>';
-      }).join('') +
-      '</div>';
+    renderCommitteesPortal('');
   } catch(e) {
     container.innerHTML = '<div class="hint-text" style="color:var(--red);">Could not load committees: '+escHtml(e.message)+'</div>';
   }
+}
+
+const COMMITTEE_CATEGORY_ORDER = [
+  'Service','Mentoring','Youth Health','Education','Scholarships',
+  'Brotherhood & Wellness','Brotherhood','Civic Engagement','Advocacy',
+  'Engagement','Governance','Leadership','Finance','Communications',
+  'Standards','Tradition','Membership Intake','Philanthropy',
+  'Infrastructure','Interfraternal','Mentorship','Signature Event',
+  'Youth Mentorship','Recognition','Growth'
+];
+
+function renderCommitteesPortal(filterText) {
+  const container = document.getElementById('committeesPortalList');
+  if (!container) return;
+  const q = (filterText||'').toLowerCase().trim();
+
+  // Group committees by category
+  const groups = {};
+  _mpCommittees.forEach(function(c) {
+    const meta = getCommitteeMeta(c.name);
+    if (q && !c.name.toLowerCase().includes(q) && !meta.tag.toLowerCase().includes(q)) return;
+    if (!groups[meta.tag]) groups[meta.tag] = [];
+    groups[meta.tag].push(c);
+  });
+
+  const categoryKeys = COMMITTEE_CATEGORY_ORDER.filter(function(k){ return groups[k]; })
+    .concat(Object.keys(groups).filter(function(k){ return !COMMITTEE_CATEGORY_ORDER.includes(k); }));
+
+  if (!categoryKeys.length) {
+    container.innerHTML =
+      renderCommitteeSearchBar(filterText) +
+      '<div style="text-align:center;padding:32px 0;color:#555;font-size:0.88rem;">No committees match your search.</div>';
+    return;
+  }
+
+  const groupsHtml = categoryKeys.map(function(cat) {
+    const items = groups[cat];
+    return '<div style="margin-bottom:20px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">' +
+        '<div style="font-size:10px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:#C9A84C;">' + escHtml(cat) + '</div>' +
+        '<div style="flex:1;height:1px;background:rgba(201,168,76,0.15);"></div>' +
+        '<div style="font-size:10px;color:#555;">' + items.length + '</div>' +
+      '</div>' +
+      items.map(function(c) {
+        const isMember = _mpMyMemberships.includes(c.id);
+        const count = _mpCountMap[c.id]||0;
+        const meta = getCommitteeMeta(c.name);
+        const chair = c.chair_id ? (_mpNameMap[c.chair_id]||'') : '';
+        return '<div style="display:flex;align-items:center;gap:12px;padding:11px 14px;background:'+(isMember?'rgba(201,168,76,0.06)':'rgba(255,255,255,0.03)')+';border:1px solid '+(isMember?'rgba(201,168,76,0.3)':'rgba(255,255,255,0.07)')+';border-left:3px solid '+(isMember?'#C9A84C':'rgba(255,255,255,0.1)')+';border-radius:8px;margin-bottom:6px;transition:border-color 0.15s;">' +
+          '<div style="font-size:20px;width:28px;text-align:center;flex-shrink:0;">'+meta.icon+'</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:700;font-size:0.88rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+escHtml(c.name)+'</div>' +
+            '<div style="font-size:0.72rem;color:#666;margin-top:2px;">' +
+              count+' member'+(count!==1?'s':'') +
+              (chair ? ' &nbsp;·&nbsp; Chair: <span style="color:#999;">'+escHtml(chair)+'</span>' : '') +
+            '</div>' +
+          '</div>' +
+          (isMember ? '<div style="flex-shrink:0;font-size:9px;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:#000;background:#C9A84C;border-radius:4px;padding:2px 7px;">Joined</div>' : '') +
+          '<button onclick="openCommitteeDetail(\''+escHtml(c.id)+'\')" style="flex-shrink:0;padding:6px 12px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;border-radius:6px;font-weight:700;font-size:0.75rem;cursor:pointer;white-space:nowrap;">Details →</button>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }).join('');
+
+  container.innerHTML = renderCommitteeSearchBar(filterText) + groupsHtml;
+}
+
+function renderCommitteeSearchBar(currentValue) {
+  return '<div style="margin-bottom:18px;position:relative;">' +
+    '<i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#555;font-size:0.82rem;pointer-events:none;"></i>' +
+    '<input type="text" placeholder="Search committees…" value="'+escHtml(currentValue||'')+'" ' +
+      'oninput="renderCommitteesPortal(this.value)" ' +
+      'style="width:100%;padding:9px 12px 9px 34px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:0.88rem;outline:none;box-sizing:border-box;" />' +
+  '</div>';
 }
 
 async function openCommitteeDetail(committeeId) {
