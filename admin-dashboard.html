@@ -2225,6 +2225,7 @@
             <button class="nl-tab-btn" id="nlTabBtn-templates" onclick="nlShowTab('templates')">Templates</button>
             <button class="nl-tab-btn" id="nlTabBtn-drafts" onclick="nlShowTab('drafts')">Drafts</button>
             <button class="nl-tab-btn" id="nlTabBtn-history" onclick="nlShowTab('history')">History</button>
+            <button class="nl-tab-btn" id="nlTabBtn-results" onclick="nlShowTab('results')">Results</button>
           </div>
           <!-- Blocks tab -->
           <div id="nlTab-blocks" style="flex:1;overflow-y:auto;padding:12px;">
@@ -2249,6 +2250,13 @@
           <!-- Templates tab -->
           <div id="nlTab-templates" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
           <div id="nlTab-drafts" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;"></div>
+          <div id="nlTab-results" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);">Survey Results</span>
+              <button class="btn-sm view" style="font-size:0.7rem;padding:3px 8px;" onclick="nlLoadSurveyResults()"><i class="fas fa-rotate-right"></i></button>
+            </div>
+            <div id="nlSurveyResultsList"><div class="hint-text" style="margin:0;font-size:0.8rem;">Loading…</div></div>
+          </div>
           <div id="nlTab-history" hidden style="flex:1;overflow-y:auto;padding:12px;font-size:0.82rem;">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
               <span style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--gray-500);">Send History</span>
@@ -9594,7 +9602,7 @@ function nlNewNewsletter() {
 
 // ── Tab switching ──
 function nlShowTab(tab) {
-  ['blocks', 'sections', 'styles', 'templates', 'drafts', 'history'].forEach(function (t) {
+  ['blocks', 'sections', 'styles', 'templates', 'drafts', 'history', 'results'].forEach(function (t) {
     const panel = document.getElementById('nlTab-' + t);
     const btn = document.getElementById('nlTabBtn-' + t);
     if (panel) panel.hidden = (t !== tab);
@@ -9605,6 +9613,7 @@ function nlShowTab(tab) {
   if (tab === 'templates') nlRenderTemplatesTab().catch(function () { });
   if (tab === 'drafts') nlLoadDrafts().catch(function () { });
   if (tab === 'history') nlLoadHistory().catch(function () { });
+  if (tab === 'results') nlLoadSurveyResults().catch(function () { });
 }
 
 // ── Templates (Supabase) ──
@@ -9991,8 +10000,12 @@ function nlBlockVisual(b) {
       return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '">' + (icons || '<span style="color:#aaa;font-size:0.78rem;">No social links configured</span>') + '</div>';
     }
     case 'survey': {
+      const surveyId = b.id || 'survey';
+      const newsletterId = nlState.draftId || 'draft';
+      const baseUrl = SUPABASE_URL + '/functions/v1/record-survey-response';
       const opts = (p.options || []).map(function (o) {
-        return '<span style="display:inline-block;margin:3px;padding:5px 11px;border:1px solid #C9A84C;border-radius:4px;font-size:0.78rem;color:#C9A84C;">' + escHtml(o) + '</span>';
+        const href = baseUrl + '?newsletter_id=' + encodeURIComponent(newsletterId) + '&survey_id=' + encodeURIComponent(surveyId) + '&response=' + encodeURIComponent(o);
+        return '<a href="' + href + '" style="display:inline-block;margin:3px;padding:6px 14px;border:1px solid #C9A84C;border-radius:4px;font-size:0.78rem;color:#C9A84C;text-decoration:none;font-weight:600;">' + escHtml(o) + '</a>';
       }).join('');
       return '<div style="text-align:' + (p.align || 'center') + ';padding:' + ptop + ' 0 ' + pbot + '"><div style="font-weight:600;font-size:0.88rem;margin-bottom:8px;">' + escHtml(p.question || 'Survey question') + '</div><div>' + opts + '</div></div>';
     }
@@ -10565,6 +10578,61 @@ async function nlDeleteDraft(id) {
     nlLoadDrafts();
   } catch(e) {
     showToast('Could not delete draft.', 'error');
+  }
+}
+
+// ── Survey Results ──
+async function nlLoadSurveyResults() {
+  const el = document.getElementById('nlSurveyResultsList');
+  if (!el) return;
+  el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Loading…</div>';
+  const token = getAdminToken();
+  if (!token) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Sign in to see results.</div>'; return; }
+  try {
+    const [responses, newsletters] = await Promise.all([
+      sbGet('newsletter_survey_responses', 'order=responded_at.desc', token).catch(function() { return []; }),
+      sbGet('newsletters', 'order=created_at.desc&limit=50&select=id,subject', token).catch(function() { return []; })
+    ]);
+    if (!responses || !responses.length) {
+      el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No survey responses yet. Survey buttons in sent newsletters will collect responses here.</div>';
+      return;
+    }
+    // Group by newsletter_id + survey_id
+    const groups = {};
+    responses.forEach(function(r) {
+      const key = (r.newsletter_id || 'unknown') + '::' + (r.survey_id || 'survey');
+      if (!groups[key]) groups[key] = { newsletter_id: r.newsletter_id, survey_id: r.survey_id, tally: {}, question: r.question || '' };
+      const resp = r.response || 'other';
+      groups[key].tally[resp] = (groups[key].tally[resp] || 0) + 1;
+    });
+    const nlMap = {};
+    (newsletters || []).forEach(function(n) { nlMap[n.id] = n.subject; });
+    let html = '';
+    Object.values(groups).forEach(function(g) {
+      const total = Object.values(g.tally).reduce(function(a,b){ return a+b; }, 0);
+      const nlTitle = nlMap[g.newsletter_id] || g.newsletter_id || 'Unknown Newsletter';
+      const bars = Object.entries(g.tally).map(function(entry) {
+        const opt = entry[0], count = entry[1];
+        const pct = total ? Math.round(count / total * 100) : 0;
+        return '<div style="margin-bottom:6px;">'
+          + '<div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:2px;">'
+          + '<span style="color:var(--gray-700);">' + escHtml(opt) + '</span>'
+          + '<span style="color:var(--gray-500);">' + count + ' (' + pct + '%)</span>'
+          + '</div>'
+          + '<div style="background:var(--gray-100);border-radius:3px;height:6px;overflow:hidden;">'
+          + '<div style="background:#C9A84C;height:100%;width:' + pct + '%;border-radius:3px;"></div>'
+          + '</div></div>';
+      }).join('');
+      html += '<div style="border:1px solid var(--gray-200);border-radius:7px;padding:10px 12px;margin-bottom:10px;background:var(--white);">'
+        + '<div style="font-size:0.7rem;color:var(--gray-400);margin-bottom:4px;">' + escHtml(nlTitle) + '</div>'
+        + '<div style="font-weight:700;font-size:0.82rem;color:var(--gray-800);margin-bottom:8px;">' + escHtml(g.question || 'Survey') + '</div>'
+        + bars
+        + '<div style="font-size:0.7rem;color:var(--gray-400);margin-top:6px;text-align:right;">' + total + ' response' + (total !== 1 ? 's' : '') + '</div>'
+        + '</div>';
+    });
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load results: ' + escHtml(e.message || 'error') + '</div>';
   }
 }
 
