@@ -10801,14 +10801,44 @@ async function nlLoadRsvpResults(container, token, newsletters, toggleBtn) {
 
 
 // ── Send History ──
+var _nlShowArchivedHistory = false;
+
+async function nlArchiveHistoryBatch(batchId) {
+  const token = getAdminToken();
+  if (!token) return;
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/newsletter_send_log?batch_id=eq.' + encodeURIComponent(batchId), {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ archived: true })
+    });
+    nlLoadHistory();
+  } catch(e) { showToast('Could not archive.', 'error'); }
+}
+
+function nlToggleArchivedHistory() {
+  _nlShowArchivedHistory = !_nlShowArchivedHistory;
+  nlLoadHistory();
+}
+
 async function nlLoadHistory() {
   const el = document.getElementById('nlHistoryList');
   if (!el) return;
   el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Loading…</div>';
   const token = getAdminToken();
   try {
-    const rows = await sbGet('newsletter_send_log', 'select=batch_id,subject,sent_by,sent_at,status,recipient_email&order=sent_at.desc&limit=500', token);
-    if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No emails sent yet.</div>'; return; }
+    const archiveFilter = _nlShowArchivedHistory ? 'archived=eq.true' : 'archived=eq.false';
+    const rows = await sbGet('newsletter_send_log', 'select=batch_id,subject,sent_by,sent_at,status,recipient_email&' + archiveFilter + '&order=sent_at.desc&limit=500', token);
+
+    const toggleBtn = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'
+      + '<button onclick="nlToggleArchivedHistory()" style="font-size:0.7rem;padding:3px 10px;background:none;border:1px solid var(--gray-200);border-radius:4px;cursor:pointer;color:var(--gray-500);">'
+      + (_nlShowArchivedHistory ? '<i class="fas fa-inbox"></i> Show Active' : '<i class="fas fa-archive"></i> Show Archived')
+      + '</button></div>';
+
+    if (!rows || !rows.length) {
+      el.innerHTML = toggleBtn + '<div class="hint-text" style="margin:0;font-size:0.8rem;">' + (_nlShowArchivedHistory ? 'No archived newsletters.' : 'No emails sent yet.') + '</div>';
+      return;
+    }
 
     // Group by batch_id
     const batches = {};
@@ -10820,7 +10850,7 @@ async function nlLoadHistory() {
     const STATUS_COLOR = { delivered:'var(--green)', sent:'var(--green)', bounced:'var(--red)', failed:'var(--red)', complained:'var(--red)', pending:'var(--gray-400)' };
     const STATUS_ICON  = { delivered:'fa-check-circle', sent:'fa-paper-plane', bounced:'fa-exclamation-circle', failed:'fa-times-circle', complained:'fa-ban', pending:'fa-clock' };
 
-    el.innerHTML = Object.keys(batches).map(function(bid) {
+    el.innerHTML = toggleBtn + Object.keys(batches).map(function(bid) {
       const b = batches[bid];
       const total = b.rows.length;
       const counts = { delivered:0, sent:0, bounced:0, failed:0, complained:0, pending:0 };
@@ -10840,16 +10870,19 @@ async function nlLoadHistory() {
       }).join('');
 
       return '<div style="border:1px solid var(--gray-200);border-radius:7px;margin-bottom:8px;overflow:hidden;">' +
-        '<div style="padding:10px 12px;background:var(--white);cursor:pointer;" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">' +
-          '<div style="font-size:0.8rem;font-weight:700;color:var(--gray-800);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(b.subject || '(no subject)') + '</div>' +
-          '<div style="font-size:0.72rem;color:var(--gray-400);margin-top:2px;">' + dateStr + ' &nbsp;·&nbsp; ' + total + ' recipients</div>' +
+        '<div style="padding:10px 12px;background:var(--white);">' +
+          '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">' +
+            '<div style="font-size:0.8rem;font-weight:700;color:var(--gray-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;cursor:pointer;" onclick="this.closest(\'.nl-hist-card\').querySelector(\'.nl-hist-detail\').style.display=this.closest(\'.nl-hist-card\').querySelector(\'.nl-hist-detail\').style.display===\'none\'?\'block\':\'none\'">' + escHtml(b.subject || '(no subject)') + '</div>' +
+            (!_nlShowArchivedHistory ? '<button onclick="nlArchiveHistoryBatch(\'' + escHtml(bid) + '\')" style="flex-shrink:0;font-size:0.65rem;padding:2px 7px;background:none;border:1px solid var(--gray-200);border-radius:3px;cursor:pointer;color:var(--gray-400);white-space:nowrap;"><i class="fas fa-archive"></i> Archive</button>' : '') +
+          '</div>' +
+          '<div style="font-size:0.72rem;color:var(--gray-400);margin-top:2px;cursor:pointer;" onclick="this.parentElement.nextElementSibling.style.display=this.parentElement.nextElementSibling.style.display===\'none\'?\'block\':\'none\'">' + dateStr + ' &nbsp;·&nbsp; ' + total + ' recipients</div>' +
           '<div style="display:flex;gap:10px;margin-top:6px;">' +
             '<span style="font-size:0.72rem;color:var(--green);"><i class="fas fa-check"></i> ' + ok + ' sent</span>' +
             (bad ? '<span style="font-size:0.72rem;color:var(--red);"><i class="fas fa-times"></i> ' + bad + ' failed</span>' : '') +
             (counts.pending ? '<span style="font-size:0.72rem;color:var(--gray-400);"><i class="fas fa-clock"></i> ' + counts.pending + ' pending</span>' : '') +
           '</div>' +
         '</div>' +
-        '<div style="display:none;padding:8px 12px;background:#fafafa;max-height:200px;overflow-y:auto;">' + detailRows + '</div>' +
+        '<div class="nl-hist-detail" style="display:none;padding:8px 12px;background:#fafafa;max-height:200px;overflow-y:auto;">' + detailRows + '</div>' +
       '</div>';
     }).join('');
   } catch(err) {
