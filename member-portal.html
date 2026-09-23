@@ -3741,6 +3741,7 @@ function renderCommitteesPortal(filterText) {
   const groups = {};
   _mpCommittees.forEach(function(c) {
     const meta = getCommitteeMeta(c.name);
+    if (_cmMineOnly && !_mpMyMemberships.includes(c.id)) return;
     if (q && !c.name.toLowerCase().includes(q) && !meta.tag.toLowerCase().includes(q)) return;
     if (!groups[meta.tag]) groups[meta.tag] = [];
     groups[meta.tag].push(c);
@@ -3750,9 +3751,12 @@ function renderCommitteesPortal(filterText) {
     .concat(Object.keys(groups).filter(function(k){ return !COMMITTEE_CATEGORY_ORDER.includes(k); }));
 
   if (!categoryKeys.length) {
+    const emptyMsg = _cmMineOnly
+      ? 'You have not joined any committees yet. Turn off the filter to browse and join.'
+      : 'No committees match your search.';
     container.innerHTML =
       renderCommitteeSearchBar(filterText) +
-      '<div style="text-align:center;padding:32px 0;color:#555;font-size:0.88rem;">No committees match your search.</div>';
+      '<div style="text-align:center;padding:32px 0;color:#555;font-size:0.88rem;">'+emptyMsg+'</div>';
     return;
   }
 
@@ -3788,13 +3792,26 @@ function renderCommitteesPortal(filterText) {
   container.innerHTML = renderCommitteeSearchBar(filterText) + groupsHtml;
 }
 
+let _cmMineOnly = false;
+
 function renderCommitteeSearchBar(currentValue) {
-  return '<div style="margin-bottom:18px;position:relative;">' +
-    '<i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#555;font-size:0.82rem;pointer-events:none;"></i>' +
-    '<input type="text" placeholder="Search committees…" value="'+escHtml(currentValue||'')+'" ' +
-      'oninput="renderCommitteesPortal(this.value)" ' +
-      'style="width:100%;padding:9px 12px 9px 34px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:0.88rem;outline:none;box-sizing:border-box;" />' +
+  return '<div style="display:flex;gap:8px;margin-bottom:18px;align-items:center;">' +
+    '<div style="flex:1;position:relative;">' +
+      '<i class="fas fa-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#555;font-size:0.82rem;pointer-events:none;"></i>' +
+      '<input type="text" placeholder="Search committees…" value="'+escHtml(currentValue||'')+'" ' +
+        'oninput="renderCommitteesPortal(this.value)" ' +
+        'style="width:100%;padding:9px 12px 9px 34px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:0.88rem;outline:none;box-sizing:border-box;" />' +
+    '</div>' +
+    '<button onclick="toggleMineOnly()" style="flex-shrink:0;padding:9px 14px;border-radius:8px;font-weight:700;font-size:0.78rem;cursor:pointer;white-space:nowrap;transition:all 0.15s;'+(_cmMineOnly?'background:#C9A84C;color:#000;border:1px solid #C9A84C;':'background:rgba(255,255,255,0.05);color:#aaa;border:1px solid rgba(255,255,255,0.1);')+'">' +
+      '<i class="fas fa-star" style="margin-right:5px;font-size:0.72rem;"></i>My Committees' +
+    '</button>' +
   '</div>';
+}
+
+function toggleMineOnly() {
+  _cmMineOnly = !_cmMineOnly;
+  const searchInput = document.querySelector('#committeesPortalList input[type="text"]');
+  renderCommitteesPortal(searchInput ? searchInput.value : '');
 }
 
 async function openCommitteeDetail(committeeId) {
