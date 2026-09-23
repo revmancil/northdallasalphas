@@ -661,11 +661,10 @@ backdrop-filter:blur(4px);}
     <!-- Committee Details Modal -->
     <div id="committeeDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:2000;overflow:auto;padding:20px;align-items:flex-start;justify-content:center;">
       <div style="max-width:560px;width:100%;margin:40px auto;background:#111;border:1px solid #2a2a2a;border-radius:14px;overflow:hidden;position:relative;">
-        <!-- image placeholder -->
-        <div id="cdImg" style="width:100%;aspect-ratio:16/9;background:#1a1a1a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;border-bottom:1px solid #222;position:relative;overflow:hidden;">
-          <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 12px,rgba(255,255,255,0.015) 12px,rgba(255,255,255,0.015) 13px);"></div>
-          <div id="cdImgIcon" style="font-size:36px;opacity:0.3;position:relative;"></div>
-          <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#555;position:relative;">Photo Placeholder</div>
+        <!-- description banner -->
+        <div style="width:100%;background:#161616;border-bottom:1px solid #222;padding:22px 24px 20px;position:relative;">
+          <div id="cdImgIcon" style="font-size:22px;margin-bottom:8px;"></div>
+          <p id="cdBannerDesc" style="font-size:0.88rem;color:#bbb;line-height:1.75;margin:0;"></p>
         </div>
         <button onclick="closeCommitteeDetail()" style="position:absolute;top:12px;right:14px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);color:#fff;width:30px;height:30px;border-radius:50%;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;">✕</button>
         <div style="padding:22px 24px 24px;">
@@ -3654,34 +3653,34 @@ let _cdCurrentId = null;
 
 // Committee descriptions keyed by normalized name fragment
 const COMMITTEE_META = {
-  'alpha legacy scholarship': { tag:'Signature Event', icon:'🎗️' },
-  'alpha legacy group':       { tag:'Youth Mentorship', icon:'🤝' },
-  'awards':                   { tag:'Recognition', icon:'🏆' },
-  'big brothers':             { tag:'Mentoring', icon:'👦' },
-  'brother\'s keeper':        { tag:'Brotherhood & Wellness', icon:'💛' },
-  'website':                  { tag:'Communications', icon:'💻' },
-  'social media':             { tag:'Communications', icon:'💻' },
-  'community service':        { tag:'Service', icon:'🌍' },
-  'constitution':             { tag:'Governance', icon:'📜' },
-  'education':                { tag:'Scholarships', icon:'🎓' },
-  'election':                 { tag:'Governance', icon:'🗳️' },
-  'executive':                { tag:'Leadership', icon:'⭐' },
-  'investment':               { tag:'Finance', icon:'📈' },
-  'go-to-high':               { tag:'Education', icon:'🏫' },
-  'housing':                  { tag:'Infrastructure', icon:'🏠' },
-  'imdp':                     { tag:'Membership Intake', icon:'🔰' },
-  'march for babies':         { tag:'Philanthropy', icon:'👣' },
-  'nphc':                     { tag:'Interfraternal', icon:'🤜' },
-  'professional development': { tag:'Growth', icon:'💼' },
-  'project alpha':            { tag:'Youth Health', icon:'❤️' },
-  'protocol':                 { tag:'Standards', icon:'🎩' },
-  'ritual':                   { tag:'Tradition', icon:'🕯️' },
-  'senior brothers':          { tag:'Brotherhood', icon:'🏅' },
-  'social action':            { tag:'Advocacy', icon:'✊' },
-  'social & reclamation':     { tag:'Engagement', icon:'🎉' },
-  'social and reclamation':   { tag:'Engagement', icon:'🎉' },
-  'undergraduate':            { tag:'Mentorship', icon:'📚' },
-  'voteless':                 { tag:'Civic Engagement', icon:'🗽' },
+  'alpha legacy scholarship': { tag:'Signature Event', icon:'🎗️', desc:'Oversees the comprehensive planning and execution of the annual Alpha Legacy Celebration Gala—a signature joint event with the Sankofa Foundation that honors community excellence and raises funds for foundation programs.' },
+  'alpha legacy group':       { tag:'Youth Mentorship', icon:'🤝', desc:'Plans and executes all youth mentorship activities, providing structured guidance, academic support, and leadership development rooted in Alpha\'s values—in partnership with the Sankofa Foundation.' },
+  'awards':                   { tag:'Recognition', icon:'🏆', desc:'Oversees all chapter awards—internal and external—ensuring that excellence, leadership, and service are recognized through fair and transparent criteria. Also promotes members for district, regional, and national honors.' },
+  'big brothers':             { tag:'Mentoring', icon:'👦', desc:'Cultivates the chapter\'s partnership with Big Brothers Big Sisters of America by recruiting brothers and community members to serve as mentors ("Bigs") to youth in need of positive role models.' },
+  'brother\'s keeper':        { tag:'Brotherhood & Wellness', icon:'💛', desc:'Implements the A. Charles Haston Brother\'s Keeper Program—advocating for senior brothers, spouses, and widows facing illness or hardship. Also addresses the broader health and wellness needs of all active members.' },
+  'website':                  { tag:'Communications', icon:'💻', desc:'Manages the chapter\'s digital presence across all web and social platforms—ensuring content is timely, professional, and aligned with Alpha\'s mission while promoting events and preserving a positive public image.' },
+  'social media':             { tag:'Communications', icon:'💻', desc:'Manages the chapter\'s digital presence across all web and social platforms—ensuring content is timely, professional, and aligned with Alpha\'s mission while promoting events and preserving a positive public image.' },
+  'community service':        { tag:'Service', icon:'🌍', desc:'The heart of the chapter\'s service commitment—identifying pressing community needs and coordinating impactful initiatives from food drives and clean-ups to voter registration and youth empowerment.' },
+  'constitution':             { tag:'Governance', icon:'📜', desc:'Maintains the chapter\'s governing documents, oversees constitutional review and amendments, and ensures all chapter actions remain aligned with Alpha Phi Alpha\'s national Constitution and By-Laws.' },
+  'education':                { tag:'Scholarships', icon:'🎓', desc:'Chaired by the Director of Educational Activities, this committee manages the annual scholarship award program presented jointly with the Sankofa Foundation—from eligibility criteria through awardee recognition at the gala.' },
+  'election':                 { tag:'Governance', icon:'🗳️', desc:'Preserves the integrity and transparency of the chapter\'s democratic processes by organizing and administering all internal elections in accordance with the chapter\'s Constitution and By-Laws.' },
+  'executive':                { tag:'Leadership', icon:'⭐', desc:'The chapter\'s principal administrative and advisory body—composed of all elected officers, the most recent Past President, and appointed committee chairs—providing strategic oversight and ensuring effective governance.' },
+  'investment':               { tag:'Finance', icon:'📈', desc:'Oversees the chapter\'s investment portfolio and financial assets, making recommendations on prudent strategies and educating leadership on stewardship to ensure long-term growth and sustainability.' },
+  'go-to-high':               { tag:'Education', icon:'🏫', desc:'Implements Alpha\'s 1922 signature program encouraging students—especially young men of color—to graduate high school and pursue higher education through workshops, mentoring, campus visits, and school partnerships.' },
+  'housing':                  { tag:'Infrastructure', icon:'🏠', desc:'Oversees all matters related to identifying, acquiring, and preparing property for the Community Development Center—ensuring a permanent, functional space supporting long-term community growth and empowerment.' },
+  'imdp':                     { tag:'Membership Intake', icon:'🔰', desc:'Ensures all membership candidates fully adhere to the Initial Membership Development Process standards set by the IMDP Management Team and National IMDP Officer—upholding the integrity of the intake process.' },
+  'march for babies':         { tag:'Philanthropy', icon:'👣', desc:'Leads the chapter\'s involvement in the March of Dimes\' March for Babies initiative by organizing fundraising and awareness campaigns in support of maternal and infant health aligned with District and Regional objectives.' },
+  'nphc':                     { tag:'Interfraternal', icon:'🤜', desc:'Serve as the chapter\'s official liaisons to the North Dallas Suburbia NPHC, maintaining active engagement and collaboration with fellow Divine Nine organizations at the local level.' },
+  'professional development': { tag:'Growth', icon:'💼', desc:'Provides meaningful programming, workshops, and resources that enhance the skills, leadership capacity, and professional competencies of every brother—in the fraternity and beyond.' },
+  'project alpha':            { tag:'Youth Health', icon:'❤️', desc:'Implements Alpha\'s national youth health initiative—empowering males ages 12+ with knowledge to make responsible decisions about sexual health, teen pregnancy prevention, and healthy relationships.' },
+  'protocol':                 { tag:'Standards', icon:'🎩', desc:'Upholds the standards of conduct, decorum, and formality outlined in the Official Alpha Phi Alpha Protocol and Etiquette Manual—ensuring all chapter activities reflect the dignity and professionalism of the fraternity.' },
+  'ritual':                   { tag:'Tradition', icon:'🕯️', desc:'Entrusted with preserving, perfecting, and performing the sacred rites, traditions, and ceremonies that define Alpha brotherhood—safeguarding fraternal heritage through precision, discretion, and reverence.' },
+  'senior brothers':          { tag:'Brotherhood', icon:'🏅', desc:'Recognizes, honors, and engages the esteemed Senior Brothers of Xi Tau Lambda—serving as both an advocacy body and guiding voice ensuring their experiences and insights remain integrated into chapter life.' },
+  'social action':            { tag:'Advocacy', icon:'✊', desc:'The chapter\'s conscience and community engagement engine—monitoring developments in civil rights, education, and justice and mobilizing the chapter to take informed, impactful action on behalf of those it serves.' },
+  'social & reclamation':     { tag:'Engagement', icon:'🎉', desc:'Creates meaningful Brotherhood social experiences while using those events as strategic tools for reclaiming inactive brothers—reconnecting and reinvigorating brothers back into the active fold of Alpha.' },
+  'social and reclamation':   { tag:'Engagement', icon:'🎉', desc:'Creates meaningful Brotherhood social experiences while using those events as strategic tools for reclaiming inactive brothers—reconnecting and reinvigorating brothers back into the active fold of Alpha.' },
+  'undergraduate':            { tag:'Mentorship', icon:'📚', desc:'Fosters strong, supportive relationships between Xi Tau Lambda and its advised undergraduate chapters—guiding the next generation of Alpha leaders and reinforcing unity between graduate and undergraduate brothers.' },
+  'voteless':                 { tag:'Civic Engagement', icon:'🗽', desc:'Embodies Alpha\'s historic commitment to voting rights—mobilizing voter registration, civic education, and political participation especially in historically marginalized communities within the chapter\'s service area.' },
 };
 
 function getCommitteeMeta(name) {
@@ -3753,9 +3752,10 @@ async function openCommitteeDetail(committeeId) {
   const meta = getCommitteeMeta(c.name);
 
   document.getElementById('cdImgIcon').textContent = meta.icon;
+  document.getElementById('cdBannerDesc').textContent = meta.desc || c.description || '';
   document.getElementById('cdTag').textContent = meta.tag;
   document.getElementById('cdName').textContent = c.name;
-  document.getElementById('cdDesc').textContent = c.description || '';
+  document.getElementById('cdDesc').textContent = '';
   document.getElementById('cdChair').textContent = c.chair_id ? (_mpNameMap[c.chair_id]||'—') : '—';
   document.getElementById('cdCochair').textContent = c.cochair_id ? (_mpNameMap[c.cochair_id]||'—') : '—';
 
