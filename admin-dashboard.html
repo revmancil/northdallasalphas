@@ -2946,8 +2946,32 @@
           <h3><i class="fas fa-sitemap" style="color:var(--gold);margin-right:8px;"></i>Chapter Committees</h3>
           <button class="btn-sm success" onclick="seedCommittees()"><i class="fas fa-seedling"></i> Seed Committees</button>
         </div>
-        <div class="section-card-body">
-          <div id="committeesAdminList"><div class="hint-text">Loading committees…</div></div>
+        <div class="section-card-body" style="padding:0;">
+          <div style="display:flex;height:620px;overflow:hidden;">
+
+            <!-- LEFT: committee list -->
+            <div style="width:240px;flex-shrink:0;border-right:1px solid var(--gray-200);display:flex;flex-direction:column;">
+              <div style="padding:10px 12px;border-bottom:1px solid var(--gray-100);">
+                <div style="position:relative;">
+                  <i class="fas fa-search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:0.75rem;"></i>
+                  <input type="text" id="caSearch" placeholder="Filter…" oninput="filterCommitteeAdminList(this.value)"
+                    style="width:100%;padding:7px 10px 7px 28px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;box-sizing:border-box;background:var(--gray-50);" />
+                </div>
+              </div>
+              <div id="committeesAdminList" style="flex:1;overflow-y:auto;padding:6px 0;">
+                <div class="hint-text">Loading…</div>
+              </div>
+            </div>
+
+            <!-- RIGHT: detail/edit panel -->
+            <div id="caDetail" style="flex:1;overflow-y:auto;padding:22px 24px;">
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--gray-400);gap:10px;">
+                <i class="fas fa-sitemap" style="font-size:2rem;opacity:0.3;"></i>
+                <p style="font-size:0.88rem;">Select a committee to view and edit</p>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
@@ -13534,82 +13558,111 @@ async function loadCommitteesAdmin() {
   }
 }
 
+let _caCountMap = {};
+let _caSelectedId = null;
+let _caFilterText = '';
+
 async function renderCommitteesAdminList(token) {
   const container = document.getElementById('committeesAdminList');
   if (!container) return;
   if (!_committees.length) {
-    container.innerHTML = '<div class="hint-text">No committees yet. Click "Seed Committees" to add the default list.</div>';
+    container.innerHTML = '<div class="hint-text" style="padding:12px;">No committees yet.<br>Click "Seed Committees".</div>';
     return;
   }
   const memberRows = await sbGet('committee_members', 'select=committee_id,member_id', token).catch(()=>[]);
-  const countMap = {};
-  (memberRows||[]).forEach(function(r){ countMap[r.committee_id] = (countMap[r.committee_id]||0)+1; });
+  _caCountMap = {};
+  (memberRows||[]).forEach(function(r){ _caCountMap[r.committee_id] = (_caCountMap[r.committee_id]||0)+1; });
+  renderCommitteeAdminSidebar();
+  if (_caSelectedId) openCommitteeAdminDetail(_caSelectedId);
+}
 
-  function memberName(id) {
-    const m = _allMembersForDropdown.find(function(x){return x.id===id;});
-    return m ? [m.first_name,m.last_name].filter(Boolean).join(' ') : '—';
+function renderCommitteeAdminSidebar() {
+  const container = document.getElementById('committeesAdminList');
+  if (!container) return;
+  const q = _caFilterText.toLowerCase();
+  const visible = _committees.filter(function(c){ return !q || c.name.toLowerCase().includes(q); });
+  if (!visible.length) {
+    container.innerHTML = '<div style="padding:12px;font-size:0.82rem;color:var(--gray-400);">No match.</div>';
+    return;
   }
+  container.innerHTML = visible.map(function(c) {
+    const count = _caCountMap[c.id] || 0;
+    const hasChair = !!c.chair_id;
+    const isActive = _caSelectedId === c.id;
+    return '<div onclick="openCommitteeAdminDetail(\''+escHtml(c.id)+'\')" style="padding:10px 14px;cursor:pointer;border-left:3px solid '+(isActive?'var(--gold)':'transparent')+';background:'+(isActive?'rgba(201,168,76,0.07)':'transparent')+';transition:background 0.1s;">' +
+      '<div style="display:flex;align-items:center;gap:6px;">' +
+        '<span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:'+(hasChair?'#4ade80':'var(--gray-300)')+';"></span>' +
+        '<span style="font-size:0.85rem;font-weight:'+(isActive?'700':'500')+';color:'+(isActive?'var(--gray-800)':'var(--gray-700)')+';line-height:1.3;">'+escHtml(c.name)+'</span>' +
+      '</div>' +
+      '<div style="font-size:0.72rem;color:var(--gray-400);margin-top:3px;padding-left:13px;">'+count+' member'+(count!==1?'s':'')+'</div>' +
+    '</div>';
+  }).join('');
+}
+
+function filterCommitteeAdminList(val) {
+  _caFilterText = val || '';
+  renderCommitteeAdminSidebar();
+}
+
+function openCommitteeAdminDetail(committeeId) {
+  _caSelectedId = committeeId;
+  renderCommitteeAdminSidebar();
+  const c = _committees.find(function(x){return x.id===committeeId;});
+  if (!c) return;
+  const detail = document.getElementById('caDetail');
+  if (!detail) return;
+
   const memberOptions = '<option value="">— None —</option>' + _allMembersForDropdown.map(function(m){
     return '<option value="'+escHtml(m.id)+'">'+escHtml([m.first_name,m.last_name].filter(Boolean).join(' '))+'</option>';
   }).join('');
 
-  container.innerHTML = _committees.map(function(c) {
-    const count = countMap[c.id] || 0;
-    const chairName = memberName(c.chair_id);
-    const cochairName = memberName(c.cochair_id);
-    const isExpanded = _expandedCommittee === c.id;
-    return '<div class="committee-card" id="cc-'+escHtml(c.id)+'">' +
-      '<div class="committee-card-header" onclick="toggleCommitteeExpand(\''+escHtml(c.id)+'\')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--gray-50);border-radius:10px;border:1px solid var(--gray-200);margin-bottom:6px;">' +
-        '<div>' +
-          '<div style="font-weight:700;font-size:0.95rem;color:var(--gray-800);">'+escHtml(c.name)+'</div>' +
-          '<div style="font-size:0.78rem;color:var(--gray-500);margin-top:3px;">'+
-            'Chair: <strong>'+escHtml(chairName)+'</strong> &nbsp;·&nbsp; Co-Chair: <strong>'+escHtml(cochairName)+'</strong> &nbsp;·&nbsp; '+count+' member'+(count!==1?'s':'') +
-          '</div>' +
-        '</div>' +
-        '<i class="fas fa-chevron-'+(isExpanded?'up':'down')+'" style="color:var(--gray-400);"></i>' +
-      '</div>' +
-      (isExpanded ?
-        '<div class="committee-expand" style="padding:16px;border:1px solid var(--gray-200);border-top:none;border-radius:0 0 10px 10px;margin-bottom:6px;">' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">' +
-            '<div><label style="font-size:0.78rem;color:var(--gray-500);display:block;margin-bottom:4px;">Chair</label>' +
-            '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'chair_id\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">'+memberOptions.replace('value="'+(c.chair_id||'')+'"','value="'+(c.chair_id||'')+'" selected')+'</select></div>' +
-            '<div><label style="font-size:0.78rem;color:var(--gray-500);display:block;margin-bottom:4px;">Co-Chair</label>' +
-            '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'cochair_id\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;">'+memberOptions.replace('value="'+(c.cochair_id||'')+'"','value="'+(c.cochair_id||'')+'" selected')+'</select></div>' +
-          '</div>' +
-          '<div style="font-size:0.82rem;font-weight:600;color:var(--gray-600);margin-bottom:8px;">Meeting Schedule</div>' +
-          '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px;">' +
-            '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:4px;">Day</label>' +
-            '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_day\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;">' +
-              '<option value="">— None —</option>' +
-              ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(d){
-                return '<option value="'+d+'"'+(c.meeting_day===d?' selected':'')+'>'+d+'</option>';
-              }).join('') +
-            '</select></div>' +
-            '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:4px;">Time</label>' +
-            '<input type="time" value="'+escHtml(c.meeting_time||'')+'" onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_time\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;" /></div>' +
-            '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:4px;">Frequency</label>' +
-            '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_frequency\',this.value)" style="width:100%;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;">' +
-              '<option value="">— None —</option>' +
-              ['Weekly','Bi-Weekly','Monthly','Quarterly','As Needed'].map(function(f){
-                return '<option value="'+f+'"'+(c.meeting_frequency===f?' selected':'')+'>'+f+'</option>';
-              }).join('') +
-            '</select></div>' +
-          '</div>' +
-          '<div style="margin-bottom:10px;font-size:0.82rem;font-weight:600;color:var(--gray-600);">Members</div>' +
-          '<div id="cm-list-'+escHtml(c.id)+'" style="margin-bottom:12px;"></div>' +
-          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
-            '<input id="cm-role-'+escHtml(c.id)+'" type="text" placeholder="Position (e.g. Upsilon Mu)" style="flex:1;min-width:140px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" />' +
-            '<select id="cm-add-'+escHtml(c.id)+'" style="flex:1;min-width:140px;padding:6px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;"><option value="">Select brother...</option>'+memberOptions+'</select>' +
-            '<button class="btn-sm success" onclick="addCommitteeMember(\''+escHtml(c.id)+'\')"><i class="fas fa-plus"></i> Add</button>' +
-          '</div>' +
-        '</div>'
-      : '') +
-    '</div>';
-  }).join('');
+  const chairOpts   = memberOptions.replace('value="'+(c.chair_id||'')+'"',   'value="'+(c.chair_id||'')+'" selected');
+  const cochairOpts = memberOptions.replace('value="'+(c.cochair_id||'')+'"', 'value="'+(c.cochair_id||'')+'" selected');
 
-  if (_expandedCommittee) {
-    loadCommitteeMemberList(_expandedCommittee, token);
-  }
+  const dayOpts = '<option value="">— None —</option>' +
+    ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(d){
+      return '<option value="'+d+'"'+(c.meeting_day===d?' selected':'')+'>'+d+'</option>';
+    }).join('');
+  const freqOpts = '<option value="">— None —</option>' +
+    ['Weekly','Bi-Weekly','Monthly','Quarterly','As Needed'].map(function(f){
+      return '<option value="'+f+'"'+(c.meeting_frequency===f?' selected':'')+'>'+f+'</option>';
+    }).join('');
+
+  detail.innerHTML =
+    '<div style="margin-bottom:20px;">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Committee</div>' +
+      '<div style="font-size:1.25rem;font-weight:800;color:var(--gray-800);">'+escHtml(c.name)+'</div>' +
+    '</div>' +
+
+    '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray-500);margin-bottom:10px;">Leadership</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:22px;">' +
+      '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Chair</label>' +
+      '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'chair_id\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.85rem;background:#fff;">'+chairOpts+'</select></div>' +
+      '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Co-Chair</label>' +
+      '<select onchange="assignCommitteeRole(\''+escHtml(c.id)+'\',\'cochair_id\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.85rem;background:#fff;">'+cochairOpts+'</select></div>' +
+    '</div>' +
+
+    '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray-500);margin-bottom:10px;">Meeting Schedule</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px;">' +
+      '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Day</label>' +
+      '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_day\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.82rem;background:#fff;">'+dayOpts+'</select></div>' +
+      '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Time</label>' +
+      '<input type="time" value="'+escHtml(c.meeting_time||'')+'" onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_time\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.82rem;" /></div>' +
+      '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Frequency</label>' +
+      '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_frequency\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.82rem;background:#fff;">'+freqOpts+'</select></div>' +
+    '</div>' +
+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray-500);">Members</div>' +
+    '</div>' +
+    '<div id="cm-list-'+escHtml(c.id)+'" style="margin-bottom:14px;"><div class="hint-text" style="margin:0;font-size:0.82rem;">Loading…</div></div>' +
+    '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--gray-100);">' +
+      '<input id="cm-role-'+escHtml(c.id)+'" type="text" placeholder="Position (e.g. Secretary)" style="flex:1;min-width:120px;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.85rem;" />' +
+      '<select id="cm-add-'+escHtml(c.id)+'" style="flex:1;min-width:140px;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.85rem;"><option value="">Select brother…</option>'+memberOptions+'</select>' +
+      '<button class="btn-sm success" onclick="addCommitteeMember(\''+escHtml(c.id)+'\')"><i class="fas fa-plus"></i> Add</button>' +
+    '</div>';
+
+  loadCommitteeMemberList(c.id, getAdminToken());
 }
 
 async function loadCommitteeMemberList(committeeId, token) {
@@ -13618,21 +13671,20 @@ async function loadCommitteeMemberList(committeeId, token) {
   if (!token) token = getAdminToken();
   try {
     const rows = await sbGet('committee_members','committee_id=eq.'+committeeId+'&select=id,member_id,member_role',token);
-    if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">No members yet.</div>'; return; }
+    if (!rows || !rows.length) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.82rem;">No members yet.</div>'; return; }
     const memberOpts = '<option value="">— Unassigned —</option>' + _allMembersForDropdown.map(function(m){
       return '<option value="'+escHtml(m.id)+'">'+escHtml([m.first_name,m.last_name].filter(Boolean).join(' '))+'</option>';
     }).join('');
     el.innerHTML = rows.map(function(r){
       const rid = escHtml(r.id);
       const selectedOpts = memberOpts.replace('value="'+(r.member_id||'')+'"','value="'+(r.member_id||'')+'" selected');
-      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--gray-100);">'+
-        '<span style="font-size:0.85rem;font-weight:600;min-width:140px;flex-shrink:0;color:var(--gray-700);">'+escHtml(r.member_role||'—')+'</span>'+
-        '<select style="flex:1;padding:4px 8px;border:1px solid var(--gray-300);border-radius:5px;font-size:0.82rem;" '+
-          'onchange="updateCommitteeMemberAssignment(\''+rid+'\',this.value)">'+selectedOpts+'</select>'+
-        '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+rid+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>'+
-        '</div>';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--gray-100);">' +
+        '<span style="font-size:0.82rem;font-weight:600;min-width:130px;flex-shrink:0;color:var(--gray-700);">'+escHtml(r.member_role||'—')+'</span>' +
+        '<select style="flex:1;padding:5px 8px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.82rem;" onchange="updateCommitteeMemberAssignment(\''+rid+'\',this.value)">'+selectedOpts+'</select>' +
+        '<button class="btn-sm danger" onclick="removeCommitteeMember(\''+rid+'\',\''+escHtml(committeeId)+'\')"><i class="fas fa-times"></i></button>' +
+      '</div>';
     }).join('');
-  } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members. Ensure the member_role column exists.</div>'; }
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:0.8rem;">Could not load members.</div>'; }
 }
 
 async function saveCommitteeMemberRole(rowId, role) {
@@ -13644,8 +13696,7 @@ async function saveCommitteeMemberRole(rowId, role) {
 }
 
 function toggleCommitteeExpand(committeeId) {
-  _expandedCommittee = (_expandedCommittee === committeeId) ? null : committeeId;
-  renderCommitteesAdminList(getAdminToken());
+  openCommitteeAdminDetail(committeeId);
 }
 
 async function assignCommitteeRole(committeeId, field, memberId) {
