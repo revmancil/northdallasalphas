@@ -10664,9 +10664,10 @@ async function nlArchiveSurveyGroup(newsletterId, surveyId) {
   const token = getAdminToken();
   if (!token) return;
   try {
-    await fetch(SUPABASE_URL + '/rest/v1/newsletter_survey_responses?newsletter_id=eq.' + encodeURIComponent(newsletterId || '') + '&survey_id=eq.' + encodeURIComponent(surveyId), {
+    const nlFilter = newsletterId ? 'newsletter_id=eq.' + encodeURIComponent(newsletterId) : 'newsletter_id=is.null';
+    await fetch(SUPABASE_URL + '/rest/v1/newsletter_survey_responses?' + nlFilter + '&survey_id=eq.' + encodeURIComponent(surveyId), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ archived: true })
     });
     nlLoadSurveyResults();
@@ -10677,9 +10678,10 @@ async function nlArchiveRsvpGroup(newsletterId, rsvpId) {
   const token = getAdminToken();
   if (!token) return;
   try {
-    await fetch(SUPABASE_URL + '/rest/v1/newsletter_rsvp_responses?newsletter_id=eq.' + encodeURIComponent(newsletterId || '') + '&rsvp_id=eq.' + encodeURIComponent(rsvpId), {
+    const nlFilter = newsletterId ? 'newsletter_id=eq.' + encodeURIComponent(newsletterId) : 'newsletter_id=is.null';
+    await fetch(SUPABASE_URL + '/rest/v1/newsletter_rsvp_responses?' + nlFilter + '&rsvp_id=eq.' + encodeURIComponent(rsvpId), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({ archived: true })
     });
     nlLoadSurveyResults();
@@ -10698,7 +10700,7 @@ async function nlLoadSurveyResults() {
   const token = getAdminToken();
   if (!token) { el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Sign in to see results.</div>'; return; }
   try {
-    const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=eq.false';
+    const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=not.eq.true';
     const [responses, newsletters] = await Promise.all([
       sbGet('newsletter_survey_responses', archiveFilter + '&order=responded_at.desc', token).catch(function() { return []; }),
       sbGet('newsletters', 'order=created_at.desc&limit=50&select=id,subject', token).catch(function() { return []; })
@@ -10762,7 +10764,7 @@ async function nlLoadSurveyResults() {
 }
 
 async function nlLoadRsvpResults(container, token, newsletters, toggleBtn) {
-  const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=eq.false';
+  const archiveFilter = _nlShowArchivedResults ? 'archived=eq.true' : 'archived=not.eq.true';
   const rsvps = await sbGet('newsletter_rsvp_responses', archiveFilter + '&order=responded_at.desc', token).catch(function() { return []; });
   if (!rsvps || !rsvps.length) return;
   const nlMap = {};
@@ -10827,7 +10829,7 @@ async function nlLoadHistory() {
   el.innerHTML = '<div class="hint-text" style="margin:0;font-size:0.8rem;">Loading…</div>';
   const token = getAdminToken();
   try {
-    const archiveFilter = _nlShowArchivedHistory ? 'archived=eq.true' : 'archived=eq.false';
+    const archiveFilter = _nlShowArchivedHistory ? 'archived=eq.true' : 'archived=not.eq.true';
     const rows = await sbGet('newsletter_send_log', 'select=batch_id,subject,sent_by,sent_at,status,recipient_email&' + archiveFilter + '&order=sent_at.desc&limit=500', token);
 
     const toggleBtn = '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'
