@@ -3,6 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const THANK_YOU_URL = "https://northdallasalphas.com/survey-thanks.html";
 
+// Allow unauthenticated access — survey links in emails have no auth token
+export const config = { auth: false };
+
 serve(async (req: Request) => {
   const url = new URL(req.url);
   const newsletterId = url.searchParams.get("newsletter_id") || null;
