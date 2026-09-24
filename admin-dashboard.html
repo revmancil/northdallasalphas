@@ -3940,6 +3940,45 @@
         <h2 class="panel-title"><i class="fas fa-life-ring"></i> Help Desk</h2>
       </div>
 
+      <!-- Service Status -->
+      <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+          <div style="font-weight:700;font-size:0.95rem;color:#111;">Service Status</div>
+          <button onclick="checkServiceStatus()" id="svcRefreshBtn" style="background:none;border:1px solid #ddd;border-radius:6px;padding:5px 12px;font-size:0.78rem;cursor:pointer;color:#555;display:flex;align-items:center;gap:6px;"><i class="fas fa-sync-alt"></i> Refresh</button>
+        </div>
+        <div id="svcStatusGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+          <div class="svc-card" id="svc-supabase" style="border:1px solid #e5e5e5;border-radius:7px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div id="svc-supabase-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111;">Supabase (Database)</div>
+              <div id="svc-supabase-msg" style="font-size:0.75rem;color:#888;margin-top:2px;">Checking…</div>
+            </div>
+          </div>
+          <div class="svc-card" id="svc-resend" style="border:1px solid #e5e5e5;border-radius:7px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div id="svc-resend-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111;">Resend (Email)</div>
+              <div id="svc-resend-msg" style="font-size:0.75rem;color:#888;margin-top:2px;">Checking…</div>
+            </div>
+          </div>
+          <div class="svc-card" id="svc-auth" style="border:1px solid #e5e5e5;border-radius:7px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div id="svc-auth-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111;">Supabase (Auth)</div>
+              <div id="svc-auth-msg" style="font-size:0.75rem;color:#888;margin-top:2px;">Checking…</div>
+            </div>
+          </div>
+          <div class="svc-card" id="svc-storage" style="border:1px solid #e5e5e5;border-radius:7px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div id="svc-storage-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111;">Supabase (Storage)</div>
+              <div id="svc-storage-msg" style="font-size:0.75rem;color:#888;margin-top:2px;">Checking…</div>
+            </div>
+          </div>
+        </div>
+        <div id="svcLastChecked" style="font-size:0.72rem;color:#bbb;margin-top:12px;text-align:right;"></div>
+      </div>
+
       <!-- Maintenance Mode Toggle -->
       <div style="background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;">
         <div>
@@ -14401,6 +14440,68 @@ var _hdMaintenanceMode = false;
 
 async function loadHelpdeskPanel() {
   await Promise.all([loadHelpdeskIssues(), loadMaintenanceModeStatus()]);
+  checkServiceStatus();
+}
+
+function svcSet(id, ok, msg) {
+  var dot = document.getElementById('svc-' + id + '-dot');
+  var txt = document.getElementById('svc-' + id + '-msg');
+  if (!dot || !txt) return;
+  dot.style.background = ok === null ? '#ccc' : ok ? '#27ae60' : '#e74c3c';
+  txt.textContent = msg;
+}
+
+async function checkServiceStatus() {
+  var btn = document.getElementById('svcRefreshBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking…'; }
+  svcSet('supabase', null, 'Checking…');
+  svcSet('auth',     null, 'Checking…');
+  svcSet('storage',  null, 'Checking…');
+  svcSet('resend',   null, 'Checking…');
+
+  var token = getAdminToken();
+
+  // Supabase DB — quick REST ping (read one row from members)
+  try {
+    var t0 = Date.now();
+    var r = await fetch(SUPABASE_URL + '/rest/v1/members?select=id&limit=1', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY) }
+    });
+    var ms = Date.now() - t0;
+    svcSet('supabase', r.ok, r.ok ? 'Operational (' + ms + ' ms)' : 'Error ' + r.status);
+  } catch(e) { svcSet('supabase', false, 'Unreachable'); }
+
+  // Supabase Auth — health endpoint
+  try {
+    var t1 = Date.now();
+    var ra = await fetch(SUPABASE_URL + '/auth/v1/health');
+    var ms1 = Date.now() - t1;
+    svcSet('auth', ra.ok, ra.ok ? 'Operational (' + ms1 + ' ms)' : 'Error ' + ra.status);
+  } catch(e) { svcSet('auth', false, 'Unreachable'); }
+
+  // Supabase Storage — list buckets (requires service or anon key)
+  try {
+    var t2 = Date.now();
+    var rs = await fetch(SUPABASE_URL + '/storage/v1/bucket', {
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY) }
+    });
+    var ms2 = Date.now() - t2;
+    svcSet('storage', rs.ok, rs.ok ? 'Operational (' + ms2 + ' ms)' : 'Error ' + rs.status);
+  } catch(e) { svcSet('storage', false, 'Unreachable'); }
+
+  // Resend — check via edge function ping (GET returns method-not-allowed = endpoint is alive)
+  try {
+    var t3 = Date.now();
+    var rr = await fetch(SUPABASE_URL + '/functions/v1/resend-webhook', { method: 'GET' });
+    var ms3 = Date.now() - t3;
+    // 405 = function is up, just rejecting GET — that's fine
+    var alive = rr.status === 405 || rr.status === 200 || rr.status === 400;
+    svcSet('resend', alive, alive ? 'Webhook endpoint reachable (' + ms3 + ' ms)' : 'Error ' + rr.status);
+  } catch(e) { svcSet('resend', false, 'Unreachable'); }
+
+  var el = document.getElementById('svcLastChecked');
+  if (el) el.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh'; }
 }
 
 async function loadMaintenanceModeStatus() {
