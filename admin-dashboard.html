@@ -3975,6 +3975,13 @@
               <div id="svc-storage-msg" style="font-size:0.75rem;color:#888;margin-top:2px;">Checking…</div>
             </div>
           </div>
+          <div class="svc-card" id="svc-stripe" style="border:1px solid #e5e5e5;border-radius:7px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
+            <div id="svc-stripe-dot" style="width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;"></div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111;">Stripe (Payments)</div>
+              <div id="svc-stripe-msg" style="font-size:0.75rem;color:#888;margin-top:2px;">Checking…</div>
+            </div>
+          </div>
         </div>
         <div id="svcLastChecked" style="font-size:0.72rem;color:#bbb;margin-top:12px;text-align:right;"></div>
       </div>
@@ -14458,6 +14465,7 @@ async function checkServiceStatus() {
   svcSet('auth',     null, 'Checking…');
   svcSet('storage',  null, 'Checking…');
   svcSet('resend',   null, 'Checking…');
+  svcSet('stripe',   null, 'Checking…');
 
   var token = getAdminToken();
 
@@ -14498,6 +14506,15 @@ async function checkServiceStatus() {
     var alive = rr.status === 405 || rr.status === 200 || rr.status === 400;
     svcSet('resend', alive, alive ? 'Webhook endpoint reachable (' + ms3 + ' ms)' : 'Error ' + rr.status);
   } catch(e) { svcSet('resend', false, 'Unreachable'); }
+
+  // Stripe — ping via stripe-checkout edge function (GET returns 405 = alive)
+  try {
+    var t4 = Date.now();
+    var rstripe = await fetch(SUPABASE_URL + '/functions/v1/stripe-checkout', { method: 'GET' });
+    var ms4 = Date.now() - t4;
+    var stripeAlive = rstripe.status === 405 || rstripe.status === 200 || rstripe.status === 400;
+    svcSet('stripe', stripeAlive, stripeAlive ? 'Webhook endpoint reachable (' + ms4 + ' ms)' : 'Error ' + rstripe.status);
+  } catch(e) { svcSet('stripe', false, 'Unreachable'); }
 
   var el = document.getElementById('svcLastChecked');
   if (el) el.textContent = 'Last checked: ' + new Date().toLocaleTimeString();
