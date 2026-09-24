@@ -14479,12 +14479,13 @@ async function checkServiceStatus() {
     svcSet('supabase', r.ok, r.ok ? 'Operational (' + ms + ' ms)' : 'Error ' + r.status);
   } catch(e) { svcSet('supabase', false, 'Unreachable'); }
 
-  // Supabase Auth — health endpoint
+  // Supabase Auth — health endpoint (401 = up but auth-protected, still operational)
   try {
     var t1 = Date.now();
     var ra = await fetch(SUPABASE_URL + '/auth/v1/health');
     var ms1 = Date.now() - t1;
-    svcSet('auth', ra.ok, ra.ok ? 'Operational (' + ms1 + ' ms)' : 'Error ' + ra.status);
+    var authOk = ra.ok || ra.status === 401;
+    svcSet('auth', authOk, authOk ? 'Operational (' + ms1 + ' ms)' : 'Error ' + ra.status);
   } catch(e) { svcSet('auth', false, 'Unreachable'); }
 
   // Supabase Storage — list buckets (requires service or anon key)
@@ -14497,13 +14498,12 @@ async function checkServiceStatus() {
     svcSet('storage', rs.ok, rs.ok ? 'Operational (' + ms2 + ' ms)' : 'Error ' + rs.status);
   } catch(e) { svcSet('storage', false, 'Unreachable'); }
 
-  // Resend — check via edge function ping (GET returns method-not-allowed = endpoint is alive)
+  // Resend — check via edge function ping (401/405/400 all mean the function is deployed and reachable)
   try {
     var t3 = Date.now();
     var rr = await fetch(SUPABASE_URL + '/functions/v1/resend-webhook', { method: 'GET' });
     var ms3 = Date.now() - t3;
-    // 405 = function is up, just rejecting GET — that's fine
-    var alive = rr.status === 405 || rr.status === 200 || rr.status === 400;
+    var alive = rr.status === 405 || rr.status === 200 || rr.status === 400 || rr.status === 401;
     svcSet('resend', alive, alive ? 'Webhook endpoint reachable (' + ms3 + ' ms)' : 'Error ' + rr.status);
   } catch(e) { svcSet('resend', false, 'Unreachable'); }
 
