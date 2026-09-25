@@ -6363,7 +6363,8 @@ async function deleteTestMember(memberId, name) {
     });
     if (!res.ok) throw new Error(await res.text());
     showToast('Member deleted.', 'success');
-    loadAccessPanel();
+    if (typeof loadMemberRequests === 'function') loadMemberRequests();
+    else if (typeof loadAccessPanel === 'function') loadAccessPanel();
   } catch(e) { showToast('Could not delete: ' + e.message, 'error'); }
 }
 
