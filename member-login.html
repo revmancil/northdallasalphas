@@ -187,15 +187,16 @@ async function upsertPendingMember(email, first, last, phone, alphaId, accessTok
   const authHeaders = accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {};
   // If we already know the member's row ID (from Alpha ID lookup), use it directly
   if (memberId) {
-    const payload = { first_name: first, last_name: last, phone, alpha_id: alphaId, email };
-    await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
+    const payload = { first_name: first, last_name: last, phone, alpha_id: alphaId, email, portal_access: 'pending' };
+    const r1 = await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=representation' },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=minimal' },
       body: JSON.stringify(payload)
     });
+    if (!r1.ok) throw new Error(await r1.text());
     return;
   }
-  const selectRes = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id,status&limit=1', {
+  const selectRes = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id,status,portal_access&limit=1', {
     method: 'GET',
     headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders }
   });
@@ -203,19 +204,21 @@ async function upsertPendingMember(email, first, last, phone, alphaId, accessTok
   const existing = Array.isArray(existingRows) && existingRows.length ? existingRows[0] : null;
   if (existing && existing.id) {
     const payload = { first_name: first, last_name: last, phone, alpha_id: alphaId };
-    if (existing.status !== 'active') payload.status = 'pending';
-    await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(existing.id), {
+    if (existing.portal_access !== 'granted') { payload.status = 'pending'; payload.portal_access = 'pending'; }
+    const r2 = await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(existing.id), {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=representation' },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=minimal' },
       body: JSON.stringify(payload)
     });
+    if (!r2.ok) throw new Error(await r2.text());
     return;
   }
-  await fetch(SUPABASE_URL + '/rest/v1/members', {
+  const r3 = await fetch(SUPABASE_URL + '/rest/v1/members', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=representation' },
-    body: JSON.stringify({ email, first_name: first, last_name: last, phone, alpha_id: alphaId, status: 'pending' })
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, ...authHeaders, 'Prefer': 'return=minimal' },
+    body: JSON.stringify({ email, first_name: first, last_name: last, phone, alpha_id: alphaId, status: 'pending', portal_access: 'pending' })
   });
+  if (!r3.ok) throw new Error(await r3.text());
 }
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
