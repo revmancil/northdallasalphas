@@ -4892,7 +4892,7 @@ function renderAccessTable() {
                 '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="accessUpdateStatus(\'' + mid + '\',\'visiting\')" title="Restore with visiting access"><i class="fas fa-user-clock"></i> Restore (Visiting)</button> ' +
                 '<button class="btn-sm" style="background:rgba(220,38,38,0.12);color:#dc2626;border:1px solid rgba(220,38,38,0.35);" onclick="deleteTestMember(\'' + mid + '\',\'' + mname + '\')"><i class="fas fa-trash"></i> Delete</button>';
     }
-    return '<tr style="border-bottom:1px solid var(--gray-100);">' +
+    return '<tr id="member-row-' + mid + '" style="border-bottom:1px solid var(--gray-100);">' +
       '<td style="padding:10px 12px;font-weight:600;">' + escHtml(name) + membershipBadge + adminBadge + '</td>' +
       '<td style="padding:10px 12px;color:var(--gray-600);">' + escHtml(m.email || '—') + '</td>' +
       '<td style="padding:10px 12px;"><span style="color:' + accessColor + ';font-weight:600;">' + escHtml(accessLabel) + '</span></td>' +
@@ -6149,7 +6149,7 @@ async function loadMemberRequests() {
         const name = [m.first_name, m.last_name].filter(Boolean).join(' ').trim() || 'Unknown member';
         const requested = m.created_at ? new Date(m.created_at).toLocaleString() : 'Unknown time';
         const mid = escHtml(String(m.id || ''));
-        return '<div style="padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
+        return '<div id="member-row-' + mid + '" style="padding:12px 0;border-bottom:1px solid var(--gray-200);">' +
           '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">' +
           '<div>' +
           '<div style="font-size:0.9rem;font-weight:700;color:var(--gray-800);">' + escHtml(name) + '</div>' +
@@ -6363,8 +6363,11 @@ async function deleteTestMember(memberId, name) {
     });
     if (!res.ok) throw new Error(await res.text());
     showToast('Member deleted.', 'success');
+    // Remove from DOM immediately
+    var domRow = document.getElementById('member-row-' + memberId);
+    if (domRow) domRow.remove();
     if (typeof loadMemberRequests === 'function') loadMemberRequests();
-    else if (typeof loadAccessPanel === 'function') loadAccessPanel();
+    if (typeof loadAccessPanel === 'function') loadAccessPanel();
   } catch(e) { showToast('Could not delete: ' + e.message, 'error'); }
 }
 
