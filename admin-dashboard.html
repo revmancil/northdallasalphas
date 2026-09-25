@@ -4887,8 +4887,10 @@ function renderAccessTable() {
         actions += ' <button class="btn-sm edit" onclick="prefillAdminGrant(\'' + memail + '\')" title="Grant admin dashboard access"><i class="fas fa-user-shield"></i> Make Admin</button>';
       }
     } else {
+      const mname = escHtml(name);
       actions = '<button class="btn-sm success" onclick="accessUpdateStatus(\'' + mid + '\',\'granted\')"><i class="fas fa-redo"></i> Restore</button> ' +
-                '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="accessUpdateStatus(\'' + mid + '\',\'visiting\')" title="Restore with visiting access"><i class="fas fa-user-clock"></i> Restore (Visiting)</button>';
+                '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="accessUpdateStatus(\'' + mid + '\',\'visiting\')" title="Restore with visiting access"><i class="fas fa-user-clock"></i> Restore (Visiting)</button> ' +
+                '<button class="btn-sm" style="background:rgba(220,38,38,0.12);color:#dc2626;border:1px solid rgba(220,38,38,0.35);" onclick="deleteTestMember(\'' + mid + '\',\'' + mname + '\')"><i class="fas fa-trash"></i> Delete</button>';
     }
     return '<tr style="border-bottom:1px solid var(--gray-100);">' +
       '<td style="padding:10px 12px;font-weight:600;">' + escHtml(name) + membershipBadge + adminBadge + '</td>' +
