@@ -194,6 +194,7 @@ async function upsertPendingMember(email, first, last, phone, alphaId, accessTok
       body: JSON.stringify(payload)
     });
     if (!r1.ok) throw new Error(await r1.text());
+    notifyAdminAccessRequest(first, last, email);
     return;
   }
   const selectRes = await fetch(SUPABASE_URL + '/rest/v1/members?email=eq.' + encodeURIComponent(email) + '&select=id,status,portal_access&limit=1', {
@@ -211,6 +212,7 @@ async function upsertPendingMember(email, first, last, phone, alphaId, accessTok
       body: JSON.stringify(payload)
     });
     if (!r2.ok) throw new Error(await r2.text());
+    if (existing.portal_access !== 'granted') notifyAdminAccessRequest(first, last, email);
     return;
   }
   const r3 = await fetch(SUPABASE_URL + '/rest/v1/members', {
@@ -219,7 +221,18 @@ async function upsertPendingMember(email, first, last, phone, alphaId, accessTok
     body: JSON.stringify({ email, first_name: first, last_name: last, phone, alpha_id: alphaId, status: 'pending', portal_access: 'pending' })
   });
   if (!r3.ok) throw new Error(await r3.text());
+  notifyAdminAccessRequest(first, last, email);
 }
+
+function notifyAdminAccessRequest(first, last, email) {
+  const name = [first, last].filter(Boolean).join(' ');
+  fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+    body: JSON.stringify({ type: 'member_request', name: name, email: email })
+  }).catch(function(){});
+}
+
 document.getElementById('loginForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   hideMsg('loginError'); hideMsg('loginSuccess');
