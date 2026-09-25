@@ -251,7 +251,7 @@ function buildGenericAlert(type: string, name: string, email: string, chapter: s
   return {
     subject: isVisitor ? `New Visiting Brother Request — ${name || email}` : `New Member Portal Request — ${name || email}`,
     html: emailShell(
-      isVisitor ? "🤝" : "🙋",
+      isVisitor ? "🤝" : '<img src="https://northdallasalphas.com/images/xtl-logo.png" alt="Xi Tau Lambda" style="width:48px;height:48px;object-fit:contain;" />',
       isVisitor ? "New Visiting Brother Request" : "New Member Portal Request",
       "North Dallas Alphas — Admin Alert",
       `<strong style="color:#fff;">${esc(name || "Someone")}</strong> submitted a ${isVisitor ? "visiting brother" : "member portal"} request.<br><br>
