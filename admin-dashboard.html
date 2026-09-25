@@ -6159,6 +6159,7 @@ async function loadMemberRequests() {
           '<button class="btn-sm" style="background:rgba(74,222,128,0.15);color:#16a34a;border:1px solid rgba(74,222,128,0.4);" onclick="updateMemberStatus(\'' + mid + '\',\'chapter\')"><i class="fas fa-home"></i> Chapter Brother</button>' +
           '<button class="btn-sm" style="background:rgba(201,168,76,0.15);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="updateMemberStatus(\'' + mid + '\',\'visiting\')"><i class="fas fa-user-clock"></i> Visiting Brother</button>' +
           '<button class="btn-sm danger" onclick="updateMemberStatus(\'' + mid + '\',\'revoked\')"><i class="fas fa-times"></i> Reject</button>' +
+          '<button class="btn-sm" style="background:rgba(220,38,38,0.12);color:#dc2626;border:1px solid rgba(220,38,38,0.35);" onclick="deleteTestMember(\'' + mid + '\',\'' + escHtml(name) + '\')"><i class="fas fa-trash"></i> Delete</button>' +
           '</div>' +
           '</div>' +
           '</div>';
@@ -6346,6 +6347,22 @@ function renderMemberComplianceList(members) {
   allComplianceMembers = members || [];
   rosterCurrentPage    = 1;
   renderRosterPage();
+}
+
+async function deleteTestMember(memberId, name) {
+  if (!memberId) return;
+  if (!confirm('Permanently delete "' + name + '"? This cannot be undone.')) return;
+  const token = getAdminToken();
+  if (!token) { showToast('Admin session expired.', 'error'); return; }
+  try {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    showToast('Member deleted.', 'success');
+    loadAccessRequestsPanel();
+  } catch(e) { showToast('Could not delete: ' + e.message, 'error'); }
 }
 
 async function updateMemberStatus(memberId, approvalType) {
