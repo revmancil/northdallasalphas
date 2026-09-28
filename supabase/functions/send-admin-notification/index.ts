@@ -478,5 +478,30 @@ serve(async (req) => {
     return json({ sent: await sendEmail(resendKey, from, recipients, subject, html), recipients: recipients.length });
   }
 
+  // ── Portal access approved → email directly to the brother ──────────────────
+  if (type === "portal_access_approved") {
+    const name       = String(payload.name    ?? "Brother").trim();
+    const toEmail    = String(payload.to      ?? "").trim();
+    const isChapter  = payload.access_type !== "visiting";
+    const loginUrl   = String(payload.login_url ?? "https://northdallasalphas.com/member-login.html").trim();
+    if (!toEmail) return json({ error: "No recipient email." }, 400);
+    const subject = isChapter ? "Welcome, Brother — Portal Access Approved" : "Portal Access Approved — Visiting Brother";
+    const html = emailShell(
+      '<img src="https://northdallasalphas.com/images/xtl-logo.png" alt="Xi Tau Lambda" style="width:48px;height:48px;object-fit:contain;" />',
+      isChapter ? "Portal Access Approved" : "Visiting Brother Access Approved",
+      "North Dallas Alphas — Member Portal",
+      `Brother <strong style="color:#fff;">${esc(name)}</strong>, your request for access to the North Dallas Alphas member portal has been approved.<br><br>
+       ${isChapter
+         ? `You have been enrolled as a <strong style="color:${gold};">Chapter Brother</strong> with full portal access.`
+         : `You have been granted <strong style="color:${gold};">Visiting Brother</strong> access to the member portal.`
+       }<br><br>
+       Click below to sign in and access the portal.`,
+      "Sign In to Member Portal",
+      loginUrl,
+    );
+    const ok = await sendEmail(resendKey, from, [toEmail], subject, html);
+    return json({ sent: ok, recipients: 1 });
+  }
+
   return json({ error: "Unknown notification type: " + type }, 400);
 });

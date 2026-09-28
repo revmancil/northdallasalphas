@@ -6438,11 +6438,11 @@ async function updateMemberStatus(memberId, approvalType) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({
-          type: 'visiting_brother_approved',
+          type: 'portal_access_approved',
           to: m.email,
           name: [m.first_name, m.last_name].filter(Boolean).join(' ') || m.email,
-          subject: isChapter ? 'Chapter Brother Access Approved' : 'Portal Access Approved',
-          body: emailBody
+          access_type: isChapter ? 'chapter' : 'visiting',
+          login_url: window.location.origin + '/member-login.html'
         })
       }).catch(function(){});
     }
