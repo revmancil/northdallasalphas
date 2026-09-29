@@ -2994,7 +2994,7 @@ async function submitAnnouncement() {
       try { flyerUrl = await uploadAnnFlyer(_annFlyerFile); }
       catch(fe) { errEl.textContent = 'Flyer upload failed: ' + (fe.message||'error'); errEl.style.display = ''; btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Announcement'; return; }
     }
-    await fetch(SUPABASE_URL + '/rest/v1/member_announcements', {
+    const annRes = await fetch(SUPABASE_URL + '/rest/v1/member_announcements', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token, 'Prefer': 'return=minimal' },
       body: JSON.stringify({
@@ -3013,7 +3013,8 @@ async function submitAnnouncement() {
         created_at:   new Date().toISOString()
       })
     });
-    // Notify admins (fire-and-forget)
+    if (!annRes.ok) throw new Error(await annRes.text());
+    // Notify admins (fire-and-forget, only after confirmed insert)
     fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + currentSession.access_token },
