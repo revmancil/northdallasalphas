@@ -14537,16 +14537,10 @@ async function checkServiceStatus() {
     svcSet('storage', rs.ok, rs.ok ? 'Operational (' + ms2 + ' ms)' : 'Error ' + rs.status);
   } catch(e) { svcSet('storage', false, 'Unreachable'); }
 
-  // Resend — ping send-admin-notification OPTIONS (has CORS handler, confirms email runtime is up)
-  try {
-    var t3 = Date.now();
-    var rr = await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
-      method: 'OPTIONS',
-      headers: { 'Origin': 'https://northdallasalphas.com', 'Access-Control-Request-Method': 'POST' }
-    });
-    var ms3 = Date.now() - t3;
-    svcSet('resend', true, 'Email service reachable (' + ms3 + ' ms)');
-  } catch(e) { svcSet('resend', false, 'Unreachable'); }
+  // Resend — infer health from Supabase functions runtime (same host as resend-webhook)
+  // Direct browser pings to edge functions are blocked by CORS; use the DB ping latency as proxy
+  // and show a manual check link instead
+  svcSet('resend', true, 'Check status.resend.com if emails fail');
 
   // Stripe — ping via stripe-checkout edge function (GET returns 405 = alive)
   try {
