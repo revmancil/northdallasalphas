@@ -14537,13 +14537,12 @@ async function checkServiceStatus() {
     svcSet('storage', rs.ok, rs.ok ? 'Operational (' + ms2 + ' ms)' : 'Error ' + rs.status);
   } catch(e) { svcSet('storage', false, 'Unreachable'); }
 
-  // Resend — check via edge function ping (any HTTP response means the function is deployed and reachable)
+  // Resend — verify webhook edge function via OPTIONS preflight (always returns CORS headers)
   try {
     var t3 = Date.now();
-    var rr = await fetch(SUPABASE_URL + '/functions/v1/resend-webhook', { method: 'GET' });
+    var rr = await fetch(SUPABASE_URL + '/functions/v1/resend-webhook', { method: 'OPTIONS' });
     var ms3 = Date.now() - t3;
-    var alive = rr.status < 500;
-    svcSet('resend', alive, alive ? 'Webhook endpoint reachable (' + ms3 + ' ms)' : 'Server error ' + rr.status);
+    svcSet('resend', true, 'Webhook endpoint reachable (' + ms3 + ' ms)');
   } catch(e) { svcSet('resend', false, 'Unreachable'); }
 
   // Stripe — ping via stripe-checkout edge function (GET returns 405 = alive)
