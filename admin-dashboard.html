@@ -14033,6 +14033,10 @@ function openCommitteeAdminDetail(committeeId) {
   const chairOpts   = memberOptions.replace('value="'+(c.chair_id||'')+'"',   'value="'+(c.chair_id||'')+'" selected');
   const cochairOpts = memberOptions.replace('value="'+(c.cochair_id||'')+'"', 'value="'+(c.cochair_id||'')+'" selected');
 
+  const weekOpts = '<option value="">— Any —</option>' +
+    ['First','Second','Third','Fourth','Last'].map(function(w){
+      return '<option value="'+w+'"'+(c.meeting_week===w?' selected':'')+'>'+w+'</option>';
+    }).join('');
   const dayOpts = '<option value="">— None —</option>' +
     ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(function(d){
       return '<option value="'+d+'"'+(c.meeting_day===d?' selected':'')+'>'+d+'</option>';
@@ -14057,7 +14061,9 @@ function openCommitteeAdminDetail(committeeId) {
     '</div>' +
 
     '<div style="font-size:10px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--gray-500);margin-bottom:10px;">Meeting Schedule</div>' +
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px;">' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:22px;">' +
+      '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Week</label>' +
+      '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_week\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.82rem;background:#fff;">'+weekOpts+'</select></div>' +
       '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Day</label>' +
       '<select onchange="saveCommitteeSchedule(\''+escHtml(c.id)+'\',\'meeting_day\',this.value)" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:7px;font-size:0.82rem;background:#fff;">'+dayOpts+'</select></div>' +
       '<div><label style="font-size:0.75rem;color:var(--gray-500);display:block;margin-bottom:5px;">Time</label>' +

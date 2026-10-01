@@ -3761,7 +3761,8 @@ async function openCommitteeDetail(committeeId) {
   document.getElementById('cdCochair').textContent = c.cochair_id ? (_mpNameMap[c.cochair_id]||'—') : '—';
 
   const schedParts = [];
-  if (c.meeting_day) schedParts.push(c.meeting_day);
+  var dayLabel = [c.meeting_week, c.meeting_day].filter(Boolean).join(' ');
+  if (dayLabel) schedParts.push(dayLabel);
   if (c.meeting_time) schedParts.push(c.meeting_time);
   if (c.meeting_frequency) schedParts.push('(' + c.meeting_frequency + ')');
   document.getElementById('cdSchedule').textContent = schedParts.length ? schedParts.join(' · ') : 'TBD';
