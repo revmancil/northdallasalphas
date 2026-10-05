@@ -7921,13 +7921,14 @@ async function loadEventsArchive() {
   const token = getAdminToken();
   el.innerHTML = '<div class="hint-text">Loading…</div>';
   try {
-    const rows = await sbGet('events', 'archived=eq.true&order=start_date.desc', token);
+    const rows = await sbGet('events', 'archived=eq.true&order=datetime.desc', token);
     if (!rows || !rows.length) {
       el.innerHTML = '<div class="hint-text">No archived events.</div>';
       return;
     }
     el.innerHTML = rows.map(function(ev) {
-      const dateStr = ev.start_date ? new Date(ev.start_date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—';
+      const dtRaw = ev.datetime || '';
+      const dateStr = dtRaw ? new Date(dtRaw).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—';
       return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-200);">' +
         '<div>' +
           '<div style="font-weight:600;font-size:0.88rem;">' + escHtml(ev.name || '(untitled)') + '</div>' +
