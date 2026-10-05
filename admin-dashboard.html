@@ -592,131 +592,119 @@
     /* ═══════════════════════════════════════
        EVENTS MANAGER
     ═══════════════════════════════════════ */
-    .events-header-row {
-      display: grid;
-      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto auto;
-      gap: 10px;
-      padding: 0 0 8px;
-      border-bottom: 1px solid var(--gray-200);
-      margin-bottom: 4px;
+    .events-header-row { display: none; } /* replaced by card layout */
+    .event-row {
+      background: var(--white);
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 16px 18px 12px;
+      margin-bottom: 12px;
     }
-    .events-header-row span {
+    .event-row:last-child { margin-bottom: 0; }
+    .event-row-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      margin-bottom: 12px;
+    }
+    .event-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .event-field label {
       font-size: 0.68rem;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--gray-400);
     }
-    .event-row {
-      display: grid;
-      grid-template-columns: 2fr 1.5fr 110px 80px 110px 80px auto auto auto auto auto auto auto;
-      gap: 10px;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--gray-200);
-    }
-    .event-row:last-child { border-bottom: none; }
+    .event-field.span-2 { grid-column: span 2; }
     .event-row input {
       width: 100%;
       padding: 8px 10px;
       border: 1.5px solid var(--gray-200);
-      border-radius: 5px;
+      border-radius: 6px;
       font-family: 'Inter', sans-serif;
       font-size: 0.84rem;
       color: var(--gray-800);
+      background: var(--white);
+      box-sizing: border-box;
     }
     .event-row input:focus { outline: none; border-color: var(--gold); }
+    .event-row-dates {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .event-row-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 10px;
+      border-top: 1px solid var(--gray-200);
+    }
+    .event-row-toolbar .toolbar-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gray-400);
+      margin-right: 2px;
+    }
+    .event-row-toolbar .toolbar-spacer { flex: 1; }
     .event-row .featured-star {
-      width: 34px; height: 34px;
-      border-radius: 5px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 6px;
       border: 1.5px solid var(--gray-200);
       background: var(--gray-100);
       cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1rem;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--gray-500);
       transition: all 0.2s;
-      flex-shrink: 0;
+      white-space: nowrap;
     }
     .event-row .featured-star.active {
       background: rgba(201,168,76,0.15);
       border-color: var(--gold);
       color: var(--gold);
     }
-    .event-row .featured-star:hover { border-color: var(--gold); }
-    .event-row .btn-flyer {
-      width: 34px; height: 34px;
-      border-radius: 5px;
-      border: 1.5px solid var(--gray-200);
-      background: var(--gray-100);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem;
-      color: var(--blue);
-      transition: all 0.2s;
-      position: relative;
-      flex-shrink: 0;
-    }
-    .event-row .btn-flyer.has-flyer {
-      background: rgba(52,152,219,0.1);
-      border-color: var(--blue);
-    }
-    .event-row .btn-flyer:hover { border-color: var(--blue); background: rgba(52,152,219,0.1); }
-    /* Registration link button */
-    .event-row .btn-reg {
-      width: 34px; height: 34px;
-      border-radius: 5px;
-      border: 1.5px solid var(--gray-200);
-      background: var(--gray-100);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem;
-      color: #27ae60;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .event-row .btn-reg.has-reg {
-      background: rgba(39,174,96,0.1);
-      border-color: #27ae60;
-    }
-    .event-row .btn-reg:hover { border-color: #27ae60; background: rgba(39,174,96,0.12); }
-    .event-row .btn-sponsor {
-      width: 34px; height: 34px;
-      border-radius: 5px;
-      border: 1.5px solid var(--gray-200);
-      background: var(--gray-100);
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem;
-      color: #d4a017;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .event-row .btn-sponsor.has-sponsor {
-      background: rgba(201,168,76,0.15);
-      border-color: var(--gold);
-    }
-    .event-row .btn-sponsor:hover { border-color: var(--gold); background: rgba(201,168,76,0.12); }
-    /* Description button */
+    .event-row .featured-star:hover { border-color: var(--gold); color: var(--gold); }
+    .event-row .btn-flyer,
+    .event-row .btn-reg,
+    .event-row .btn-sponsor,
     .event-row .btn-desc {
-      width: 34px; height: 34px;
-      border-radius: 5px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 6px;
       border: 1.5px solid var(--gray-200);
       background: var(--gray-100);
       cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem;
-      color: #9b59b6;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
       transition: all 0.2s;
-      flex-shrink: 0;
+      white-space: nowrap;
     }
-    .event-row .btn-desc.has-desc {
-      background: rgba(155,89,182,0.1);
-      border-color: #9b59b6;
-    }
+    .event-row .btn-flyer { color: var(--blue); }
+    .event-row .btn-flyer.has-flyer { background: rgba(52,152,219,0.1); border-color: var(--blue); }
+    .event-row .btn-flyer:hover { border-color: var(--blue); background: rgba(52,152,219,0.1); }
+    .event-row .btn-reg { color: #27ae60; }
+    .event-row .btn-reg.has-reg { background: rgba(39,174,96,0.1); border-color: #27ae60; }
+    .event-row .btn-reg:hover { border-color: #27ae60; background: rgba(39,174,96,0.12); }
+    .event-row .btn-sponsor { color: #d4a017; }
+    .event-row .btn-sponsor.has-sponsor { background: rgba(201,168,76,0.15); border-color: var(--gold); }
+    .event-row .btn-sponsor:hover { border-color: var(--gold); background: rgba(201,168,76,0.12); }
+    .event-row .btn-desc { color: #9b59b6; }
+    .event-row .btn-desc.has-desc { background: rgba(155,89,182,0.1); border-color: #9b59b6; }
     .event-row .btn-desc:hover { border-color: #9b59b6; background: rgba(155,89,182,0.12); }
     /* Description sub-row */
     .event-desc-row {
-      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -754,7 +742,6 @@
     }
     /* Registration URL sub-row */
     .event-reg-row {
-      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -766,7 +753,6 @@
     }
     .event-reg-row.visible { display: flex; }
     .event-sponsor-row {
-      grid-column: span 12;
       display: none;
       gap: 14px;
       align-items: flex-start;
@@ -824,16 +810,17 @@
       width: 100%;
     }
     .event-row .btn-del {
-      width: 34px; height: 34px;
-      border-radius: 5px;
+      height: 32px;
+      padding: 0 10px;
+      border-radius: 6px;
       border: 1px solid rgba(231,76,60,0.25);
       background: rgba(231,76,60,0.07);
       cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem;
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.78rem;
+      font-weight: 600;
       color: var(--red);
       transition: all 0.2s;
-      flex-shrink: 0;
     }
     .event-row .btn-del:hover { background: rgba(231,76,60,0.2); }
 
@@ -1790,28 +1777,8 @@
         </div>
         <div class="section-card-body">
           <p class="hint-text">
-            Click the <strong><i class="fas fa-star" style="color:var(--gold);"></i> star</strong> to mark a featured event,
-            the <strong><i class="fas fa-image" style="color:var(--blue);"></i> image</strong> icon for a flyer,
-            and the <strong><i class="fas fa-align-left" style="color:#9b59b6;"></i> text</strong> icon for a description.
-            Use the <strong><i class="fas fa-link" style="color:#27ae60;"></i> link</strong> icon to set free and/or paid registration (choice modal on the Events page).
-            Use the <strong><i class="fas fa-handshake" style="color:var(--gold);"></i> handshake</strong> icon to show a sponsor button on specific events only.
+            Use the toolbar on each event card to attach a <strong>Flyer</strong>, write a <strong>Description</strong>, set <strong>Registration</strong> options, add a <strong>Sponsor</strong> button, or generate a <strong>QR code</strong> for check-in.
           </p>
-
-          <div class="events-header-row">
-            <span>Event Name</span>
-            <span>Location</span>
-            <span>Start Date <span style="color:var(--red);">*</span></span>
-            <span>Start Time <span style="color:var(--red);">*</span></span>
-            <span>End Date</span>
-            <span>End Time</span>
-            <span style="text-align:center;"><i class="fas fa-star" title="Featured"></i></span>
-            <span style="text-align:center;"><i class="fas fa-image" title="Flyer"></i></span>
-            <span style="text-align:center;"><i class="fas fa-align-left" title="Description"></i></span>
-            <span style="text-align:center;"><i class="fas fa-link" title="Registration"></i></span>
-            <span style="text-align:center;"><i class="fas fa-handshake" title="Sponsorship"></i></span>
-            <span style="text-align:center;"><i class="fas fa-qrcode" title="Check-In QR"></i></span>
-            <span></span>
-          </div>
 
           <div id="eventsList"></div>
 
@@ -7711,36 +7678,62 @@ function renderEventsList() {
     row.className = 'event-row';
     row.id = 'event-row-' + i;
     row.innerHTML = `
-      <input type="text" class="ev-name" placeholder="Event name" value="${escHtml(ev.name)}" onchange="eventsData[${i}].name=this.value" />
-      <input type="text" class="ev-location" placeholder="Location" value="${escHtml(ev.location)}" onchange="eventsData[${i}].location=this.value" />
-      <input type="date" class="ev-start-date" id="ev-start-date-${i}" value="${escHtml(ev.start_date)}" title="Start Date (required)" onchange="eventsData[${i}].start_date=this.value;eventsData[${i}].datetime=buildDatetime(this.value,eventsData[${i}].start_time,eventsData[${i}].end_date,eventsData[${i}].end_time)" />
-      <input type="time" class="ev-start-time" id="ev-start-time-${i}" value="${escHtml(ev.start_time)}" title="Start Time (required)" onchange="eventsData[${i}].start_time=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,this.value,eventsData[${i}].end_date,eventsData[${i}].end_time)" />
-      <input type="date" class="ev-end-date" id="ev-end-date-${i}" value="${escHtml(ev.end_date)}" title="End Date (optional — leave blank if same day)" onchange="eventsData[${i}].end_date=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,eventsData[${i}].start_time,this.value,eventsData[${i}].end_time)" />
-      <input type="time" class="ev-end-time" id="ev-end-time-${i}" value="${escHtml(ev.end_time)}" title="End Time (optional)" onchange="eventsData[${i}].end_time=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,eventsData[${i}].start_time,eventsData[${i}].end_date,this.value)" />
-      <button class="featured-star${ev.featured ? ' active' : ''}" title="${ev.featured ? 'Featured event — click to unfeature' : 'Click to mark as featured'}" onclick="toggleFeatured(${i})">
-        <i class="fas fa-star"></i>
-      </button>
-      <button class="btn-flyer${ev.flyer ? ' has-flyer' : ''}" title="${ev.flyer ? 'Flyer attached — click to edit' : 'Attach a flyer image'}" onclick="toggleFlyerRow(${i})">
-        <i class="fas fa-image"></i>
-      </button>
-      <button class="btn-desc${ev.description ? ' has-desc' : ''}" title="${ev.description ? 'Description set — click to edit' : 'Add event description'}" onclick="toggleDescRow(${i})">
-        <i class="fas fa-align-left"></i>
-      </button>
-      <button class="btn-reg${eventHasRegistrationOptions(ev) ? ' has-reg' : ''}" title="${eventHasRegistrationOptions(ev) ? 'Registration options set — click to edit' : 'Add registration options'}" onclick="toggleRegRow(${i})">
-        <i class="fas fa-link"></i>
-      </button>
-      <button class="btn-sponsor${ev.sponsorEnabled ? ' has-sponsor' : ''}" title="${ev.sponsorEnabled ? 'Sponsor button enabled — click to edit' : 'Add sponsor button'}" onclick="toggleSponsorRow(${i})">
-        <i class="fas fa-handshake"></i>
-      </button>
-      <button class="btn-sm view" onclick="showEvtQr(${i})" title="Check-In QR Code" style="padding:4px 8px;font-size:0.78rem;">
-        <i class="fas fa-qrcode"></i>
-      </button>
-      <button class="btn-sm" onclick="archiveEvent(${i})" title="Archive event" style="padding:4px 8px;font-size:0.78rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);">
-        <i class="fas fa-box-archive"></i>
-      </button>
-      <button class="btn-del" onclick="removeEvent(${i})" title="Delete event">
-        <i class="fas fa-trash"></i>
-      </button>
+      <div class="event-row-fields">
+        <div class="event-field span-2">
+          <label>Event Name <span style="color:var(--red);">*</span></label>
+          <input type="text" class="ev-name" placeholder="Event name" value="${escHtml(ev.name)}" onchange="eventsData[${i}].name=this.value" />
+        </div>
+        <div class="event-field span-2">
+          <label>Location</label>
+          <input type="text" class="ev-location" placeholder="Location or address" value="${escHtml(ev.location)}" onchange="eventsData[${i}].location=this.value" />
+        </div>
+      </div>
+      <div class="event-row-dates">
+        <div class="event-field">
+          <label>Start Date <span style="color:var(--red);">*</span></label>
+          <input type="date" class="ev-start-date" id="ev-start-date-${i}" value="${escHtml(ev.start_date)}" onchange="eventsData[${i}].start_date=this.value;eventsData[${i}].datetime=buildDatetime(this.value,eventsData[${i}].start_time,eventsData[${i}].end_date,eventsData[${i}].end_time)" />
+        </div>
+        <div class="event-field">
+          <label>Start Time <span style="color:var(--red);">*</span></label>
+          <input type="time" class="ev-start-time" id="ev-start-time-${i}" value="${escHtml(ev.start_time)}" onchange="eventsData[${i}].start_time=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,this.value,eventsData[${i}].end_date,eventsData[${i}].end_time)" />
+        </div>
+        <div class="event-field">
+          <label>End Date <span style="color:var(--gray-400);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input type="date" class="ev-end-date" id="ev-end-date-${i}" value="${escHtml(ev.end_date)}" onchange="eventsData[${i}].end_date=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,eventsData[${i}].start_time,this.value,eventsData[${i}].end_time)" />
+        </div>
+        <div class="event-field">
+          <label>End Time <span style="color:var(--gray-400);font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+          <input type="time" class="ev-end-time" id="ev-end-time-${i}" value="${escHtml(ev.end_time)}" onchange="eventsData[${i}].end_time=this.value;eventsData[${i}].datetime=buildDatetime(eventsData[${i}].start_date,eventsData[${i}].start_time,eventsData[${i}].end_date,this.value)" />
+        </div>
+      </div>
+      <div class="event-row-toolbar">
+        <span class="toolbar-label">Options:</span>
+        <button class="featured-star${ev.featured ? ' active' : ''}" onclick="toggleFeatured(${i})">
+          <i class="fas fa-star"></i> ${ev.featured ? 'Featured' : 'Feature'}
+        </button>
+        <button class="btn-flyer${ev.flyer ? ' has-flyer' : ''}" onclick="toggleFlyerRow(${i})">
+          <i class="fas fa-image"></i> Flyer${ev.flyer ? ' ✓' : ''}
+        </button>
+        <button class="btn-desc${ev.description ? ' has-desc' : ''}" onclick="toggleDescRow(${i})">
+          <i class="fas fa-align-left"></i> Description${ev.description ? ' ✓' : ''}
+        </button>
+        <button class="btn-reg${eventHasRegistrationOptions(ev) ? ' has-reg' : ''}" onclick="toggleRegRow(${i})">
+          <i class="fas fa-link"></i> Registration${eventHasRegistrationOptions(ev) ? ' ✓' : ''}
+        </button>
+        <button class="btn-sponsor${ev.sponsorEnabled ? ' has-sponsor' : ''}" onclick="toggleSponsorRow(${i})">
+          <i class="fas fa-handshake"></i> Sponsor${ev.sponsorEnabled ? ' ✓' : ''}
+        </button>
+        <button class="btn-sm view" onclick="showEvtQr(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;">
+          <i class="fas fa-qrcode"></i> QR
+        </button>
+        <span class="toolbar-spacer"></span>
+        <button class="btn-sm" onclick="archiveEvent(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);">
+          <i class="fas fa-box-archive"></i> Archive
+        </button>
+        <button class="btn-del" onclick="removeEvent(${i})">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </div>
     `;
     container.appendChild(row);
 
