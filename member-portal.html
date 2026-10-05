@@ -1600,6 +1600,20 @@ function parseDate(dtStr) {
   return { day, month: months[m - 1] || '???', time };
 }
 
+function buildEventRsvpHtml(evId) {
+  var myResponse = _myEventRsvps[evId] || null;
+  var labels = { yes:'Yes', maybe:'Maybe', no:'No' };
+  var icons  = { yes:'fa-check', maybe:'fa-question', no:'fa-times' };
+  var colors = { yes:'#16a34a', maybe:'#d97706', no:'#dc2626' };
+  return '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">' +
+    '<span style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Your RSVP:</span>' +
+    ['yes','maybe','no'].map(function(val) {
+      var active = myResponse === val;
+      return '<button id="evrsvp-' + escHtml(evId) + '-' + val + '" onclick="submitEventRsvp(\'' + escHtml(evId) + '\',\'' + val + '\')" style="padding:5px 13px;border-radius:6px;font-size:0.78rem;font-weight:600;cursor:pointer;border:1px solid ' + colors[val] + ';background:' + (active ? colors[val] : 'transparent') + ';color:' + (active ? '#fff' : colors[val]) + ';display:inline-flex;align-items:center;gap:5px;"><i class="fas ' + icons[val] + '"></i> ' + labels[val] + '</button>';
+    }).join('') +
+  '</div>';
+}
+
 function renderEventItem(ev) {
   const d = parseDate(ev.datetime);
   const n = portalNormalizeEvent(ev);
@@ -1610,6 +1624,7 @@ function renderEventItem(ev) {
     var label = n.fee > 0 ? 'Register — $' + (n.fee / 100).toFixed(2) : 'Register (Free)';
     regHtml = '<button type="button" class="btn-gold event-reg-btn" onclick="portalOpenRegModal(\'' + escHtml(String(ev.id)) + '\')"><i class="fas fa-ticket-alt"></i> ' + label + '</button>';
   }
+  var rsvpHtml = ev.rsvp_enabled ? buildEventRsvpHtml(String(ev.id)) : '';
   if (ev.flyer && ev.flyer.trim()) {
     // Featured flyer card: flyer left, details right
     return '<div style="display:flex;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;background:#111;margin-bottom:4px;">' +
@@ -1640,6 +1655,7 @@ function renderEventItem(ev) {
           regHtml +
           '<button onclick="openFlyerLightbox(\'' + escHtml(ev.flyer) + '\',\'' + escHtml(ev.name) + '\')" style="display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.75);font-size:0.82rem;font-weight:600;padding:9px 16px;border-radius:7px;cursor:pointer;"><i class="fas fa-image"></i> View Flyer</button>' +
         '</div>' +
+        rsvpHtml +
       '</div>' +
     '</div>';
   }
@@ -1652,7 +1668,39 @@ function renderEventItem(ev) {
     (d.time ? ' &middot; <i class="fas fa-clock"></i> ' + escHtml(d.time) : '') + '</div>' +
     (ev.description ? '<p style="font-size:0.78rem;color:var(--gray-400);margin-top:6px;line-height:1.5;">' + escHtml(ev.description) + '</p>' : '') +
     regHtml +
+    rsvpHtml +
     '</div></div>';
+}
+
+async function submitEventRsvp(eventId, response) {
+  var memberId = currentMember && currentMember.id;
+  var token = currentSession && currentSession.access_token;
+  if (!memberId || !token) { showToast('Session expired. Please log in again.', 'error'); return; }
+  // Optimistically update button states
+  var colors = { yes:'#16a34a', maybe:'#d97706', no:'#dc2626' };
+  ['yes','maybe','no'].forEach(function(val) {
+    var btn = document.getElementById('evrsvp-' + eventId + '-' + val);
+    if (!btn) return;
+    var active = val === response;
+    btn.style.background = active ? colors[val] : 'transparent';
+    btn.style.color = active ? '#fff' : colors[val];
+  });
+  _myEventRsvps[eventId] = response;
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/event_rsvps', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + token,
+        'Prefer': 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify({ event_id: eventId, member_id: memberId, response: response })
+    });
+    if (!res.ok) throw new Error(await res.text());
+  } catch(e) {
+    showToast('Could not save RSVP: ' + e.message, 'error');
+  }
 }
 
 function openFlyerLightbox(url, name) {
@@ -1668,10 +1716,22 @@ function closeFlyerLightbox() {
   if (lb) lb.style.display = 'none';
 }
 
-function renderEventsPanel() {
+var _myEventRsvps = {}; // eventId -> response
+
+async function renderEventsPanel() {
   const c = document.getElementById('eventsList');
   if (!allEvents.length) { c.innerHTML = '<div class="empty-state"><i class="fas fa-calendar"></i><p>No events found.</p></div>'; return; }
   document.getElementById('eventsCountBadge').textContent = allEvents.length + ' events';
+  // Load this member's event RSVPs
+  var memberId = currentMember && currentMember.id;
+  var token = currentSession && currentSession.access_token;
+  if (memberId && token) {
+    try {
+      var rows = await sbGet('event_rsvps', 'member_id=eq.' + encodeURIComponent(memberId), token);
+      _myEventRsvps = {};
+      (rows || []).forEach(function(r) { _myEventRsvps[r.event_id] = r.response; });
+    } catch(e) { _myEventRsvps = {}; }
+  }
   c.innerHTML = allEvents.map(renderEventItem).join('');
 }
 
