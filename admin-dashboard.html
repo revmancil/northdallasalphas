@@ -512,7 +512,9 @@
     .roster-badge-no       { background: #fef3c7; color: #92400e; }
     .roster-name-bar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px 6px; border-bottom: 1px solid var(--gray-200); }
     .roster-name { font-size: 0.95rem; font-weight: 700; color: var(--gray-800); }
-    .roster-badge-life { background: rgba(201,168,76,0.18); color: #7a5c00; border: 1px solid rgba(201,168,76,0.45); }
+    .roster-badge-life    { background: rgba(201,168,76,0.18); color: #7a5c00; border: 1px solid rgba(201,168,76,0.45); }
+    .roster-badge-renewal { background: rgba(201,168,76,0.22); color: #7a5c00; border: 1px solid rgba(201,168,76,0.55); }
+    .roster-badge-lapsed  { background: #e5e7eb; color: #374151; border: 1px solid #d1d5db; }
     .bd-member-col { transition: opacity 0.2s; }
     .bd-member-col.bd-hidden { display: none; }
     .bd-contact-input { min-width: 160px; }
@@ -6169,14 +6171,32 @@ let allComplianceMembers = [];
 let rosterCurrentPage    = 1;
 const ROSTER_PAGE_SIZE   = 25;
 
+// Returns 'active', 'renewal_needed', or 'lapsed' based on chapter_dues_expiration.
+// Falls back to dues_current (yes/no/bool) when no expiration date is stored.
+// Dues period: Sept 1 – Aug 31. Grace/renewal window: Sept 1 – Dec 31 of the expiration year.
+function rosterDuesStatus(m) {
+  var exp = m.chapter_dues_expiration;
+  if (!exp) {
+    var paid = m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
+    return paid ? 'active' : 'lapsed';
+  }
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var expDate = new Date(exp + 'T00:00:00');
+  if (today <= expDate) return 'active';
+  var graceEnd = new Date(expDate.getFullYear(), 11, 31); // Dec 31 of expiration year
+  if (today <= graceEnd) return 'renewal_needed';
+  return 'lapsed';
+}
+
 function rosterComputeActive(m) {
-  const duesCurrent = m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
+  const duesStatus  = rosterDuesStatus(m);
+  const duesOk      = duesStatus === 'active' || duesStatus === 'renewal_needed';
   const grandTax    = String(m.grand_tax_paid  || '').toLowerCase();
   const lifeMem     = String(m.life_member      || '').toLowerCase();
   const grandOk = grandTax === 'yes' || grandTax === 'y' || grandTax === 'true' || grandTax === '1';
   const lifeOk  = lifeMem  === 'yes' || lifeMem  === 'y' || lifeMem  === 'true' || lifeMem  === '1';
-  if (lifeOk) return duesCurrent; // life member — ignore grand tax
-  return duesCurrent && grandOk;
+  if (lifeOk) return duesOk;
+  return duesOk && grandOk;
 }
 
 function rosterYesNo(val) {
@@ -6200,7 +6220,7 @@ function imdpEligible(m) {
   const lifeMem = String(m.life_member || '').toLowerCase();
   const isLife  = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
   const grandTaxOk  = isLife || m.grand_tax_paid;
-  const duesOk      = m.dues_current;
+  const duesOk      = rosterDuesStatus(m) !== 'lapsed';
   const today       = new Date().toISOString().slice(0, 10);
   const imdpOk      = m.imdp_certified && m.imdp_certified >= today;
   const riskOk      = m.risk_mgmt_certified && m.risk_mgmt_certified >= today;
@@ -6213,9 +6233,14 @@ function renderRosterGroup(m) {
   const lifeMem  = String(m.life_member || '').toLowerCase();
   const isLife   = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
 
-  const activeBadge = isActive
-    ? '<span class="roster-badge roster-badge-active">Active</span>'
-    : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
+  const duesStatus = rosterDuesStatus(m);
+  const activeBadge = duesStatus === 'renewal_needed'
+    ? '<span class="roster-badge roster-badge-renewal"><i class="fas fa-clock" style="font-size:0.6rem;margin-right:3px;"></i>Renewal Needed</span>'
+    : duesStatus === 'lapsed'
+      ? '<span class="roster-badge roster-badge-lapsed"><i class="fas fa-ban" style="font-size:0.6rem;margin-right:3px;"></i>Membership Lapsed</span>'
+      : isActive
+        ? '<span class="roster-badge roster-badge-active">Active</span>'
+        : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
   const lifeBadge = isLife
     ? ' <span class="roster-badge roster-badge-life"><i class="fas fa-star" style="font-size:0.6rem;margin-right:3px;"></i>Life Member</span>'
     : '';
@@ -6260,6 +6285,18 @@ function renderRosterGroup(m) {
     '<div class="roster-cell"><div class="roster-cell-key">IMDP Certified</div>'       + rosterVal(normalizeOptionalDateValue(m.imdp_certified))      + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + (isLife ? '<span class="roster-badge" style="background:rgba(201,168,76,0.15);color:#C9A84C;border:1px solid rgba(201,168,76,0.4);font-weight:700;">Life Member</span>' : rosterYesNo(m.grand_tax_paid)) + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>'    + rosterYesNo(m.dues_current)                                  + '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Dues Expiration</div>' +
+      '<input type="date" value="' + escHtml(m.chapter_dues_expiration || '') + '" ' +
+      'onchange="saveChapterDuesExpiration(\'' + escHtml(String(m.id || '')) + '\', this.value)" ' +
+      'style="border:1px solid var(--gray-300);border-radius:4px;padding:2px 5px;font-size:0.78rem;color:var(--gray-800);background:var(--white);max-width:130px;">' +
+    '</div>' +
+    '<div class="roster-cell"><div class="roster-cell-key">Dues Status</div>' +
+      (duesStatus === 'renewal_needed'
+        ? '<span class="roster-badge roster-badge-renewal"><i class="fas fa-clock" style="font-size:0.6rem;margin-right:3px;"></i>Renewal Needed</span>'
+        : duesStatus === 'lapsed'
+          ? '<span class="roster-badge roster-badge-lapsed"><i class="fas fa-ban" style="font-size:0.6rem;margin-right:3px;"></i>Membership Lapsed</span>'
+          : '<span class="roster-badge roster-badge-active">Active</span>') +
+    '</div>' +
     '</div>' +
     '</div>';
 }
@@ -6331,6 +6368,26 @@ function renderMemberComplianceList(members) {
   allComplianceMembers = members || [];
   rosterCurrentPage    = 1;
   renderRosterPage();
+}
+
+async function saveChapterDuesExpiration(memberId, newDate) {
+  const token = getAdminToken();
+  if (!token) { showToast('Admin session expired.', 'error'); return; }
+  var duesCurrent = false;
+  if (newDate) {
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    duesCurrent = today <= new Date(newDate + 'T00:00:00');
+  }
+  try {
+    await sbPatch('members', 'id=eq.' + encodeURIComponent(memberId),
+      { chapter_dues_expiration: newDate || null, dues_current: duesCurrent }, token);
+    var m = allComplianceMembers.find(function(x) { return String(x.id) === String(memberId); });
+    if (m) { m.chapter_dues_expiration = newDate || null; m.dues_current = duesCurrent; }
+    renderRosterPage();
+    showToast('Dues expiration updated.', 'success');
+  } catch(err) {
+    showToast('Could not save dues expiration: ' + escHtml(err.message || 'unknown error'), 'error');
+  }
 }
 
 async function resendApprovalEmail(email, name, accessType) {
