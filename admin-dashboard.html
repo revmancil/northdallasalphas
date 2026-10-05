@@ -1824,6 +1824,19 @@
           </div>
         </div>
       </div>
+
+      <!-- Event Archive -->
+      <div class="section-card" style="margin-top:20px;">
+        <div class="section-card-header" onclick="toggleEventArchive()" style="cursor:pointer;">
+          <h3><i class="fas fa-box-archive" style="color:var(--gold);margin-right:8px;"></i>Event Archive</h3>
+          <i class="fas fa-chevron-down" id="eventArchiveChevron" style="color:var(--gray-400);transition:transform 0.2s;"></i>
+        </div>
+        <div id="eventArchiveBody" style="display:none;">
+          <div class="section-card-body">
+            <div id="eventsArchiveList"><div class="hint-text">Click to load archived events.</div></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ══════════════════════════════════
@@ -7676,7 +7689,7 @@ async function loadEventsList() {
     return;
   }
   try {
-    const rows = await sbGet('events', 'order=sort_order.asc', token);
+    const rows = await sbGet('events', 'archived=not.is.true&order=sort_order.asc', token);
     eventsData = (rows && rows.length)
       ? rows.map(function(ev) { return normalizeAdminEventRecord(ev); })
       : getEvents();
@@ -7722,7 +7735,10 @@ function renderEventsList() {
       <button class="btn-sm view" onclick="showEvtQr(${i})" title="Check-In QR Code" style="padding:4px 8px;font-size:0.78rem;">
         <i class="fas fa-qrcode"></i>
       </button>
-      <button class="btn-del" onclick="removeEvent(${i})" title="Remove event">
+      <button class="btn-sm" onclick="archiveEvent(${i})" title="Archive event" style="padding:4px 8px;font-size:0.78rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);">
+        <i class="fas fa-box-archive"></i>
+      </button>
+      <button class="btn-del" onclick="removeEvent(${i})" title="Delete event">
         <i class="fas fa-trash"></i>
       </button>
     `;
@@ -7866,6 +7882,77 @@ async function loadEventRsvpTallies() {
       '<span style="color:var(--gray-400);">~ ' + t.maybe + ' Maybe</span>' +
       '<span style="color:#dc2626;">✗ ' + t.no + ' No</span>';
   });
+}
+
+async function archiveEvent(i) {
+  const ev = eventsData[i];
+  if (!ev) return;
+  if (!confirm('Archive "' + (ev.name || 'this event') + '"? It will move to the Event Archive and no longer show on the public site.')) return;
+  if (ev.id) {
+    const token = getAdminToken();
+    try {
+      await sbPatch('events', 'id=eq.' + encodeURIComponent(ev.id), { archived: true }, token);
+    } catch(e) {
+      showToast('Could not archive: ' + e.message, 'error');
+      return;
+    }
+  }
+  eventsData.splice(i, 1);
+  renderEventsList();
+  loadEventRsvpTallies();
+  showToast('Event archived.', 'success');
+  if (document.getElementById('eventArchiveBody').style.display !== 'none') loadEventsArchive();
+}
+
+var _evtArchiveLoaded = false;
+function toggleEventArchive() {
+  const body = document.getElementById('eventArchiveBody');
+  const chevron = document.getElementById('eventArchiveChevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chevron.style.transform = open ? '' : 'rotate(180deg)';
+  if (!open && !_evtArchiveLoaded) loadEventsArchive();
+}
+
+async function loadEventsArchive() {
+  _evtArchiveLoaded = true;
+  const el = document.getElementById('eventsArchiveList');
+  if (!el) return;
+  const token = getAdminToken();
+  el.innerHTML = '<div class="hint-text">Loading…</div>';
+  try {
+    const rows = await sbGet('events', 'archived=eq.true&order=start_date.desc', token);
+    if (!rows || !rows.length) {
+      el.innerHTML = '<div class="hint-text">No archived events.</div>';
+      return;
+    }
+    el.innerHTML = rows.map(function(ev) {
+      const dateStr = ev.start_date ? new Date(ev.start_date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--gray-200);">' +
+        '<div>' +
+          '<div style="font-weight:600;font-size:0.88rem;">' + escHtml(ev.name || '(untitled)') + '</div>' +
+          '<div style="font-size:0.75rem;color:var(--gray-500);">' + dateStr + (ev.location ? ' · ' + escHtml(ev.location) : '') + '</div>' +
+        '</div>' +
+        '<button class="btn-sm" onclick="unarchiveEvent(\'' + escHtml(ev.id) + '\',\'' + escHtml(ev.name || '') + '\')" style="background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);flex-shrink:0;">' +
+          '<i class="fas fa-rotate-left"></i> Restore' +
+        '</button>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="hint-text" style="color:var(--red);">Could not load archive: ' + escHtml(e.message) + '</div>';
+  }
+}
+
+async function unarchiveEvent(id, name) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('events', 'id=eq.' + encodeURIComponent(id), { archived: false }, token);
+    showToast('"' + name + '" restored to active events.', 'success');
+    loadEventsList();
+    loadEventsArchive();
+  } catch(e) {
+    showToast('Could not restore: ' + e.message, 'error');
+  }
 }
 
 function toggleFeatured(i) {
