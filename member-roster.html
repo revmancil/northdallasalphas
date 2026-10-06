@@ -412,7 +412,7 @@ async function loadOfficers() {
 async function loadMembers() {
   try {
     var r = await fetch(
-      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,grand_tax_paid,status,portal_access',
+      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,middle_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,grand_tax_paid,status,portal_access',
       { headers: sbHeaders(_token) }
     );
     var data = await r.json();
@@ -464,16 +464,23 @@ function chapterStatusBadge(m) {
 }
 
 function officerTitle(m) {
-  var first = normalizeName(m.first_name || '');
-  var last  = normalizeName(m.last_name  || '');
-  // first word of first name handles hyphenated/compound names
+  var first     = normalizeName(m.first_name  || '');
+  var middle    = normalizeName(m.middle_name || '');
+  var last      = normalizeName(m.last_name   || '');
   var firstWord = first.split(/[\s-]/)[0];
+  var midInit   = middle ? middle[0] : '';
+
   var candidates = [
-    first + ' ' + last,                  // full first + last
-    firstWord + ' ' + last,              // first-word + last
-    last + ' ' + first,                  // last + first
-    last + ' ' + firstWord               // last + first-word
-  ];
+    // Most specific first: first + middle initial + last
+    midInit ? first + ' ' + midInit + ' ' + last : null,
+    midInit ? firstWord + ' ' + midInit + ' ' + last : null,
+    // first + last (no middle)
+    first + ' ' + last,
+    firstWord + ' ' + last,
+    last + ' ' + first,
+    last + ' ' + firstWord
+  ].filter(Boolean);
+
   for (var i = 0; i < candidates.length; i++) {
     if (_officerMap[candidates[i]]) return _officerMap[candidates[i]];
   }
