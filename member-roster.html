@@ -295,13 +295,14 @@
           <th style="width:36px;">#</th>
           <th>Name</th>
           <th>Alpha ID</th>
+          <th>Officer Position</th>
           <th>Chapter Dues Expiration</th>
           <th>Grand Tax Status</th>
           <th>Chapter Status</th>
         </tr>
       </thead>
       <tbody id="rosterBody">
-        <tr><td colspan="5"><div class="state-msg"><i class="fas fa-spinner fa-spin"></i>Loading members…</div></td></tr>
+        <tr><td colspan="7"><div class="state-msg"><i class="fas fa-spinner fa-spin"></i>Loading members…</div></td></tr>
       </tbody>
     </table>
   </div>
@@ -314,6 +315,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 var _token = null;
 var _allMembers = [];
 var _filtered = [];
+var _officerMap = {}; // alpha_id or name key → position title
 
 function sbHeaders(token) {
   return {
@@ -358,11 +360,28 @@ async function doLogin() {
     if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     var printDateEl = document.getElementById('printDate');
     if (printDateEl) { printDateEl.style.display = ''; printDateEl.textContent = 'Printed ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }
-    loadMembers();
+    loadOfficers().then(loadMembers);
   } catch(e) {
     errEl.textContent = 'Error connecting. Please try again.';
     errEl.style.display = '';
   }
+}
+
+async function loadOfficers() {
+  try {
+    var r = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.officers&select=content_json&limit=1', { headers: sbHeaders(_token) });
+    var rows = await r.json();
+    if (!rows || !rows.length || !rows[0].content_json) return;
+    var officers = rows[0].content_json;
+    if (!Array.isArray(officers)) return;
+    _officerMap = {};
+    officers.forEach(function(o) {
+      if (!o.name || !o.title) return;
+      // Strip "Bro." prefix and normalize
+      var name = o.name.replace(/^bro\.?\s*/i, '').trim().toLowerCase();
+      if (name && name !== '[name]') _officerMap[name] = o.title;
+    });
+  } catch(e) { /* non-fatal */ }
 }
 
 async function loadMembers() {
@@ -419,6 +438,12 @@ function chapterStatusBadge(m) {
     : '<span class="badge badge-lapsed"><i class="fas fa-ban"></i> Inactive</span>';
 }
 
+function officerTitle(m) {
+  var full = ((m.first_name || '') + ' ' + (m.last_name || '') + (m.suffix ? ' ' + m.suffix : '')).trim().toLowerCase();
+  var lastFirst = ((m.last_name || '') + ', ' + (m.first_name || '')).trim().toLowerCase();
+  return _officerMap[full] || _officerMap[lastFirst] || null;
+}
+
 function formatExp(val) {
   if (!val) return '—';
   var m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -451,15 +476,17 @@ function resetFilters() {
 function renderTable() {
   var tbody = document.getElementById('rosterBody');
   if (!_filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="state-msg"><i class="fas fa-users-slash"></i>No members match the current filter.</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="state-msg"><i class="fas fa-users-slash"></i>No members match the current filter.</div></td></tr>';
     return;
   }
   tbody.innerHTML = _filtered.map(function(m, i) {
     var fullName = [m.last_name, m.first_name, m.suffix ? '(' + m.suffix + ')' : ''].filter(Boolean).join(', ').replace(', (', ' (');
-    return '<tr>' +
+    var officer = officerTitle(m);
+    return '<tr' + (officer ? ' style="background:rgba(201,168,76,0.07);"' : '') + '>' +
       '<td class="td-num">' + (i + 1) + '</td>' +
-      '<td class="td-name">' + escHtml(fullName) + '</td>' +
+      '<td class="td-name">' + escHtml(fullName) + (officer ? ' <span style="font-size:0.68rem;font-weight:700;color:#C9A84C;letter-spacing:0.04em;">★</span>' : '') + '</td>' +
       '<td class="td-id">'   + escHtml(String(m.alpha_id || '—')) + '</td>' +
+      '<td>' + (officer ? '<span class="badge" style="background:rgba(201,168,76,0.18);color:#7a5c00;border:1px solid rgba(201,168,76,0.4);">' + escHtml(officer) + '</span>' : '<span style="color:#9a9a9a;font-size:0.78rem;">—</span>') + '</td>' +
       '<td class="td-exp">'  + escHtml(formatExp(m.chapter_dues_expiration)) + '</td>' +
       '<td>' + grandTaxBadge(m) + '</td>' +
       '<td>' + chapterStatusBadge(m) + '</td>' +
