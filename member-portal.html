@@ -1924,7 +1924,9 @@ function renderMemberCard() {
   if (statusEl) {
     var isLife = !!m.life_member_date;
     var isVisit = m.portal_access === 'visiting';
-    statusEl.textContent = isLife ? 'Life Member' : isVisit ? 'Visiting Brother' : 'Active';
+    var cardDues = portalDuesStatus ? portalDuesStatus(m) : (m.dues_current ? 'active' : 'lapsed');
+    var cardDuesOk = cardDues === 'active' || cardDues === 'renewal_needed';
+    statusEl.textContent = isLife ? 'Life Member' : isVisit ? 'Visiting Brother' : (cardDuesOk ? 'Active Member' : 'Membership Lapsed');
   }
 }
 
@@ -2784,6 +2786,24 @@ async function init() {
   const isVisiting  = portalAccess === 'visiting';
   const isPending   = !hasAccess && !isVisiting;
 
+  // Compute dues status from chapter_dues_expiration
+  function portalDuesStatus(m) {
+    if (!m) return 'lapsed';
+    var exp = m.chapter_dues_expiration;
+    if (!exp) {
+      var paid = m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
+      return paid ? 'active' : 'lapsed';
+    }
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    var expDate = new Date(exp + 'T00:00:00');
+    if (today <= expDate) return 'active';
+    var graceEnd = new Date(expDate.getFullYear(), 11, 31);
+    if (today <= graceEnd) return 'renewal_needed';
+    return 'lapsed';
+  }
+  const duesStatus = portalDuesStatus(currentMember);
+  const duesActive = duesStatus === 'active' || duesStatus === 'renewal_needed';
+
   // Gate: pending users see a holding screen and cannot access portal content
   if (isPending) {
     document.getElementById('sidebarName').textContent = fullName || _userEmail;
@@ -2817,8 +2837,9 @@ async function init() {
   var vbAccessCard = document.getElementById('vbAccessRequestCard');
   if (vbAccessCard) vbAccessCard.style.display = isVisiting ? '' : 'none';
 
-  document.getElementById('statusText').textContent  = hasAccess ? 'Active Member' : (isVisiting ? 'Visiting Brother' : 'Pending Approval');
-  document.getElementById('statusDot').className = 'status-dot' + ((!hasAccess && !isVisiting) ? ' pending' : '');
+  var memberStatusLabel = isVisiting ? 'Visiting Brother' : isPending ? 'Pending Approval' : (duesActive ? 'Active Member' : 'Membership Lapsed');
+  document.getElementById('statusText').textContent  = memberStatusLabel;
+  document.getElementById('statusDot').className = 'status-dot' + ((!hasAccess && !isVisiting) ? ' pending' : (!duesActive && !isVisiting ? ' pending' : ''));
   const avEl = document.getElementById('sidebarAvatar');
   if (currentMember && currentMember.photo) { avEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { avEl.textContent = initials.toUpperCase(); }
@@ -2848,8 +2869,8 @@ async function init() {
     }).catch(function(){});
 
   const statusEl = document.getElementById('profileStatus');
-  statusEl.className = 'member-status ' + (hasAccess ? 'active' : (isVisiting ? 'active' : 'pending'));
-  statusEl.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> ' + (hasAccess ? 'Active Member' : (isVisiting ? 'Visiting Brother' : 'Pending Approval'));
+  statusEl.className = 'member-status ' + (isVisiting ? 'active' : isPending ? 'pending' : (duesActive ? 'active' : 'pending'));
+  statusEl.innerHTML = '<i class="fas fa-circle" style="font-size:6px;"></i> ' + memberStatusLabel;
   const pAvEl = document.getElementById('profileAvatarLarge');
   if (currentMember && currentMember.photo) { pAvEl.innerHTML = '<img src="' + escHtml(currentMember.photo) + '" alt="Avatar" />'; }
   else { pAvEl.textContent = initials.toUpperCase(); }

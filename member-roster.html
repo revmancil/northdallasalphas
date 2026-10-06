@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Member Roster – Xi Tau Lambda Chapter 607</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root {
+    --gold: #C9A84C;
+    --gold-light: rgba(201,168,76,0.15);
+    --black: #0a0a0a;
+    --white: #ffffff;
+    --gray-100: #f4f4f4;
+    --gray-200: #e5e5e5;
+    --gray-400: #9a9a9a;
+    --gray-700: #3a3a3a;
+    --active-bg: rgba(34,197,94,0.1);
+    --active-color: #15803d;
+    --renewal-bg: rgba(201,168,76,0.18);
+    --renewal-color: #7a5c00;
+    --lapsed-bg: #e5e7eb;
+    --lapsed-color: #374151;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--white);
+    color: var(--black);
+    padding: 32px 40px;
+  }
+
+  /* ── Header ── */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--gold);
+  }
+  .header-left { flex: 1; }
+  .chapter-label {
+    font-family: 'EB Garamond', serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .chapter-title {
+    font-family: 'EB Garamond', serif;
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--black);
+    line-height: 1.15;
+  }
+  .roster-meta {
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    margin-top: 6px;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 0.78rem;
+    color: var(--gray-400);
+    white-space: nowrap;
+  }
+  .header-right strong { color: var(--black); font-size: 0.85rem; }
+
+  /* ── Controls (hidden on print) ── */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+  }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--gray-700);
+  }
+  .filter-group label { font-weight: 500; }
+  select, input[type="text"] {
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    font-family: 'Inter', sans-serif;
+    color: var(--black);
+    background: var(--white);
+    outline: none;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--gold); }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .btn-gold { background: var(--gold); color: var(--black); }
+  .btn-outline { background: transparent; border: 1px solid var(--gray-200); color: var(--gray-700); }
+  .btn:hover { opacity: 0.88; }
+  .ml-auto { margin-left: auto; }
+
+  /* ── Summary row ── */
+  .summary-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+    font-size: 0.78rem;
+  }
+  .summary-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .summary-chip.total   { background: var(--gray-100); color: var(--gray-700); }
+  .summary-chip.active  { background: var(--active-bg); color: var(--active-color); }
+  .summary-chip.renewal { background: var(--renewal-bg); color: var(--renewal-color); }
+  .summary-chip.lapsed  { background: var(--lapsed-bg); color: var(--lapsed-color); }
+
+  /* ── Table ── */
+  .roster-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  thead th {
+    background: var(--black);
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child { border-radius: 0; }
+  tbody tr { border-bottom: 1px solid var(--gray-200); }
+  tbody tr:hover { background: var(--gray-100); }
+  tbody td {
+    padding: 9px 12px;
+    vertical-align: middle;
+    color: var(--black);
+  }
+  tbody tr:nth-child(even) { background: #fafafa; }
+  tbody tr:nth-child(even):hover { background: var(--gray-100); }
+
+  .td-num {
+    color: var(--gray-400);
+    font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .td-name { font-weight: 600; }
+  .td-id   { font-variant-numeric: tabular-nums; color: var(--gray-700); }
+  .td-exp  { font-variant-numeric: tabular-nums; color: var(--gray-700); }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-active  { background: var(--active-bg);  color: var(--active-color);  border: 1px solid rgba(34,197,94,0.25); }
+  .badge-renewal { background: var(--renewal-bg); color: var(--renewal-color); border: 1px solid rgba(201,168,76,0.4); }
+  .badge-lapsed  { background: var(--lapsed-bg);  color: var(--lapsed-color);  border: 1px solid #d1d5db; }
+  .badge-life    { background: var(--gold-light);  color: #7a5c00; border: 1px solid rgba(201,168,76,0.4); }
+
+  /* ── Loading / empty ── */
+  .state-msg {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--gray-400);
+    font-size: 0.88rem;
+  }
+  .state-msg i { font-size: 1.8rem; margin-bottom: 10px; display: block; color: var(--gold); }
+
+  /* ── Login gate ── */
+  #loginGate {
+    max-width: 380px;
+    margin: 80px auto;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    padding: 36px 32px;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+  }
+  #loginGate .gate-logo {
+    font-family: 'EB Garamond', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+  #loginGate p { font-size: 0.85rem; color: var(--gray-400); margin-bottom: 20px; }
+  .form-field { margin-bottom: 14px; text-align: left; }
+  .form-field label { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 4px; }
+  .form-field input { width: 100%; }
+  #loginErr { color: #b91c1c; font-size: 0.8rem; margin-top: 10px; display: none; }
+
+  /* ── Print styles ── */
+  @media print {
+    body { padding: 16px 20px; font-size: 10px; }
+    .controls, .no-print { display: none !important; }
+    .page-header { margin-bottom: 14px; padding-bottom: 10px; }
+    .chapter-title { font-size: 1.3rem; }
+    thead th { font-size: 0.62rem; padding: 6px 8px; }
+    tbody td  { padding: 5px 8px; }
+    .badge { font-size: 0.62rem; padding: 2px 6px; }
+    tbody tr { page-break-inside: avoid; }
+    .summary-row { margin-bottom: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Login gate -->
+<div id="loginGate">
+  <div class="gate-logo">ΑΦΑ</div>
+  <p>Admin access required to view the member roster.</p>
+  <div class="form-field"><label>Email</label><input type="email" id="lgEmail" autocomplete="email" placeholder="admin@example.com"></div>
+  <div class="form-field"><label>Password</label><input type="password" id="lgPass" placeholder="••••••••"></div>
+  <button class="btn btn-gold" style="width:100%;justify-content:center;padding:10px;" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+  <div id="loginErr"></div>
+</div>
+
+<!-- Roster (hidden until logged in) -->
+<div id="rosterApp" style="display:none;">
+  <header class="page-header">
+    <div class="header-left">
+      <div class="chapter-label">Alpha Phi Alpha Fraternity, Inc.</div>
+      <div class="chapter-title">Xi Tau Lambda Chapter 607<br>Member Roster</div>
+      <div class="roster-meta" id="rosterMeta">Loading…</div>
+    </div>
+    <div class="header-right no-print">
+      <strong id="adminName"></strong><br>
+      <span id="rosterDate"></span>
+    </div>
+    <div class="header-right" style="display:none;" id="printDate"></div>
+  </header>
+
+  <div class="controls no-print">
+    <div class="filter-group">
+      <label>Status</label>
+      <select id="filterStatus" onchange="applyFilters()">
+        <option value="all">All Members</option>
+        <option value="active">Active</option>
+        <option value="renewal_needed">Renewal Needed</option>
+        <option value="lapsed">Membership Lapsed</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Search</label>
+      <input type="text" id="searchInput" placeholder="Name or Alpha ID…" oninput="applyFilters()" style="width:180px;">
+    </div>
+    <div class="ml-auto" style="display:flex;gap:8px;">
+      <button class="btn btn-outline" onclick="resetFilters()"><i class="fas fa-times"></i> Clear</button>
+      <button class="btn btn-gold" onclick="printRoster()"><i class="fas fa-print"></i> Print Roster</button>
+    </div>
+  </div>
+
+  <div class="summary-row" id="summaryRow"></div>
+
+  <div class="roster-wrap">
+    <table id="rosterTable">
+      <thead>
+        <tr>
+          <th style="width:36px;">#</th>
+          <th>Name</th>
+          <th>Alpha ID</th>
+          <th>Dues Expiration</th>
+          <th>Dues Status</th>
+        </tr>
+      </thead>
+      <tbody id="rosterBody">
+        <tr><td colspan="5"><div class="state-msg"><i class="fas fa-spinner fa-spin"></i>Loading members…</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL      = 'https://fbjervpgxnbyntylabfr.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZiamVydnBneG5ieW50eWxhYmZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzU1ODksImV4cCI6MjA5MjA1MTU4OX0.cMGLe14EDNivZHREWvmE7QMHjb4V_STx0Mfbx7AT4dg';
+
+var _token = null;
+var _allMembers = [];
+var _filtered = [];
+
+function sbHeaders(token) {
+  return {
+    'Content-Type': 'application/json',
+    'apikey': SUPABASE_ANON_KEY,
+    'Authorization': 'Bearer ' + (token || SUPABASE_ANON_KEY)
+  };
+}
+
+async function doLogin() {
+  var email = document.getElementById('lgEmail').value.trim();
+  var pass  = document.getElementById('lgPass').value;
+  var errEl = document.getElementById('loginErr');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Email and password are required.'; errEl.style.display = ''; return; }
+  try {
+    var r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ email, password: pass })
+    });
+    var data = await r.json();
+    if (!r.ok || !data.access_token) {
+      errEl.textContent = data.error_description || data.msg || 'Invalid credentials.';
+      errEl.style.display = '';
+      return;
+    }
+    // Check admin
+    var admins = await fetch(SUPABASE_URL + '/rest/v1/chapter_admins?email=eq.' + encodeURIComponent(email) + '&limit=1', { headers: sbHeaders(data.access_token) });
+    var adminRows = await admins.json();
+    if (!adminRows || !adminRows.length) {
+      errEl.textContent = 'You do not have admin access to view the roster.';
+      errEl.style.display = '';
+      return;
+    }
+    _token = data.access_token;
+    document.getElementById('loginGate').style.display = 'none';
+    document.getElementById('rosterApp').style.display = '';
+    var nameEl = document.getElementById('adminName');
+    if (nameEl) nameEl.textContent = email;
+    var dateEl = document.getElementById('rosterDate');
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    var printDateEl = document.getElementById('printDate');
+    if (printDateEl) { printDateEl.style.display = ''; printDateEl.textContent = 'Printed ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }
+    loadMembers();
+  } catch(e) {
+    errEl.textContent = 'Error connecting. Please try again.';
+    errEl.style.display = '';
+  }
+}
+
+async function loadMembers() {
+  try {
+    var r = await fetch(
+      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,status',
+      { headers: sbHeaders(_token) }
+    );
+    var data = await r.json();
+    if (!Array.isArray(data)) throw new Error('Bad response');
+    _allMembers = data;
+    applyFilters();
+  } catch(e) {
+    document.getElementById('rosterBody').innerHTML = '<tr><td colspan="5"><div class="state-msg"><i class="fas fa-exclamation-circle"></i>Could not load members. Please refresh and try again.</div></td></tr>';
+  }
+}
+
+function duesStatus(m) {
+  var lifeVal = String(m.life_member || m.life_member_date || '').toLowerCase();
+  if (lifeVal === 'yes' || lifeVal === 'true' || lifeVal === 'y' || lifeVal === '1' || m.life_member_date) return 'life';
+  var exp = m.chapter_dues_expiration;
+  if (!exp) {
+    var paid = m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
+    return paid ? 'active' : 'lapsed';
+  }
+  var today = new Date(); today.setHours(0,0,0,0);
+  var expDate = new Date(exp + 'T00:00:00');
+  if (today <= expDate) return 'active';
+  var graceEnd = new Date(expDate.getFullYear(), 11, 31);
+  if (today <= graceEnd) return 'renewal_needed';
+  return 'lapsed';
+}
+
+function formatExp(val) {
+  if (!val) return '—';
+  var m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[2] + '/' + m[3] + '/' + m[1] : val;
+}
+
+function badgeHtml(status) {
+  switch(status) {
+    case 'active':         return '<span class="badge badge-active"><i class="fas fa-check-circle"></i> Active</span>';
+    case 'renewal_needed': return '<span class="badge badge-renewal"><i class="fas fa-clock"></i> Renewal Needed</span>';
+    case 'lapsed':         return '<span class="badge badge-lapsed"><i class="fas fa-ban"></i> Membership Lapsed</span>';
+    case 'life':           return '<span class="badge badge-life"><i class="fas fa-star"></i> Life Member</span>';
+    default:               return '<span class="badge badge-lapsed">Unknown</span>';
+  }
+}
+
+function applyFilters() {
+  var filterStatus = document.getElementById('filterStatus').value;
+  var search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  _filtered = _allMembers.filter(function(m) {
+    var status = duesStatus(m);
+    if (filterStatus !== 'all' && status !== filterStatus) return false;
+    if (search) {
+      var name = ((m.first_name || '') + ' ' + (m.last_name || '') + ' ' + (m.suffix || '')).toLowerCase();
+      var id   = String(m.alpha_id || '').toLowerCase();
+      if (!name.includes(search) && !id.includes(search)) return false;
+    }
+    return true;
+  });
+  renderTable();
+  renderSummary();
+  document.getElementById('rosterMeta').textContent = _filtered.length + ' of ' + _allMembers.length + ' members shown · As of ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function resetFilters() {
+  document.getElementById('filterStatus').value = 'all';
+  document.getElementById('searchInput').value = '';
+  applyFilters();
+}
+
+function renderTable() {
+  var tbody = document.getElementById('rosterBody');
+  if (!_filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="state-msg"><i class="fas fa-users-slash"></i>No members match the current filter.</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = _filtered.map(function(m, i) {
+    var fullName = [m.last_name, m.first_name, m.suffix ? '(' + m.suffix + ')' : ''].filter(Boolean).join(', ').replace(', (', ' (');
+    var status = duesStatus(m);
+    return '<tr>' +
+      '<td class="td-num">' + (i + 1) + '</td>' +
+      '<td class="td-name">' + escHtml(fullName) + '</td>' +
+      '<td class="td-id">'  + escHtml(String(m.alpha_id || '—')) + '</td>' +
+      '<td class="td-exp">' + escHtml(formatExp(m.chapter_dues_expiration)) + '</td>' +
+      '<td>' + badgeHtml(status) + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderSummary() {
+  var counts = { total: _allMembers.length, active: 0, renewal_needed: 0, lapsed: 0, life: 0 };
+  _allMembers.forEach(function(m) { var s = duesStatus(m); if (counts[s] !== undefined) counts[s]++; });
+  document.getElementById('summaryRow').innerHTML =
+    '<span class="summary-chip total"><i class="fas fa-users"></i> ' + counts.total + ' Total</span>' +
+    '<span class="summary-chip active"><i class="fas fa-check-circle"></i> ' + counts.active + ' Active</span>' +
+    '<span class="summary-chip renewal"><i class="fas fa-clock"></i> ' + counts.renewal_needed + ' Renewal Needed</span>' +
+    '<span class="summary-chip lapsed"><i class="fas fa-ban"></i> ' + counts.lapsed + ' Lapsed</span>' +
+    (counts.life ? '<span class="summary-chip" style="background:rgba(201,168,76,0.15);color:#7a5c00;"><i class="fas fa-star"></i> ' + counts.life + ' Life</span>' : '');
+}
+
+function printRoster() {
+  window.print();
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Allow Enter key on login form
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('loginGate').style.display !== 'none') doLogin();
+});
+</script>
+</body>
+</html>
