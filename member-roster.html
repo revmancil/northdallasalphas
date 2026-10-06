@@ -369,12 +369,27 @@ async function doLogin() {
 
 function normalizeName(s) {
   return (s || '')
-    .replace(/^bro\.?\s*/i, '')           // strip "Bro." prefix
-    .replace(/\b(jr|sr|ii|iii|iv|v)\.?\b/gi, '') // strip suffixes
+    .replace(/^bro\.?\s*/i, '')
+    .replace(/\b(jr|sr|ii|iii|iv|v)\.?\b/gi, '')
     .replace(/[.,]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
+}
+
+// Returns all name key variants for an officer name string
+function officerNameKeys(raw) {
+  var norm = normalizeName(raw);
+  if (!norm || norm === '[name]') return [];
+  var tokens = norm.split(' ').filter(Boolean);
+  var keys = [norm]; // full normalized name
+  if (tokens.length >= 2) {
+    // first + last (skip middle tokens)
+    keys.push(tokens[0] + ' ' + tokens[tokens.length - 1]);
+    // last + first
+    keys.push(tokens[tokens.length - 1] + ' ' + tokens[0]);
+  }
+  return keys;
 }
 
 async function loadOfficers() {
@@ -387,8 +402,9 @@ async function loadOfficers() {
     _officerMap = {};
     officers.forEach(function(o) {
       if (!o.name || !o.title) return;
-      var name = normalizeName(o.name);
-      if (name && name !== '[name]') _officerMap[name] = o.title;
+      officerNameKeys(o.name).forEach(function(key) {
+        if (!_officerMap[key]) _officerMap[key] = o.title;
+      });
     });
   } catch(e) { /* non-fatal */ }
 }
@@ -448,11 +464,20 @@ function chapterStatusBadge(m) {
 }
 
 function officerTitle(m) {
-  // Try multiple name forms, all normalized (suffixes stripped)
-  var full      = normalizeName((m.first_name || '') + ' ' + (m.last_name || '') + (m.suffix ? ' ' + m.suffix : ''));
-  var noSuffix  = normalizeName((m.first_name || '') + ' ' + (m.last_name || ''));
-  var lastFirst = normalizeName((m.last_name || '') + ' ' + (m.first_name || ''));
-  return _officerMap[full] || _officerMap[noSuffix] || _officerMap[lastFirst] || null;
+  var first = normalizeName(m.first_name || '');
+  var last  = normalizeName(m.last_name  || '');
+  // first word of first name handles hyphenated/compound names
+  var firstWord = first.split(/[\s-]/)[0];
+  var candidates = [
+    first + ' ' + last,                  // full first + last
+    firstWord + ' ' + last,              // first-word + last
+    last + ' ' + first,                  // last + first
+    last + ' ' + firstWord               // last + first-word
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    if (_officerMap[candidates[i]]) return _officerMap[candidates[i]];
+  }
+  return null;
 }
 
 function formatExp(val) {
