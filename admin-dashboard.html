@@ -6287,6 +6287,7 @@ function renderRosterGroup(m) {
     '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>'    + rosterYesNo(m.dues_current)                                  + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Dues Expiration</div>' +
       '<input type="date" value="' + escHtml(m.chapter_dues_expiration || '') + '" ' +
+      'min="2020-01-01" max="2040-12-31" ' +
       'onchange="saveChapterDuesExpiration(\'' + escHtml(String(m.id || '')) + '\', this.value)" ' +
       'style="border:1px solid var(--gray-300);border-radius:4px;padding:2px 5px;font-size:0.78rem;color:var(--gray-800);background:var(--white);min-width:140px;">' +
     '</div>' +
