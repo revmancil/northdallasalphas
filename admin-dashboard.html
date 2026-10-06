@@ -6288,7 +6288,7 @@ function renderRosterGroup(m) {
     '<div class="roster-cell"><div class="roster-cell-key">Dues Expiration</div>' +
       '<input type="date" value="' + escHtml(m.chapter_dues_expiration || '') + '" ' +
       'onchange="saveChapterDuesExpiration(\'' + escHtml(String(m.id || '')) + '\', this.value)" ' +
-      'style="border:1px solid var(--gray-300);border-radius:4px;padding:2px 5px;font-size:0.78rem;color:var(--gray-800);background:var(--white);max-width:130px;">' +
+      'style="border:1px solid var(--gray-300);border-radius:4px;padding:2px 5px;font-size:0.78rem;color:var(--gray-800);background:var(--white);min-width:140px;">' +
     '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Dues Status</div>' +
       (duesStatus === 'renewal_needed'
