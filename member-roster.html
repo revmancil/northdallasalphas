@@ -367,6 +367,16 @@ async function doLogin() {
   }
 }
 
+function normalizeName(s) {
+  return (s || '')
+    .replace(/^bro\.?\s*/i, '')           // strip "Bro." prefix
+    .replace(/\b(jr|sr|ii|iii|iv|v)\.?\b/gi, '') // strip suffixes
+    .replace(/[.,]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
 async function loadOfficers() {
   try {
     var r = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.officers&select=content_json&limit=1', { headers: sbHeaders(_token) });
@@ -377,8 +387,7 @@ async function loadOfficers() {
     _officerMap = {};
     officers.forEach(function(o) {
       if (!o.name || !o.title) return;
-      // Strip "Bro." prefix and normalize
-      var name = o.name.replace(/^bro\.?\s*/i, '').trim().toLowerCase();
+      var name = normalizeName(o.name);
       if (name && name !== '[name]') _officerMap[name] = o.title;
     });
   } catch(e) { /* non-fatal */ }
@@ -439,9 +448,11 @@ function chapterStatusBadge(m) {
 }
 
 function officerTitle(m) {
-  var full = ((m.first_name || '') + ' ' + (m.last_name || '') + (m.suffix ? ' ' + m.suffix : '')).trim().toLowerCase();
-  var lastFirst = ((m.last_name || '') + ', ' + (m.first_name || '')).trim().toLowerCase();
-  return _officerMap[full] || _officerMap[lastFirst] || null;
+  // Try multiple name forms, all normalized (suffixes stripped)
+  var full      = normalizeName((m.first_name || '') + ' ' + (m.last_name || '') + (m.suffix ? ' ' + m.suffix : ''));
+  var noSuffix  = normalizeName((m.first_name || '') + ' ' + (m.last_name || ''));
+  var lastFirst = normalizeName((m.last_name || '') + ' ' + (m.first_name || ''));
+  return _officerMap[full] || _officerMap[noSuffix] || _officerMap[lastFirst] || null;
 }
 
 function formatExp(val) {
