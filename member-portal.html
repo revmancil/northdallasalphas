@@ -1876,12 +1876,8 @@ async function renderDuesPanel() {
     .then(function(dues) {
       if (!dues || !dues.length) {
         c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>No dues records found for your account.</p></div>';
-        document.getElementById('statDuesPaid').textContent = '--';
         return;
       }
-      const yr = new Date().getFullYear().toString();
-      const thisYear = dues.find(function(d) { return d.year === yr; });
-      document.getElementById('statDuesPaid').textContent = thisYear ? (thisYear.paid ? 'Paid' : 'Unpaid') : '--';
       c.innerHTML = dues.map(function(d) {
         return '<div class="dues-row">' +
           '<span class="dues-year">' + escHtml(d.year) + '</span>' +
@@ -2877,7 +2873,7 @@ async function init() {
   loadProfileForm(currentMember);
   prefillDuesPayFields();
   document.getElementById('statEventsCount').textContent = allEvents.length;
-  document.getElementById('statDuesPaid').textContent    = '--';
+  document.getElementById('statDuesPaid').textContent = duesStatus === 'active' ? 'Active' : duesStatus === 'renewal_needed' ? 'Renewal Needed' : duesStatus === 'lapsed' ? 'Lapsed' : '--';
 
   // Parse a certification date stored in any common format (YYYY-MM-DD, MM/DD/YYYY, M/D/YYYY, etc.)
   function parseCertDate(cert) {
