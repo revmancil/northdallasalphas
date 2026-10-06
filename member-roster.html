@@ -368,7 +368,7 @@ async function doLogin() {
 async function loadMembers() {
   try {
     var r = await fetch(
-      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,grand_tax_paid,status',
+      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,grand_tax_paid,status,portal_access',
       { headers: sbHeaders(_token) }
     );
     var data = await r.json();
@@ -468,12 +468,20 @@ function renderTable() {
 }
 
 function renderSummary() {
-  var active = 0, inactive = 0;
-  _allMembers.forEach(function(m) { chapterStatus(m) === 'active' ? active++ : inactive++; });
+  var active = 0, inactive = 0, lifeCount = 0, duesPaid = 0, visiting = 0;
+  _allMembers.forEach(function(m) {
+    if (isLifeMember(m)) lifeCount++;
+    if (m.chapter_dues_expiration) duesPaid++;
+    if (m.portal_access === 'visiting') visiting++;
+    chapterStatus(m) === 'active' ? active++ : inactive++;
+  });
   document.getElementById('summaryRow').innerHTML =
     '<span class="summary-chip total"><i class="fas fa-users"></i> ' + _allMembers.length + ' Total</span>' +
     '<span class="summary-chip active"><i class="fas fa-check-circle"></i> ' + active + ' Active</span>' +
-    '<span class="summary-chip lapsed"><i class="fas fa-ban"></i> ' + inactive + ' Inactive</span>';
+    '<span class="summary-chip lapsed"><i class="fas fa-ban"></i> ' + inactive + ' Inactive</span>' +
+    '<span class="summary-chip" style="background:rgba(201,168,76,0.15);color:#7a5c00;border:1px solid rgba(201,168,76,0.3);"><i class="fas fa-dollar-sign"></i> ' + duesPaid + ' Chapter Dues Paid</span>' +
+    '<span class="summary-chip" style="background:rgba(201,168,76,0.15);color:#7a5c00;border:1px solid rgba(201,168,76,0.3);"><i class="fas fa-star"></i> ' + lifeCount + ' Life Members</span>' +
+    (visiting ? '<span class="summary-chip" style="background:#f4f4f4;color:#3a3a3a;border:1px solid #e5e5e5;"><i class="fas fa-handshake"></i> ' + visiting + ' Visiting Brothers</span>' : '');
 }
 
 function printRoster() {
