@@ -272,8 +272,7 @@
       <select id="filterStatus" onchange="applyFilters()">
         <option value="all">All Members</option>
         <option value="active">Active</option>
-        <option value="renewal_needed">Renewal Needed</option>
-        <option value="lapsed">Membership Lapsed</option>
+        <option value="inactive">Inactive</option>
       </select>
     </div>
     <div class="filter-group">
@@ -296,8 +295,9 @@
           <th style="width:36px;">#</th>
           <th>Name</th>
           <th>Alpha ID</th>
-          <th>Dues Expiration</th>
-          <th>Dues Status</th>
+          <th>Chapter Dues Expiration</th>
+          <th>Grand Tax Status</th>
+          <th>Chapter Status</th>
         </tr>
       </thead>
       <tbody id="rosterBody">
@@ -368,7 +368,7 @@ async function doLogin() {
 async function loadMembers() {
   try {
     var r = await fetch(
-      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,status',
+      SUPABASE_URL + '/rest/v1/members?order=last_name.asc,first_name.asc&select=id,first_name,last_name,suffix,alpha_id,dues_current,chapter_dues_expiration,life_member,life_member_date,grand_tax_paid,status',
       { headers: sbHeaders(_token) }
     );
     var data = await r.json();
@@ -380,20 +380,43 @@ async function loadMembers() {
   }
 }
 
-function duesStatus(m) {
+function isLifeMember(m) {
   var lifeVal = String(m.life_member || m.life_member_date || '').toLowerCase();
-  if (lifeVal === 'yes' || lifeVal === 'true' || lifeVal === 'y' || lifeVal === '1' || m.life_member_date) return 'life';
+  return lifeVal === 'yes' || lifeVal === 'true' || lifeVal === 'y' || lifeVal === '1' || !!m.life_member_date;
+}
+
+function isGrandTaxPaid(m) {
+  var v = String(m.grand_tax_paid || '').toLowerCase();
+  return v === 'yes' || v === 'y' || v === 'true' || v === '1';
+}
+
+function isDuesActive(m) {
   var exp = m.chapter_dues_expiration;
-  if (!exp) {
-    var paid = m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
-    return paid ? 'active' : 'lapsed';
-  }
+  if (!exp) return m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
   var today = new Date(); today.setHours(0,0,0,0);
   var expDate = new Date(exp + 'T00:00:00');
-  if (today <= expDate) return 'active';
+  if (today <= expDate) return true;
   var graceEnd = new Date(expDate.getFullYear(), 11, 31);
-  if (today <= graceEnd) return 'renewal_needed';
-  return 'lapsed';
+  return today <= graceEnd;
+}
+
+function chapterStatus(m) {
+  var life = isLifeMember(m);
+  var grandOk = isGrandTaxPaid(m) || life;
+  var duesOk  = isDuesActive(m);
+  return (duesOk && grandOk) ? 'active' : 'inactive';
+}
+
+function grandTaxBadge(m) {
+  if (isLifeMember(m)) return '<span class="badge badge-life"><i class="fas fa-star"></i> Life Member</span>';
+  if (isGrandTaxPaid(m)) return '<span class="badge badge-active"><i class="fas fa-check-circle"></i> Paid</span>';
+  return '<span class="badge badge-lapsed"><i class="fas fa-times-circle"></i> Unpaid</span>';
+}
+
+function chapterStatusBadge(m) {
+  return chapterStatus(m) === 'active'
+    ? '<span class="badge badge-active"><i class="fas fa-check-circle"></i> Active</span>'
+    : '<span class="badge badge-lapsed"><i class="fas fa-ban"></i> Inactive</span>';
 }
 
 function formatExp(val) {
@@ -402,22 +425,11 @@ function formatExp(val) {
   return m ? m[2] + '/' + m[3] + '/' + m[1] : val;
 }
 
-function badgeHtml(status) {
-  switch(status) {
-    case 'active':         return '<span class="badge badge-active"><i class="fas fa-check-circle"></i> Active</span>';
-    case 'renewal_needed': return '<span class="badge badge-renewal"><i class="fas fa-clock"></i> Renewal Needed</span>';
-    case 'lapsed':         return '<span class="badge badge-lapsed"><i class="fas fa-ban"></i> Membership Lapsed</span>';
-    case 'life':           return '<span class="badge badge-life"><i class="fas fa-star"></i> Life Member</span>';
-    default:               return '<span class="badge badge-lapsed">Unknown</span>';
-  }
-}
-
 function applyFilters() {
   var filterStatus = document.getElementById('filterStatus').value;
   var search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
   _filtered = _allMembers.filter(function(m) {
-    var status = duesStatus(m);
-    if (filterStatus !== 'all' && status !== filterStatus) return false;
+    if (filterStatus !== 'all' && chapterStatus(m) !== filterStatus) return false;
     if (search) {
       var name = ((m.first_name || '') + ' ' + (m.last_name || '') + ' ' + (m.suffix || '')).toLowerCase();
       var id   = String(m.alpha_id || '').toLowerCase();
@@ -439,31 +451,29 @@ function resetFilters() {
 function renderTable() {
   var tbody = document.getElementById('rosterBody');
   if (!_filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="state-msg"><i class="fas fa-users-slash"></i>No members match the current filter.</div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6"><div class="state-msg"><i class="fas fa-users-slash"></i>No members match the current filter.</div></td></tr>';
     return;
   }
   tbody.innerHTML = _filtered.map(function(m, i) {
     var fullName = [m.last_name, m.first_name, m.suffix ? '(' + m.suffix + ')' : ''].filter(Boolean).join(', ').replace(', (', ' (');
-    var status = duesStatus(m);
     return '<tr>' +
       '<td class="td-num">' + (i + 1) + '</td>' +
       '<td class="td-name">' + escHtml(fullName) + '</td>' +
-      '<td class="td-id">'  + escHtml(String(m.alpha_id || '—')) + '</td>' +
-      '<td class="td-exp">' + escHtml(formatExp(m.chapter_dues_expiration)) + '</td>' +
-      '<td>' + badgeHtml(status) + '</td>' +
+      '<td class="td-id">'   + escHtml(String(m.alpha_id || '—')) + '</td>' +
+      '<td class="td-exp">'  + escHtml(formatExp(m.chapter_dues_expiration)) + '</td>' +
+      '<td>' + grandTaxBadge(m) + '</td>' +
+      '<td>' + chapterStatusBadge(m) + '</td>' +
       '</tr>';
   }).join('');
 }
 
 function renderSummary() {
-  var counts = { total: _allMembers.length, active: 0, renewal_needed: 0, lapsed: 0, life: 0 };
-  _allMembers.forEach(function(m) { var s = duesStatus(m); if (counts[s] !== undefined) counts[s]++; });
+  var active = 0, inactive = 0;
+  _allMembers.forEach(function(m) { chapterStatus(m) === 'active' ? active++ : inactive++; });
   document.getElementById('summaryRow').innerHTML =
-    '<span class="summary-chip total"><i class="fas fa-users"></i> ' + counts.total + ' Total</span>' +
-    '<span class="summary-chip active"><i class="fas fa-check-circle"></i> ' + counts.active + ' Active</span>' +
-    '<span class="summary-chip renewal"><i class="fas fa-clock"></i> ' + counts.renewal_needed + ' Renewal Needed</span>' +
-    '<span class="summary-chip lapsed"><i class="fas fa-ban"></i> ' + counts.lapsed + ' Lapsed</span>' +
-    (counts.life ? '<span class="summary-chip" style="background:rgba(201,168,76,0.15);color:#7a5c00;"><i class="fas fa-star"></i> ' + counts.life + ' Life</span>' : '');
+    '<span class="summary-chip total"><i class="fas fa-users"></i> ' + _allMembers.length + ' Total</span>' +
+    '<span class="summary-chip active"><i class="fas fa-check-circle"></i> ' + active + ' Active</span>' +
+    '<span class="summary-chip lapsed"><i class="fas fa-ban"></i> ' + inactive + ' Inactive</span>';
 }
 
 function printRoster() {
