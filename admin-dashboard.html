@@ -6286,10 +6286,12 @@ function renderRosterGroup(m) {
     '<div class="roster-cell"><div class="roster-cell-key">Grand Tax Paid</div>'       + (isLife ? '<span class="roster-badge" style="background:rgba(201,168,76,0.15);color:#C9A84C;border:1px solid rgba(201,168,76,0.4);font-weight:700;">Life Member</span>' : rosterYesNo(m.grand_tax_paid)) + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Chapter Dues Paid</div>'    + rosterYesNo(m.dues_current)                                  + '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Dues Expiration</div>' +
-      '<input type="date" value="' + escHtml(m.chapter_dues_expiration || '') + '" ' +
-      'min="2020-01-01" max="2040-12-31" ' +
-      'onchange="saveChapterDuesExpiration(\'' + escHtml(String(m.id || '')) + '\', this.value)" ' +
-      'style="border:1px solid var(--gray-300);border-radius:4px;padding:2px 5px;font-size:0.78rem;color:var(--gray-800);background:var(--white);min-width:140px;">' +
+      '<input type="text" id="dues-exp-' + escHtml(String(m.id || '')) + '" ' +
+      'value="' + escHtml(formatDuesExpDisplay(m.chapter_dues_expiration)) + '" ' +
+      'placeholder="MM/DD/YYYY" maxlength="10" ' +
+      'onblur="commitDuesExpiration(\'' + escHtml(String(m.id || '')) + '\', this)" ' +
+      'onkeydown="if(event.key===\'Enter\'){this.blur();}" ' +
+      'style="border:1px solid var(--gray-300);border-radius:4px;padding:2px 6px;font-size:0.78rem;color:var(--gray-800);background:var(--white);width:100px;">' +
     '</div>' +
     '<div class="roster-cell"><div class="roster-cell-key">Dues Status</div>' +
       (duesStatus === 'renewal_needed'
@@ -6369,6 +6371,36 @@ function renderMemberComplianceList(members) {
   allComplianceMembers = members || [];
   rosterCurrentPage    = 1;
   renderRosterPage();
+}
+
+// Format stored YYYY-MM-DD → MM/DD/YYYY for display
+function formatDuesExpDisplay(val) {
+  if (!val) return '';
+  var m = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? m[2] + '/' + m[3] + '/' + m[1] : val;
+}
+
+// Parse MM/DD/YYYY → YYYY-MM-DD; returns null if unparseable
+function parseDuesExpInput(val) {
+  var v = (val || '').trim();
+  if (!v) return null;
+  var m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  var mo = m[1].padStart(2, '0'), dy = m[2].padStart(2, '0'), yr = m[3];
+  return yr + '-' + mo + '-' + dy;
+}
+
+function commitDuesExpiration(memberId, input) {
+  var parsed = parseDuesExpInput(input.value);
+  if (input.value.trim() && !parsed) {
+    input.style.borderColor = '#dc2626';
+    showToast('Enter date as MM/DD/YYYY (e.g. 08/31/2027)', 'error');
+    return;
+  }
+  input.style.borderColor = '';
+  // Reformat display to canonical MM/DD/YYYY
+  if (parsed) input.value = formatDuesExpDisplay(parsed);
+  saveChapterDuesExpiration(memberId, parsed);
 }
 
 async function saveChapterDuesExpiration(memberId, newDate) {
