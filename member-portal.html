@@ -2045,8 +2045,20 @@ async function loadMeetingsPortal() {
   try {
     var allMeetings = await sbGet('meetings', 'order=meeting_date.asc', token);
     _meetingsCache = allMeetings || [];
-    var meetings = (allMeetings || []).filter(function(m) { return !m.archived; });
-    var archivedMeetings = (allMeetings || []).filter(function(m) { return m.archived; }).reverse();
+    var myMemberId = currentMember ? currentMember.id : null;
+    var isOfficer = !!(currentMember && currentMember.officer_title);
+    function isInvited(m) {
+      var aud = m.audience || 'all';
+      if (aud === 'all') return true;
+      if (aud === 'officers') return isOfficer;
+      if (aud === 'custom') {
+        var ids = Array.isArray(m.invited_ids) ? m.invited_ids : [];
+        return myMemberId && ids.indexOf(myMemberId) !== -1;
+      }
+      return true;
+    }
+    var meetings = (allMeetings || []).filter(function(m) { return !m.archived && isInvited(m); });
+    var archivedMeetings = (allMeetings || []).filter(function(m) { return m.archived && isInvited(m); }).reverse();
     if (!meetings.length && !archivedMeetings.length) {
       el.innerHTML = '<div class="empty-state"><i class="fas fa-people-group"></i><p>No meetings scheduled yet.</p></div>';
       return;

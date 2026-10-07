@@ -2597,6 +2597,17 @@
             <span style="font-size:0.78rem;color:var(--gray-400);">Uncheck to keep this meeting off the public events page (e.g. ALSG, leadership meetings)</span>
           </div>
 
+          <!-- Audience / Invite -->
+          <div style="margin-top:14px;border-top:1px solid var(--gray-200);padding-top:14px;">
+            <div style="font-size:0.85rem;font-weight:600;color:var(--gray-700);margin-bottom:10px;"><i class="fas fa-users" style="color:var(--gold);margin-right:6px;"></i>Invited Audience</div>
+            <div style="display:flex;flex-wrap:wrap;gap:14px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--gray-700);user-select:none;"><input type="radio" name="mtgAudience" value="all" checked style="accent-color:var(--gold);" onchange="toggleMtgAudience('mtgMemberPicker')" /> All Members</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--gray-700);user-select:none;"><input type="radio" name="mtgAudience" value="officers" style="accent-color:var(--gold);" onchange="toggleMtgAudience('mtgMemberPicker')" /> Officers Only</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--gray-700);user-select:none;"><input type="radio" name="mtgAudience" value="custom" style="accent-color:var(--gold);" onchange="toggleMtgAudience('mtgMemberPicker')" /> Specific Members</label>
+            </div>
+            <div id="mtgMemberPicker" style="display:none;margin-top:12px;"></div>
+          </div>
+
           <!-- Recurring toggle -->
           <div style="margin-top:14px;border-top:1px solid var(--gray-200);padding-top:14px;">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;color:var(--gray-700);user-select:none;">
@@ -2744,6 +2755,17 @@
               <span>Show on public website</span>
             </label>
           </div>
+          <!-- Audience / Invite (edit) -->
+          <div style="margin-top:14px;border-top:1px solid var(--gray-200);padding-top:14px;">
+            <div style="font-size:0.85rem;font-weight:600;color:var(--gray-700);margin-bottom:10px;"><i class="fas fa-users" style="color:var(--gold);margin-right:6px;"></i>Invited Audience</div>
+            <div style="display:flex;flex-wrap:wrap;gap:14px;">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--gray-700);user-select:none;"><input type="radio" name="mtgEditAudience" value="all" checked style="accent-color:var(--gold);" onchange="toggleMtgAudience('mtgEditMemberPicker')" /> All Members</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--gray-700);user-select:none;"><input type="radio" name="mtgEditAudience" value="officers" style="accent-color:var(--gold);" onchange="toggleMtgAudience('mtgEditMemberPicker')" /> Officers Only</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;color:var(--gray-700);user-select:none;"><input type="radio" name="mtgEditAudience" value="custom" style="accent-color:var(--gold);" onchange="toggleMtgAudience('mtgEditMemberPicker')" /> Specific Members</label>
+            </div>
+            <div id="mtgEditMemberPicker" style="display:none;margin-top:12px;"></div>
+          </div>
+
           <div id="mtgEditMsg" style="display:none;margin-top:10px;font-size:0.83rem;"></div>
           <div style="display:flex;gap:10px;margin-top:20px;">
             <button class="btn-save" id="mtgEditSaveBtn" onclick="saveEditMeeting()" style="flex:1;"><i class="fas fa-save"></i> Save Changes</button>
@@ -5590,6 +5612,8 @@ async function loadMeetingsPanel() {
         '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">' +
         (m.is_public === false ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(156,163,175,0.15);color:var(--gray-500);border:1px solid var(--gray-200);" title="Hidden from public website"><i class="fas fa-eye-slash"></i> Private</span>' : '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.25);" title="Visible on public website"><i class="fas fa-globe"></i> Public</span>') +
         (m.series_id ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(201,168,76,0.08);color:var(--gold);border:1px solid rgba(201,168,76,0.2);" title="Part of a recurring series"><i class="fas fa-rotate"></i> Recurring</span>' : '') +
+        (m.audience === 'officers' ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" title="Invited: Officers only"><i class="fas fa-shield-halved"></i> Officers Only</span>' : '') +
+        (m.audience === 'custom' ? '<span style="font-size:0.72rem;font-weight:700;padding:2px 8px;border-radius:12px;background:rgba(59,130,246,0.1);color:#3b82f6;border:1px solid rgba(59,130,246,0.25);" title="Invited: Specific members (' + (Array.isArray(m.invited_ids) ? m.invited_ids.length : 0) + ')"><i class="fas fa-user-check"></i> ' + (Array.isArray(m.invited_ids) ? m.invited_ids.length : 0) + ' Invited</span>' : '') +
         '<button class="btn-sm view" onclick="showMtgQr(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\',\'' + escHtml(dateStr) + '\')"><i class="fas fa-qrcode"></i> QR Check-In</button>' +
         '<button class="btn-sm view" onclick="showMtgAttendance(\'' + escHtml(m.id) + '\',\'' + escHtml(m.title) + '\')"><i class="fas fa-clipboard-check"></i> Attendance</button>' +
         '<button class="btn-sm" style="background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid rgba(201,168,76,0.3);" onclick="openEditMeetingModal(\'' + escHtml(m.id) + '\')"><i class="fas fa-pencil-alt"></i> Edit</button>' +
@@ -5667,6 +5691,84 @@ function updateRecurringPreview() {
   });
 })();
 
+// ----- Meeting audience / member picker helpers -----
+var _mtgMembersCache = null;
+
+async function toggleMtgAudience(pickerId) {
+  const radio = document.querySelector('input[name="' + (pickerId === 'mtgMemberPicker' ? 'mtgAudience' : 'mtgEditAudience') + '"]:checked');
+  const val = radio ? radio.value : 'all';
+  const picker = document.getElementById(pickerId);
+  if (!picker) return;
+  if (val === 'custom') {
+    await loadMtgMemberPicker(pickerId, []);
+  } else {
+    picker.style.display = 'none';
+    picker.innerHTML = '';
+  }
+}
+
+async function loadMtgMemberPicker(pickerId, preSelected) {
+  const picker = document.getElementById(pickerId);
+  if (!picker) return;
+  picker.style.display = 'block';
+  picker.innerHTML = '<div style="font-size:0.82rem;color:var(--gray-400);padding:6px 0;"><i class="fas fa-spinner fa-spin"></i> Loading members…</div>';
+  try {
+    if (!_mtgMembersCache) {
+      const token = getAdminToken();
+      const all = await sbGet('members', 'select=id,first_name,last_name,alpha_id,officer_title&order=last_name.asc,first_name.asc', token);
+      _mtgMembersCache = (all || []).filter(function(m) { return m.first_name || m.last_name; });
+    }
+    renderMtgMemberPicker(picker, _mtgMembersCache, preSelected);
+  } catch(e) {
+    picker.innerHTML = '<div style="font-size:0.82rem;color:var(--red);">Could not load members.</div>';
+  }
+}
+
+function renderMtgMemberPicker(picker, members, selected) {
+  var selectedSet = new Set(selected || []);
+  picker.innerHTML =
+    '<div style="border:1px solid var(--gray-300);border-radius:8px;overflow:hidden;">' +
+    '<div style="padding:8px 10px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);">' +
+    '<input type="text" placeholder="Search members…" oninput="filterMtgPicker(this)" style="width:100%;border:none;background:transparent;outline:none;font-size:0.83rem;color:var(--gray-700);" />' +
+    '</div>' +
+    '<div style="max-height:220px;overflow-y:auto;padding:6px 0;" id="' + picker.id + 'List">' +
+    members.map(function(m) {
+      var label = (m.last_name || '') + ', ' + (m.first_name || '') + (m.alpha_id ? ' (' + m.alpha_id + ')' : '') + (m.officer_title ? ' — ' + m.officer_title : '');
+      var chk = selectedSet.has(m.id) ? ' checked' : '';
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:0.82rem;color:var(--gray-700);" data-name="' + escHtml((m.last_name||'') + ' ' + (m.first_name||'')).toLowerCase() + '">' +
+        '<input type="checkbox" value="' + escHtml(m.id) + '"' + chk + ' style="accent-color:var(--gold);flex-shrink:0;" />' +
+        escHtml(label) + '</label>';
+    }).join('') +
+    '</div>' +
+    '<div style="padding:6px 12px;border-top:1px solid var(--gray-200);background:var(--gray-50);font-size:0.78rem;color:var(--gray-500);">' +
+    '<span id="' + picker.id + 'Count">' + selected.length + '</span> selected' +
+    '</div></div>';
+  picker.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var cnt = picker.querySelectorAll('input[type="checkbox"]:checked').length;
+      var countEl = document.getElementById(picker.id + 'Count');
+      if (countEl) countEl.textContent = cnt;
+    });
+  });
+}
+
+function filterMtgPicker(input) {
+  var listEl = input.closest('div').parentElement.querySelector('[id$="List"]');
+  if (!listEl) return;
+  var q = input.value.toLowerCase();
+  listEl.querySelectorAll('label').forEach(function(lbl) {
+    lbl.style.display = (!q || (lbl.dataset.name || '').includes(q)) ? '' : 'none';
+  });
+}
+
+function getMtgSelectedIds(pickerId) {
+  var picker = document.getElementById(pickerId);
+  if (!picker) return [];
+  return Array.from(picker.querySelectorAll('input[type="checkbox"]:checked')).map(function(cb) { return cb.value; });
+}
+
+// ----- End meeting audience helpers -----
+
 async function saveMeeting() {
   const title    = (document.getElementById('mtgTitle')    || {}).value?.trim();
   const date     = (document.getElementById('mtgDate')     || {}).value;
@@ -5675,6 +5777,9 @@ async function saveMeeting() {
   const location = (document.getElementById('mtgLocation') || {}).value?.trim();
   const agenda    = (document.getElementById('mtgAgenda')   || {}).value?.trim();
   const isPublic  = !!(document.getElementById('mtgIsPublic') || {}).checked;
+  const audienceRadio = document.querySelector('input[name="mtgAudience"]:checked');
+  const audience = audienceRadio ? audienceRadio.value : 'all';
+  const invitedIds = audience === 'custom' ? getMtgSelectedIds('mtgMemberPicker') : [];
   const isRecurring = !!(document.getElementById('mtgRecurring') || {}).checked;
   const frequency   = (document.getElementById('mtgFrequency') || {}).value || 'monthly';
   const occurrences = Math.min(parseInt((document.getElementById('mtgOccurrences') || {}).value) || 6, 24);
@@ -5699,12 +5804,12 @@ async function saveMeeting() {
       for (let i = 0; i < dates.length; i++) {
         const d = dates[i];
         const mtgTitle = title; // keep same title; date distinguishes them
-        const row = { title: mtgTitle, meeting_date: d, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic, series_id: seriesId };
+        const row = { title: mtgTitle, meeting_date: d, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic, series_id: seriesId, audience: audience, invited_ids: invitedIds.length ? invitedIds : null };
         try {
           await sbPost('meetings', row, token);
         } catch(e) {
-          // series_id column may not exist — retry without it
-          if (/series_id|column/i.test(e.message || '')) {
+          // series_id or audience columns may not exist — retry without them
+          if (/series_id|audience|invited_ids|column/i.test(e.message || '')) {
             const rowFallback = { title: mtgTitle, meeting_date: d, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic };
             await sbPost('meetings', rowFallback, token);
           } else { throw e; }
@@ -5713,12 +5818,22 @@ async function saveMeeting() {
       }
       mtgMsg(saved + ' meetings scheduled (' + (freqLabels[frequency] || frequency) + ')!', true);
     } else {
-      await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic }, token);
+      try {
+        await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic, audience: audience, invited_ids: invitedIds.length ? invitedIds : null }, token);
+      } catch(e) {
+        if (/audience|invited_ids|column/i.test(e.message || '')) {
+          await sbPost('meetings', { title, meeting_date: date, start_time: start || null, end_time: end || null, location: location || null, agenda: agenda || null, created_by: uname, is_public: isPublic }, token);
+        } else { throw e; }
+      }
       mtgMsg('Meeting scheduled!', true);
     }
     ['mtgTitle','mtgDate','mtgStart','mtgEnd','mtgLocation','mtgAgenda'].forEach(function(id) {
       const el = document.getElementById(id); if (el) el.value = '';
     });
+    const allRadio = document.querySelector('input[name="mtgAudience"][value="all"]');
+    if (allRadio) { allRadio.checked = true; }
+    const picker = document.getElementById('mtgMemberPicker');
+    if (picker) { picker.style.display = 'none'; picker.innerHTML = ''; }
     document.getElementById('mtgRecurring').checked = false;
     document.getElementById('mtgRecurringOptions').style.display = 'none';
     document.getElementById('mtgRecurringPreview').textContent = '';
@@ -5743,6 +5858,16 @@ function openEditMeetingModal(id) {
   document.getElementById('mtgEditLocation').value = m.location || '';
   document.getElementById('mtgEditAgenda').value   = m.agenda || '';
   document.getElementById('mtgEditIsPublic').checked = m.is_public !== false;
+  // Populate audience
+  const editAudience = m.audience || 'all';
+  const editAudienceRadio = document.querySelector('input[name="mtgEditAudience"][value="' + editAudience + '"]');
+  if (editAudienceRadio) editAudienceRadio.checked = true;
+  const editPicker = document.getElementById('mtgEditMemberPicker');
+  if (editPicker) { editPicker.style.display = 'none'; editPicker.innerHTML = ''; }
+  if (editAudience === 'custom') {
+    const preSelected = Array.isArray(m.invited_ids) ? m.invited_ids : [];
+    loadMtgMemberPicker('mtgEditMemberPicker', preSelected);
+  }
   const msgEl = document.getElementById('mtgEditMsg');
   msgEl.style.display = 'none'; msgEl.textContent = '';
   const modal = document.getElementById('mtgEditModal');
@@ -5762,6 +5887,9 @@ async function saveEditMeeting() {
   const location = document.getElementById('mtgEditLocation').value.trim();
   const agenda   = document.getElementById('mtgEditAgenda').value.trim();
   const isPublic = document.getElementById('mtgEditIsPublic').checked;
+  const editAudienceRadio = document.querySelector('input[name="mtgEditAudience"]:checked');
+  const editAudience = editAudienceRadio ? editAudienceRadio.value : 'all';
+  const editInvitedIds = editAudience === 'custom' ? getMtgSelectedIds('mtgEditMemberPicker') : [];
   const msgEl    = document.getElementById('mtgEditMsg');
   const btn      = document.getElementById('mtgEditSaveBtn');
 
@@ -5771,7 +5899,7 @@ async function saveEditMeeting() {
   msgEl.style.display = 'none';
   const token = getAdminToken();
   try {
-    await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), {
+    const patchPayload = {
       title,
       meeting_date: date || null,
       start_time:   start || null,
@@ -5779,7 +5907,17 @@ async function saveEditMeeting() {
       location:     location || null,
       agenda:       agenda || null,
       is_public:    isPublic,
-    }, token);
+      audience:     editAudience,
+      invited_ids:  editInvitedIds.length ? editInvitedIds : null,
+    };
+    try {
+      await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), patchPayload, token);
+    } catch(e) {
+      if (/audience|invited_ids|column/i.test(e.message || '')) {
+        const { audience: _a, invited_ids: _i, ...fallback } = patchPayload;
+        await sbPatch('meetings', 'id=eq.' + encodeURIComponent(id), fallback, token);
+      } else { throw e; }
+    }
     showToast('Meeting updated!', 'success');
     closeMtgEdit();
     loadMeetingsPanel();
