@@ -3922,12 +3922,104 @@ async function toggleCommitteeMembership(committeeId, isMember) {
 var _hdScreenshotData = null;
 
 // ── Request a Meeting ─────────────────────────────────────
+// ----- Meeting request helpers -----
+function toggleMrRecurring() {
+  var chk = document.getElementById('mrRecurring');
+  var opts = document.getElementById('mrRecurringOpts');
+  if (opts) opts.style.display = chk && chk.checked ? 'block' : 'none';
+}
+
+var _mrMembersCache = null;
+
+async function toggleMrAudience() {
+  var radio = document.querySelector('input[name="mrAudience"]:checked');
+  var val = radio ? radio.value : 'all';
+  var picker = document.getElementById('mrMemberPicker');
+  if (!picker) return;
+  if (val === 'custom') {
+    await loadMrMemberPicker([]);
+  } else {
+    picker.style.display = 'none';
+    picker.innerHTML = '';
+  }
+}
+
+async function loadMrMemberPicker(preSelected) {
+  var picker = document.getElementById('mrMemberPicker');
+  if (!picker) return;
+  picker.style.display = 'block';
+  picker.innerHTML = '<div style="font-size:0.82rem;color:rgba(255,255,255,0.35);padding:6px 0;"><i class="fas fa-spinner fa-spin"></i> Loading brothers…</div>';
+  try {
+    if (!_mrMembersCache) {
+      var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
+      var token = session && session.access_token ? session.access_token : null;
+      var all = await sbGet('members', 'select=id,first_name,last_name,alpha_id,officer_title&order=last_name.asc,first_name.asc', token);
+      _mrMembersCache = (all || []).filter(function(m) { return m.first_name || m.last_name; });
+    }
+    renderMrMemberPicker(picker, _mrMembersCache, preSelected);
+  } catch(e) {
+    picker.innerHTML = '<div style="font-size:0.82rem;color:#f87171;">Could not load members.</div>';
+  }
+}
+
+function renderMrMemberPicker(picker, members, selected) {
+  var selectedSet = new Set(selected || []);
+  picker.innerHTML =
+    '<div style="border:1px solid rgba(255,255,255,0.12);border-radius:8px;overflow:hidden;">' +
+    '<div style="padding:7px 10px;border-bottom:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);">' +
+    '<input type="text" placeholder="Search brothers…" oninput="filterMrPicker(this)" style="width:100%;border:none;background:transparent;outline:none;font-size:0.82rem;color:#fff;font-family:inherit;" />' +
+    '</div>' +
+    '<div style="max-height:200px;overflow-y:auto;padding:4px 0;" id="mrMemberPickerList">' +
+    members.map(function(m) {
+      var label = (m.last_name || '') + ', ' + (m.first_name || '') + (m.alpha_id ? ' (' + m.alpha_id + ')' : '') + (m.officer_title ? ' — ' + m.officer_title : '');
+      var chk = selectedSet.has(m.id) ? ' checked' : '';
+      var esc = function(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+      return '<label style="display:flex;align-items:center;gap:8px;padding:5px 12px;cursor:pointer;font-size:0.82rem;color:rgba(255,255,255,0.7);" data-name="' + esc((m.last_name||'')+' '+(m.first_name||'')).toLowerCase() + '">' +
+        '<input type="checkbox" value="' + esc(m.id) + '"' + chk + ' style="accent-color:#C9A84C;flex-shrink:0;" />' +
+        esc(label) + '</label>';
+    }).join('') +
+    '</div>' +
+    '<div style="padding:5px 12px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.02);font-size:0.77rem;color:rgba(255,255,255,0.35);">' +
+    '<span id="mrMemberPickerCount">' + selected.length + '</span> selected</div></div>';
+  picker.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      var cnt = picker.querySelectorAll('input[type="checkbox"]:checked').length;
+      var countEl = document.getElementById('mrMemberPickerCount');
+      if (countEl) countEl.textContent = cnt;
+    });
+  });
+}
+
+function filterMrPicker(input) {
+  var listEl = document.getElementById('mrMemberPickerList');
+  if (!listEl) return;
+  var q = input.value.toLowerCase();
+  listEl.querySelectorAll('label').forEach(function(lbl) {
+    lbl.style.display = (!q || (lbl.dataset.name || '').includes(q)) ? '' : 'none';
+  });
+}
+
+function getMrSelectedIds() {
+  var picker = document.getElementById('mrMemberPicker');
+  if (!picker) return [];
+  return Array.from(picker.querySelectorAll('input[type="checkbox"]:checked')).map(function(cb) { return cb.value; });
+}
+// ----- End meeting request helpers -----
+
 function openMeetingRequestModal() {
   var modal = document.getElementById('meetingRequestModal');
   modal.style.display = 'flex';
-  ['mrTitle','mrDate','mrTime','mrLocation','mrPurpose'].forEach(function(id) {
+  ['mrTitle','mrDate','mrTime','mrEndTime','mrLocation','mrPurpose'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
+  var allRadio = document.querySelector('input[name="mrAudience"][value="all"]');
+  if (allRadio) allRadio.checked = true;
+  var picker = document.getElementById('mrMemberPicker');
+  if (picker) { picker.style.display = 'none'; picker.innerHTML = ''; }
+  var recurringChk = document.getElementById('mrRecurring');
+  if (recurringChk) recurringChk.checked = false;
+  var recurringOpts = document.getElementById('mrRecurringOpts');
+  if (recurringOpts) recurringOpts.style.display = 'none';
   document.getElementById('mrErr').style.display = 'none';
   document.getElementById('mrSuccess').style.display = 'none';
   var btn = document.getElementById('mrSubmitBtn');
@@ -3943,13 +4035,21 @@ async function submitMeetingRequest() {
   var committee= (document.getElementById('mrCommittee').value || '').trim();
   var date     = (document.getElementById('mrDate').value || '').trim();
   var time     = (document.getElementById('mrTime').value || '').trim();
+  var endTime  = (document.getElementById('mrEndTime').value || '').trim();
   var location = (document.getElementById('mrLocation').value || '').trim();
   var purpose  = (document.getElementById('mrPurpose').value || '').trim();
+  var isRecurring = !!(document.getElementById('mrRecurring') || {}).checked;
+  var frequency   = (document.getElementById('mrFrequency') || {}).value || 'monthly';
+  var occurrences = parseInt((document.getElementById('mrOccurrences') || {}).value) || 6;
+  var audienceRadio = document.querySelector('input[name="mrAudience"]:checked');
+  var audience = audienceRadio ? audienceRadio.value : 'all';
+  var invitedIds = audience === 'custom' ? getMrSelectedIds() : [];
   var errEl    = document.getElementById('mrErr');
   var btn      = document.getElementById('mrSubmitBtn');
   errEl.style.display = 'none';
   if (!title)   { errEl.textContent = 'Please enter a meeting title.'; errEl.style.display = 'block'; return; }
   if (!purpose) { errEl.textContent = 'Please describe the purpose of the meeting.'; errEl.style.display = 'block'; return; }
+  if (audience === 'custom' && invitedIds.length === 0) { errEl.textContent = 'Please select at least one brother to invite.'; errEl.style.display = 'block'; return; }
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
   try {
     var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
@@ -3957,17 +4057,31 @@ async function submitMeetingRequest() {
     if (!token) throw new Error('You must be signed in to submit a request.');
     var memberName = (currentMember && (currentMember.first_name + ' ' + (currentMember.last_name || '')).trim()) || (session.user && session.user.email) || 'Unknown';
     var memberEmail = (currentMember && currentMember.email) || (session.user && session.user.email) || '';
-    var agendaNote = '[COMMITTEE: ' + committee + ']\n[REQUESTED BY: ' + memberName + ']\n\n' + purpose;
-    await sbPost('meetings', {
+    var freqLabels = { weekly:'Weekly', biweekly:'Every 2 Weeks', monthly:'Monthly' };
+    var recurringNote = isRecurring ? '\n[RECURRING: ' + (freqLabels[frequency] || frequency) + ', ' + occurrences + ' meetings]' : '';
+    var audienceNote = audience === 'officers' ? '\n[INVITE: Officers Only]' : audience === 'custom' ? '\n[INVITE: ' + invitedIds.length + ' specific brothers]' : '';
+    var agendaNote = '[COMMITTEE: ' + committee + ']\n[REQUESTED BY: ' + memberName + ']' + recurringNote + audienceNote + '\n\n' + purpose;
+    var row = {
       title:        title,
       meeting_date: date || null,
       start_time:   time || null,
+      end_time:     endTime || null,
       location:     location || null,
       agenda:       agendaNote,
       created_by:   memberName,
       is_public:    false,
       status:       'requested',
-    }, token);
+      audience:     audience,
+      invited_ids:  invitedIds.length ? invitedIds : null,
+    };
+    try {
+      await sbPost('meetings', row, token);
+    } catch(e) {
+      if (/audience|invited_ids|end_time|column/i.test(e.message || '')) {
+        var { audience: _a, invited_ids: _i, end_time: _e, ...fallback } = row;
+        await sbPost('meetings', fallback, token);
+      } else { throw e; }
+    }
     // Notify admins
     try {
       await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
@@ -4953,20 +5067,59 @@ async function submitVbAccessRequest() {
         </select>
       </div>
 
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;">
         <div>
           <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Proposed Date</label>
           <input type="date" id="mrDate" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.88rem;padding:10px 12px;outline:none;font-family:inherit;box-sizing:border-box;" />
         </div>
         <div>
-          <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Preferred Time</label>
+          <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Start Time</label>
           <input type="time" id="mrTime" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.88rem;padding:10px 12px;outline:none;font-family:inherit;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">End Time</label>
+          <input type="time" id="mrEndTime" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.88rem;padding:10px 12px;outline:none;font-family:inherit;box-sizing:border-box;" />
         </div>
       </div>
 
       <div>
         <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Proposed Location</label>
         <input type="text" id="mrLocation" placeholder="Address or venue name (leave blank if flexible)" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.88rem;padding:10px 12px;outline:none;font-family:inherit;box-sizing:border-box;" />
+      </div>
+
+      <!-- Recurring -->
+      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;">
+          <input type="checkbox" id="mrRecurring" style="width:15px;height:15px;accent-color:#C9A84C;" onchange="toggleMrRecurring()" />
+          <span style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.75);"><i class="fas fa-rotate" style="color:#C9A84C;margin-right:4px;"></i> Recurring Meeting</span>
+        </label>
+        <div id="mrRecurringOpts" style="display:none;margin-top:12px;display:none;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Frequency</label>
+              <select id="mrFrequency" style="width:100%;background:#1e1e1e;border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.85rem;padding:9px 10px;outline:none;font-family:inherit;">
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Every 2 Weeks</option>
+                <option value="monthly" selected>Monthly</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;"># of Meetings</label>
+              <input type="number" id="mrOccurrences" value="6" min="2" max="24" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.85rem;padding:9px 10px;outline:none;font-family:inherit;box-sizing:border-box;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Invite Specific Brothers -->
+      <div style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 14px;">
+        <div style="font-size:0.85rem;font-weight:600;color:rgba(255,255,255,0.75);margin-bottom:10px;"><i class="fas fa-users" style="color:#C9A84C;margin-right:6px;"></i>Invite Brothers</div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.83rem;color:rgba(255,255,255,0.65);user-select:none;"><input type="radio" name="mrAudience" value="all" checked style="accent-color:#C9A84C;" onchange="toggleMrAudience()" /> All Members</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.83rem;color:rgba(255,255,255,0.65);user-select:none;"><input type="radio" name="mrAudience" value="officers" style="accent-color:#C9A84C;" onchange="toggleMrAudience()" /> Officers Only</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.83rem;color:rgba(255,255,255,0.65);user-select:none;"><input type="radio" name="mrAudience" value="custom" style="accent-color:#C9A84C;" onchange="toggleMrAudience()" /> Specific Brothers</label>
+        </div>
+        <div id="mrMemberPicker" style="display:none;margin-top:12px;"></div>
       </div>
 
       <div>
