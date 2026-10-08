@@ -4379,12 +4379,24 @@ async function loadMyHelpdeskIssues() {
       var label = statusLabels[iss.status] || iss.status;
       var created = iss.created_at ? new Date(iss.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
       var updated = iss.updated_at && iss.updated_at !== iss.created_at ? ' · Updated ' + new Date(iss.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
-      return '<div style="display:flex;align-items:flex-start;gap:14px;padding:16px 22px;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+      var hasReply = !!(iss.admin_response && iss.admin_response.trim());
+      var replyDate = hasReply && iss.admin_response_at ? new Date(iss.admin_response_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      return '<div style="border-bottom:1px solid rgba(255,255,255,0.06);">' +
+        '<div style="display:flex;align-items:flex-start;gap:14px;padding:16px 22px ' + (hasReply ? '8px' : '16px') + ';">' +
         '<div style="flex:1;min-width:0;">' +
-        '<div style="font-size:0.88rem;color:#ffffff;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.description || '') + '</div>' +
+        '<div style="font-size:0.88rem;color:#ffffff;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;">' +
+        (hasReply ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#C9A84C;flex-shrink:0;" title="Admin reply received"></span>' : '') +
+        '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(iss.description || '') + '</span></div>' +
         '<div style="font-size:0.72rem;color:rgba(255,255,255,0.45);">' + escHtml(iss.category || '') + ' · ' + created + escHtml(updated) + '</div>' +
         '</div>' +
         '<span style="flex-shrink:0;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:' + color + ';border:1px solid ' + color + ';border-radius:20px;padding:2px 9px;margin-top:2px;">' + label + '</span>' +
+        '</div>' +
+        (hasReply ?
+          '<div style="margin:0 22px 14px 22px;padding:12px 14px;background:rgba(201,168,76,0.08);border-left:3px solid #C9A84C;border-radius:0 6px 6px 0;">' +
+          '<div style="font-size:0.68rem;text-transform:uppercase;letter-spacing:0.07em;color:#C9A84C;font-weight:700;margin-bottom:6px;"><i class="fas fa-reply" style="margin-right:4px;"></i>Support Reply' + (replyDate ? ' · ' + replyDate : '') + '</div>' +
+          '<div style="font-size:0.83rem;color:rgba(255,255,255,0.85);line-height:1.55;white-space:pre-wrap;">' + escHtml(iss.admin_response) + '</div>' +
+          '</div>'
+          : '') +
         '</div>';
     }).join('');
   } catch(e) {

@@ -15022,9 +15022,21 @@ function openHdDetail(iss) {
     '</div>' +
     '<div style="margin-bottom:18px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:6px;">Page</div><div style="font-size:0.82rem;color:#555;word-break:break-all;">' + escHtml(iss.page_url||'') + '</div></div>' +
     '<div style="margin-bottom:20px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:6px;">Description</div><div style="font-size:0.88rem;color:#222;line-height:1.6;white-space:pre-wrap;">' + escHtml(iss.description||'') + '</div></div>' +
+
+    // Previous admin reply (if any)
+    (iss.admin_response ? '<div style="margin-bottom:20px;padding:14px 16px;background:#fffbf0;border:1px solid rgba(201,168,76,0.3);border-radius:8px;"><div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#C9A84C;font-weight:700;margin-bottom:6px;"><i class="fas fa-reply" style="margin-right:4px;"></i>Your Previous Reply</div><div style="font-size:0.85rem;color:#333;line-height:1.6;white-space:pre-wrap;">' + escHtml(iss.admin_response) + '</div>' + (iss.admin_response_at ? '<div style="font-size:0.72rem;color:#aaa;margin-top:6px;">' + new Date(iss.admin_response_at).toLocaleString('en-US') + '</div>' : '') + '</div>' : '') +
+
+    // Reply textarea
+    '<div style="margin-bottom:16px;">' +
+    '<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:#888;margin-bottom:6px;">' + (iss.admin_response ? 'Update Reply' : 'Reply to Member') + '</div>' +
+    '<textarea id="hdReplyText_' + iss.id + '" rows="3" placeholder="Type your response to ' + escHtml(iss.member_name || 'this member') + '…" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:0.85rem;font-family:inherit;resize:vertical;box-sizing:border-box;outline:none;line-height:1.5;">' + escHtml(iss.admin_response||'') + '</textarea>' +
+    '</div>' +
+
+    '<div id="hdReplyMsg_' + iss.id + '" style="display:none;font-size:0.82rem;margin-bottom:12px;padding:8px 12px;border-radius:6px;"></div>' +
     '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
     '<select id="hdDetailStatus_' + iss.id + '" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:0.83rem;"><option value="open"' + (iss.status==='open'?' selected':'') + '>Open</option><option value="in-progress"' + (iss.status==='in-progress'?' selected':'') + '>In Progress</option><option value="resolved"' + (iss.status==='resolved'?' selected':'') + '>Resolved</option></select>' +
-    '<button onclick="updateHelpdeskIssue(\'' + iss.id + '\')" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.83rem;padding:8px 16px;cursor:pointer;">Save Status</button>' +
+    '<button id="hdSendReplyBtn_' + iss.id + '" onclick="sendHelpdeskReply(\'' + iss.id + '\')" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.83rem;padding:8px 18px;cursor:pointer;white-space:nowrap;"><i class="fas fa-paper-plane"></i> Send Reply</button>' +
+    '<button onclick="updateHelpdeskIssue(\'' + iss.id + '\')" style="background:#f5f5f5;color:#333;border:1px solid #ddd;border-radius:6px;font-weight:600;font-size:0.83rem;padding:8px 14px;cursor:pointer;white-space:nowrap;">Status Only</button>' +
     '<button onclick="deleteHelpdeskIssue(\'' + iss.id + '\')" style="background:none;border:1px solid #ddd;border-radius:6px;font-size:0.83rem;padding:8px 14px;cursor:pointer;color:#888;" onmouseover="this.style.borderColor=\'#e74c3c\';this.style.color=\'#e74c3c\'" onmouseout="this.style.borderColor=\'#ddd\';this.style.color=\'#888\'"><i class="fas fa-trash"></i></button>' +
     '</div>';
   modal.style.display = 'flex';
@@ -15046,6 +15058,65 @@ async function updateHelpdeskIssue(id) {
     showToast && showToast('Issue updated.');
   } catch(e) {
     alert('Failed to update: ' + (e.message||''));
+  }
+}
+
+async function sendHelpdeskReply(id) {
+  var token = getAdminToken();
+  var replyText = (document.getElementById('hdReplyText_' + id) || {}).value || '';
+  var statusEl = document.getElementById('hdDetailStatus_' + id);
+  var newStatus = statusEl ? statusEl.value : null;
+  var msgEl = document.getElementById('hdReplyMsg_' + id);
+  var btn = document.getElementById('hdSendReplyBtn_' + id);
+
+  if (!replyText.trim()) {
+    if (msgEl) { msgEl.style.display='block'; msgEl.style.background='#fff3cd'; msgEl.style.color='#856404'; msgEl.style.border='1px solid #ffc107'; msgEl.textContent='Please type a reply before sending.'; }
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…'; }
+
+  // Find issue email from current rendered detail — fetch fresh from DB
+  try {
+    var issues = await sbGet('helpdesk_issues', 'id=eq.' + encodeURIComponent(id) + '&select=member_email,member_name', token);
+    var iss = issues && issues[0];
+    var memberEmail = iss ? iss.member_email : null;
+    var memberName = iss ? iss.member_name : 'Member';
+
+    // Build patch: admin_response + admin_response_at + optional status
+    var patch = { admin_response: replyText.trim(), admin_response_at: new Date().toISOString() };
+    if (newStatus) patch.status = newStatus;
+
+    try {
+      await sbPatch('helpdesk_issues', 'id=eq.' + encodeURIComponent(id), patch, token);
+    } catch(patchErr) {
+      // Columns may not exist yet — try without new columns
+      if (/admin_response|column/i.test(patchErr.message||'')) {
+        var fallbackPatch = {};
+        if (newStatus) fallbackPatch.status = newStatus;
+        if (Object.keys(fallbackPatch).length) await sbPatch('helpdesk_issues', 'id=eq.' + encodeURIComponent(id), fallbackPatch, token);
+      } else {
+        throw patchErr;
+      }
+    }
+
+    // Email member
+    if (memberEmail) {
+      try {
+        await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ type: 'helpdesk_reply', memberEmail: memberEmail, memberName: memberName, response: replyText.trim(), issueId: id, status: newStatus || 'updated' })
+        });
+      } catch(_) {}
+    }
+
+    if (msgEl) { msgEl.style.display='block'; msgEl.style.background='#d4edda'; msgEl.style.color='#155724'; msgEl.style.border='1px solid #c3e6cb'; msgEl.textContent='Reply sent' + (memberEmail ? ' to ' + memberEmail : '') + '.'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reply'; }
+    loadHelpdeskIssues();
+  } catch(e) {
+    if (msgEl) { msgEl.style.display='block'; msgEl.style.background='#f8d7da'; msgEl.style.color='#721c24'; msgEl.style.border='1px solid #f5c6cb'; msgEl.textContent='Error: ' + (e.message||'Failed to send reply.'); }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Reply'; }
   }
 }
 
