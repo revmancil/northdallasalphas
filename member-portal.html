@@ -426,6 +426,44 @@ backdrop-filter:blur(4px);}
           <div class="empty-state"><i class="fas fa-people-group"></i><p>Loading meetings…</p></div>
         </div>
       </div>
+
+      <!-- Bulk Committee Report Upload -->
+      <div class="section-card" style="margin-top:20px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-file-upload" style="color:var(--gold);margin-right:8px;"></i>Upload Committee Reports</h3>
+        </div>
+        <div class="section-card-body">
+          <p style="font-size:0.83rem;color:rgba(255,255,255,0.45);margin:0 0 16px;line-height:1.55;">Submit one or more reports at once. Each file is reviewed and approved separately by leadership.</p>
+
+          <div style="margin-bottom:12px;">
+            <label style="display:block;font-size:0.72rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:6px;">Committee <span style="color:#C9A84C;">*</span></label>
+            <input type="text" id="bulkCommitteeName" placeholder="e.g. IMDP, Scholarship, Finance, Education" style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:7px;color:#fff;font-size:0.88rem;padding:10px 12px;outline:none;font-family:inherit;box-sizing:border-box;" />
+          </div>
+
+          <!-- Dropzone -->
+          <div id="bulkReportDropzone"
+               onclick="document.getElementById('bulkReportFiles').click()"
+               ondragover="event.preventDefault();this.style.borderColor='#C9A84C';"
+               ondragleave="this.style.borderColor='rgba(255,255,255,0.12)';"
+               ondrop="event.preventDefault();this.style.borderColor='rgba(255,255,255,0.12)';handleBulkReportFiles({target:{files:event.dataTransfer.files}})"
+               style="border:2px dashed rgba(255,255,255,0.12);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color 0.2s;color:rgba(255,255,255,0.35);font-size:0.85rem;">
+            <i class="fas fa-cloud-upload-alt" style="font-size:1.6rem;color:rgba(201,168,76,0.5);margin-bottom:8px;display:block;"></i>
+            Click or drag files here<br>
+            <span style="font-size:0.75rem;color:rgba(255,255,255,0.25);">PDF, Word, Excel, PowerPoint — multiple files allowed</span>
+            <input type="file" id="bulkReportFiles" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv" style="display:none;" onchange="handleBulkReportFiles(event)" />
+          </div>
+
+          <!-- Staged file list -->
+          <div id="bulkReportList" style="display:none;margin-top:14px;"></div>
+
+          <!-- Progress / message -->
+          <div id="bulkReportMsg" style="display:none;margin-top:10px;font-size:0.83rem;padding:10px 12px;border-radius:6px;"></div>
+
+          <div id="bulkReportActions" style="display:none;margin-top:14px;display:none;">
+            <button id="bulkReportSubmitBtn" onclick="submitBulkReports()" style="background:#C9A84C;color:#000;border:none;border-radius:7px;font-size:0.85rem;font-weight:700;padding:10px 22px;cursor:pointer;font-family:inherit;"><i class="fas fa-paper-plane"></i> Submit Reports</button>
+          </div>
+        </div>
+      </div>
     </div>
     <!-- DUES -->
     <div class="panel" id="panel-dues">
@@ -2245,6 +2283,147 @@ async function submitRsvp(meetingId, response, btn) {
     // silent — UI already updated
   }
 }
+
+// ----- Bulk committee report upload -----
+var _bulkReportFiles = [];
+
+function handleBulkReportFiles(e) {
+  var incoming = Array.from(e.target.files || []);
+  if (!incoming.length) return;
+  // merge — avoid true duplicates by name+size
+  incoming.forEach(function(f) {
+    if (!_bulkReportFiles.some(function(x) { return x.name === f.name && x.size === f.size; })) {
+      _bulkReportFiles.push(f);
+    }
+  });
+  // reset input so same file can be re-added after a remove
+  var inp = document.getElementById('bulkReportFiles');
+  if (inp) inp.value = '';
+  renderBulkReportList();
+}
+
+function renderBulkReportList() {
+  var listEl    = document.getElementById('bulkReportList');
+  var actionsEl = document.getElementById('bulkReportActions');
+  var msgEl     = document.getElementById('bulkReportMsg');
+  if (!listEl) return;
+  if (!_bulkReportFiles.length) {
+    listEl.style.display = 'none'; listEl.innerHTML = '';
+    if (actionsEl) actionsEl.style.display = 'none';
+    return;
+  }
+  listEl.style.display = 'block';
+  listEl.innerHTML =
+    '<div style="font-size:0.77rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:8px;">' +
+    _bulkReportFiles.length + ' file' + (_bulkReportFiles.length !== 1 ? 's' : '') + ' queued</div>' +
+    _bulkReportFiles.map(function(f, i) {
+      var kb = (f.size / 1024).toFixed(0);
+      var ext = (f.name.split('.').pop() || '').toLowerCase();
+      var icon = ext === 'pdf' ? 'file-pdf' : /docx?/.test(ext) ? 'file-word' : /xlsx?/.test(ext) ? 'file-excel' : /pptx?/.test(ext) ? 'file-powerpoint' : 'file-alt';
+      return '<div id="bulkFileRow-' + i + '" style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:7px;margin-bottom:6px;">' +
+        '<i class="fas fa-' + icon + '" style="color:#C9A84C;flex-shrink:0;"></i>' +
+        '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:0.83rem;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="' + escHtml(f.name) + '">' + escHtml(f.name) + '</div>' +
+        '<div style="font-size:0.73rem;color:rgba(255,255,255,0.3);">' + kb + ' KB</div></div>' +
+        '<button onclick="removeBulkFile(' + i + ')" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:0.85rem;padding:2px 6px;" title="Remove">✕</button>' +
+        '</div>';
+    }).join('');
+  if (actionsEl) actionsEl.style.display = 'block';
+  if (msgEl) { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+}
+
+function removeBulkFile(index) {
+  _bulkReportFiles.splice(index, 1);
+  renderBulkReportList();
+}
+
+async function submitBulkReports() {
+  var committee = (document.getElementById('bulkCommitteeName').value || '').trim();
+  var msgEl     = document.getElementById('bulkReportMsg');
+  var btn       = document.getElementById('bulkReportSubmitBtn');
+  if (!committee) {
+    msgEl.style.display = 'block'; msgEl.style.color = '#f87171';
+    msgEl.style.background = 'rgba(220,38,38,0.08)'; msgEl.style.border = '1px solid rgba(220,38,38,0.2)';
+    msgEl.textContent = 'Please enter the committee name before submitting.'; return;
+  }
+  if (!_bulkReportFiles.length) {
+    msgEl.style.display = 'block'; msgEl.style.color = '#f87171';
+    msgEl.style.background = 'rgba(220,38,38,0.08)'; msgEl.style.border = '1px solid rgba(220,38,38,0.2)';
+    msgEl.textContent = 'Please select at least one file.'; return;
+  }
+  var session = JSON.parse(localStorage.getItem(MEMBER_SESSION_KEY) || 'null');
+  var token = session && session.access_token ? session.access_token : null;
+  if (!token) { msgEl.style.display='block'; msgEl.style.color='#f87171'; msgEl.textContent='You must be signed in.'; return; }
+  var memberName = currentMember ? [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ') : (session.user && session.user.email) || 'Unknown';
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+  msgEl.style.display = 'block'; msgEl.style.color = 'rgba(255,255,255,0.6)';
+  msgEl.style.background = 'rgba(255,255,255,0.04)'; msgEl.style.border = '1px solid rgba(255,255,255,0.1)';
+  var total = _bulkReportFiles.length;
+  var done = 0; var failed = [];
+  for (var i = 0; i < total; i++) {
+    var f = _bulkReportFiles[i];
+    msgEl.textContent = 'Uploading ' + (i + 1) + ' of ' + total + ': ' + f.name + '…';
+    // highlight current row
+    var row = document.getElementById('bulkFileRow-' + i);
+    if (row) row.style.borderColor = 'rgba(201,168,76,0.4)';
+    try {
+      var bucket = 'chapter-documents';
+      var stamp  = Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+      var safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      var path = 'committee-reports/' + stamp + '_' + safeName;
+      var storageRes = await fetch(SUPABASE_URL + '/storage/v1/object/' + bucket + '/' + path, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Content-Type': f.type || 'application/octet-stream', 'x-upsert': 'false' },
+        body: f
+      });
+      if (!storageRes.ok) { var se = await storageRes.json().catch(function(){return{};}); throw new Error(se.message || 'Storage upload failed'); }
+      var fileUrl = SUPABASE_URL + '/storage/v1/object/public/' + bucket + '/' + path;
+      var docTitle = committee + ' Report — ' + f.name.replace(/\.[^.]+$/, '');
+      var insRes = await fetch(SUPABASE_URL + '/rest/v1/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ title: docTitle, category: 'Committee', description: committee, file_url: fileUrl, members_only: true, uploaded_by_name: memberName, status: 'pending' })
+      });
+      if (!insRes.ok) { var de = await insRes.json().catch(function(){return{};}); throw new Error(de.message || 'Could not save record'); }
+      done++;
+      if (row) { row.style.borderColor = 'rgba(34,197,94,0.4)'; row.style.background = 'rgba(34,197,94,0.05)'; }
+    } catch(err) {
+      failed.push(f.name + ' (' + (err.message || 'error') + ')');
+      if (row) { row.style.borderColor = 'rgba(239,68,68,0.4)'; row.style.background = 'rgba(239,68,68,0.05)'; }
+    }
+  }
+  // Admin notification (fire and forget)
+  try {
+    await fetch(SUPABASE_URL + '/functions/v1/send-admin-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ type: 'committee_report', name: memberName, committee: committee, title: done + ' report' + (done !== 1 ? 's' : '') + ' submitted' })
+    });
+  } catch(_) {}
+  if (failed.length) {
+    msgEl.style.color = '#fbbf24'; msgEl.style.background = 'rgba(251,191,36,0.08)'; msgEl.style.border = '1px solid rgba(251,191,36,0.2)';
+    msgEl.innerHTML = done + ' of ' + total + ' uploaded successfully.<br>Failed: ' + failed.map(function(s){ return escHtml(s); }).join(', ');
+  } else {
+    msgEl.style.color = '#4ade80'; msgEl.style.background = 'rgba(34,197,94,0.08)'; msgEl.style.border = '1px solid rgba(34,197,94,0.2)';
+    msgEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + done + ' report' + (done !== 1 ? 's' : '') + ' submitted! Leadership will review and approve each one shortly.';
+  }
+  btn.disabled = false; btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Reports';
+  // If all succeeded, clear the queue after a delay
+  if (!failed.length) {
+    setTimeout(function() {
+      _bulkReportFiles = [];
+      document.getElementById('bulkCommitteeName').value = '';
+      renderBulkReportList();
+      msgEl.style.display = 'none';
+    }, 3500);
+  } else {
+    // Remove only succeeded files
+    var failedNames = failed.map(function(s){ return s.split(' (')[0]; });
+    _bulkReportFiles = _bulkReportFiles.filter(function(f){ return failedNames.indexOf(f.name) !== -1; });
+    renderBulkReportList();
+  }
+}
+// ----- End bulk committee report upload -----
 
 function toggleCommitteeUpload(meetingId) {
   var el = document.getElementById('committeeUpload-' + meetingId);

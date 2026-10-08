@@ -2117,7 +2117,10 @@
       <div class="section-card" style="margin-bottom:20px;" id="pendingDocsCard">
         <div class="section-card-header">
           <h3><i class="fas fa-clock" style="color:#f59e0b;margin-right:8px;"></i>Pending Committee Submissions</h3>
-          <span id="pendingDocCount" style="font-size:0.82rem;color:var(--gray-400);"></span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span id="pendingDocCount" style="font-size:0.82rem;color:var(--gray-400);"></span>
+            <button id="approveAllDocsBtn" style="display:none;" class="btn-sm success" onclick="approveAllPendingDocs()" title="Approve all pending submissions at once"><i class="fas fa-check-double"></i> Approve All</button>
+          </div>
         </div>
         <div class="section-card-body" id="pendingDocsList">
           <div class="hint-text">Loading…</div>
@@ -12279,15 +12282,20 @@ function renderDocRow(doc, opts) {
   const date  = doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '';
   const by    = doc.uploaded_by_name ? ' · By ' + escHtml(doc.uploaded_by_name) : '';
   const mtgLabel = doc.meeting_id ? ' · <span style="color:var(--gold);font-size:0.72rem;">Meeting Doc</span>' : '';
+  const isCommittee = (doc.category || '') === 'Committee';
+  const committeeLabel = isCommittee && doc.description ? '<span style="background:rgba(201,168,76,0.12);color:var(--gold);padding:1px 8px;border-radius:10px;font-weight:600;font-size:0.72rem;margin-right:8px;border:1px solid rgba(201,168,76,0.25);"><i class="fas fa-users" style="margin-right:3px;"></i>' + escHtml(doc.description) + ' Committee</span>' : '';
+  const fileExt = (doc.file_url || '').split('.').pop().toLowerCase();
+  const fileIcon = fileExt === 'pdf' ? 'file-pdf' : /docx?/.test(fileExt) ? 'file-word' : /xlsx?/.test(fileExt) ? 'file-excel' : /pptx?/.test(fileExt) ? 'file-powerpoint' : 'file-alt';
   return '<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--gray-100);">' +
     '<div style="width:42px;height:42px;border-radius:8px;background:' + color + '22;display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
-      '<i class="fas fa-file-alt" style="color:' + color + ';font-size:1.1rem;"></i>' +
+      '<i class="fas fa-' + fileIcon + '" style="color:' + color + ';font-size:1.1rem;"></i>' +
     '</div>' +
     '<div style="flex:1;min-width:0;">' +
       '<div style="font-weight:600;color:var(--dark);margin-bottom:2px;">' + escHtml(doc.title) + '</div>' +
       '<div style="font-size:0.8rem;color:var(--gray-500);">' +
-        '<span style="background:' + color + '22;color:' + color + ';padding:1px 8px;border-radius:10px;font-weight:600;font-size:0.72rem;margin-right:8px;">' + escHtml(doc.category || 'General') + '</span>' +
-        (doc.description ? escHtml(doc.description) + ' · ' : '') + date + by + mtgLabel +
+        committeeLabel +
+        (!isCommittee ? '<span style="background:' + color + '22;color:' + color + ';padding:1px 8px;border-radius:10px;font-weight:600;font-size:0.72rem;margin-right:8px;">' + escHtml(doc.category || 'General') + '</span>' : '') +
+        (!isCommittee && doc.description ? escHtml(doc.description) + ' · ' : '') + date + by + mtgLabel +
       '</div>' +
     '</div>' +
     '<div style="display:flex;gap:6px;flex-shrink:0;">' +
@@ -12319,8 +12327,12 @@ async function loadAdminDocuments() {
         pendEl.innerHTML = pending.map(function(d) { return renderDocRow(d, { approve: true }); }).join('');
         if (pendCt) pendCt.textContent = pending.length + ' awaiting review';
         if (pendCard) pendCard.style.display = '';
+        const approveAllBtn = document.getElementById('approveAllDocsBtn');
+        if (approveAllBtn) approveAllBtn.style.display = pending.length > 1 ? '' : 'none';
       } else {
         if (pendCard) pendCard.style.display = 'none';
+        const approveAllBtn = document.getElementById('approveAllDocsBtn');
+        if (approveAllBtn) approveAllBtn.style.display = 'none';
       }
     }
 
@@ -12354,6 +12366,25 @@ async function approveDocument(id) {
   } catch(err) {
     showToast('Could not approve: ' + (err.message || 'error'), 'error');
   }
+}
+
+async function approveAllPendingDocs() {
+  const token = getAdminToken();
+  const pendEl = document.getElementById('pendingDocsList');
+  if (!pendEl) return;
+  const ids = Array.from(pendEl.querySelectorAll('[onclick^="approveDocument"]')).map(function(b) {
+    return b.getAttribute('onclick').replace("approveDocument('", '').replace("')", '');
+  });
+  if (!ids.length) return;
+  if (!confirm('Approve all ' + ids.length + ' pending submission' + (ids.length !== 1 ? 's' : '') + '?')) return;
+  const btn = document.getElementById('approveAllDocsBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving…'; }
+  let done = 0;
+  for (const id of ids) {
+    try { await sbPatch('documents', 'id=eq.' + encodeURIComponent(id), { status: 'approved' }, token); done++; } catch(_) {}
+  }
+  showToast(done + ' document' + (done !== 1 ? 's' : '') + ' approved.', 'success');
+  loadAdminDocuments();
 }
 
 async function rejectDocument(id, title) {
