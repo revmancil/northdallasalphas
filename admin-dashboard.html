@@ -14029,7 +14029,7 @@ function renderDuesPayments() {
       '<td style="padding:8px 10px;"><span style="color:' + statusColor + ';font-weight:600;">' + escHtml(p.payment_status||'—') + '</span></td>' +
       '<td style="padding:8px 10px;color:var(--gray-500);">' + date + '</td>' +
       '<td style="padding:8px 10px;color:var(--gray-500);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escHtml(p.notes||'') + '">' + escHtml(p.notes||'—') + '</td>' +
-      '<td style="padding:8px 10px;"><button onclick="deleteDuesPayment(\'' + escHtml(String(p.id)) + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.8rem;" title="Delete"><i class="fas fa-trash"></i></button></td>' +
+      '<td style="padding:8px 10px;"><button onclick="deleteDuesPayment(\'' + escHtml(String(p.id)) + '\',\'' + escHtml(p._source || 'legacy') + '\')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:0.8rem;" title="Delete"><i class="fas fa-trash"></i></button></td>' +
       '</tr>';
   }).join('');
 }
@@ -14266,11 +14266,12 @@ async function saveDuesConfig() {
   }
 }
 
-async function deleteDuesPayment(id) {
+async function deleteDuesPayment(id, source) {
   if (!confirm('Delete this payment record? This cannot be undone.')) return;
   var token = getAdminToken();
+  var table = (source === 'finance') ? 'finance_payments' : 'dues_payments';
   try {
-    var res = await fetch(SUPABASE_URL + '/rest/v1/dues_payments?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=minimal' }) });
+    var res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=minimal' }) });
     if (!res.ok) { var errText = await res.text(); throw new Error(errText); }
     _duesPayments = _duesPayments.filter(function(p){ return String(p.id) !== String(id); });
     renderDuesPayments();
