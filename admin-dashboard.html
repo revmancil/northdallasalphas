@@ -3096,12 +3096,19 @@
           <button class="btn-sm" onclick="vtgMarkAll(false)" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">Mark All Absent</button>
         </div>
         <div id="vtgAttendGrid" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+        <div style="margin-top:16px;">
+          <button onclick="vtgSaveMeeting()" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.85rem;padding:8px 20px;cursor:pointer;"><i class="fas fa-save"></i> Save Meeting</button>
+        </div>
       </div>
 
       <!-- Motions tab -->
       <div id="vtgViewMotions" style="display:none;">
         <div id="vtgMotionsList"></div>
-        <button class="btn-sm" onclick="vtgOpenAddMotion()" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);margin-top:8px;"><i class="fas fa-plus"></i> Add Motion</button>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn-sm" onclick="vtgOpenAddMotion()" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);"><i class="fas fa-plus"></i> Add Motion</button>
+          <button onclick="vtgSaveMeeting()" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.85rem;padding:8px 20px;cursor:pointer;"><i class="fas fa-save"></i> Save Meeting</button>
+          <span id="vtgMotionsSaveStatus" style="font-size:0.78rem;color:var(--gray-400);"></span>
+        </div>
         <!-- Add motion form -->
         <div id="vtgAddMotionForm" style="display:none;background:rgba(201,168,76,0.05);border:1px dashed rgba(201,168,76,0.3);border-radius:8px;padding:14px 16px;margin-top:14px;">
           <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;">
@@ -4255,6 +4262,8 @@ function showPanel(id) {
     showToast("You don't have access to that section.", 'error');
     return;
   }
+  // Auto-save voting panel when navigating away
+  if (id !== 'voting' && vtgDirty) { vtgSaveMeeting(); }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
 
@@ -15674,7 +15683,9 @@ async function vtgSaveMeeting() {
       if (rows && rows[0] && rows[0].id) { m.dbId = rows[0].id; m.id = rows[0].id; vtgCurrentId = m.id; }
     }
     vtgDirty = false;
-    document.getElementById('vtgSaveStatus').textContent = 'Saved ' + new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    var savedMsg = 'Saved ' + new Date().toLocaleTimeString([],{hour:'numeric',minute:'2-digit'});
+    document.getElementById('vtgSaveStatus').textContent = savedMsg;
+    var ms = document.getElementById('vtgMotionsSaveStatus'); if (ms) ms.textContent = savedMsg;
     showToast('Meeting saved.', 'success');
     vtgRenderPicker();
     vtgRenderRecords();
