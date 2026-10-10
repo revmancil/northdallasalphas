@@ -407,8 +407,23 @@ async function init() {
   var params = new URLSearchParams(window.location.search);
   if (params.get('payment') === 'success') {
     document.getElementById('successBanner').style.display = '';
-    // Clean URL
     window.history.replaceState({}, '', window.location.pathname);
+    // Update member dues expiration after successful Stripe payment
+    var pendingFY = localStorage.getItem('nda_pending_dues_fy');
+    localStorage.removeItem('nda_pending_dues_fy');
+    if (pendingFY) {
+      try {
+        var sess = JSON.parse(localStorage.getItem('nda_member_session') || 'null');
+        if (sess && sess.access_token && sess.user && sess.user.id) {
+          var expYear = (parseInt(pendingFY) || new Date().getFullYear()) + 1;
+          await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(sess.user.id), {
+            method: 'PATCH',
+            headers: Object.assign({}, sbHeaders(sess.access_token), { 'Prefer': 'return=minimal' }),
+            body: JSON.stringify({ dues_current: true, dues_paid_year: pendingFY, chapter_dues_expiration: expYear + '-12-31' })
+          });
+        }
+      } catch(e) {}
+    }
   }
 
   var raw = localStorage.getItem('nda_member_session');
@@ -676,6 +691,8 @@ async function startCheckout() {
     try { data = await res.json(); } catch(e) { data = { error: await res.text() }; }
 
     if (!res.ok || !data.url) throw new Error((data && data.error) || 'Checkout unavailable.');
+    // Persist fiscal year so we can update member record on success redirect
+    localStorage.setItem('nda_pending_dues_fy', selectedFY);
     window.location.href = data.url;
 
   } catch(e) {
