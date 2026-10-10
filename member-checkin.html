@@ -566,7 +566,7 @@ async function doVisitorCheckIn() {
   setLoading('visitorBtn', true, '<i class="fas fa-door-open"></i> Check In as Visiting Brother');
   try {
     var displayName = name + (chapter ? ' (' + chapter + ')' : '');
-    var payload = { meeting_id: meetingId, member_name: displayName, member_type: 'visiting_guest' };
+    var payload = { meeting_id: meetingId, member_name: displayName };
     var res = await fetch(SUPABASE_URL + '/rest/v1/meeting_attendance', {
       method: 'POST',
       headers: {
