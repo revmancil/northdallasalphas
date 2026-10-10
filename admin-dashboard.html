@@ -15349,45 +15349,32 @@ async function vtgSyncCheckins() {
       return;
     }
 
-    // Build sets from attendance records
-    var checkedIds = new Set(attendedList.filter(function(r){ return r.member_id; }).map(function(r){ return String(r.member_id); }));
-    var attendedEmails = attendedList.filter(function(r){ return r.member_email; }).map(function(r){ return r.member_email.toLowerCase(); });
-
-    // Look up member IDs for any emails not already resolved by member_id
-    var memberIdsByEmail = {};
-    if (attendedEmails.length) {
-      var emailFilter = 'email=in.(' + attendedEmails.map(encodeURIComponent).join(',') + ')&select=id,email';
-      var emailMatches = await sbGet('members', emailFilter, vtgToken()).catch(function(){ return []; });
-      (emailMatches || []).forEach(function(r){ if (r.email) memberIdsByEmail[r.email.toLowerCase()] = r.id; });
-    }
+    // Build lookup sets — normalize everything to lowercase strings
+    var checkedIdSet  = new Set(attendedList.filter(function(r){ return r.member_id;    }).map(function(r){ return String(r.member_id); }));
+    var checkedEmailSet = new Set(attendedList.filter(function(r){ return r.member_email; }).map(function(r){ return r.member_email.toLowerCase(); }));
 
     var count = 0;
     vtgRoster.forEach(function(r) {
+      var idKey    = String(r.id);
       var emailKey = r.email ? r.email.toLowerCase() : '';
-      var resolvedId = memberIdsByEmail[emailKey];
-      var matched = checkedIds.has(String(r.id)) || (resolvedId && resolvedId === r.id);
+      var matched  = checkedIdSet.has(idKey) || (emailKey && checkedEmailSet.has(emailKey));
       if (matched) {
-        if (!m.attendance[r.id]) count++;
-        m.attendance[r.id] = true;
+        if (!m.attendance[idKey]) count++;
+        m.attendance[idKey] = true;   // always store as string key
       }
-    });
-
-    // Also mark any resolved IDs that may not be in the local roster yet (edge case)
-    attendedEmails.forEach(function(email) {
-      var rid = memberIdsByEmail[email];
-      if (rid && !m.attendance[rid]) { m.attendance[rid] = true; count++; }
-    });
-    checkedIds.forEach(function(id) {
-      if (!m.attendance[id]) { m.attendance[id] = true; count++; }
     });
 
     vtgDirty = true;
     vtgRenderAttendance();
     vtgUpdateQuorumBadge();
+
+    // Auto-save so attendance persists across navigation
+    await vtgSaveMeeting();
+
     if (count === 0) {
       showToast(attendedList.length + ' check-in record' + (attendedList.length !== 1 ? 's' : '') + ' found but none matched the voting brothers roster. Non-voting or ineligible brothers are excluded.', 'error');
     } else {
-      showToast(count + ' voting brother' + (count !== 1 ? 's' : '') + ' synced from ' + attendedList.length + ' check-in record' + (attendedList.length !== 1 ? 's' : '') + '.', 'success');
+      showToast(count + ' voting brother' + (count !== 1 ? 's' : '') + ' marked present from ' + attendedList.length + ' check-in record' + (attendedList.length !== 1 ? 's' : '') + '.', 'success');
     }
   } catch(e) {
     showToast('Sync failed: ' + (e.message || 'error'), 'error');
@@ -15430,7 +15417,7 @@ function vtgUpdateQuorumBadge() {
   var m = vtgCurrent();
   var badge = document.getElementById('vtgQuorumBadge');
   if (!m || !badge) return;
-  var presentCount = vtgRoster.filter(function(r){ return m.attendance[r.id]; }).length;
+  var presentCount = vtgRoster.filter(function(r){ return m.attendance[String(r.id)]; }).length;
   var total = vtgRoster.length;
   if (m.quorumTarget) {
     var met = presentCount >= m.quorumTarget;
@@ -15449,7 +15436,7 @@ function vtgRenderAttendance() {
   var q = (document.getElementById('vtgAttendSearch').value || '').toLowerCase();
   var list = vtgRoster.filter(function(r){ return !q || vtgFullName(r).toLowerCase().includes(q); });
   grid.innerHTML = list.map(function(r) {
-    var present = !!m.attendance[r.id];
+    var present = !!m.attendance[String(r.id)];
     var style = present
       ? 'padding:7px 13px;border-radius:999px;border:1.5px solid #C9A84C;background:rgba(201,168,76,0.12);font-size:0.82rem;font-weight:600;cursor:pointer;color:#111;display:inline-flex;align-items:center;gap:6px;'
       : 'padding:7px 13px;border-radius:999px;border:1.5px solid var(--gray-300);background:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--gray-500);display:inline-flex;align-items:center;gap:6px;';
@@ -15461,7 +15448,8 @@ function vtgRenderAttendance() {
 
 function vtgToggleAttend(memberId) {
   var m = vtgCurrent(); if (!m) return;
-  m.attendance[memberId] = !m.attendance[memberId];
+  var key = String(memberId);
+  m.attendance[key] = !m.attendance[key];
   vtgDirty = true;
   vtgRenderAttendance();
   vtgRenderMotions();
@@ -15469,7 +15457,7 @@ function vtgToggleAttend(memberId) {
 
 function vtgMarkAll(present) {
   var m = vtgCurrent(); if (!m) return;
-  vtgRoster.forEach(function(r){ m.attendance[r.id] = present; });
+  vtgRoster.forEach(function(r){ m.attendance[String(r.id)] = present; });
   vtgDirty = true;
   vtgRenderAttendance();
   vtgRenderMotions();
@@ -15611,7 +15599,7 @@ function vtgRenderRecords() {
   var list = document.getElementById('vtgRecordsList'); if (!list) return;
   if (!vtgMeetings.length) { list.innerHTML = '<p style="color:var(--gray-400);font-size:0.85rem;">No meetings recorded yet.</p>'; return; }
   list.innerHTML = vtgMeetings.map(function(m) {
-    var presentCount = vtgRoster.filter(function(r){ return m.attendance[r.id]; }).length;
+    var presentCount = vtgRoster.filter(function(r){ return m.attendance[String(r.id)]; }).length;
     var passed = m.motions.filter(function(mo){ return vtgComputeTally(mo).passed === true; }).length;
     var failed = m.motions.filter(function(mo){ return vtgComputeTally(mo).passed === false; }).length;
     var statusBadge = m.finalizedAt
