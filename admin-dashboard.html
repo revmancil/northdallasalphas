@@ -14107,13 +14107,39 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
   if (!confirm('Confirm this Zelle payment as received and mark the brother as paid?')) return;
   var token = getAdminToken();
   try {
-    await sbPatch('dues', 'id=eq.' + duesId, { paid: true, paid_date: new Date().toISOString() }, token);
+    var now = new Date().toISOString();
+    // 1. Mark dues record as paid
+    var duesRows = await sbGet('dues', 'id=eq.' + encodeURIComponent(duesId) + '&select=*', token);
+    var duesRow = duesRows && duesRows[0];
+    await sbPatch('dues', 'id=eq.' + duesId, { paid: true, paid_date: now }, token);
+
+    // 2. Update member record
     if (memberId) {
       var zelleExpYear = (parseInt(fiscalYear) || new Date().getFullYear()) + 1;
       await sbPatch('members', 'id=eq.' + memberId, { dues_paid_year: fiscalYear, dues_current: true, chapter_dues_expiration: zelleExpYear + '-12-31' }, token);
     }
-    showToast && showToast('Payment confirmed.');
+
+    // 3. Look up member name for payment record
+    var memberInfo = {};
+    if (memberId) {
+      var mrows = await sbGet('members', 'id=eq.' + encodeURIComponent(memberId) + '&select=first_name,last_name,email,phone', token);
+      memberInfo = (mrows && mrows[0]) || {};
+    }
+    var fullName = [memberInfo.first_name, memberInfo.last_name].filter(Boolean).join(' ') || (duesRow && duesRow.member_name) || 'Unknown';
+    var amountCents = (duesRow && duesRow.amount_cents) || 30000;
+    var fy = fiscalYear || String(new Date().getFullYear());
+
+    // 4. Write to dues_payments so it appears in Payment History
+    var dpPayload = { full_name: fullName, email: memberInfo.email || null, phone: memberInfo.phone || null, amount_cents: amountCents, payment_status: 'paid', payment_method: 'zelle', notes: (duesRow && duesRow.notes) || null, created_at: now };
+    fetch(SUPABASE_URL + '/rest/v1/dues_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(dpPayload) }).catch(function(){});
+
+    // 5. Write to finance_payments so Finance Dashboard counts it
+    var fpPayload = { member_id: memberId || null, member_name: fullName, category: 'dues', category_label: 'Chapter Dues', fiscal_year: fy, amount_cents: amountCents, method: 'zelle', status: 'paid', late_fee: false, building_fund: false, xero_sync_status: 'pending', created_at: now };
+    fetch(SUPABASE_URL + '/rest/v1/finance_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(fpPayload) }).catch(function(){});
+
+    showToast('Payment confirmed — record added to Payment History.');
     loadPendingZelle();
+    _fetchDuesPayments();
   } catch(e) {
     alert('Failed to confirm: ' + (e.message||''));
   }
