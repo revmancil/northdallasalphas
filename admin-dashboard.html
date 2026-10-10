@@ -3115,6 +3115,7 @@
             <div class="field-group" style="margin:0;min-width:200px;"><label>Moved by</label><input type="text" id="vtgNewMotionMover" placeholder="Brother's name" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
             <div class="field-group" style="margin:0;min-width:200px;"><label>Seconded by</label><input type="text" id="vtgNewMotionSeconder" placeholder="Brother's name" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;" /></div>
             <div class="field-group" style="margin:0;flex-basis:100%;"><label>Motion Text (optional)</label><textarea id="vtgNewMotionDesc" rows="2" placeholder="Full motion text for the minutes" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;resize:vertical;"></textarea></div>
+            <div class="field-group" style="margin:0;flex-basis:100%;"><label>Debate Notes (optional)</label><textarea id="vtgNewMotionDebate" rows="3" placeholder="Key points raised during debate, arguments for and against…" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.85rem;resize:vertical;"></textarea></div>
             <button class="btn-save" onclick="vtgSubmitMotion()" style="padding:8px 18px;font-size:0.85rem;">Add Motion</button>
             <button class="btn-sm" onclick="document.getElementById('vtgAddMotionForm').style.display='none';" style="background:transparent;color:var(--gray-500);border-color:var(--gray-300);">Cancel</button>
           </div>
@@ -15503,6 +15504,9 @@ function vtgMotionCardHtml(m, motion) {
     + '</div>'
     + (motion.description ? '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:3px;">' + escHtml(motion.description) + '</div>' : '')
     + '</div>'
+    + '<div style="align-self:stretch;display:flex;align-items:center;">'
+    + '<button onclick="vtgToggleDebate(\'' + escHtml(motion.id) + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid var(--gray-300);background:transparent;font-size:0.78rem;cursor:pointer;color:var(--gray-600);white-space:nowrap;" title="Show/hide debate notes"><i class="fas fa-comments"></i> Debate' + (motion.debate ? ' <span style=\'display:inline-block;width:6px;height:6px;border-radius:50%;background:#C9A84C;vertical-align:middle;\'></span>' : '') + '</button>'
+    + '</div>'
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
     + '<span style="color:#2f6b45;font-weight:700;font-size:0.85rem;">Y ' + t.yea + '</span>'
     + '<span style="color:#c0392b;font-weight:700;font-size:0.85rem;">N ' + t.nay + '</span>'
@@ -15516,8 +15520,24 @@ function vtgMotionCardHtml(m, motion) {
     + '<button onclick="vtgClearVotes(\'' + escHtml(motion.id) + '\')" style="padding:4px 10px;border-radius:6px;border:1px solid var(--gray-300);background:transparent;font-size:0.78rem;cursor:pointer;color:var(--gray-600);">Clear</button>'
     + '<button onclick="vtgRemoveMotion(\'' + escHtml(motion.id) + '\')" style="padding:4px 8px;border-radius:6px;border:none;background:transparent;color:var(--gray-400);font-size:1rem;cursor:pointer;" title="Remove motion">✕</button>'
     + '</div></div>'
+    + '<div id="vtgDebatePanel_' + escHtml(motion.id) + '" style="display:none;padding:12px 16px;border-bottom:1px solid var(--gray-200);background:var(--gray-50);">'
+    + '<div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:.06em;color:#C9A84C;font-weight:700;margin-bottom:6px;"><i class="fas fa-comments" style="margin-right:4px;"></i>Debate Notes</div>'
+    + '<textarea oninput="vtgUpdateDebate(\'' + escHtml(motion.id) + '\',this.value)" rows="4" placeholder="Key points raised during debate…" style="width:100%;padding:8px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:0.83rem;resize:vertical;box-sizing:border-box;font-family:inherit;line-height:1.5;">' + escHtml(motion.debate || '') + '</textarea>'
+    + '</div>'
     + '<div style="max-height:360px;overflow-y:auto;">' + voteRows + '</div>'
     + '</div>';
+}
+
+function vtgToggleDebate(motionId) {
+  var panel = document.getElementById('vtgDebatePanel_' + motionId);
+  if (panel) panel.style.display = panel.style.display === 'none' ? '' : 'none';
+}
+
+function vtgUpdateDebate(motionId, value) {
+  var m = vtgCurrent(); if (!m) return;
+  var motion = m.motions.find(function(x){ return x.id === motionId; }); if (!motion) return;
+  motion.debate = value;
+  vtgDirty = true;
 }
 
 function vtgCastVote(motionId, memberId, choice) {
@@ -15563,6 +15583,7 @@ function vtgRemoveMotion(motionId) {
 function vtgOpenAddMotion() {
   document.getElementById('vtgNewMotionTitle').value = '';
   document.getElementById('vtgNewMotionDesc').value = '';
+  document.getElementById('vtgNewMotionDebate').value = '';
   document.getElementById('vtgNewMotionMover').value = '';
   document.getElementById('vtgNewMotionSeconder').value = '';
   document.getElementById('vtgNewMotionThreshold').value = 'majority';
@@ -15575,11 +15596,12 @@ function vtgSubmitMotion() {
   var title = document.getElementById('vtgNewMotionTitle').value.trim();
   if (!title) { showToast('A motion needs a title.', 'error'); return; }
   var desc = document.getElementById('vtgNewMotionDesc').value.trim();
+  var debate = document.getElementById('vtgNewMotionDebate').value.trim();
   var mover = document.getElementById('vtgNewMotionMover').value.trim();
   var seconder = document.getElementById('vtgNewMotionSeconder').value.trim();
   var threshold = document.getElementById('vtgNewMotionThreshold').value;
   var id = 'mo-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
-  m.motions.push({ id: id, title: title, description: desc, mover: mover, seconder: seconder, threshold: threshold, votes: {} });
+  m.motions.push({ id: id, title: title, description: desc, debate: debate, mover: mover, seconder: seconder, threshold: threshold, votes: {} });
   document.getElementById('vtgAddMotionForm').style.display = 'none';
   vtgDirty = true;
   vtgRenderMotions();
@@ -15748,6 +15770,21 @@ function vtgExportPdfById(id) {
     return [mo.title||'Untitled', mo.mover||'—', mo.seconder||'—', mo.threshold==='twothirds'?'2/3':'Majority', String(t.yea), String(t.nay), String(t.abstain), t.passed===null?'No votes':t.passed?'Passed':'Failed'];
   });
   doc.autoTable({ startY:116, head:[['Motion','Moved by','Seconded by','Threshold','Yea','Nay','Abstain','Result']], body: summaryBody.length ? summaryBody : [['No motions recorded','—','—','—','—','—','—','—']], styles:{fontSize:9,cellPadding:5}, headStyles:{fillColor:[201,168,76],textColor:[28,21,8]}, margin:{left:40,right:40} });
+  var debateMotions = m.motions.filter(function(mo){ return mo.debate && mo.debate.trim(); });
+  if (debateMotions.length) {
+    var dy = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 116) + 20;
+    if (dy > doc.internal.pageSize.getHeight() - 80) { doc.addPage(); dy = 40; }
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text('Debate Notes', 40, dy); dy += 16;
+    debateMotions.forEach(function(mo) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(10);
+      doc.text((mo.title || 'Untitled') + ':', 40, dy); dy += 14;
+      doc.setFont('helvetica','normal'); doc.setFontSize(9);
+      var lines = doc.splitTextToSize(mo.debate.trim(), doc.internal.pageSize.getWidth() - 80);
+      if (dy + lines.length * 12 > doc.internal.pageSize.getHeight() - 40) { doc.addPage(); dy = 40; }
+      doc.text(lines, 40, dy); dy += lines.length * 12 + 10;
+    });
+  }
   if (m.motions.length) {
     doc.addPage('letter','landscape');
     doc.setFont('helvetica','bold'); doc.setFontSize(13);
