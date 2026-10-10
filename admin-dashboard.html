@@ -15245,21 +15245,12 @@ async function loadVotingPanel() {
   try {
     const tok = vtgToken();
     const [members, meetings, scheduledMtgs] = await Promise.all([
-      sbGet('members', 'select=id,alpha_id,first_name,last_name,middle_name,suffix,email,status,grand_tax_paid,life_member,chapter_dues_expiration,dues_current&order=last_name.asc', tok),
+      sbGet('members', 'select=id,alpha_id,first_name,last_name,middle_name,suffix,email,status,grand_tax_paid,life_member,life_member_date,life_member_number,chapter_dues_expiration,dues_current&order=last_name.asc', tok),
       sbGet('chapter_meetings', 'order=created_at.desc', tok).catch(() => []),
       sbGet('meetings', 'select=id,title,meeting_date&order=meeting_date.desc', tok).catch(() => [])
     ]);
-    var today = new Date().toISOString().slice(0, 10);
     vtgRoster = (members || []).filter(function(m) {
-      // Must have grand tax paid OR be a life member
-      var taxOk = m.grand_tax_paid === true || m.grand_tax_paid === 'true' || m.life_member === true || m.life_member === 'true';
-      if (!taxOk) return false;
-      // Must have non-expired chapter dues
-      if (m.chapter_dues_expiration) {
-        return m.chapter_dues_expiration >= today;
-      }
-      // No expiration date recorded — fall back to dues_current flag
-      return m.dues_current === true || m.dues_current === 'true' || m.dues_current === 'yes';
+      return rosterComputeActive(m);
     }).map(function(m) {
       return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '', email: (m.email || '').toLowerCase() };
     });
