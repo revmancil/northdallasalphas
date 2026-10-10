@@ -14099,7 +14099,8 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
   try {
     await sbPatch('dues', 'id=eq.' + duesId, { paid: true, paid_date: new Date().toISOString() }, token);
     if (memberId) {
-      await sbPatch('members', 'id=eq.' + memberId, { dues_paid_year: fiscalYear, dues_current: true }, token);
+      var zelleExpYear = (parseInt(fiscalYear) || new Date().getFullYear()) + 1;
+      await sbPatch('members', 'id=eq.' + memberId, { dues_paid_year: fiscalYear, dues_current: true, chapter_dues_expiration: zelleExpYear + '-12-31' }, token);
     }
     showToast && showToast('Payment confirmed.');
     loadPendingZelle();
@@ -14186,12 +14187,13 @@ async function submitDuesRecord() {
       body: JSON.stringify(fpPayload)
     }).catch(function(){});
 
-    // Update member dues_current if a member was selected
+    // Update member dues_current + expiration if a member was selected
     if (memberId) {
+      var expYear = (parseInt(fy) || new Date().getFullYear()) + 1;
       fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
         method: 'PATCH',
         headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=minimal' }),
-        body: JSON.stringify({ dues_current: true, dues_paid_year: fy })
+        body: JSON.stringify({ dues_current: true, dues_paid_year: fy, chapter_dues_expiration: expYear + '-12-31' })
       }).catch(function(){});
     }
 
