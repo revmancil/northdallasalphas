@@ -2723,8 +2723,13 @@
         <div style="background:#fff;border-radius:12px;padding:28px 28px 24px;max-width:480px;width:92%;max-height:85vh;display:flex;flex-direction:column;position:relative;">
           <button onclick="closeMtgAtt()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
           <h3 id="mtgAttTitle" style="margin:0 0 18px;font-size:1rem;color:var(--gray-800);padding-right:20px;"></h3>
-          <div style="overflow-y:auto;
-          -webkit-overflow-scrolling: touch;flex:1;">
+          <!-- Tab bar -->
+          <div style="display:flex;gap:0;border-bottom:2px solid var(--gray-200);margin-bottom:14px;">
+            <button id="mtgTabAtt" onclick="mtgSwitchTab('att')" style="flex:1;padding:7px 10px;font-size:0.78rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--gold);margin-bottom:-2px;color:var(--gold);"><i class="fas fa-check-circle"></i> Attendance</button>
+            <button id="mtgTabRsvp" onclick="mtgSwitchTab('rsvp')" style="flex:1;padding:7px 10px;font-size:0.78rem;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;color:var(--gray-500);"><i class="fas fa-calendar-check"></i> RSVPs</button>
+          </div>
+          <!-- Attendance pane -->
+          <div id="mtgPaneAtt" style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;">
             <div style="margin-bottom:18px;">
               <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;"><i class="fas fa-check-circle"></i> Checked In</div>
               <div id="mtgAttCheckedIn"></div>
@@ -2734,7 +2739,45 @@
               <div id="mtgAttNotChecked"></div>
             </div>
           </div>
+          <!-- RSVP pane -->
+          <div id="mtgPaneRsvp" style="display:none;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;">
+            <div style="margin-bottom:16px;">
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#16a34a;margin-bottom:8px;"><i class="fas fa-check"></i> Yes</div>
+              <div id="mtgRsvpYes"><span style="color:var(--gray-400);font-size:0.82rem;">None</span></div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;"><i class="fas fa-question"></i> Maybe</div>
+              <div id="mtgRsvpMaybe"><span style="color:var(--gray-400);font-size:0.82rem;">None</span></div>
+            </div>
+            <div>
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px;"><i class="fas fa-times"></i> No</div>
+              <div id="mtgRsvpNo"><span style="color:var(--gray-400);font-size:0.82rem;">None</span></div>
+            </div>
+          </div>
           <button onclick="downloadAttCsv()" class="btn-save" style="margin-top:16px;width:100%;"><i class="fas fa-download"></i> Download Attendee List (CSV)</button>
+        </div>
+      </div>
+
+      <!-- Event RSVP List modal -->
+      <div id="evtRsvpModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:12px;padding:28px 28px 24px;max-width:480px;width:92%;max-height:85vh;display:flex;flex-direction:column;position:relative;">
+          <button onclick="document.getElementById('evtRsvpModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray-500);">×</button>
+          <h3 id="evtRsvpTitle" style="margin:0 0 16px;font-size:1rem;color:var(--gray-800);padding-right:20px;"></h3>
+          <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;">
+            <div style="margin-bottom:16px;">
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#16a34a;margin-bottom:8px;"><i class="fas fa-check"></i> Yes</div>
+              <div id="evtRsvpYes"><span style="color:var(--gray-400);font-size:0.82rem;">None</span></div>
+            </div>
+            <div style="margin-bottom:16px;">
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;"><i class="fas fa-question"></i> Maybe</div>
+              <div id="evtRsvpMaybe"><span style="color:var(--gray-400);font-size:0.82rem;">None</span></div>
+            </div>
+            <div>
+              <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--gray-400);margin-bottom:8px;"><i class="fas fa-times"></i> No</div>
+              <div id="evtRsvpNo"><span style="color:var(--gray-400);font-size:0.82rem;">None</span></div>
+            </div>
+          </div>
+          <button onclick="downloadEvtRsvpCsv()" class="btn-save" style="margin-top:16px;width:100%;"><i class="fas fa-download"></i> Download RSVP List (CSV)</button>
         </div>
       </div>
 
@@ -6157,20 +6200,35 @@ function downloadEvtAttCsv() {
   a.click();
 }
 
+function mtgSwitchTab(tab) {
+  document.getElementById('mtgPaneAtt').style.display = tab === 'att' ? 'flex' : 'none';
+  document.getElementById('mtgPaneRsvp').style.display = tab === 'rsvp' ? 'flex' : 'none';
+  document.getElementById('mtgPaneAtt').style.flexDirection = 'column';
+  document.getElementById('mtgTabAtt').style.borderBottomColor = tab === 'att' ? 'var(--gold)' : 'transparent';
+  document.getElementById('mtgTabAtt').style.color = tab === 'att' ? 'var(--gold)' : 'var(--gray-500)';
+  document.getElementById('mtgTabRsvp').style.borderBottomColor = tab === 'rsvp' ? 'var(--gold)' : 'transparent';
+  document.getElementById('mtgTabRsvp').style.color = tab === 'rsvp' ? 'var(--gold)' : 'var(--gray-500)';
+}
+
 async function showMtgAttendance(meetingId, title) {
   const token = getAdminToken();
   try {
-    const [attended, rsvps] = await Promise.all([
+    const [attended, allRsvps] = await Promise.all([
       sbGet('meeting_attendance', 'meeting_id=eq.' + encodeURIComponent(meetingId) + '&order=checked_in_at.asc', token),
-      sbGet('meeting_rsvps', 'meeting_id=eq.' + encodeURIComponent(meetingId) + '&response=in.(yes,maybe)&select=member_id,member_name,member_email,response', token)
+      sbGet('meeting_rsvps', 'meeting_id=eq.' + encodeURIComponent(meetingId) + '&select=member_id,member_name,member_email,response', token)
     ]);
-    const checkedNames = new Set((attended||[]).map(function(r){ return String(r.member_id||''); }));
+    const rsvpYes    = (allRsvps||[]).filter(function(r){ return r.response === 'yes'; });
+    const rsvpMaybe  = (allRsvps||[]).filter(function(r){ return r.response === 'maybe'; });
+    const rsvpNo     = (allRsvps||[]).filter(function(r){ return r.response === 'no'; });
+    const checkedIds = new Set((attended||[]).map(function(r){ return String(r.member_id||''); }));
     const checkedEmails = new Set((attended||[]).map(function(r){ return (r.member_email||'').toLowerCase(); }));
-    const notCheckedIn = (rsvps||[]).filter(function(r){
-      return !checkedNames.has(String(r.member_id||'__none__')) && !(r.member_email && checkedEmails.has(r.member_email.toLowerCase()));
+    const notCheckedIn = (allRsvps||[]).filter(function(r){
+      return (r.response === 'yes' || r.response === 'maybe') &&
+        !checkedIds.has(String(r.member_id||'__none__')) && !(r.member_email && checkedEmails.has(r.member_email.toLowerCase()));
     });
     const modal = document.getElementById('mtgAttModal');
     document.getElementById('mtgAttTitle').textContent = 'Attendance — ' + title;
+    mtgSwitchTab('att');
     // Checked in
     const ciEl = document.getElementById('mtgAttCheckedIn');
     if (!attended || !attended.length) {
@@ -6192,8 +6250,20 @@ async function showMtgAttendance(meetingId, title) {
         return '<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.85rem;color:var(--gray-600);">'+escHtml(r.member_name||r.member_email||'Unknown')+'</div>';
       }).join('');
     }
+    // RSVP pane
+    function rsvpRows(list) {
+      if (!list.length) return '<span style="color:var(--gray-400);font-size:0.82rem;">None</span>';
+      return list.map(function(r){
+        return '<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.85rem;color:var(--gray-700);">'+escHtml(r.member_name||r.member_email||'Unknown')+'</div>';
+      }).join('');
+    }
+    document.getElementById('mtgRsvpYes').innerHTML = rsvpRows(rsvpYes);
+    document.getElementById('mtgRsvpMaybe').innerHTML = rsvpRows(rsvpMaybe);
+    document.getElementById('mtgRsvpNo').innerHTML = rsvpRows(rsvpNo);
+    // Update tab labels with counts
+    document.getElementById('mtgTabRsvp').innerHTML = '<i class="fas fa-calendar-check"></i> RSVPs (' + (allRsvps||[]).length + ')';
     // Store for CSV
-    modal._attendData = { title: title, attended: attended||[], notCheckedIn: notCheckedIn };
+    modal._attendData = { title: title, attended: attended||[], notCheckedIn: notCheckedIn, allRsvps: allRsvps||[] };
     modal.style.display = 'flex';
   } catch(err) {
     showToast('Could not load attendance.', 'error');
@@ -6203,12 +6273,18 @@ function closeMtgAtt() { document.getElementById('mtgAttModal').style.display = 
 function downloadAttCsv() {
   const d = document.getElementById('mtgAttModal')._attendData;
   if (!d) return;
-  const rows = [['Name','Email','Status','Checked In At']];
+  const rows = [['Name','Email','Status','Checked In At','RSVP Response']];
   (d.attended||[]).forEach(function(r){
-    rows.push([r.member_name||'', r.member_email||'', 'Checked In', r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '']);
+    rows.push([r.member_name||'', r.member_email||'', 'Checked In', r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '', '']);
   });
-  (d.notCheckedIn||[]).forEach(function(r){
-    rows.push([r.member_name||'', r.member_email||'', "RSVP'd — Not Checked In", '']);
+  // Add RSVP responses (all three)
+  var attendedIds = new Set((d.attended||[]).map(function(r){ return String(r.member_id||''); }));
+  var attendedEmails = new Set((d.attended||[]).map(function(r){ return (r.member_email||'').toLowerCase(); }));
+  (d.allRsvps||d.notCheckedIn||[]).forEach(function(r){
+    var alreadyIn = attendedIds.has(String(r.member_id||'__none__')) || (r.member_email && attendedEmails.has(r.member_email.toLowerCase()));
+    if (!alreadyIn) {
+      rows.push([r.member_name||'', r.member_email||'', "RSVP'd — Not Checked In", '', r.response||'']);
+    }
   });
   const csv = rows.map(function(r){ return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
   const blob = new Blob([csv], {type:'text/csv'});
@@ -8045,8 +8121,11 @@ function renderEventsList() {
             <input type="checkbox" id="rsvp-enabled-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.rsvpEnabled ? 'checked' : ''} onchange="eventsData[${i}].rsvpEnabled=this.checked" />
             <span><strong style="color:var(--gold);">Brothers RSVP</strong> — enables a Yes / No / Maybe RSVP in the Member Portal for this event. Responses are tallied below and visible here.</span>
           </label>
-          <div id="rsvp-tally-${i}" style="display:flex;gap:18px;font-size:0.82rem;padding-top:6px;border-top:1px solid rgba(201,168,76,0.15);">
-            <span style="color:var(--gray-400);font-style:italic;">Loading tally…</span>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:6px;border-top:1px solid rgba(201,168,76,0.15);">
+            <div id="rsvp-tally-${i}" style="display:flex;gap:18px;font-size:0.82rem;flex:1;">
+              <span style="color:var(--gray-400);font-style:italic;">Loading tally…</span>
+            </div>
+            ${ev.id ? `<button onclick="showEventRsvps('${escHtml(ev.id)}','${escHtml(ev.name||'Event')}')" style="padding:5px 12px;font-size:0.75rem;font-weight:700;border:1px solid var(--gold);border-radius:5px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;"><i class="fas fa-list"></i> View List</button>` : ''}
           </div>
         </div>
         <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);margin-bottom:12px;">
@@ -8114,9 +8193,51 @@ async function loadEventRsvpTallies() {
     const t = tallyMap[ev.id] || { yes:0, no:0, maybe:0 };
     el.innerHTML =
       '<span style="color:#16a34a;font-weight:600;">✓ ' + t.yes + ' Yes</span>' +
-      '<span style="color:var(--gray-400);">~ ' + t.maybe + ' Maybe</span>' +
-      '<span style="color:#dc2626;">✗ ' + t.no + ' No</span>';
+      '<span style="color:var(--gold);">~ ' + t.maybe + ' Maybe</span>' +
+      '<span style="color:var(--gray-500);">✗ ' + t.no + ' No</span>';
   });
+}
+
+async function showEventRsvps(eventId, eventName) {
+  const token = getAdminToken();
+  const modal = document.getElementById('evtRsvpModal');
+  document.getElementById('evtRsvpTitle').textContent = 'RSVPs — ' + eventName;
+  document.getElementById('evtRsvpYes').innerHTML = '<span style="color:var(--gray-400);font-size:0.82rem;font-style:italic;">Loading…</span>';
+  document.getElementById('evtRsvpMaybe').innerHTML = '';
+  document.getElementById('evtRsvpNo').innerHTML = '';
+  modal.style.display = 'flex';
+  try {
+    const rows = await sbGet('event_rsvps', 'event_id=eq.' + encodeURIComponent(eventId) + '&select=member_id,member_name,member_email,response&order=member_name.asc', token);
+    const yes   = (rows||[]).filter(function(r){ return r.response === 'yes'; });
+    const maybe = (rows||[]).filter(function(r){ return r.response === 'maybe'; });
+    const no    = (rows||[]).filter(function(r){ return r.response === 'no'; });
+    function rsvpRows(list) {
+      if (!list.length) return '<span style="color:var(--gray-400);font-size:0.82rem;">None</span>';
+      return list.map(function(r){
+        return '<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.85rem;color:var(--gray-700);">'+escHtml(r.member_name||r.member_email||'Unknown')+'</div>';
+      }).join('');
+    }
+    document.getElementById('evtRsvpYes').innerHTML = rsvpRows(yes);
+    document.getElementById('evtRsvpMaybe').innerHTML = rsvpRows(maybe);
+    document.getElementById('evtRsvpNo').innerHTML = rsvpRows(no);
+    modal._rsvpData = { title: eventName, rows: rows||[] };
+  } catch(err) {
+    document.getElementById('evtRsvpYes').innerHTML = '<span style="color:#dc2626;font-size:0.82rem;">Could not load RSVPs.</span>';
+  }
+}
+
+function downloadEvtRsvpCsv() {
+  const d = document.getElementById('evtRsvpModal')._rsvpData;
+  if (!d) return;
+  const csvRows = [['Name','Email','Response']];
+  (d.rows||[]).sort(function(a,b){ return (a.response||'').localeCompare(b.response||'') || (a.member_name||'').localeCompare(b.member_name||''); }).forEach(function(r){
+    csvRows.push([r.member_name||'', r.member_email||'', r.response||'']);
+  });
+  const csv = csvRows.map(function(r){ return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'rsvps-' + (d.title||'event').replace(/[^a-z0-9]/gi,'-').toLowerCase() + '.csv';
+  a.click();
 }
 
 async function archiveEvent(i) {
