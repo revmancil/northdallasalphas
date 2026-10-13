@@ -7837,7 +7837,8 @@ function normalizeAdminEventRecord(ev) {
     sponsorUrl: String(ev.sponsor_url || ev.sponsorUrl || '').trim(),
     sponsorLabel: String(ev.sponsor_label || ev.sponsorLabel || 'Become a Sponsor').trim() || 'Become a Sponsor',
     membersOnly: !!(ev.members_only ?? ev.membersOnly),
-    rsvpEnabled: !!(ev.rsvp_enabled ?? ev.rsvpEnabled)
+    rsvpEnabled: !!(ev.rsvp_enabled ?? ev.rsvpEnabled),
+    attire: ev.attire || ''
   };
 }
 
@@ -8004,6 +8005,17 @@ function renderEventsList() {
         <div class="event-field span-2">
           <label>Location</label>
           <input type="text" class="ev-location" placeholder="Location or address" value="${escHtml(ev.location)}" onchange="eventsData[${i}].location=this.value" />
+        </div>
+        <div class="event-field span-2">
+          <label>Attire</label>
+          <select onchange="eventsData[${i}].attire=this.value" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-800);font-size:0.88rem;">
+            <option value="" ${!ev.attire ? 'selected' : ''}>— Select attire —</option>
+            <option value="Alpha Attire" ${ev.attire==='Alpha Attire' ? 'selected' : ''}>Alpha Attire</option>
+            <option value="Alpha Paraphernalia" ${ev.attire==='Alpha Paraphernalia' ? 'selected' : ''}>Alpha Paraphernalia</option>
+            <option value="Casual" ${ev.attire==='Casual' ? 'selected' : ''}>Casual</option>
+            <option value="Semi-Formal" ${ev.attire==='Semi-Formal' ? 'selected' : ''}>Semi-Formal</option>
+            <option value="Formal" ${ev.attire==='Formal' ? 'selected' : ''}>Formal</option>
+          </select>
         </div>
       </div>
       <div class="event-row-dates">
@@ -8536,6 +8548,7 @@ function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
       row.members_only = !!ev.membersOnly;
       row.rsvp_enabled = !!ev.rsvpEnabled;
     }
+    if (ev.attire) row.attire = ev.attire;
     if (includeSponsorFields) {
       row.sponsor_enabled = !!ev.sponsorEnabled;
       row.sponsor_url = String(ev.sponsorUrl || '').trim();
