@@ -8056,7 +8056,7 @@ function renderEventsList() {
         <button class="btn-sm view" onclick="showEvtQr(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;">
           <i class="fas fa-qrcode"></i> QR
         </button>
-        <button id="rsvp-btn-${i}" class="btn-sm view" style="height:32px;padding:0 10px;font-size:0.78rem;display:none;"><i class="fas fa-calendar-check"></i> RSVPs</button>
+        <button class="btn-sm view" onclick="openEvtRsvps(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;${ev.id?'':'display:none;'}"><i class="fas fa-calendar-check"></i> RSVPs</button>
         <span class="toolbar-spacer"></span>
         <button class="btn-sm" onclick="archiveEvent(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);">
           <i class="fas fa-box-archive"></i> Archive
@@ -8067,13 +8067,6 @@ function renderEventsList() {
       </div>
     `;
     container.appendChild(row);
-    if (ev.id) {
-      var rsvpBtn = document.getElementById('rsvp-btn-' + i);
-      if (rsvpBtn) {
-        rsvpBtn.style.display = '';
-        rsvpBtn.onclick = (function(eid, ename){ return function(){ showEventRsvps(eid, ename); }; })(ev.id, ev.name || 'Event');
-      }
-    }
 
     // Flyer sub-row
     const flyerRow = document.createElement('div');
@@ -8213,6 +8206,11 @@ async function loadEventRsvpTallies() {
       '<span style="color:var(--gold);">~ ' + t.maybe + ' Maybe</span>' +
       '<span style="color:var(--gray-500);">✗ ' + t.no + ' No</span>';
   });
+}
+
+function openEvtRsvps(i) {
+  var ev = eventsData[i];
+  if (ev && ev.id) showEventRsvps(ev.id, ev.name || 'Event');
 }
 
 async function showEventRsvps(eventId, eventName) {
