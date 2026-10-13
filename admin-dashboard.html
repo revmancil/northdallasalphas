@@ -8199,22 +8199,34 @@ async function showEventRsvps(eventId, eventName) {
   document.getElementById('evtRsvpNo').innerHTML = '';
   modal.style.display = 'flex';
   try {
-    const rows = await sbGet('event_rsvps', 'event_id=eq.' + encodeURIComponent(eventId) + '&select=member_id,member_name,member_email,response&order=member_name.asc', token);
-    const yes   = (rows||[]).filter(function(r){ return r.response === 'yes'; });
-    const maybe = (rows||[]).filter(function(r){ return r.response === 'maybe'; });
-    const no    = (rows||[]).filter(function(r){ return r.response === 'no'; });
-    function rsvpRows(list) {
+    // event_rsvps only stores member_id and response — fetch names from members table
+    const [rsvpRows, memberRows] = await Promise.all([
+      sbGet('event_rsvps', 'event_id=eq.' + encodeURIComponent(eventId) + '&select=member_id,response', token),
+      sbGet('members', 'select=id,first_name,last_name,email', token)
+    ]);
+    const memberMap = {};
+    (memberRows||[]).forEach(function(m){ memberMap[String(m.id)] = m; });
+    const enriched = (rsvpRows||[]).map(function(r) {
+      var m = memberMap[String(r.member_id)] || {};
+      var name = m.first_name ? (m.first_name + ' ' + (m.last_name||'')).trim() : (m.email || 'Unknown');
+      return { response: r.response, name: name, email: m.email||'' };
+    }).sort(function(a,b){ return a.name.localeCompare(b.name); });
+
+    const yes   = enriched.filter(function(r){ return r.response === 'yes'; });
+    const maybe = enriched.filter(function(r){ return r.response === 'maybe'; });
+    const no    = enriched.filter(function(r){ return r.response === 'no'; });
+    function rsvpRows2(list) {
       if (!list.length) return '<span style="color:var(--gray-400);font-size:0.82rem;">None</span>';
       return list.map(function(r){
-        return '<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.85rem;color:var(--gray-700);">'+escHtml(r.member_name||r.member_email||'Unknown')+'</div>';
+        return '<div style="padding:5px 0;border-bottom:1px solid var(--gray-100);font-size:0.85rem;color:var(--gray-700);">'+escHtml(r.name)+'</div>';
       }).join('');
     }
-    document.getElementById('evtRsvpYes').innerHTML = rsvpRows(yes);
-    document.getElementById('evtRsvpMaybe').innerHTML = rsvpRows(maybe);
-    document.getElementById('evtRsvpNo').innerHTML = rsvpRows(no);
-    modal._rsvpData = { title: eventName, rows: rows||[] };
+    document.getElementById('evtRsvpYes').innerHTML = rsvpRows2(yes);
+    document.getElementById('evtRsvpMaybe').innerHTML = rsvpRows2(maybe);
+    document.getElementById('evtRsvpNo').innerHTML = rsvpRows2(no);
+    modal._rsvpData = { title: eventName, rows: enriched };
   } catch(err) {
-    document.getElementById('evtRsvpYes').innerHTML = '<span style="color:#dc2626;font-size:0.82rem;">Could not load RSVPs.</span>';
+    document.getElementById('evtRsvpYes').innerHTML = '<span style="color:#dc2626;font-size:0.82rem;">Error: ' + escHtml(err.message||'Could not load RSVPs.') + '</span>';
   }
 }
 
@@ -8222,8 +8234,8 @@ function downloadEvtRsvpCsv() {
   const d = document.getElementById('evtRsvpModal')._rsvpData;
   if (!d) return;
   const csvRows = [['Name','Email','Response']];
-  (d.rows||[]).sort(function(a,b){ return (a.response||'').localeCompare(b.response||'') || (a.member_name||'').localeCompare(b.member_name||''); }).forEach(function(r){
-    csvRows.push([r.member_name||'', r.member_email||'', r.response||'']);
+  (d.rows||[]).sort(function(a,b){ return (a.response||'').localeCompare(b.response||'') || (a.name||'').localeCompare(b.name||''); }).forEach(function(r){
+    csvRows.push([r.name||'', r.email||'', r.response||'']);
   });
   const csv = csvRows.map(function(r){ return r.map(function(v){ return '"'+String(v||'').replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
   const blob = new Blob([csv], {type:'text/csv'});
