@@ -8056,6 +8056,7 @@ function renderEventsList() {
         <button class="btn-sm view" onclick="showEvtQr(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;">
           <i class="fas fa-qrcode"></i> QR
         </button>
+        ${ev.id ? '<button id="rsvp-viewlist-' + i + '" class="btn-sm view" style="height:32px;padding:0 10px;font-size:0.78rem;"><i class="fas fa-calendar-check"></i> RSVPs</button>' : ''}
         <span class="toolbar-spacer"></span>
         <button class="btn-sm" onclick="archiveEvent(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);">
           <i class="fas fa-box-archive"></i> Archive
@@ -8133,11 +8134,8 @@ function renderEventsList() {
             <input type="checkbox" id="rsvp-enabled-${i}" style="margin-top:3px;flex-shrink:0;" ${ev.rsvpEnabled ? 'checked' : ''} onchange="eventsData[${i}].rsvpEnabled=this.checked" />
             <span><strong style="color:var(--gold);">Brothers RSVP</strong> — enables a Yes / No / Maybe RSVP in the Member Portal for this event. Responses are tallied below and visible here.</span>
           </label>
-          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:6px;border-top:1px solid rgba(201,168,76,0.15);">
-            <div id="rsvp-tally-${i}" style="display:flex;gap:18px;font-size:0.82rem;flex:1;">
-              <span style="color:var(--gray-400);font-style:italic;">Loading tally…</span>
-            </div>
-            <button id="rsvp-viewlist-${i}" style="padding:5px 12px;font-size:0.75rem;font-weight:700;border:1px solid var(--gold);border-radius:5px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;${ev.id ? '' : 'display:none;'}"><i class="fas fa-list"></i> View List</button>
+          <div id="rsvp-tally-${i}" style="display:flex;gap:18px;font-size:0.82rem;padding-top:6px;border-top:1px solid rgba(201,168,76,0.15);">
+            <span style="color:var(--gray-400);font-style:italic;">Loading tally…</span>
           </div>
         </div>
         <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);margin-bottom:12px;">
