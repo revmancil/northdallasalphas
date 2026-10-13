@@ -8137,7 +8137,7 @@ function renderEventsList() {
             <div id="rsvp-tally-${i}" style="display:flex;gap:18px;font-size:0.82rem;flex:1;">
               <span style="color:var(--gray-400);font-style:italic;">Loading tally…</span>
             </div>
-            ${ev.id ? '<button onclick="showEventRsvps(\'' + escHtml(ev.id) + '\',\'' + escHtml(ev.name||'Event').replace(/'/g,'&#39;') + '\')" style="padding:5px 12px;font-size:0.75rem;font-weight:700;border:1px solid var(--gold);border-radius:5px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;"><i class=\'fas fa-list\'></i> View List</button>' : ''}
+            <button id="rsvp-viewlist-${i}" style="padding:5px 12px;font-size:0.75rem;font-weight:700;border:1px solid var(--gold);border-radius:5px;background:transparent;color:var(--gold);cursor:pointer;white-space:nowrap;${ev.id ? '' : 'display:none;'}"><i class="fas fa-list"></i> View List</button>
           </div>
         </div>
         <div style="padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;background:var(--white);margin-bottom:12px;">
@@ -8183,6 +8183,14 @@ function renderEventsList() {
       </div>
     `;
     container.appendChild(sponsorRow);
+  });
+
+  // Wire View List buttons after DOM is built
+  eventsData.forEach(function(ev, i) {
+    var btn = document.getElementById('rsvp-viewlist-' + i);
+    if (btn && ev.id) {
+      btn.onclick = function() { showEventRsvps(ev.id, ev.name || 'Event'); };
+    }
   });
 
   document.getElementById('eventsCountLabel').textContent = eventsData.length + ' event' + (eventsData.length !== 1 ? 's' : '');
