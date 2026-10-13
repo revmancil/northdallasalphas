@@ -8495,6 +8495,11 @@ function addEvent() {
 
 function removeEvent(i) {
   if (!confirm(`Remove "${eventsData[i].name}"?`)) return;
+  const removedId = eventsData[i].id;
+  if (removedId) {
+    if (!window._eventsRemovedIds) window._eventsRemovedIds = [];
+    window._eventsRemovedIds.push(removedId);
+  }
   eventsData.splice(i, 1);
   renderEventsList();
   showToast('Event removed. Click "Save All Events" to confirm.', 'error');
@@ -8560,14 +8565,15 @@ function buildEventsPayload(includeRegistrationFields, includeSponsorFields) {
 
 async function persistEventsToSupabase(payload, token) {
   if (!payload.length) return;
-  // Upsert preserves existing UUIDs so event registrations stay valid.
-  // Events without an id get a new UUID from Postgres default.
   await sbUpsert('events', payload, 'id', token);
-  // Delete any events that were removed (not in current payload).
-  const keptIds = payload.map(function(r) { return r.id; }).filter(Boolean);
-  if (keptIds.length) {
-    await sbDeleteByFilter('events', 'id=not.in.(' + keptIds.join(',') + ')', token);
+  // Only attempt to delete events that were explicitly removed this session.
+  // Skipping bulk "delete anything not in payload" to avoid FK violations from
+  // event_registrations; use the Archive button to remove individual events.
+  const toDelete = Array.isArray(window._eventsRemovedIds) ? window._eventsRemovedIds.filter(Boolean) : [];
+  for (const id of toDelete) {
+    try { await sbDeleteByFilter('events', 'id=eq.' + id, token); } catch(e) { /* has registrations — skip */ }
   }
+  window._eventsRemovedIds = [];
 }
 
 async function saveEvents() {
