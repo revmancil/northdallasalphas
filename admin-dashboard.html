@@ -8056,7 +8056,7 @@ function renderEventsList() {
         <button class="btn-sm view" onclick="showEvtQr(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;">
           <i class="fas fa-qrcode"></i> QR
         </button>
-        ${ev.id ? '<button id="rsvp-viewlist-' + i + '" class="btn-sm view" style="height:32px;padding:0 10px;font-size:0.78rem;"><i class="fas fa-calendar-check"></i> RSVPs</button>' : ''}
+        ${ev.id ? '<button class="btn-sm view" onclick="showEventRsvps(this.dataset.eid,this.dataset.ename)" data-eid="' + escHtml(ev.id) + '" data-ename="' + escHtml((ev.name||'Event').replace(/"/g,'&quot;')) + '" style="height:32px;padding:0 10px;font-size:0.78rem;"><i class="fas fa-calendar-check"></i> RSVPs</button>' : ''}
         <span class="toolbar-spacer"></span>
         <button class="btn-sm" onclick="archiveEvent(${i})" style="height:32px;padding:0 10px;font-size:0.78rem;background:rgba(201,168,76,0.1);color:var(--gold);border:1px solid rgba(201,168,76,0.3);">
           <i class="fas fa-box-archive"></i> Archive
@@ -8181,14 +8181,6 @@ function renderEventsList() {
       </div>
     `;
     container.appendChild(sponsorRow);
-  });
-
-  // Wire View List buttons after DOM is built
-  eventsData.forEach(function(ev, i) {
-    var btn = document.getElementById('rsvp-viewlist-' + i);
-    if (btn && ev.id) {
-      btn.onclick = function() { showEventRsvps(ev.id, ev.name || 'Event'); };
-    }
   });
 
   document.getElementById('eventsCountLabel').textContent = eventsData.length + ' event' + (eventsData.length !== 1 ? 's' : '');
