@@ -14247,7 +14247,7 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
 
     // 2. Update member record
     if (memberId) {
-      var zelleExpYear = (parseInt(fiscalYear) || new Date().getFullYear()) + 1;
+      var zelleExpYear = parseInt(fiscalYear) || (new Date().getFullYear() + 1);
       await sbPatch('members', 'id=eq.' + memberId, { dues_paid_year: fiscalYear, dues_current: true, chapter_dues_expiration: zelleExpYear + '-12-31' }, token);
     }
 
@@ -14354,7 +14354,7 @@ async function submitDuesRecord() {
 
     // Update member dues_current + expiration if a member was selected
     if (memberId) {
-      var expYear = (parseInt(fy) || new Date().getFullYear()) + 1;
+      var expYear = parseInt(fy) || (new Date().getFullYear() + 1);
       fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(memberId), {
         method: 'PATCH',
         headers: Object.assign({}, sbHeaders(token), { 'Prefer': 'return=minimal' }),

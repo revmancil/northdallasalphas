@@ -1855,7 +1855,7 @@ async function submitZelleNotification() {
   if (!currentMember || !currentSession) return;
   var name = [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ');
   var email = currentMember.email || _userEmail || '';
-  var fiscalYear = new Date().getFullYear().toString();
+  var fiscalYear = String(new Date().getFullYear() + 1); // membership year = year dues expire
   btn.disabled = true;
   msg.style.display = 'none';
   try {

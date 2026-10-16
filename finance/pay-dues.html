@@ -369,7 +369,7 @@ var currentMember  = null;
 var currentSession = null;
 var duesConfig     = null;   // loaded from Supabase
 var selectedCategory = null; // key from duesConfig
-var selectedFY       = String(new Date().getFullYear());
+var selectedFY       = String(new Date().getFullYear() + 1); // membership year = year dues expire
 
 /* ═══════════════════════════════════════════
    HELPERS
@@ -415,7 +415,7 @@ async function init() {
       try {
         var sess = JSON.parse(localStorage.getItem('nda_member_session') || 'null');
         if (sess && sess.access_token && sess.user && sess.user.id) {
-          var expYear = (parseInt(pendingFY) || new Date().getFullYear()) + 1;
+          var expYear = parseInt(pendingFY) || (new Date().getFullYear() + 1);
           await fetch(SUPABASE_URL + '/rest/v1/members?id=eq.' + encodeURIComponent(sess.user.id), {
             method: 'PATCH',
             headers: Object.assign({}, sbHeaders(sess.access_token), { 'Prefer': 'return=minimal' }),
@@ -540,8 +540,8 @@ function selectCategory(key) {
 function renderFYPills() {
   var cur = new Date().getFullYear();
   var pills = document.getElementById('fyPills');
-  // Offer current year and previous (for late payers catching up)
-  var years = [String(cur - 1), String(cur)];
+  // Offer current membership year and next (membership year = year dues expire)
+  var years = [String(cur), String(cur + 1)];
   pills.innerHTML = years.map(function(y) {
     return '<button class="fy-pill' + (y === selectedFY ? ' active' : '') + '" onclick="selectFY(\'' + y + '\')">' + y + '</button>';
   }).join('');
