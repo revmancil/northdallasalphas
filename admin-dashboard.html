@@ -14261,12 +14261,9 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
     var amountCents = (duesRow && duesRow.amount_cents) || 30000;
     var fy = fiscalYear || String(new Date().getFullYear());
 
-    // 4. Write to dues_payments so it appears in Payment History
-    var dpPayload = { full_name: fullName, email: memberInfo.email || null, phone: memberInfo.phone || null, amount_cents: amountCents, payment_status: 'paid', payment_method: 'zelle', notes: (duesRow && duesRow.notes) || null, created_at: now };
-    fetch(SUPABASE_URL + '/rest/v1/dues_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(dpPayload) }).catch(function(){});
-
-    // 5. Write to finance_payments so Finance Dashboard counts it
-    var fpPayload = { member_id: memberId || null, member_name: fullName, category: 'dues', category_label: 'Chapter Dues', fiscal_year: fy, amount_cents: amountCents, method: 'zelle', status: 'paid', late_fee: false, building_fund: false, xero_sync_status: 'pending', created_at: now };
+    // 4. Write to finance_payments so Finance Dashboard counts it and Payment History shows it
+    // (Do NOT also write to dues_payments — that would create a duplicate row in Payment History)
+    var fpPayload = { member_id: memberId || null, member_name: fullName, email: memberInfo.email || null, phone: memberInfo.phone || null, category: 'dues', category_label: 'Chapter Dues', fiscal_year: fy, amount_cents: amountCents, method: 'zelle', status: 'paid', late_fee: false, building_fund: false, xero_sync_status: 'pending', created_at: now };
     fetch(SUPABASE_URL + '/rest/v1/finance_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(fpPayload) }).catch(function(){});
 
     showToast('Payment confirmed — record added to Payment History.');
