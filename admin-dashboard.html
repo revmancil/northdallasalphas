@@ -12963,7 +12963,9 @@ async function loadFinanceDashboard() {
   if (_fdLoaded) return;
   _fdLoaded = true;
   var token = getAdminToken();
-  var fy = String(new Date().getFullYear());
+  // FY = expiration year (current calendar year + 1); brothers pay in current year for next year's membership
+  var calYear = new Date().getFullYear();
+  var fy = String(calYear + 1);
 
   // Stat tiles
   try {
@@ -12975,9 +12977,10 @@ async function loadFinanceDashboard() {
       sbGet('finance_reimbursements','status=eq.approved&select=amount_cents', token)
     ]);
     var fpPayments   = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
-    // dues_payments covers manual/Zelle entries; filter to current FY by created_at year
+    // dues_payments covers manual/Zelle entries; filter by actual payment year (calYear) since
+    // brothers pay in the current calendar year for the following year's membership (FY = expiration year)
     var legacyPay    = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
-    var fyLegacy     = legacyPay.filter(function(p){ var y = p.created_at ? new Date(p.created_at).getFullYear() : 0; return String(y) === fy; });
+    var fyLegacy     = legacyPay.filter(function(p){ var y = p.created_at ? new Date(p.created_at).getFullYear() : 0; return y === calYear; });
     // Exclude finance_payments Zelle rows to avoid double-counting with dues_payments
     var fpNonZelle   = fpPayments.filter(function(p){ return (p.method||'').toLowerCase() !== 'zelle'; });
     var pendingReqs  = results[2].status==='fulfilled' ? (results[2].value||[]) : [];
