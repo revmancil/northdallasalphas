@@ -14071,26 +14071,17 @@ async function _fetchDuesPayments() {
         _source:                    'finance'
       };
     });
-    // Merge: prefer dues_payments rows (legacy); skip finance_payments rows that match by
-    // stripe session id OR by zelle+name+notes (to avoid duplicates from confirmZellePayment)
+    // Merge: include all dues_payments rows; skip finance_payments rows whose Stripe
+    // session ID already appears in dues_payments (avoids Stripe double-counting).
+    // Zelle payments are written only to dues_payments, so no Zelle dedup needed here.
     var seenStripe = {};
-    var seenZelle = {};
     var merged = [];
     legacy.forEach(function(p) {
       if (p.stripe_checkout_session_id) seenStripe[p.stripe_checkout_session_id] = true;
-      // Build a dedup key for Zelle entries: name + notes (contains "Chapter Dues · YYYY")
-      if ((p.payment_method||'').toLowerCase() === 'zelle' && p.full_name && p.notes) {
-        seenZelle[(p.full_name + '|' + p.notes).toLowerCase()] = true;
-      }
       merged.push(p);
     });
     normalized.forEach(function(p) {
       if (p.stripe_checkout_session_id && seenStripe[p.stripe_checkout_session_id]) return;
-      // Skip finance_payments Zelle row if dues_payments already has a matching entry
-      if ((p.payment_method||'').toLowerCase() === 'zelle') {
-        var noteKey = (p.full_name + '|Chapter Dues · ' + (p.notes||'').split(' · ')[1]).toLowerCase();
-        if (seenZelle[noteKey]) return;
-      }
       merged.push(p);
     });
     merged.sort(function(a, b) { return (b.created_at || '') < (a.created_at || '') ? -1 : 1; });
@@ -14272,14 +14263,12 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
     var amountCents = (duesRow && duesRow.amount_cents) || 30000;
     var fy = fiscalYear || String(new Date().getFullYear());
 
-    // 4. Write to finance_payments (Finance Dashboard) AND dues_payments (Payment History tab)
-    var fpPayload = { member_id: memberId || null, member_name: fullName, category: 'dues', category_label: 'Chapter Dues', fiscal_year: fy, amount_cents: amountCents, method: 'zelle', status: 'paid', late_fee: false, building_fund: false, xero_sync_status: 'pending', created_at: now };
-    var fpRes = await fetch(SUPABASE_URL + '/rest/v1/finance_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(fpPayload) });
-    if (!fpRes.ok) { var fpErr = await fpRes.text(); throw new Error('finance_payments: ' + fpErr); }
-
-    // Also write to dues_payments so the row is always visible in Payment History
+    // 4. Write ONLY to dues_payments — this is the single source of truth for Zelle.
+    // dues_payments appears in Payment History AND is counted by the Finance Dashboard,
+    // so there is no need to also write to finance_payments (which would create a duplicate).
     var dpPayload = { full_name: fullName, email: memberInfo.email || null, phone: memberInfo.phone || null, amount_cents: amountCents, payment_status: 'paid', payment_method: 'zelle', notes: 'Chapter Dues · ' + fy, created_at: now };
-    await fetch(SUPABASE_URL + '/rest/v1/dues_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(dpPayload) });
+    var dpRes = await fetch(SUPABASE_URL + '/rest/v1/dues_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(dpPayload) });
+    if (!dpRes.ok) { var dpErr = await dpRes.text(); throw new Error('Could not save payment record: ' + dpErr); }
 
     showToast('Payment confirmed — record added to Payment History.');
     loadPendingZelle();
