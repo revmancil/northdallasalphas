@@ -12968,20 +12968,22 @@ async function loadFinanceDashboard() {
   // Stat tiles
   try {
     var results = await Promise.allSettled([
-      sbGet('finance_payments',      'fiscal_year=eq.'+fy+'&status=eq.paid&select=amount_cents', token),
+      sbGet('finance_payments',      'fiscal_year=eq.'+fy+'&status=eq.paid&select=amount_cents,method', token),
       sbGet('dues_payments',         'payment_status=eq.paid&select=amount_cents,created_at', token),
       sbGet('finance_requisitions',  'status=eq.pending&select=id,amount_cents', token),
       sbGet('finance_reimbursements','status=eq.pending&select=id,amount_cents', token),
       sbGet('finance_reimbursements','status=eq.approved&select=amount_cents', token)
     ]);
     var fpPayments   = results[0].status==='fulfilled' ? (results[0].value||[]) : [];
-    // Also sum dues_payments for current fiscal year (manual entries)
+    // dues_payments covers manual/Zelle entries; filter to current FY by created_at year
     var legacyPay    = results[1].status==='fulfilled' ? (results[1].value||[]) : [];
     var fyLegacy     = legacyPay.filter(function(p){ var y = p.created_at ? new Date(p.created_at).getFullYear() : 0; return String(y) === fy; });
+    // Exclude finance_payments Zelle rows to avoid double-counting with dues_payments
+    var fpNonZelle   = fpPayments.filter(function(p){ return (p.method||'').toLowerCase() !== 'zelle'; });
     var pendingReqs  = results[2].status==='fulfilled' ? (results[2].value||[]) : [];
     var pendingReimbs= results[3].status==='fulfilled' ? (results[3].value||[]) : [];
     var paidReimbs   = results[4].status==='fulfilled' ? (results[4].value||[]) : [];
-    var duesTotal    = fpPayments.reduce(function(s,r){return s+(r.amount_cents||0);},0)
+    var duesTotal    = fpNonZelle.reduce(function(s,r){return s+(r.amount_cents||0);},0)
                      + fyLegacy.reduce(function(s,r){return s+(r.amount_cents||0);},0);
     var reqAmt       = pendingReqs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
     var reimbAmt     = pendingReimbs.reduce(function(s,r){return s+(r.amount_cents||0);},0);
