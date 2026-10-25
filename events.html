@@ -1544,7 +1544,7 @@ function publicSwitchView(view) {
   var btnCal  = document.getElementById('pubToggleCal');
   if (view === 'calendar') {
     listEl.style.display = 'none';
-    calEl.style.display  = '';
+    calEl.style.display  = 'block';
     btnList.classList.remove('active');
     btnCal.classList.add('active');
     if (!_pubCalYear) {
