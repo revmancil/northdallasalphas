@@ -104,6 +104,25 @@
     }
     .gala-detail i { color: var(--gold); width: 18px; }
 
+    /* ── View Toggle ── */
+    .view-toggle{display:flex;gap:4px;background:rgba(0,0,0,0.08);border-radius:8px;padding:3px;margin-bottom:28px;width:fit-content;}
+    .view-toggle button{padding:6px 18px;border:none;border-radius:6px;font-size:0.82rem;font-weight:700;cursor:pointer;letter-spacing:0.04em;text-transform:uppercase;background:transparent;color:inherit;transition:background 0.15s,color 0.15s;}
+    .view-toggle button.active{background:var(--gold,#C9A84C);color:#000;}
+    /* ── Calendar ── */
+    #eventsCalendarWrap{display:none;}
+    .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+    .cal-nav-month{font-size:1.1rem;font-weight:800;letter-spacing:0.02em;}
+    .cal-nav button{background:transparent;border:1px solid rgba(0,0,0,0.15);border-radius:6px;width:32px;height:32px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;}
+    .cal-nav button:hover{background:var(--gold,#C9A84C);color:#000;border-color:var(--gold,#C9A84C);}
+    .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .cal-dow{text-align:center;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#666;padding:6px 0;}
+    .cal-day{min-height:80px;border-radius:8px;padding:6px;background:rgba(0,0,0,0.025);border:1px solid rgba(0,0,0,0.06);}
+    .cal-day.other-month{opacity:0.3;}
+    .cal-day.today{border-color:var(--gold,#C9A84C);background:rgba(201,168,76,0.06);}
+    .cal-day-num{font-size:0.78rem;font-weight:700;color:#444;margin-bottom:4px;}
+    .cal-day.today .cal-day-num{color:var(--gold,#C9A84C);}
+    .cal-event-chip{background:var(--gold,#C9A84C);color:#000;font-size:0.65rem;font-weight:700;border-radius:4px;padding:2px 5px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;border:none;text-align:left;line-height:1.4;}
+    .cal-event-chip:hover{background:#b8932e;}
     /* ── All Events List ── */
     .all-events {
       padding: 90px 0;
@@ -609,9 +628,22 @@
 <section class="all-events">
   <div class="container">
     <span class="section-label">Upcoming</span>
-    <h2 class="section-title" style="margin-bottom: 40px;" id="allEventsHeading">Upcoming Events</h2>
-    <div id="allEventsList">
-      <!-- Rendered by JS -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:40px;">
+      <h2 class="section-title" style="margin-bottom:0;" id="allEventsHeading">Upcoming Events</h2>
+      <div class="view-toggle" id="publicEventsToggle">
+        <button class="active" id="pubToggleList" onclick="publicSwitchView('list')"><i class="fas fa-list"></i> List</button>
+        <button id="pubToggleCal" onclick="publicSwitchView('calendar')"><i class="fas fa-calendar-alt"></i> Calendar</button>
+      </div>
+    </div>
+    <div id="allEventsList"><!-- Rendered by JS --></div>
+    <div id="eventsCalendarWrap">
+      <div class="cal-nav">
+        <button onclick="publicCalNav(-1)"><i class="fas fa-chevron-left"></i></button>
+        <span class="cal-nav-month" id="pubCalMonthLabel"></span>
+        <button onclick="publicCalNav(1)"><i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div class="cal-grid" id="pubCalDow"></div>
+      <div class="cal-grid" id="pubCalDays"></div>
     </div>
   </div>
 </section>
@@ -1499,6 +1531,99 @@ document.addEventListener('DOMContentLoaded', function() {
     closeEventModal();
   });
 });
+
+// ── Public Events Calendar ──
+var _pubCalYear, _pubCalMonth;
+var MONTH_NAMES_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var DOW_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function publicSwitchView(view) {
+  var listEl = document.getElementById('allEventsList');
+  var calEl  = document.getElementById('eventsCalendarWrap');
+  var btnList = document.getElementById('pubToggleList');
+  var btnCal  = document.getElementById('pubToggleCal');
+  if (view === 'calendar') {
+    listEl.style.display = 'none';
+    calEl.style.display  = '';
+    btnList.classList.remove('active');
+    btnCal.classList.add('active');
+    if (!_pubCalYear) {
+      var now = new Date();
+      _pubCalYear  = now.getFullYear();
+      _pubCalMonth = now.getMonth();
+    }
+    renderPubCal();
+  } else {
+    listEl.style.display = '';
+    calEl.style.display  = 'none';
+    btnList.classList.add('active');
+    btnCal.classList.remove('active');
+  }
+}
+
+function publicCalNav(delta) {
+  _pubCalMonth += delta;
+  if (_pubCalMonth > 11) { _pubCalMonth = 0; _pubCalYear++; }
+  if (_pubCalMonth < 0)  { _pubCalMonth = 11; _pubCalYear--; }
+  renderPubCal();
+}
+
+function eventDateToYMD(dtStr) {
+  if (!dtStr) return null;
+  var s = String(dtStr).trim();
+  var segs = s.split(' ')[0].split('/');
+  if (segs.length >= 3) {
+    var m = parseInt(segs[0], 10) - 1;
+    var d = parseInt(segs[1], 10);
+    var y = parseInt(segs[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return { y: y, m: m, d: d };
+  }
+  var fb = new Date(s);
+  if (!isNaN(fb.getTime())) return { y: fb.getFullYear(), m: fb.getMonth(), d: fb.getDate() };
+  return null;
+}
+
+function renderPubCal() {
+  var label = document.getElementById('pubCalMonthLabel');
+  var dowEl  = document.getElementById('pubCalDow');
+  var daysEl = document.getElementById('pubCalDays');
+  label.textContent = MONTH_NAMES_LONG[_pubCalMonth] + ' ' + _pubCalYear;
+  dowEl.innerHTML = DOW_ABBR.map(function(d){ return '<div class="cal-dow">' + d + '</div>'; }).join('');
+
+  // Map events to their day number in this month
+  var eventsByDay = {};
+  (allEventsStore || []).forEach(function(ev) {
+    var ymd = eventDateToYMD(ev.datetime);
+    if (!ymd) return;
+    if (ymd.y === _pubCalYear && ymd.m === _pubCalMonth) {
+      if (!eventsByDay[ymd.d]) eventsByDay[ymd.d] = [];
+      eventsByDay[ymd.d].push(ev);
+    }
+  });
+
+  var today = new Date();
+  var firstDow = new Date(_pubCalYear, _pubCalMonth, 1).getDay();
+  var daysInMonth = new Date(_pubCalYear, _pubCalMonth + 1, 0).getDate();
+  var daysInPrev  = new Date(_pubCalYear, _pubCalMonth, 0).getDate();
+  var cells = [];
+  var totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
+  for (var i = 0; i < totalCells; i++) {
+    var dayNum, isOther = false;
+    if (i < firstDow) { dayNum = daysInPrev - firstDow + i + 1; isOther = true; }
+    else if (i >= firstDow + daysInMonth) { dayNum = i - firstDow - daysInMonth + 1; isOther = true; }
+    else { dayNum = i - firstDow + 1; }
+    var isToday = !isOther && _pubCalYear === today.getFullYear() && _pubCalMonth === today.getMonth() && dayNum === today.getDate();
+    var chips = '';
+    if (!isOther && eventsByDay[dayNum]) {
+      chips = eventsByDay[dayNum].map(function(ev) {
+        var idx = allEventsStore.indexOf(ev);
+        return '<button class="cal-event-chip" onclick="openEventModal(allEventsStore[' + idx + '])" title="' + escHtml(ev.name) + '">' + escHtml(ev.name) + '</button>';
+      }).join('');
+    }
+    cells.push('<div class="cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '') + '"><div class="cal-day-num">' + dayNum + '</div>' + chips + '</div>');
+  }
+  daysEl.innerHTML = cells.join('');
+}
 
 (function handleStripeReturnQuery() {
   var q = new URLSearchParams(window.location.search);

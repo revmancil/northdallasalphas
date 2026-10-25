@@ -233,6 +233,24 @@ backdrop-filter:blur(4px);}
     .portal-reg-flash{position:fixed;top:0;left:0;right:0;z-index:3000;padding:14px 20px;text-align:center;font-size:0.9rem;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.15);}
     .portal-reg-flash.success{background:#ecfdf5;color:#065f46;border-bottom:1px solid #6ee7b7;}
     .event-reg-btn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:0.78rem;font-weight:700;cursor:pointer;padding:6px 12px;border-radius:6px;border:none;}
+    /* ── Calendar View ── */
+    .mp-view-toggle{display:flex;gap:3px;background:rgba(255,255,255,0.06);border-radius:7px;padding:3px;}
+    .mp-view-toggle button{padding:5px 14px;border:none;border-radius:5px;font-size:0.75rem;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.04em;background:transparent;color:rgba(255,255,255,0.5);transition:background 0.15s,color 0.15s;}
+    .mp-view-toggle button.active{background:var(--gold);color:#000;}
+    #mpEventsCalWrap{display:none;padding:4px 0;}
+    .mp-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .mp-cal-nav-month{font-size:1rem;font-weight:800;color:var(--white);}
+    .mp-cal-nav button{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;width:30px;height:30px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:0.85rem;display:flex;align-items:center;justify-content:center;}
+    .mp-cal-nav button:hover{background:var(--gold);color:#000;border-color:var(--gold);}
+    .mp-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+    .mp-cal-dow{text-align:center;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(255,255,255,0.35);padding:5px 0;}
+    .mp-cal-day{min-height:68px;border-radius:7px;padding:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);}
+    .mp-cal-day.other-month{opacity:0.25;}
+    .mp-cal-day.today{border-color:var(--gold);background:rgba(201,168,76,0.08);}
+    .mp-cal-day-num{font-size:0.72rem;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:3px;}
+    .mp-cal-day.today .mp-cal-day-num{color:var(--gold);}
+    .mp-cal-chip{background:var(--gold);color:#000;font-size:0.6rem;font-weight:700;border-radius:3px;padding:2px 5px;margin-bottom:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block;border:none;text-align:left;line-height:1.4;}
+    .mp-cal-chip:hover{background:#b8932e;}
   </style>
 </head>
 <body>
@@ -399,8 +417,28 @@ backdrop-filter:blur(4px);}
     <!-- EVENTS -->
     <div class="panel" id="panel-events">
       <div class="section-card">
-        <div class="section-card-header"><h3><i class="fas fa-calendar-alt"></i> All Chapter Events</h3><span id="eventsCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span></div>
-        <div class="section-card-body" id="eventsList"><div class="empty-state"><i class="fas fa-calendar"></i><p>Loading events...</p></div></div>
+        <div class="section-card-header">
+          <h3><i class="fas fa-calendar-alt"></i> All Chapter Events</h3>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <span id="eventsCountBadge" style="font-size:0.78rem;color:var(--gray-400);"></span>
+            <div class="mp-view-toggle">
+              <button class="active" id="mpToggleList" onclick="mpSwitchView('list')"><i class="fas fa-list"></i> List</button>
+              <button id="mpToggleCal" onclick="mpSwitchView('calendar')"><i class="fas fa-calendar-alt"></i> Calendar</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card-body">
+          <div id="eventsList"><div class="empty-state"><i class="fas fa-calendar"></i><p>Loading events...</p></div></div>
+          <div id="mpEventsCalWrap">
+            <div class="mp-cal-nav">
+              <button onclick="mpCalNav(-1)"><i class="fas fa-chevron-left"></i></button>
+              <span class="mp-cal-nav-month" id="mpCalMonthLabel"></span>
+              <button onclick="mpCalNav(1)"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="mp-cal-grid" id="mpCalDow"></div>
+            <div class="mp-cal-grid" id="mpCalDays"></div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- CHAPTER NEWS FEED -->
@@ -1663,9 +1701,10 @@ function renderEventItem(ev) {
     regHtml = '<button type="button" class="btn-gold event-reg-btn" onclick="portalOpenRegModal(\'' + escHtml(String(ev.id)) + '\')"><i class="fas fa-ticket-alt"></i> ' + label + '</button>';
   }
   var rsvpHtml = ev.rsvp_enabled ? buildEventRsvpHtml(String(ev.id)) : '';
+  var evCardId = 'ev-card-' + escHtml(String(ev.id || ev.name).replace(/\s+/g,'_'));
   if (ev.flyer && ev.flyer.trim()) {
     // Featured flyer card: flyer left, details right
-    return '<div style="display:flex;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;background:#111;margin-bottom:4px;">' +
+    return '<div id="' + evCardId + '" style="display:flex;border:1px solid rgba(255,255,255,0.09);border-radius:14px;overflow:hidden;background:#111;margin-bottom:4px;">' +
       // Left: badges above flyer
       '<div style="flex-shrink:0;width:260px;display:flex;flex-direction:column;">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px;">' +
@@ -1697,7 +1736,7 @@ function renderEventItem(ev) {
       '</div>' +
     '</div>';
   }
-  return '<div class="event-item">' +
+  return '<div class="event-item" id="' + evCardId + '">' +
     '<div class="event-date-badge"><div class="day">' + d.day + '</div><div class="month">' + d.month + '</div></div>' +
     '<div class="event-info">' +
     (ev.featured ? '<span class="featured-badge">Featured</span>' : '') +
@@ -1755,6 +1794,106 @@ function closeFlyerLightbox() {
 }
 
 var _myEventRsvps = {}; // eventId -> response
+
+// ── Member Portal Calendar View ──
+var _mpCalYear, _mpCalMonth;
+var MP_MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+var MP_DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function mpSwitchView(view) {
+  var listEl = document.getElementById('eventsList');
+  var calEl  = document.getElementById('mpEventsCalWrap');
+  var btnList = document.getElementById('mpToggleList');
+  var btnCal  = document.getElementById('mpToggleCal');
+  if (view === 'calendar') {
+    listEl.style.display = 'none';
+    calEl.style.display  = '';
+    btnList.classList.remove('active');
+    btnCal.classList.add('active');
+    if (!_mpCalYear) {
+      var now = new Date();
+      _mpCalYear  = now.getFullYear();
+      _mpCalMonth = now.getMonth();
+    }
+    renderMpCal();
+  } else {
+    listEl.style.display = '';
+    calEl.style.display  = 'none';
+    btnList.classList.add('active');
+    btnCal.classList.remove('active');
+  }
+}
+
+function mpCalNav(delta) {
+  _mpCalMonth += delta;
+  if (_mpCalMonth > 11) { _mpCalMonth = 0; _mpCalYear++; }
+  if (_mpCalMonth < 0)  { _mpCalMonth = 11; _mpCalYear--; }
+  renderMpCal();
+}
+
+function mpEventDateToYMD(dtStr) {
+  if (!dtStr) return null;
+  var s = String(dtStr).trim();
+  var segs = s.split(' ')[0].split('/');
+  if (segs.length >= 3) {
+    var m = parseInt(segs[0], 10) - 1;
+    var d = parseInt(segs[1], 10);
+    var y = parseInt(segs[2], 10);
+    if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return { y: y, m: m, d: d };
+  }
+  var fb = new Date(s);
+  if (!isNaN(fb.getTime())) return { y: fb.getFullYear(), m: fb.getMonth(), d: fb.getDate() };
+  return null;
+}
+
+function renderMpCal() {
+  var label  = document.getElementById('mpCalMonthLabel');
+  var dowEl  = document.getElementById('mpCalDow');
+  var daysEl = document.getElementById('mpCalDays');
+  label.textContent = MP_MONTH_NAMES[_mpCalMonth] + ' ' + _mpCalYear;
+  dowEl.innerHTML = MP_DOW.map(function(d){ return '<div class="mp-cal-dow">' + d + '</div>'; }).join('');
+
+  var eventsByDay = {};
+  (allEvents || []).forEach(function(ev, idx) {
+    var ymd = mpEventDateToYMD(ev.datetime);
+    if (!ymd) return;
+    if (ymd.y === _mpCalYear && ymd.m === _mpCalMonth) {
+      if (!eventsByDay[ymd.d]) eventsByDay[ymd.d] = [];
+      eventsByDay[ymd.d].push({ ev: ev, idx: idx });
+    }
+  });
+
+  var today = new Date();
+  var firstDow = new Date(_mpCalYear, _mpCalMonth, 1).getDay();
+  var daysInMonth = new Date(_mpCalYear, _mpCalMonth + 1, 0).getDate();
+  var daysInPrev  = new Date(_mpCalYear, _mpCalMonth, 0).getDate();
+  var totalCells = Math.ceil((firstDow + daysInMonth) / 7) * 7;
+  var cells = [];
+  for (var i = 0; i < totalCells; i++) {
+    var dayNum, isOther = false;
+    if (i < firstDow) { dayNum = daysInPrev - firstDow + i + 1; isOther = true; }
+    else if (i >= firstDow + daysInMonth) { dayNum = i - firstDow - daysInMonth + 1; isOther = true; }
+    else { dayNum = i - firstDow + 1; }
+    var isToday = !isOther && _mpCalYear === today.getFullYear() && _mpCalMonth === today.getMonth() && dayNum === today.getDate();
+    var chips = '';
+    if (!isOther && eventsByDay[dayNum]) {
+      chips = eventsByDay[dayNum].map(function(item) {
+        var cardId = 'ev-card-' + String(item.ev.id || item.ev.name).replace(/\s+/g,'_');
+        return '<button class="mp-cal-chip" onclick="portalOpenEventDetail(\'' + escHtml(cardId) + '\')" title="' + escHtml(item.ev.name) + '">' + escHtml(item.ev.name) + '</button>';
+      }).join('');
+    }
+    cells.push('<div class="mp-cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '') + '"><div class="mp-cal-day-num">' + dayNum + '</div>' + chips + '</div>');
+  }
+  daysEl.innerHTML = cells.join('');
+}
+
+function portalOpenEventDetail(cardId) {
+  mpSwitchView('list');
+  setTimeout(function() {
+    var el = document.getElementById(cardId);
+    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.style.outline = '2px solid var(--gold)'; setTimeout(function(){ el.style.outline = ''; }, 1800); }
+  }, 80);
+}
 
 async function renderEventsPanel() {
   const c = document.getElementById('eventsList');
