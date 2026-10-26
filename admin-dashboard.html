@@ -12020,13 +12020,19 @@ async function galCreateAlbum() {
   var desc = (document.getElementById('galNewDesc').value || '').trim();
   var id = 'album-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
   _galAlbums.unshift({ id: id, name: name, date: date, description: desc, cover: '' });
-  await galSaveAlbums();
-  galHideNewAlbumForm();
-  document.getElementById('galNewName').value = '';
-  document.getElementById('galNewDate').value = '';
-  document.getElementById('galNewDesc').value = '';
   galRenderAlbumCards();
-  showToast('Album created. Open it to upload photos.');
+  try {
+    await galSaveAlbums();
+    galHideNewAlbumForm();
+    document.getElementById('galNewName').value = '';
+    document.getElementById('galNewDate').value = '';
+    document.getElementById('galNewDesc').value = '';
+    showToast('Album created. Open it to upload photos.');
+  } catch (err) {
+    showToast('Failed to save album: ' + (err && err.message ? err.message : 'unknown error'), 'error');
+    _galAlbums.shift();
+    galRenderAlbumCards();
+  }
 }
 
 async function galOpenAlbum(albumId) {
