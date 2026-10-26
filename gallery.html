@@ -705,9 +705,21 @@ async function initGalleryPage() {
 }
 
 async function pubGalLoadAlbums() {
-  var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.photo_albums&select=content_json&limit=1', { headers: sbHeaders() });
+  var grid = document.getElementById('pubGalAlbumGrid');
   _pubAlbums = [];
-  if (res.ok) { var rows = await res.json(); if (rows && rows[0] && Array.isArray(rows[0].content_json)) _pubAlbums = rows[0].content_json; }
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.photo_albums&select=content_json&limit=1', { headers: sbHeaders() });
+    if (res.ok) {
+      var rows = await res.json();
+      if (rows && rows[0] && Array.isArray(rows[0].content_json)) _pubAlbums = rows[0].content_json;
+    } else {
+      console.error('Gallery fetch failed:', res.status, await res.text());
+    }
+  } catch(e) {
+    console.error('Gallery load error:', e);
+    if (grid) grid.innerHTML = '<div style="color:#666;padding:40px 0;text-align:center;">Unable to load albums. Please try refreshing.</div>';
+    return;
+  }
   pubGalRenderAlbums();
 }
 
