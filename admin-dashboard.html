@@ -12104,6 +12104,14 @@ async function galHandleBulkUpload(e) {
   }
   progressEl.textContent = done + ' photo' + (done !== 1 ? 's' : '') + ' uploaded' + (failed ? ', ' + failed + ' failed' : '') + '.';
   setTimeout(function() { progressEl.style.display = 'none'; }, 3000);
+  // Auto-set cover from first upload if album has none
+  if (uploaded.length) {
+    var album = _galAlbums.find(function(a) { return a.id === _galActiveAlbumId; });
+    if (album && !album.cover) {
+      album.cover = uploaded[0].url;
+      await galSaveAlbums();
+    }
+  }
   await galOpenAlbum(_galActiveAlbumId);
 }
 
