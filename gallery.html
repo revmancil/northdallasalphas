@@ -731,7 +731,7 @@ function pubGalRenderAlbums() {
   var grid = document.getElementById('pubGalAlbumGrid');
   var empty = document.getElementById('pubGalEmpty');
   if (!_pubAlbums.length) { grid.style.display = 'none'; empty.style.display = ''; return; }
-  grid.style.display = ''; empty.style.display = 'none';
+  grid.style.display = 'grid'; empty.style.display = 'none';
   grid.innerHTML = _pubAlbums.map(function(album) {
     var cover = album.cover
       ? '<img class="pub-album-cover" src="' + escHtml(album.cover) + '" alt="' + escHtml(album.name) + '" onerror="pubGalCoverErr(this)" />'
