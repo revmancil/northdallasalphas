@@ -11,6 +11,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .gallery-section { padding: 72px 0 96px; background: var(--gray-100); min-height: 42vh; }
+    .pub-album-card { background:var(--white);border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.07);cursor:pointer;border:none;text-align:left;width:100%;padding:0;transition:transform 0.2s,box-shadow 0.2s; }
+    .pub-album-card:hover { transform:translateY(-4px);box-shadow:0 10px 32px rgba(0,0,0,0.12); }
+    .pub-album-cover { width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--gray-200); }
+    .pub-album-cover-empty { width:100%;aspect-ratio:4/3;background:var(--gray-200);display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:2.5rem; }
+    .pub-photo-card { border-radius:8px;overflow:hidden;cursor:pointer;background:var(--gray-200); }
+    .pub-photo-card img { width:100%;aspect-ratio:1;object-fit:cover;display:block;transition:transform 0.2s; }
+    .pub-photo-card:hover img { transform:scale(1.04); }
     .gallery-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -269,22 +276,41 @@
 
 <section class="gallery-section">
   <div class="container">
-    <div class="gallery-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" id="galleryGrid" aria-live="polite"></div>
-    <div class="gallery-empty" id="galleryEmpty" hidden>
-      <div><i class="fas fa-images" aria-hidden="true"></i></div>
-      <p>Photos from our events will appear here soon. Visit <a href="events.html">Upcoming Events</a> to join us, or check back after the next chapter program.</p>
+    <!-- Album list view -->
+    <div id="pubGalAlbumView">
+      <div id="pubGalAlbumGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:24px;">
+        <div style="color:#666;font-size:0.9rem;padding:40px 0;"><i class="fas fa-spinner fa-spin"></i> Loading gallery…</div>
+      </div>
+      <div id="pubGalEmpty" style="display:none;text-align:center;padding:60px 0;color:#666;">
+        <i class="fas fa-images" style="font-size:3rem;margin-bottom:16px;display:block;opacity:0.3;"></i>
+        <p>Photos from our events will appear here soon.</p>
+      </div>
+    </div>
+    <!-- Album photo view -->
+    <div id="pubGalAlbumPhotos" style="display:none;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:28px;flex-wrap:wrap;">
+        <button onclick="pubGalBackToAlbums()" style="background:transparent;border:1px solid #ccc;border-radius:6px;padding:8px 16px;cursor:pointer;font-size:0.85rem;color:#444;"><i class="fas fa-arrow-left"></i> All Albums</button>
+        <div>
+          <h2 id="pubGalAlbumTitle" style="margin:0;font-size:1.3rem;font-weight:800;color:var(--gray-800);"></h2>
+          <div id="pubGalAlbumMeta" style="font-size:0.8rem;color:#666;"></div>
+        </div>
+      </div>
+      <div id="pubGalPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;"></div>
     </div>
   </div>
 </section>
 
-<div class="gallery-lightbox" id="galleryLightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
-  <div class="gallery-lightbox-backdrop" id="lbBackdrop"></div>
-  <button type="button" class="lb-close" id="lbClose" aria-label="Close">&times;</button>
-  <button type="button" class="lb-nav lb-prev" id="lbPrev" aria-label="Previous photo"><i class="fas fa-chevron-left"></i></button>
-  <button type="button" class="lb-nav lb-next" id="lbNext" aria-label="Next photo"><i class="fas fa-chevron-right"></i></button>
-  <div class="gallery-lightbox-dialog">
-    <img id="lbImg" src="" alt="" />
-    <div class="gallery-lightbox-meta" id="lbMeta"></div>
+<!-- Lightbox -->
+<div id="pubLightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9900;align-items:center;justify-content:center;">
+  <button onclick="pubLbClose()" style="position:absolute;top:18px;right:22px;background:transparent;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1;">&times;</button>
+  <button onclick="pubLbNav(-1)" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:1.5rem;cursor:pointer;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-chevron-left"></i></button>
+  <button onclick="pubLbNav(1)" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:1.5rem;cursor:pointer;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-chevron-right"></i></button>
+  <div style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:12px;">
+    <img id="pubLbImg" src="" alt="" style="max-width:90vw;max-height:78vh;object-fit:contain;border-radius:6px;" />
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span id="pubLbCaption" style="color:rgba(255,255,255,0.7);font-size:0.88rem;"></span>
+      <a id="pubLbDownload" href="" download style="background:var(--gold,#C9A84C);color:#000;border-radius:6px;padding:7px 16px;font-size:0.82rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-download"></i> Download</a>
+    </div>
   </div>
 </div>
 
@@ -649,101 +675,107 @@ async function deleteGalleryPhoto(index) {
   }
 }
 
+// ── Album-based gallery ──
+var _pubAlbums = [];
+var _pubAlbumPhotos = [];
+var _pubLbIndex = 0;
+
 async function initGalleryPage() {
-  bindLightboxUi();
   rebindSiteShellInteractions();
+  // Announcement bar
   try {
-    const announceRes = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
-    if (announceRes.ok) {
-      const rows = await announceRes.json();
-      const row = rows && rows.length ? rows[0] : null;
-      if (row && row.text) {
-        const bar = document.querySelector('.announce-bar');
-        if (bar) bar.innerHTML = `${row.text} &nbsp; <a href="${row.link_url || 'events.html'}">${row.link_text || 'Learn More →'}</a>`;
-      }
-    }
-
-    const secRes = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.gallery&select=section_key,content_html', { headers: sbHeaders() });
-    if (secRes.ok) {
-      const sections = await secRes.json();
-      const byKey = {};
-      sections.forEach(function(s) { byKey[s.section_key] = s.content_html || ''; });
-      if (byKey['full_shell']) {
-        const shellWrap = document.getElementById('pageShell');
-        if (shellWrap) {
-          shellWrap.innerHTML = byKey['full_shell'];
-          rebindSiteShellInteractions();
-          galleryUiBound = false;
-          bindLightboxUi();
-        }
-      }
-      if (byKey['full_page']) {
-        const fullPageWrap = document.getElementById('pageContent');
-        if (fullPageWrap) {
-          fullPageWrap.innerHTML = byKey['full_page'];
-          rebindSiteShellInteractions();
-          galleryUiBound = false;
-          bindLightboxUi();
-        }
-      }
-      if (byKey['gallery-hero']) {
-        const target = document.getElementById('edit-gallery-hero');
-        if (target) target.innerHTML = byKey['gallery-hero'];
-      }
-    }
-
-    isAdminUser = !!getAdminToken();
-    const [rawMeta, storageItems] = await Promise.all([
-      getSiteContentJson(EVENT_GALLERY_KEY),
-      listStoragePhotos()
-    ]);
-    const metadataByPath = new Map();
-    if (Array.isArray(rawMeta)) {
-      rawMeta.forEach(function(row) {
-        if (!row || typeof row !== 'object') return;
-        const path = String(row.path || '').trim();
-        const photoValue = row && (row.photo || row.image || row.url || row.src);
-        if (path) metadataByPath.set(path, row);
-        else if (photoValue) metadataByPath.set(String(photoValue).trim(), row);
-      });
-    }
-    galleryPhotos = storageItems.map(function(file) {
-      const meta = metadataByPath.get(file.path) || metadataByPath.get(file.photo) || {};
-      return {
-        photo: file.photo,
-        path: file.path,
-        title: meta && meta.title ? String(meta.title) : '',
-        caption: meta && meta.caption ? String(meta.caption) : ''
-      };
-    });
-    // Fallback: if storage listing is empty, still render metadata URLs so gallery is not blank.
-    if (!galleryPhotos.length && Array.isArray(rawMeta)) {
-      galleryPhotos = rawMeta
-        .map(function(row) {
-          if (!row || typeof row !== 'object') return null;
-          const photoValue = row.photo || row.image || row.url || row.src;
-          const photo = photoValue ? String(photoValue).trim() : '';
-          if (!photo) return null;
-          return {
-            photo: photo,
-            path: row.path ? String(row.path).trim() : '',
-            title: row.title ? String(row.title) : '',
-            caption: row.caption ? String(row.caption) : ''
-          };
-        })
-        .filter(Boolean);
-    }
-    renderGalleryGrid();
-  } catch (err) {
-    renderGalleryGrid();
-  }
+    var ar = await fetch(SUPABASE_URL + '/rest/v1/announcements?active=eq.true&order=id.desc&limit=1', { headers: sbHeaders() });
+    if (ar.ok) { var rows = await ar.json(); var r = rows && rows[0]; if (r && r.text) { var bar = document.querySelector('.announce-bar'); if (bar) bar.innerHTML = r.text + ' &nbsp; <a href="' + (r.link_url||'events.html') + '">' + (r.link_text||'Learn More →') + '</a>'; } }
+  } catch(e) {}
+  // Page sections
+  try {
+    var sr = await fetch(SUPABASE_URL + '/rest/v1/page_sections?page_id=eq.gallery&select=section_key,content_html', { headers: sbHeaders() });
+    if (sr.ok) { var secs = await sr.json(); var bk = {}; secs.forEach(function(s){bk[s.section_key]=s.content_html||'';}); if (bk['gallery-hero']) { var t = document.getElementById('edit-gallery-hero'); if (t) t.innerHTML = bk['gallery-hero']; } }
+  } catch(e) {}
+  // Load albums
+  await pubGalLoadAlbums();
+  // Lightbox keyboard
+  document.addEventListener('keydown', function(e) {
+    var lb = document.getElementById('pubLightbox');
+    if (!lb || lb.style.display === 'none') return;
+    if (e.key === 'Escape') pubLbClose();
+    if (e.key === 'ArrowLeft') pubLbNav(-1);
+    if (e.key === 'ArrowRight') pubLbNav(1);
+  });
 }
 
-const PhotoGallery = {
-  init: initGalleryPage,
-  refresh: renderGalleryGrid
-};
+async function pubGalLoadAlbums() {
+  var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.photo_albums&select=content_json&limit=1', { headers: sbHeaders() });
+  _pubAlbums = [];
+  if (res.ok) { var rows = await res.json(); if (rows && rows[0] && Array.isArray(rows[0].content_json)) _pubAlbums = rows[0].content_json; }
+  pubGalRenderAlbums();
+}
 
+function pubGalRenderAlbums() {
+  var grid = document.getElementById('pubGalAlbumGrid');
+  var empty = document.getElementById('pubGalEmpty');
+  if (!_pubAlbums.length) { grid.style.display = 'none'; empty.style.display = ''; return; }
+  grid.style.display = ''; empty.style.display = 'none';
+  grid.innerHTML = _pubAlbums.map(function(album) {
+    var cover = album.cover
+      ? '<img class="pub-album-cover" src="' + escHtml(album.cover) + '" alt="' + escHtml(album.name) + '" onerror="this.outerHTML=\'<div class=\\\"pub-album-cover-empty\\\"><i class=\\\"fas fa-images\\\"></i></div>\'" />'
+      : '<div class="pub-album-cover-empty"><i class="fas fa-images"></i></div>';
+    return '<button class="pub-album-card" onclick="pubGalOpenAlbum(\'' + escHtml(album.id) + '\')">' +
+      cover +
+      '<div style="padding:14px 16px 16px;">' +
+        '<div style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:2px;">' + escHtml(album.name) + '</div>' +
+        (album.date ? '<div style="font-size:0.78rem;color:var(--gray-500);">' + escHtml(new Date(album.date + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})) + '</div>' : '') +
+        (album.description ? '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:4px;">' + escHtml(album.description) + '</div>' : '') +
+      '</div></button>';
+  }).join('');
+}
+
+async function pubGalOpenAlbum(albumId) {
+  var album = _pubAlbums.find(function(a){return a.id===albumId;});
+  if (!album) return;
+  document.getElementById('pubGalAlbumView').style.display = 'none';
+  document.getElementById('pubGalAlbumPhotos').style.display = '';
+  document.getElementById('pubGalAlbumTitle').textContent = album.name;
+  document.getElementById('pubGalAlbumMeta').textContent = album.date ? new Date(album.date + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : '';
+  var photoGrid = document.getElementById('pubGalPhotoGrid');
+  photoGrid.innerHTML = '<div style="color:#666;font-size:0.9rem;"><i class="fas fa-spinner fa-spin"></i> Loading photos…</div>';
+  var res = await fetch(SUPABASE_URL + '/rest/v1/photo_submissions?album_id=eq.' + encodeURIComponent(albumId) + '&status=eq.approved&order=submitted_at.asc', { headers: sbHeaders() });
+  _pubAlbumPhotos = [];
+  if (res.ok) { _pubAlbumPhotos = await res.json() || []; }
+  if (!_pubAlbumPhotos.length) { photoGrid.innerHTML = '<div style="color:#666;font-size:0.9rem;padding:40px 0;text-align:center;">No photos in this album yet.</div>'; return; }
+  photoGrid.innerHTML = _pubAlbumPhotos.map(function(p, i) {
+    return '<div class="pub-photo-card" onclick="pubLbOpen(' + i + ')">' +
+      '<img src="' + escHtml(p.photo_url) + '" alt="' + escHtml(p.caption||'') + '" loading="lazy" />' +
+      (p.caption ? '<div style="padding:6px 10px;font-size:0.75rem;color:#555;background:#fff;">' + escHtml(p.caption) + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function pubGalBackToAlbums() {
+  document.getElementById('pubGalAlbumPhotos').style.display = 'none';
+  document.getElementById('pubGalAlbumView').style.display = '';
+}
+
+function pubLbOpen(index) {
+  _pubLbIndex = index;
+  pubLbShow();
+  document.getElementById('pubLightbox').style.display = 'flex';
+}
+function pubLbClose() { document.getElementById('pubLightbox').style.display = 'none'; }
+function pubLbNav(delta) { _pubLbIndex = (_pubLbIndex + delta + _pubAlbumPhotos.length) % _pubAlbumPhotos.length; pubLbShow(); }
+function pubLbShow() {
+  var p = _pubAlbumPhotos[_pubLbIndex];
+  if (!p) return;
+  document.getElementById('pubLbImg').src = p.photo_url;
+  document.getElementById('pubLbCaption').textContent = p.caption || '';
+  var dl = document.getElementById('pubLbDownload');
+  dl.href = p.photo_url;
+  dl.setAttribute('download', 'photo-' + (_pubLbIndex + 1) + '.jpg');
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+const PhotoGallery = { init: initGalleryPage };
 PhotoGallery.init();
 </script>
 

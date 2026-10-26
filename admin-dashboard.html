@@ -1852,39 +1852,69 @@
          EVENT PHOTO GALLERY PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-gallery">
-      <div class="section-card">
-        <div class="section-card-header">
-          <h3><i class="fas fa-images" style="color:var(--gold);margin-right:8px;"></i>Event Photo Gallery</h3>
-          <span>Shown on <a href="gallery.html" target="_blank" style="color:var(--blue);">gallery.html</a></span>
-        </div>
-        <div class="section-card-body">
-          <p class="hint-text">
-            Add photos from chapter events with optional titles and captions. Paste an image URL or upload from your computer (uploads are sent to Supabase Storage bucket <strong>chapter-media</strong>).
-            To edit the gallery page headline and intro text, open <strong>Page Editor</strong> and select the <strong>Photo Gallery</strong> tab.
-          </p>
-          <p class="hint-text" style="margin-top:8px;">
-            For large collections, prefer hosted image URLs (e.g. your website or cloud storage) so the gallery stays fast and reliable.
-          </p>
-          <div style="margin-top:12px;padding:12px 14px;border:1px solid rgba(52,152,219,0.28);border-radius:8px;background:rgba(52,152,219,0.06);">
-            <div style="font-size:0.74rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">
-              Hosted image URL quick guide
+      <!-- Tab bar -->
+      <div style="display:flex;gap:4px;margin-bottom:18px;">
+        <button id="galTab-albums" onclick="galSwitchTab('albums')" style="padding:8px 20px;border:none;border-radius:7px;font-size:0.82rem;font-weight:700;cursor:pointer;background:var(--gold);color:#000;">Albums</button>
+        <button id="galTab-queue" onclick="galSwitchTab('queue')" style="padding:8px 20px;border:none;border-radius:7px;font-size:0.82rem;font-weight:700;cursor:pointer;background:var(--dark2);color:rgba(255,255,255,0.55);">Review Queue <span id="galQueueBadge" style="display:none;background:#e74c3c;color:#fff;border-radius:8px;padding:1px 6px;font-size:0.7rem;margin-left:4px;"></span></button>
+      </div>
+
+      <!-- Albums tab -->
+      <div id="galPane-albums">
+        <!-- Album list view -->
+        <div id="galAlbumList">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <span style="font-size:0.82rem;color:var(--gray-400);" id="galAlbumCount"></span>
+            <button class="btn-sm success" onclick="galShowNewAlbumForm()"><i class="fas fa-plus"></i> New Album</button>
+          </div>
+          <!-- New album inline form -->
+          <div id="galNewAlbumForm" style="display:none;background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:18px;margin-bottom:16px;">
+            <div style="font-size:0.82rem;font-weight:700;color:var(--gold);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.06em;">New Album</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div><label style="font-size:0.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Album Name *</label><input type="text" id="galNewName" placeholder="e.g. Alpha Legacy Gala 2026" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark3);color:var(--white);font-size:0.88rem;" /></div>
+              <div><label style="font-size:0.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Event Date</label><input type="date" id="galNewDate" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark3);color:var(--white);font-size:0.88rem;" /></div>
             </div>
-            <div style="font-size:0.8rem;color:var(--gray-700);line-height:1.55;">
-              1) Upload images to public storage (Supabase Storage, Cloudinary, or your website).<br/>
-              2) Copy the direct image link and paste it into <strong>Photo URL</strong>.<br/>
-              3) Confirm the URL opens the image by itself in a browser tab.
-            </div>
-            <div style="margin-top:8px;font-size:0.75rem;color:var(--gray-600);">
-              Example format:
-              <code style="display:inline-block;margin-left:4px;padding:2px 6px;background:#eef5ff;border:1px solid #d9e9ff;border-radius:4px;color:#1f4e79;">https://&lt;project-ref&gt;.supabase.co/storage/v1/object/public/chapter-media/event-photo.jpg</code>
+            <div style="margin-bottom:12px;"><label style="font-size:0.72rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:4px;">Description (optional)</label><input type="text" id="galNewDesc" placeholder="Short description shown on gallery page" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark3);color:var(--white);font-size:0.88rem;" /></div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn-save" onclick="galCreateAlbum()"><i class="fas fa-check"></i> Create Album</button>
+              <button class="btn-sm" onclick="galHideNewAlbumForm()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);">Cancel</button>
             </div>
           </div>
-          <div id="eventGalleryList" style="margin-top:18px;"></div>
-          <button class="btn-sm success" onclick="addEventGalleryRow()" style="margin-top:14px;">
-            <i class="fas fa-plus-circle"></i> Add Photo
-          </button>
-          <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px;">
-            <button class="btn-save" onclick="saveEventGallery()"><i class="fas fa-save"></i> Save Gallery</button>
+          <div id="galAlbumCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
+            <div style="color:var(--gray-400);font-size:0.85rem;padding:20px 0;"><i class="fas fa-spinner fa-spin"></i> Loading albums…</div>
+          </div>
+        </div>
+        <!-- Album detail view (hidden by default) -->
+        <div id="galAlbumDetail" style="display:none;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+            <button onclick="galBackToAlbums()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:0.82rem;"><i class="fas fa-arrow-left"></i> All Albums</button>
+            <h3 id="galDetailTitle" style="margin:0;font-size:1rem;font-weight:800;color:var(--white);"></h3>
+            <span id="galDetailCount" style="font-size:0.78rem;color:var(--gray-400);"></span>
+            <div style="margin-left:auto;display:flex;gap:8px;">
+              <label style="background:var(--gold);color:#000;border-radius:6px;padding:8px 16px;font-size:0.82rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-upload"></i> Upload Photos<input type="file" id="galBulkInput" accept="image/*" multiple style="display:none;" onchange="galHandleBulkUpload(event)"></label>
+              <button onclick="galDeleteAlbum()" style="background:rgba(231,76,60,0.15);border:1px solid rgba(231,76,60,0.4);color:#e74c3c;border-radius:6px;padding:8px 14px;font-size:0.82rem;font-weight:700;cursor:pointer;"><i class="fas fa-trash"></i> Delete Album</button>
+            </div>
+          </div>
+          <div id="galUploadProgress" style="display:none;margin-bottom:14px;padding:10px 14px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:8px;font-size:0.85rem;color:var(--gold);"></div>
+          <div id="galDetailPhotos" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;"></div>
+        </div>
+      </div>
+
+      <!-- Review Queue tab -->
+      <div id="galPane-queue" style="display:none;">
+        <div style="margin-bottom:16px;font-size:0.85rem;color:var(--gray-400);">Photos submitted by brothers for your review. Approve to add to an album or reject to remove.</div>
+        <div id="galQueueList"><div style="color:var(--gray-400);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+      </div>
+
+      <!-- Approve modal -->
+      <div id="galApproveModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9000;align-items:center;justify-content:center;">
+        <div style="background:var(--dark2);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:28px;width:360px;max-width:90vw;">
+          <div style="font-size:1rem;font-weight:800;color:var(--white);margin-bottom:16px;">Approve Photo</div>
+          <img id="galApproveThumb" src="" alt="" style="width:100%;height:180px;object-fit:cover;border-radius:8px;margin-bottom:16px;" />
+          <label style="font-size:0.75rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Add to Album</label>
+          <select id="galApproveAlbumSelect" style="width:100%;padding:9px 12px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark3);color:var(--white);font-size:0.88rem;margin-bottom:16px;"></select>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-save" onclick="galConfirmApprove()"><i class="fas fa-check"></i> Approve</button>
+            <button onclick="galCloseApproveModal()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);border-radius:6px;padding:8px 14px;font-size:0.82rem;cursor:pointer;">Cancel</button>
           </div>
         </div>
       </div>
@@ -4315,7 +4345,7 @@ function showPanel(id) {
   if (id === 'presidents')     { if (!_panelLoaded.presidents)    loadPresidentsPanel(); }
   if (id === 'announcements')  loadAnnouncement();
   if (id === 'newsletter')     nlInitPanel();
-  if (id === 'gallery')        { if (!_panelLoaded.gallery)       loadEventGalleryPanel(); }
+  if (id === 'gallery')        { loadGalleryPanel(); }
   if (id === 'pages')          setPageEditorStorageNotice('', '');
   if (id === 'meetings')       { loadMeetingRequests(); loadMeetingsPanel(); }
   if (id === 'chapter-news')   { if (!_panelLoaded.chapterNews)   loadChapterNewsPanel(); }
@@ -11919,6 +11949,271 @@ async function saveEventGallery() {
   } catch (err) {
     showToast('Could not save gallery: ' + (err.message || 'unknown error'), 'error');
   }
+}
+
+// ══════════════════════════════════════════════════
+// ALBUM-BASED PHOTO GALLERY (new system)
+// ══════════════════════════════════════════════════
+
+const PHOTO_ALBUMS_KEY = 'photo_albums';
+let _galAlbums = [];          // [{id, name, date, description, cover}]
+let _galActiveAlbumId = null;
+let _galApproveSubId = null;
+
+async function loadGalleryPanel() {
+  galSwitchTab('albums');
+  await galLoadAlbums();
+  galLoadQueueBadge();
+}
+
+function galSwitchTab(tab) {
+  var tabs = ['albums','queue'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('galTab-' + t);
+    var pane = document.getElementById('galPane-' + t);
+    if (btn) { btn.style.background = t === tab ? 'var(--gold)' : 'var(--dark2)'; btn.style.color = t === tab ? '#000' : 'rgba(255,255,255,0.55)'; }
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+  });
+  if (tab === 'queue') galLoadQueue();
+}
+
+async function galLoadAlbums() {
+  _galAlbums = await getContentJson(PHOTO_ALBUMS_KEY, []);
+  if (!Array.isArray(_galAlbums)) _galAlbums = [];
+  galRenderAlbumCards();
+}
+
+async function galSaveAlbums() {
+  await saveContentJson(PHOTO_ALBUMS_KEY, _galAlbums);
+}
+
+function galRenderAlbumCards() {
+  var container = document.getElementById('galAlbumCards');
+  var countEl = document.getElementById('galAlbumCount');
+  if (!container) return;
+  if (countEl) countEl.textContent = _galAlbums.length + ' album' + (_galAlbums.length !== 1 ? 's' : '');
+  if (!_galAlbums.length) {
+    container.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:20px 0;">No albums yet. Create one to get started.</div>';
+    return;
+  }
+  container.innerHTML = _galAlbums.map(function(album) {
+    var cover = album.cover || '';
+    var thumb = cover
+      ? '<img src="' + escHtml(cover) + '" style="width:100%;height:140px;object-fit:cover;border-radius:8px 8px 0 0;display:block;" onerror="this.style.display=\'none\'" />'
+      : '<div style="width:100%;height:140px;background:var(--dark3);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.2);font-size:2rem;"><i class="fas fa-images"></i></div>';
+    return '<button onclick="galOpenAlbum(' + "'" + escHtml(album.id) + "'" + ')" style="background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;cursor:pointer;text-align:left;width:100%;padding:0;">' +
+      thumb +
+      '<div style="padding:12px 14px;">' +
+        '<div style="font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:2px;">' + escHtml(album.name) + '</div>' +
+        (album.date ? '<div style="font-size:0.73rem;color:var(--gray-400);">' + escHtml(album.date) + '</div>' : '') +
+      '</div></button>';
+  }).join('');
+}
+
+function galShowNewAlbumForm() { document.getElementById('galNewAlbumForm').style.display = ''; }
+function galHideNewAlbumForm() { document.getElementById('galNewAlbumForm').style.display = 'none'; }
+
+async function galCreateAlbum() {
+  var name = (document.getElementById('galNewName').value || '').trim();
+  if (!name) { showToast('Enter an album name.', 'error'); return; }
+  var date = (document.getElementById('galNewDate').value || '').trim();
+  var desc = (document.getElementById('galNewDesc').value || '').trim();
+  var id = 'album-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  _galAlbums.unshift({ id: id, name: name, date: date, description: desc, cover: '' });
+  await galSaveAlbums();
+  galHideNewAlbumForm();
+  document.getElementById('galNewName').value = '';
+  document.getElementById('galNewDate').value = '';
+  document.getElementById('galNewDesc').value = '';
+  galRenderAlbumCards();
+  showToast('Album created. Open it to upload photos.');
+}
+
+async function galOpenAlbum(albumId) {
+  _galActiveAlbumId = albumId;
+  var album = _galAlbums.find(function(a) { return a.id === albumId; });
+  if (!album) return;
+  document.getElementById('galAlbumList').style.display = 'none';
+  document.getElementById('galAlbumDetail').style.display = '';
+  document.getElementById('galDetailTitle').textContent = album.name;
+  document.getElementById('galDetailPhotos').innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading photos…</div>';
+  var token = getAdminToken();
+  var rows = [];
+  try { rows = await sbGet('photo_submissions', 'album_id=eq.' + encodeURIComponent(albumId) + '&status=eq.approved&order=submitted_at.desc', token); } catch(e) {}
+  rows = rows || [];
+  document.getElementById('galDetailCount').textContent = rows.length + ' photo' + (rows.length !== 1 ? 's' : '');
+  galRenderDetailPhotos(rows);
+}
+
+function galRenderDetailPhotos(rows) {
+  var container = document.getElementById('galDetailPhotos');
+  if (!container) return;
+  if (!rows.length) { container.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:20px 0;">No photos yet. Upload some using the button above.</div>'; return; }
+  container.innerHTML = rows.map(function(row) {
+    return '<div style="position:relative;border-radius:8px;overflow:hidden;background:var(--dark3);">' +
+      '<img src="' + escHtml(row.photo_url) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" />' +
+      '<div style="position:absolute;inset:0;background:rgba(0,0,0,0);transition:background 0.15s;" onmouseover="this.style.background=\'rgba(0,0,0,0.5)\'" onmouseout="this.style.background=\'rgba(0,0,0,0)\'">' +
+        '<div style="position:absolute;top:6px;right:6px;display:flex;gap:4px;opacity:0;transition:opacity 0.15s;" onmouseover="this.style.opacity=1" class="galPhotoActions">' +
+          '<button onclick="galSetCover(\'' + escHtml(row.photo_url) + '\')" title="Set as album cover" style="background:rgba(201,168,76,0.9);border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:0.7rem;font-weight:700;color:#000;"><i class="fas fa-image"></i></button>' +
+          '<button onclick="galDeletePhoto(\'' + escHtml(row.id) + '\',\'' + escHtml(row.storage_path) + '\')" title="Delete" style="background:rgba(231,76,60,0.9);border:none;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:0.7rem;color:#fff;"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+      '</div>' +
+      (row.caption ? '<div style="padding:5px 8px;font-size:0.7rem;color:rgba(255,255,255,0.5);background:var(--dark2);">' + escHtml(row.caption) + '</div>' : '') +
+    '</div>';
+  }).join('');
+  // Show action buttons on hover via CSS trick
+  container.querySelectorAll('.galPhotoActions').forEach(function(el) {
+    el.parentElement.parentElement.addEventListener('mouseenter', function() { el.style.opacity = '1'; });
+    el.parentElement.parentElement.addEventListener('mouseleave', function() { el.style.opacity = '0'; });
+  });
+}
+
+function galBackToAlbums() {
+  _galActiveAlbumId = null;
+  document.getElementById('galAlbumDetail').style.display = 'none';
+  document.getElementById('galAlbumList').style.display = '';
+  galRenderAlbumCards();
+}
+
+async function galHandleBulkUpload(e) {
+  var files = Array.from(e.target.files || []);
+  e.target.value = '';
+  if (!files.length || !_galActiveAlbumId) return;
+  var token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  var progressEl = document.getElementById('galUploadProgress');
+  progressEl.style.display = '';
+  var done = 0;
+  var failed = 0;
+  var uploaded = [];
+  for (var i = 0; i < files.length; i++) {
+    progressEl.textContent = 'Uploading ' + (i + 1) + ' of ' + files.length + '…';
+    try {
+      var result = await uploadImageToSupabaseBucket(files[i], EVENT_GALLERY_IMAGE_BUCKET, { prefixA: 'albums/' + _galActiveAlbumId + '/', prefixB: _galActiveAlbumId + '-' });
+      var payload = { album_id: _galActiveAlbumId, photo_url: result.url, storage_path: result.path, status: 'approved', member_name: 'Admin' };
+      await sbPost('photo_submissions', payload, token);
+      uploaded.push(result);
+      done++;
+    } catch(err) { failed++; }
+  }
+  progressEl.textContent = done + ' photo' + (done !== 1 ? 's' : '') + ' uploaded' + (failed ? ', ' + failed + ' failed' : '') + '.';
+  setTimeout(function() { progressEl.style.display = 'none'; }, 3000);
+  await galOpenAlbum(_galActiveAlbumId);
+}
+
+async function galSetCover(photoUrl) {
+  var album = _galAlbums.find(function(a) { return a.id === _galActiveAlbumId; });
+  if (!album) return;
+  album.cover = photoUrl;
+  await galSaveAlbums();
+  showToast('Cover photo updated.');
+}
+
+async function galDeletePhoto(submissionId, storagePath) {
+  if (!confirm('Delete this photo? It will be removed from the gallery.')) return;
+  var token = getAdminToken();
+  try {
+    if (storagePath) {
+      var encodedPath = encodeURIComponent(storagePath).replace(/%2F/g, '/');
+      await fetch(SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + encodedPath, { method: 'DELETE', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token } });
+    }
+    await sbDeleteByFilter('photo_submissions', 'id=eq.' + encodeURIComponent(submissionId), token);
+    showToast('Photo deleted.');
+    await galOpenAlbum(_galActiveAlbumId);
+  } catch(e) { showToast('Could not delete photo.', 'error'); }
+}
+
+async function galDeleteAlbum() {
+  var album = _galAlbums.find(function(a) { return a.id === _galActiveAlbumId; });
+  if (!album) return;
+  if (!confirm('Delete album "' + album.name + '" and all its photos? This cannot be undone.')) return;
+  var token = getAdminToken();
+  try {
+    // Delete all photo_submissions for this album
+    await sbDeleteByFilter('photo_submissions', 'album_id=eq.' + encodeURIComponent(_galActiveAlbumId), token);
+    _galAlbums = _galAlbums.filter(function(a) { return a.id !== _galActiveAlbumId; });
+    await galSaveAlbums();
+    showToast('Album deleted.');
+    galBackToAlbums();
+  } catch(e) { showToast('Could not delete album.', 'error'); }
+}
+
+// ── Review Queue ──
+async function galLoadQueueBadge() {
+  try {
+    var token = getAdminToken();
+    var rows = await sbGet('photo_submissions', 'status=eq.pending&select=id', token);
+    var count = (rows || []).length;
+    var badge = document.getElementById('galQueueBadge');
+    if (badge) { badge.textContent = count; badge.style.display = count > 0 ? '' : 'none'; }
+  } catch(e) {}
+}
+
+async function galLoadQueue() {
+  var container = document.getElementById('galQueueList');
+  if (!container) return;
+  container.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+  var token = getAdminToken();
+  var rows = [];
+  try { rows = await sbGet('photo_submissions', 'status=eq.pending&order=submitted_at.desc', token); } catch(e) {}
+  rows = rows || [];
+  var badge = document.getElementById('galQueueBadge');
+  if (badge) { badge.textContent = rows.length; badge.style.display = rows.length > 0 ? '' : 'none'; }
+  if (!rows.length) { container.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:20px 0;">No pending submissions.</div>'; return; }
+  container.innerHTML = rows.map(function(row) {
+    var d = row.submitted_at ? new Date(row.submitted_at).toLocaleDateString() : '';
+    return '<div style="display:grid;grid-template-columns:100px 1fr auto;gap:14px;align-items:center;padding:14px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:10px;background:var(--dark2);">' +
+      '<img src="' + escHtml(row.photo_url) + '" style="width:100px;height:80px;object-fit:cover;border-radius:6px;" />' +
+      '<div>' +
+        '<div style="font-size:0.88rem;font-weight:700;color:var(--white);margin-bottom:3px;">' + escHtml(row.member_name || 'Unknown member') + '</div>' +
+        (row.caption ? '<div style="font-size:0.78rem;color:var(--gray-400);margin-bottom:3px;">' + escHtml(row.caption) + '</div>' : '') +
+        '<div style="font-size:0.72rem;color:var(--gray-400);">Submitted ' + escHtml(d) + '</div>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;">' +
+        '<button onclick="galOpenApproveModal(\'' + escHtml(row.id) + '\',\'' + escHtml(row.photo_url) + '\')" style="background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.4);color:#4ade80;border-radius:6px;padding:7px 14px;font-size:0.78rem;font-weight:700;cursor:pointer;"><i class="fas fa-check"></i> Approve</button>' +
+        '<button onclick="galRejectPhoto(\'' + escHtml(row.id) + '\',\'' + escHtml(row.storage_path || '') + '\')" style="background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);color:#e74c3c;border-radius:6px;padding:7px 14px;font-size:0.78rem;font-weight:700;cursor:pointer;"><i class="fas fa-times"></i> Reject</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function galOpenApproveModal(subId, photoUrl) {
+  _galApproveSubId = subId;
+  var select = document.getElementById('galApproveAlbumSelect');
+  select.innerHTML = _galAlbums.map(function(a) { return '<option value="' + escHtml(a.id) + '">' + escHtml(a.name) + '</option>'; }).join('');
+  if (!_galAlbums.length) select.innerHTML = '<option value="">— No albums yet —</option>';
+  document.getElementById('galApproveThumb').src = photoUrl;
+  var modal = document.getElementById('galApproveModal');
+  modal.style.display = 'flex';
+}
+function galCloseApproveModal() { document.getElementById('galApproveModal').style.display = 'none'; _galApproveSubId = null; }
+
+async function galConfirmApprove() {
+  var albumId = document.getElementById('galApproveAlbumSelect').value;
+  if (!albumId) { showToast('Select an album.', 'error'); return; }
+  var token = getAdminToken();
+  try {
+    await sbPatch('photo_submissions', 'id=eq.' + encodeURIComponent(_galApproveSubId), { status: 'approved', album_id: albumId, reviewed_at: new Date().toISOString() }, token);
+    galCloseApproveModal();
+    showToast('Photo approved and added to album.');
+    galLoadQueue();
+    galLoadQueueBadge();
+  } catch(e) { showToast('Could not approve photo.', 'error'); }
+}
+
+async function galRejectPhoto(subId, storagePath) {
+  if (!confirm('Reject and delete this photo submission?')) return;
+  var token = getAdminToken();
+  try {
+    if (storagePath) {
+      var enc = encodeURIComponent(storagePath).replace(/%2F/g, '/');
+      await fetch(SUPABASE_URL + '/storage/v1/object/' + EVENT_GALLERY_IMAGE_BUCKET + '/' + enc, { method: 'DELETE', headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token } });
+    }
+    await sbPatch('photo_submissions', 'id=eq.' + encodeURIComponent(subId), { status: 'rejected', reviewed_at: new Date().toISOString() }, token);
+    showToast('Photo rejected.');
+    galLoadQueue();
+    galLoadQueueBadge();
+  } catch(e) { showToast('Could not reject photo.', 'error'); }
 }
 
 // ══════════════════════════════════════════════════

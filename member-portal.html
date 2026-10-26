@@ -289,6 +289,7 @@ backdrop-filter:blur(4px);}
     <button class="nav-item" onclick="showPanel('events')" id="nav-events"><i class="fas fa-calendar-alt"></i> Events</button>
     <button class="nav-item" onclick="showPanel('meetings');loadMeetingsPortal()" id="nav-meetings"><i class="fas fa-people-group"></i> Meetings</button>
     <button class="nav-item" onclick="showPanel('dues')" id="nav-dues"><i class="fas fa-dollar-sign"></i> Dues</button>
+    <button class="nav-item" onclick="showPanel('photos');loadPhotosPanel()" id="nav-photos"><i class="fas fa-camera"></i> Photos</button>
     <button class="nav-item" onclick="showPanel('store');loadMemberStore()" id="nav-store"><i class="fas fa-store"></i> Chapter Store <span id="cartBadge" style="display:none;background:var(--gold);color:#000;font-size:0.6rem;font-weight:800;padding:1px 5px;border-radius:10px;margin-left:4px;"></span></button>
     <button class="nav-item" onclick="showPanel('documents')" id="nav-documents"><i class="fas fa-file-alt"></i> Documents</button>
     <button class="nav-item" onclick="showPanel('imdp-info')" id="nav-imdp-info"><i class="fas fa-graduation-cap"></i> IMDP Info</button>
@@ -453,6 +454,72 @@ backdrop-filter:blur(4px);}
         </div>
       </div>
     </div>
+    <!-- PHOTOS -->
+    <div class="panel" id="panel-photos">
+      <!-- Tab bar -->
+      <div style="display:flex;gap:4px;margin-bottom:18px;">
+        <button id="photoTab-browse" onclick="photoSwitchTab('browse')" style="padding:7px 16px;border:none;border-radius:7px;font-size:0.8rem;font-weight:700;cursor:pointer;background:var(--gold);color:#000;">Browse Albums</button>
+        <button id="photoTab-myuploads" onclick="photoSwitchTab('myuploads')" style="padding:7px 16px;border:none;border-radius:7px;font-size:0.8rem;font-weight:700;cursor:pointer;background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.55);">My Uploads</button>
+      </div>
+      <!-- Browse tab -->
+      <div id="photoPane-browse">
+        <div id="portalAlbumView">
+          <div id="portalAlbumGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+            <div style="color:var(--gray-400);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>
+          </div>
+        </div>
+        <div id="portalAlbumPhotos" style="display:none;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+            <button onclick="portalBackToAlbums()" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);border-radius:6px;padding:7px 14px;cursor:pointer;font-size:0.82rem;"><i class="fas fa-arrow-left"></i> Albums</button>
+            <div>
+              <div id="portalAlbumTitle" style="font-size:1rem;font-weight:800;color:var(--white);"></div>
+              <div id="portalAlbumDate" style="font-size:0.75rem;color:var(--gray-400);"></div>
+            </div>
+          </div>
+          <div id="portalPhotoGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;"></div>
+        </div>
+      </div>
+      <!-- My Uploads tab -->
+      <div id="photoPane-myuploads" style="display:none;">
+        <div class="section-card" style="margin-bottom:16px;">
+          <div class="section-card-header"><h3><i class="fas fa-cloud-upload-alt"></i> Submit Photos</h3></div>
+          <div class="section-card-body">
+            <p style="font-size:0.85rem;color:var(--gray-400);margin-bottom:16px;">Share your event photos with the chapter. An admin will review and add approved photos to the public gallery.</p>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Album (optional)</label>
+              <select id="portalUploadAlbum" style="width:100%;max-width:320px;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark3);color:var(--white);font-size:0.88rem;">
+                <option value="">— No specific album —</option>
+              </select>
+            </div>
+            <div style="margin-bottom:12px;">
+              <label style="font-size:0.75rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:6px;">Caption (optional)</label>
+              <input type="text" id="portalUploadCaption" placeholder="Short description of the photos" style="width:100%;max-width:400px;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark3);color:var(--white);font-size:0.88rem;" />
+            </div>
+            <label style="background:var(--gold);color:#000;border-radius:6px;padding:9px 18px;font-size:0.85rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;"><i class="fas fa-images"></i> Choose Photos<input type="file" id="portalPhotoFileInput" accept="image/*" multiple style="display:none;" onchange="portalHandlePhotoUpload(event)"></label>
+            <div id="portalUploadProgress" style="display:none;margin-top:12px;padding:10px 14px;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:8px;font-size:0.85rem;color:var(--gold);"></div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-card-header"><h3><i class="fas fa-history"></i> My Submission History</h3></div>
+          <div class="section-card-body" id="portalMySubmissions"><div style="color:var(--gray-400);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading…</div></div>
+        </div>
+      </div>
+
+      <!-- Portal lightbox -->
+      <div id="portalLightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:9900;align-items:center;justify-content:center;">
+        <button onclick="portalLbClose()" style="position:absolute;top:18px;right:22px;background:transparent;border:none;color:#fff;font-size:2rem;cursor:pointer;z-index:1;">&times;</button>
+        <button onclick="portalLbNav(-1)" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:1.5rem;cursor:pointer;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-chevron-left"></i></button>
+        <button onclick="portalLbNav(1)" style="position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.1);border:none;color:#fff;font-size:1.5rem;cursor:pointer;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-chevron-right"></i></button>
+        <div style="max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <img id="portalLbImg" src="" alt="" style="max-width:90vw;max-height:78vh;object-fit:contain;border-radius:6px;" />
+          <div style="display:flex;align-items:center;gap:16px;">
+            <span id="portalLbCaption" style="color:rgba(255,255,255,0.7);font-size:0.88rem;"></span>
+            <a id="portalLbDownload" href="" download style="background:var(--gold);color:#000;border-radius:6px;padding:7px 16px;font-size:0.82rem;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:6px;"><i class="fas fa-download"></i> Download</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- MEETINGS -->
     <div class="panel" id="panel-meetings">
       <div class="section-card">
@@ -1490,7 +1557,8 @@ const PANEL_META = {
   requisition:            ['Submit Requisition',    'Request funds or chapter resources'],
   reimbursement:          ['Request Reimbursement', 'Submit a reimbursement request'],
   committees:             ['Committees',            'Chapter committees and membership'],
-  'imdp-info':            ['IMDP Info',             'Membership development sponsorship and recommender requirements']
+  'imdp-info':            ['IMDP Info',             'Membership development sponsorship and recommender requirements'],
+  photos:                 ['Photo Gallery',          'Browse event photos and submit your own']
 };
 
 function showPanel(id) {
@@ -1885,6 +1953,149 @@ function renderMpCal() {
     cells.push('<div class="mp-cal-day' + (isOther ? ' other-month' : '') + (isToday ? ' today' : '') + '"><div class="mp-cal-day-num">' + dayNum + '</div>' + chips + '</div>');
   }
   daysEl.innerHTML = cells.join('');
+}
+
+// ══════════════════════════════════════════════════
+// PHOTOS PANEL
+// ══════════════════════════════════════════════════
+var _portalAlbums = [];
+var _portalCurrentPhotos = [];
+var _portalLbIndex = 0;
+
+async function loadPhotosPanel() {
+  // Load albums
+  var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.photo_albums&select=content_json&limit=1', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+  _portalAlbums = [];
+  if (res.ok) { var rows = await res.json(); if (rows && rows[0] && Array.isArray(rows[0].content_json)) _portalAlbums = rows[0].content_json; }
+  portalRenderAlbumGrid();
+  // Populate album select in upload form
+  var sel = document.getElementById('portalUploadAlbum');
+  if (sel) {
+    sel.innerHTML = '<option value="">— No specific album —</option>' + _portalAlbums.map(function(a){ return '<option value="' + escHtml(a.id) + '">' + escHtml(a.name) + '</option>'; }).join('');
+  }
+  // Load my submissions
+  portalLoadMySubmissions();
+}
+
+function photoSwitchTab(tab) {
+  ['browse','myuploads'].forEach(function(t) {
+    var btn = document.getElementById('photoTab-' + t);
+    var pane = document.getElementById('photoPane-' + t);
+    if (btn) { btn.style.background = t === tab ? 'var(--gold)' : 'rgba(255,255,255,0.07)'; btn.style.color = t === tab ? '#000' : 'rgba(255,255,255,0.55)'; }
+    if (pane) pane.style.display = t === tab ? '' : 'none';
+  });
+}
+
+function portalRenderAlbumGrid() {
+  var grid = document.getElementById('portalAlbumGrid');
+  if (!grid) return;
+  if (!_portalAlbums.length) { grid.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:20px 0;">No albums yet.</div>'; return; }
+  grid.innerHTML = _portalAlbums.map(function(album) {
+    var cover = album.cover
+      ? '<img src="' + escHtml(album.cover) + '" style="width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px 8px 0 0;display:block;" />'
+      : '<div style="width:100%;aspect-ratio:4/3;background:rgba(255,255,255,0.05);border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.2);font-size:2rem;"><i class="fas fa-images"></i></div>';
+    return '<button onclick="portalOpenAlbum(\'' + escHtml(album.id) + '\')" style="background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden;cursor:pointer;text-align:left;width:100%;padding:0;">' +
+      cover +
+      '<div style="padding:10px 12px;">' +
+        '<div style="font-size:0.88rem;font-weight:700;color:var(--white);">' + escHtml(album.name) + '</div>' +
+        (album.date ? '<div style="font-size:0.72rem;color:var(--gray-400);">' + escHtml(album.date) + '</div>' : '') +
+      '</div></button>';
+  }).join('');
+}
+
+async function portalOpenAlbum(albumId) {
+  var album = _portalAlbums.find(function(a){return a.id===albumId;});
+  if (!album) return;
+  document.getElementById('portalAlbumView').style.display = 'none';
+  document.getElementById('portalAlbumPhotos').style.display = '';
+  document.getElementById('portalAlbumTitle').textContent = album.name;
+  document.getElementById('portalAlbumDate').textContent = album.date || '';
+  var grid = document.getElementById('portalPhotoGrid');
+  grid.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+  var res = await fetch(SUPABASE_URL + '/rest/v1/photo_submissions?album_id=eq.' + encodeURIComponent(albumId) + '&status=eq.approved&order=submitted_at.asc', { headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY } });
+  _portalCurrentPhotos = res.ok ? (await res.json() || []) : [];
+  if (!_portalCurrentPhotos.length) { grid.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:20px 0;">No photos in this album yet.</div>'; return; }
+  grid.innerHTML = _portalCurrentPhotos.map(function(p, i) {
+    return '<div style="border-radius:6px;overflow:hidden;cursor:pointer;background:rgba(255,255,255,0.04);" onclick="portalLbOpen(' + i + ')">' +
+      '<img src="' + escHtml(p.photo_url) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" loading="lazy" />' +
+    '</div>';
+  }).join('');
+}
+
+function portalBackToAlbums() {
+  document.getElementById('portalAlbumPhotos').style.display = 'none';
+  document.getElementById('portalAlbumView').style.display = '';
+}
+
+function portalLbOpen(i) { _portalLbIndex = i; portalLbShow(); document.getElementById('portalLightbox').style.display = 'flex'; }
+function portalLbClose() { document.getElementById('portalLightbox').style.display = 'none'; }
+function portalLbNav(delta) { _portalLbIndex = (_portalLbIndex + delta + _portalCurrentPhotos.length) % _portalCurrentPhotos.length; portalLbShow(); }
+function portalLbShow() {
+  var p = _portalCurrentPhotos[_portalLbIndex]; if (!p) return;
+  document.getElementById('portalLbImg').src = p.photo_url;
+  document.getElementById('portalLbCaption').textContent = p.caption || '';
+  var dl = document.getElementById('portalLbDownload'); dl.href = p.photo_url; dl.setAttribute('download', 'photo-' + (_portalLbIndex+1) + '.jpg');
+}
+
+async function portalHandlePhotoUpload(e) {
+  var files = Array.from(e.target.files || []);
+  e.target.value = '';
+  if (!files.length) return;
+  var token = currentSession && currentSession.access_token;
+  if (!token) { showToast('Session expired. Please log in again.', 'error'); return; }
+  var albumId = (document.getElementById('portalUploadAlbum').value || '').trim();
+  var caption = (document.getElementById('portalUploadCaption').value || '').trim();
+  var member = currentMember || {};
+  var memberId = member.id || null;
+  var memberName = [member.first_name, member.last_name].filter(Boolean).join(' ') || 'Unknown';
+  var progressEl = document.getElementById('portalUploadProgress');
+  progressEl.style.display = '';
+  var done = 0; var failed = 0;
+  for (var i = 0; i < files.length; i++) {
+    progressEl.textContent = 'Uploading ' + (i+1) + ' of ' + files.length + '…';
+    try {
+      var file = files[i];
+      var ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+      var path = 'submissions/' + (memberId || 'anon') + '/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.' + ext;
+      var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/' + 'chapter-media' + '/' + encodeURIComponent(path).replace(/%2F/g,'/'), {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'x-upsert': 'true', 'Content-Type': file.type || 'image/jpeg' },
+        body: file
+      });
+      if (!upRes.ok) { failed++; continue; }
+      var photoUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + encodeURIComponent(path).replace(/%2F/g,'/');
+      var payload = { member_id: memberId, member_name: memberName, storage_path: path, photo_url: photoUrl, caption: caption || null, album_id: albumId || null, status: 'pending' };
+      var insRes = await fetch(SUPABASE_URL + '/rest/v1/photo_submissions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token, 'Prefer': 'return=minimal' }, body: JSON.stringify(payload) });
+      if (insRes.ok) done++; else failed++;
+    } catch(err) { failed++; }
+  }
+  progressEl.textContent = done + ' photo' + (done!==1?'s':'') + ' submitted for review' + (failed ? ', ' + failed + ' failed' : '') + '. Admin will review shortly.';
+  document.getElementById('portalUploadCaption').value = '';
+  portalLoadMySubmissions();
+}
+
+async function portalLoadMySubmissions() {
+  var token = currentSession && currentSession.access_token;
+  var memberId = currentMember && currentMember.id;
+  var container = document.getElementById('portalMySubmissions');
+  if (!container || !memberId || !token) return;
+  var res = await fetch(SUPABASE_URL + '/rest/v1/photo_submissions?member_id=eq.' + encodeURIComponent(memberId) + '&order=submitted_at.desc&limit=50', { headers: { 'Content-Type':'application/json','apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token } });
+  var rows = res.ok ? (await res.json() || []) : [];
+  if (!rows.length) { container.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;">No submissions yet.</div>'; return; }
+  var statusColors = { pending:'#d97706', approved:'#16a34a', rejected:'#dc2626' };
+  var statusLabels = { pending:'Pending Review', approved:'Approved', rejected:'Rejected' };
+  container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;">' +
+    rows.map(function(row) {
+      var sc = statusColors[row.status] || '#666';
+      var sl = statusLabels[row.status] || row.status;
+      return '<div style="border-radius:8px;overflow:hidden;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);">' +
+        '<img src="' + escHtml(row.photo_url) + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" />' +
+        '<div style="padding:6px 8px;">' +
+          '<span style="font-size:0.65rem;font-weight:700;color:' + sc + ';text-transform:uppercase;letter-spacing:0.05em;">' + sl + '</span>' +
+          (row.caption ? '<div style="font-size:0.68rem;color:var(--gray-400);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escHtml(row.caption) + '</div>' : '') +
+        '</div></div>';
+    }).join('') +
+  '</div>';
 }
 
 function portalOpenEventDetail(cardId) {
