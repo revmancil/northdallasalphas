@@ -11,10 +11,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     .gallery-section { padding: 72px 0 96px; background: var(--gray-100); min-height: 42vh; }
-    .pub-album-card { background:var(--white);border-radius:12px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.07);cursor:pointer;border:none;text-align:left;width:100%;padding:0;transition:transform 0.2s,box-shadow 0.2s; }
-    .pub-album-card:hover { transform:translateY(-4px);box-shadow:0 10px 32px rgba(0,0,0,0.12); }
-    .pub-album-cover { width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--gray-200); }
-    .pub-album-cover-empty { width:100%;aspect-ratio:1/1;background:var(--gray-200);display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:2.5rem; }
+    .pub-album-card { background:transparent;border:none;cursor:pointer;padding:0;text-align:left;width:100%;display:block; }
+    .pub-album-card:hover .pub-album-cover,
+    .pub-album-card:hover .pub-album-cover-empty { opacity:0.85; }
+    .pub-album-cover { width:100%;aspect-ratio:1/1;object-fit:cover;display:block;border-radius:6px;transition:opacity 0.2s; }
+    .pub-album-cover-empty { width:100%;aspect-ratio:1/1;background:var(--gray-200);display:flex;align-items:center;justify-content:center;color:var(--gray-400);font-size:2.5rem;border-radius:6px;transition:opacity 0.2s; }
+    .pub-album-label { font-size:0.85rem;font-weight:700;color:var(--gray-800);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .pub-album-date { font-size:0.75rem;color:var(--gray-500);margin-top:1px; }
+    @media(max-width:600px){ #pubGalAlbumGrid{ grid-template-columns:repeat(2,1fr) !important; } }
     .pub-photo-card { border-radius:8px;overflow:hidden;cursor:pointer;background:var(--gray-200); }
     .pub-photo-card img { width:100%;aspect-ratio:1;object-fit:cover;display:block;transition:transform 0.2s; }
     .pub-photo-card:hover img { transform:scale(1.04); }
@@ -278,7 +282,7 @@
   <div class="container">
     <!-- Album list view -->
     <div id="pubGalAlbumView">
-      <div id="pubGalAlbumGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,300px));gap:24px;">
+      <div id="pubGalAlbumGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">
         <div style="color:#666;font-size:0.9rem;padding:40px 0;"><i class="fas fa-spinner fa-spin"></i> Loading gallery…</div>
       </div>
       <div id="pubGalEmpty" style="display:none;text-align:center;padding:60px 0;color:#666;">
@@ -738,11 +742,9 @@ function pubGalRenderAlbums() {
       : '<div class="pub-album-cover-empty"><i class="fas fa-images"></i></div>';
     return '<button class="pub-album-card" onclick="pubGalOpenAlbum(\'' + escHtml(album.id) + '\')">' +
       cover +
-      '<div style="padding:14px 16px 16px;">' +
-        '<div style="font-size:1rem;font-weight:700;color:var(--gray-800);margin-bottom:2px;">' + escHtml(album.name) + '</div>' +
-        (album.date ? '<div style="font-size:0.78rem;color:var(--gray-500);">' + escHtml(new Date(album.date + 'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})) + '</div>' : '') +
-        (album.description ? '<div style="font-size:0.8rem;color:var(--gray-500);margin-top:4px;">' + escHtml(album.description) + '</div>' : '') +
-      '</div></button>';
+      '<div class="pub-album-label">' + escHtml(album.name) + '</div>' +
+      (album.date ? '<div class="pub-album-date">' + escHtml(new Date(album.date + 'T12:00:00').toLocaleDateString('en-US',{month:'long',year:'numeric'})) + '</div>' : '') +
+      '</button>';
   }).join('');
 }
 
