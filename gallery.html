@@ -723,6 +723,11 @@ async function pubGalLoadAlbums() {
   pubGalRenderAlbums();
 }
 
+function pubGalCoverErr(img) {
+  img.onerror = null;
+  img.outerHTML = '<div class="pub-album-cover-empty"><i class="fas fa-images"></i></div>';
+}
+
 function pubGalRenderAlbums() {
   var grid = document.getElementById('pubGalAlbumGrid');
   var empty = document.getElementById('pubGalEmpty');
@@ -730,7 +735,7 @@ function pubGalRenderAlbums() {
   grid.style.display = ''; empty.style.display = 'none';
   grid.innerHTML = _pubAlbums.map(function(album) {
     var cover = album.cover
-      ? '<img class="pub-album-cover" src="' + escHtml(album.cover) + '" alt="' + escHtml(album.name) + '" onerror="this.outerHTML=\'<div class=\\\"pub-album-cover-empty\\\"><i class=\\\"fas fa-images\\\"></i></div>\'" />'
+      ? '<img class="pub-album-cover" src="' + escHtml(album.cover) + '" alt="' + escHtml(album.name) + '" onerror="pubGalCoverErr(this)" />'
       : '<div class="pub-album-cover-empty"><i class="fas fa-images"></i></div>';
     return '<button class="pub-album-card" onclick="pubGalOpenAlbum(\'' + escHtml(album.id) + '\')">' +
       cover +
