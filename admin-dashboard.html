@@ -1090,6 +1090,40 @@
     .pb-textarea:focus { outline:none;border-color:var(--gold); }
     .pb-grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
     @media(max-width:600px){ .pb-grid-2{grid-template-columns:1fr;} }
+    /* ── Canvas builder ── */
+    .pb-canvas { background:#e8e8e8;padding:20px;border-radius:10px;min-height:200px; }
+    .pb-canvas-block { position:relative;margin-bottom:10px;border-radius:6px;overflow:hidden;border:2px solid transparent;transition:border-color 0.15s;cursor:default; }
+    .pb-canvas-block:hover { border-color:#C9A84C; }
+    .pb-canvas-block.pb-drag-over { border-top:4px solid #C9A84C; }
+    .pb-block-toolbar { position:absolute;top:8px;left:8px;display:none;gap:4px;z-index:10; }
+    .pb-canvas-block:hover .pb-block-toolbar { display:flex; }
+    .pb-tb-btn { background:rgba(0,0,0,0.72);color:#fff;border:none;border-radius:4px;padding:5px 9px;cursor:pointer;font-size:0.78rem;line-height:1; }
+    .pb-tb-btn:hover { background:rgba(201,168,76,0.9);color:#000; }
+    .pb-tb-drag { cursor:grab;background:rgba(0,0,0,0.72);color:#fff;border:none;border-radius:4px;padding:5px 9px;font-size:0.82rem;line-height:1; }
+    .pb-tb-drag:active { cursor:grabbing; }
+    .pb-canvas-edit-panel { background:#1a1a1a;border-top:2px solid #C9A84C;padding:20px; }
+    /* Hero preview */
+    .pb-prev-hero { min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 24px;background:#1a1a1a;position:relative; }
+    .pb-prev-hero-inner { position:relative;z-index:1; }
+    .pb-prev-hero h2 { color:#fff;font-size:1.6rem;margin:0 0 8px;font-weight:800; }
+    .pb-prev-hero p { color:rgba(255,255,255,0.75);font-size:0.95rem;margin:0 0 16px; }
+    .pb-prev-hero a { background:#C9A84C;color:#000;padding:9px 22px;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.88rem; }
+    /* Text preview */
+    .pb-prev-text { background:#fff;padding:32px 40px; }
+    .pb-prev-text h2 { color:#111;font-size:1.35rem;margin:0 0 10px;font-weight:800; }
+    .pb-prev-text p { color:#444;font-size:0.92rem;margin:0;white-space:pre-wrap;line-height:1.65; }
+    /* Image+Text preview */
+    .pb-prev-imgtext { background:#fff;padding:28px 40px;display:flex;gap:28px;align-items:center; }
+    .pb-prev-imgtext.right { flex-direction:row-reverse; }
+    .pb-prev-imgtext img { width:42%;max-height:200px;object-fit:cover;border-radius:6px;flex-shrink:0; }
+    .pb-prev-imgtext-placeholder { width:42%;max-height:200px;min-height:140px;background:#e0e0e0;border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:1.8rem; }
+    .pb-prev-imgtext-body h2 { color:#111;font-size:1.2rem;margin:0 0 8px;font-weight:800; }
+    .pb-prev-imgtext-body p { color:#444;font-size:0.9rem;margin:0;white-space:pre-wrap;line-height:1.6; }
+    /* CTA preview */
+    .pb-prev-cta { padding:36px 40px;text-align:center; }
+    .pb-prev-cta h2 { font-size:1.4rem;margin:0 0 8px;font-weight:800; }
+    .pb-prev-cta p { font-size:0.92rem;margin:0 0 16px;opacity:0.85; }
+    .pb-prev-cta a { background:rgba(0,0,0,0.15);border:2px solid rgba(0,0,0,0.25);color:inherit;padding:9px 24px;border-radius:6px;text-decoration:none;font-weight:700;font-size:0.88rem; }
 
     /* ═══════════════════════════════════════
        PAST PRESIDENTS MANAGER
@@ -1725,13 +1759,13 @@
             <button class="pb-page-tab" data-page="about" onclick="pbSwitchPage('about')">About</button>
           </div>
 
-          <!-- Block list -->
-          <div id="pbBlockList" style="min-height:60px;"></div>
-
-          <!-- Add block picker (hidden by default) -->
-          <div id="pbBlockPicker" style="display:none;background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;margin-top:12px;">
+          <!-- Add block button + picker -->
+          <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <button onclick="pbShowPicker()" id="pbAddBtn" style="background:var(--dark2);border:1px dashed rgba(201,168,76,0.5);color:var(--gold);border-radius:8px;padding:9px 20px;cursor:pointer;font-size:0.85rem;font-weight:700;"><i class="fas fa-plus"></i> Add Block</button>
+          </div>
+          <div id="pbBlockPicker" style="display:none;background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;margin-bottom:12px;">
             <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:12px;">Choose a Block Type</div>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;">
               <button class="pb-type-btn" onclick="pbAddBlock('hero')"><i class="fas fa-image" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Hero / Banner</button>
               <button class="pb-type-btn" onclick="pbAddBlock('text')"><i class="fas fa-align-left" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Text Section</button>
               <button class="pb-type-btn" onclick="pbAddBlock('image_text')"><i class="fas fa-columns" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Image + Text</button>
@@ -1740,7 +1774,10 @@
             <button onclick="pbHidePicker()" style="margin-top:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.8rem;">Cancel</button>
           </div>
 
-          <button onclick="pbShowPicker()" id="pbAddBtn" style="margin-top:14px;background:var(--dark2);border:1px dashed rgba(201,168,76,0.5);color:var(--gold);border-radius:8px;padding:10px 20px;cursor:pointer;font-size:0.85rem;font-weight:700;width:100%;"><i class="fas fa-plus"></i> Add Block</button>
+          <!-- Visual canvas -->
+          <div class="pb-canvas" id="pbCanvas">
+            <div style="color:#888;font-size:0.85rem;text-align:center;padding:20px 0;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>
+          </div>
         </div>
       </div>
       <!-- ── END PAGE BUILDER ── -->
@@ -15825,7 +15862,7 @@ function openImpersonateModal() {
     pbRender();
     // scroll to new block
     setTimeout(function(){
-      var el = document.getElementById('pb-form-' + id);
+      var el = document.getElementById('pb-cblock-' + id);
       if (el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
     }, 80);
   };
@@ -15871,54 +15908,92 @@ function openImpersonateModal() {
   // ── Load ───────────────────────────────────────────────────────────
   async function pbLoadBlocks() {
     var key = PB_PAGES[_pbPage].key;
-    var list = document.getElementById('pbBlockList');
-    if (list) list.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:12px 0;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    var canvas = document.getElementById('pbCanvas');
+    if (canvas) canvas.innerHTML = '<div style="color:#888;font-size:0.85rem;text-align:center;padding:20px 0;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
     _pbBlocks = await getContentJson(key, []);
     if (!Array.isArray(_pbBlocks)) _pbBlocks = [];
     pbRender();
   }
 
-  // ── Render ─────────────────────────────────────────────────────────
+  // ── Block Visual HTML ──────────────────────────────────────────────
+  function pbBlockVisual(block) {
+    if (block.type === 'hero') {
+      var bg = block.imageUrl
+        ? 'background:linear-gradient(rgba(0,0,0,0.52),rgba(0,0,0,0.52)),url(' + escHtml(block.imageUrl) + ') center/cover no-repeat;'
+        : 'background:#1a1a1a;';
+      return '<div class="pb-prev-hero" style="' + bg + '">' +
+        '<div class="pb-prev-hero-inner">' +
+          '<h2>' + escHtml(block.heading || 'Heading') + '</h2>' +
+          (block.subtext ? '<p>' + escHtml(block.subtext) + '</p>' : '') +
+          (block.buttonText ? '<a href="#">' + escHtml(block.buttonText) + '</a>' : '') +
+        '</div></div>';
+    }
+    if (block.type === 'text') {
+      return '<div class="pb-prev-text">' +
+        '<h2>' + escHtml(block.heading || 'Heading') + '</h2>' +
+        '<p>' + escHtml(block.body || '') + '</p>' +
+        '</div>';
+    }
+    if (block.type === 'image_text') {
+      var cls = 'pb-prev-imgtext' + (block.imagePosition === 'right' ? ' right' : '');
+      var imgHtml = block.imageUrl
+        ? '<img src="' + escHtml(block.imageUrl) + '" alt="" />'
+        : '<div class="pb-prev-imgtext-placeholder"><i class="fas fa-image"></i></div>';
+      return '<div class="' + cls + '">' +
+        imgHtml +
+        '<div class="pb-prev-imgtext-body">' +
+          '<h2>' + escHtml(block.heading || 'Heading') + '</h2>' +
+          '<p>' + escHtml(block.body || '') + '</p>' +
+        '</div></div>';
+    }
+    if (block.type === 'cta') {
+      var bg2 = block.bgColor || '#C9A84C';
+      return '<div class="pb-prev-cta" style="background:' + escHtml(bg2) + ';color:#000;">' +
+        '<h2>' + escHtml(block.heading || 'Heading') + '</h2>' +
+        (block.subtext ? '<p>' + escHtml(block.subtext) + '</p>' : '') +
+        (block.buttonText ? '<a href="#">' + escHtml(block.buttonText) + '</a>' : '') +
+        '</div>';
+    }
+    return '<div style="padding:20px;background:#fff;color:#333;">Unknown block type: ' + escHtml(block.type) + '</div>';
+  }
+
+  // ── Render Canvas ──────────────────────────────────────────────────
   function pbRender() {
-    var list = document.getElementById('pbBlockList');
-    if (!list) return;
+    var canvas = document.getElementById('pbCanvas');
+    if (!canvas) return;
     if (!_pbBlocks.length) {
-      list.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:12px 0;text-align:center;">No blocks yet. Add your first block below.</div>';
+      canvas.innerHTML = '<div style="color:#888;font-size:0.85rem;text-align:center;padding:40px 0;">No blocks yet. Click <strong>+ Add Block</strong> above to start building.</div>';
       return;
     }
-    list.innerHTML = _pbBlocks.map(function(block, idx) {
-      var meta  = PB_TYPE_META[block.type] || {icon:'fa-cube', label:block.type};
-      var title = block.heading || block.body || '(untitled)';
-      var row = '<div class="pb-block-row" id="pb-row-' + escHtml(block.id) + '" draggable="true"' +
-        ' ondragstart="pbDragStart(' + idx + ')"' +
-        ' ondragover="pbDragOver(event,' + idx + ')"' +
-        ' ondrop="pbDrop(' + idx + ')"' +
-        ' ondragleave="pbDragLeave(' + idx + ')">' +
-        '<span class="pb-drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></span>' +
-        '<div class="pb-block-info">' +
-          '<div class="pb-block-type"><i class="fas ' + escHtml(meta.icon) + '" style="margin-right:5px;"></i>' + escHtml(meta.label) + '</div>' +
-          '<div class="pb-block-preview">' + escHtml(title.substring(0,80)) + '</div>' +
-        '</div>' +
-        '<div class="pb-block-actions">' +
-          '<button class="btn-sm edit" onclick="pbEditBlock(\'' + escHtml(block.id) + '\')" title="Edit"><i class="fas fa-pencil-alt"></i></button>' +
-          '<button class="btn-sm danger" onclick="pbDeleteBlock(\'' + escHtml(block.id) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
-        '</div>' +
+    canvas.innerHTML = _pbBlocks.map(function(block, idx) {
+      var toolbar = '<div class="pb-block-toolbar">' +
+        '<span class="pb-tb-drag" draggable="true" title="Drag to reorder" ' +
+          'ondragstart="pbDragStart(event,' + idx + ')">' +
+          '⠿</span>' +
+        '<button class="pb-tb-btn" onclick="pbEditBlock(\'' + escHtml(block.id) + '\')" title="Edit"><i class="fas fa-pencil-alt"></i></button>' +
+        '<button class="pb-tb-btn" onclick="pbDeleteBlock(\'' + escHtml(block.id) + '\')" title="Delete" style="background:rgba(180,0,0,0.75);"><i class="fas fa-times"></i></button>' +
         '</div>';
-      var form = (_pbOpenId === block.id) ? pbBuildForm(block) : '';
-      return row + form;
+      var visual = pbBlockVisual(block);
+      var editPanel = (_pbOpenId === block.id) ? '<div class="pb-canvas-edit-panel">' + pbBuildFormInner(block) + '</div>' : '';
+      return '<div class="pb-canvas-block" id="pb-cblock-' + escHtml(block.id) + '" ' +
+        'ondragover="pbDragOver(event,' + idx + ')"' +
+        ' ondrop="pbDrop(event,' + idx + ')"' +
+        ' ondragleave="pbDragLeave(event,' + idx + ')">' +
+        toolbar + visual + editPanel +
+        '</div>';
     }).join('');
   }
 
-  function pbBuildForm(block) {
-    var h = '<div class="pb-edit-form" id="pb-form-' + escHtml(block.id) + '">';
+  function pbBuildFormInner(block) {
+    var h = '<div id="pb-form-' + escHtml(block.id) + '">';
     function field(label, fieldKey, type, extra) {
       extra = extra || '';
       var val = escHtml(String(block[fieldKey] || ''));
       if (type === 'textarea') {
-        return '<div style="margin-bottom:10px;"><label class="pb-field-label">' + label + '</label>' +
+        return '<div style="margin-bottom:10px;"><label class="pb-field-label" style="color:rgba(255,255,255,0.5);">' + label + '</label>' +
           '<textarea class="pb-textarea" data-field="' + fieldKey + '" ' + extra + '>' + val + '</textarea></div>';
       }
-      return '<div style="margin-bottom:10px;"><label class="pb-field-label">' + label + '</label>' +
+      return '<div style="margin-bottom:10px;"><label class="pb-field-label" style="color:rgba(255,255,255,0.5);">' + label + '</label>' +
         '<input class="pb-input" type="text" data-field="' + fieldKey + '" value="' + val + '" ' + extra + ' /></div>';
     }
 
@@ -15932,7 +16007,7 @@ function openImpersonateModal() {
     } else if (block.type === 'image_text') {
       h += '<div class="pb-grid-2">' + field('Heading', 'heading','text') + field('Image URL', 'imageUrl','text') + '</div>';
       h += field('Body Text', 'body','textarea');
-      h += '<div style="margin-bottom:10px;"><label class="pb-field-label">Image Position</label>' +
+      h += '<div style="margin-bottom:10px;"><label class="pb-field-label" style="color:rgba(255,255,255,0.5);">Image Position</label>' +
         '<select class="pb-input" data-field="imagePosition">' +
           '<option value="left"' + (block.imagePosition==='left'?' selected':'') + '>Left</option>' +
           '<option value="right"' + (block.imagePosition==='right'?' selected':'') + '>Right</option>' +
@@ -15943,7 +16018,7 @@ function openImpersonateModal() {
       h += '<div class="pb-grid-2">' + field('Button Text', 'buttonText','text') + field('Button URL', 'buttonUrl','text') + '</div>';
     }
 
-    h += '<div style="display:flex;gap:8px;margin-top:4px;">' +
+    h += '<div style="display:flex;gap:8px;margin-top:8px;">' +
       '<button class="btn-save" onclick="pbSaveBlock(\'' + escHtml(block.id) + '\')"><i class="fas fa-check"></i> Save Block</button>' +
       '<button class="btn-cancel" onclick="pbCancelEdit()">Cancel</button>' +
       '</div>';
@@ -15952,22 +16027,27 @@ function openImpersonateModal() {
   }
 
   // ── Drag & Drop ────────────────────────────────────────────────────
-  window.pbDragStart = function(idx) { _pbDragIdx = idx; };
+  window.pbDragStart = function(e, idx) {
+    _pbDragIdx = idx;
+    e.dataTransfer.effectAllowed = 'move';
+  };
 
   window.pbDragOver = function(e, idx) {
     e.preventDefault();
-    document.querySelectorAll('.pb-block-row').forEach(function(r){ r.classList.remove('pb-drag-over'); });
-    var rows = document.querySelectorAll('.pb-block-row');
-    if (rows[idx]) rows[idx].classList.add('pb-drag-over');
+    e.stopPropagation();
+    document.querySelectorAll('.pb-canvas-block').forEach(function(r){ r.classList.remove('pb-drag-over'); });
+    var blocks = document.querySelectorAll('.pb-canvas-block');
+    if (blocks[idx]) blocks[idx].classList.add('pb-drag-over');
   };
 
-  window.pbDragLeave = function(idx) {
-    var rows = document.querySelectorAll('.pb-block-row');
-    if (rows[idx]) rows[idx].classList.remove('pb-drag-over');
+  window.pbDragLeave = function(e, idx) {
+    var blocks = document.querySelectorAll('.pb-canvas-block');
+    if (blocks[idx]) blocks[idx].classList.remove('pb-drag-over');
   };
 
-  window.pbDrop = function(toIdx) {
-    document.querySelectorAll('.pb-block-row').forEach(function(r){ r.classList.remove('pb-drag-over'); });
+  window.pbDrop = function(e, toIdx) {
+    e.preventDefault();
+    document.querySelectorAll('.pb-canvas-block').forEach(function(r){ r.classList.remove('pb-drag-over'); });
     if (_pbDragIdx === null || _pbDragIdx === toIdx) { _pbDragIdx = null; return; }
     var moved = _pbBlocks.splice(_pbDragIdx, 1)[0];
     _pbBlocks.splice(toIdx, 0, moved);
