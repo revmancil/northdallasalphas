@@ -614,6 +614,9 @@
   </div>
 </section>
 
+<!-- Page Builder Blocks -->
+<div id="page-builder-blocks"></div>
+
 <!-- ── Featured Event ── -->
 <section class="gala-hero" id="featured-event">
   <div class="gala-hero-bg" id="featuredBg"></div>
@@ -1293,6 +1296,58 @@ function isEventArchived(ev, todayIso) {
       el.style.transform = "translateY(0)";
     });
   }, 100);
+})();
+
+// ── Page Builder renderer ──
+function renderPageBuilderBlocks(blocks) {
+  if (!blocks || !blocks.length) return '';
+  return blocks.map(function(b) {
+    if (!b || !b.type) return '';
+    if (b.type === 'hero') {
+      var bg = b.imageUrl ? 'background:linear-gradient(rgba(0,0,0,0.55),rgba(0,0,0,0.55)),url(' + b.imageUrl + ') center/cover no-repeat;' : 'background:#111;';
+      return '<section style="' + bg + 'padding:80px 20px;text-align:center;color:#fff;">' +
+        (b.heading ? '<h2 style="font-size:2.2rem;font-weight:800;margin:0 0 12px;color:#fff;">' + b.heading + '</h2>' : '') +
+        (b.subtext ? '<p style="font-size:1.05rem;margin:0 auto 24px;color:rgba(255,255,255,0.85);max-width:640px;">' + b.subtext + '</p>' : '') +
+        (b.buttonText && b.buttonUrl ? '<a href="' + b.buttonUrl + '" style="display:inline-block;background:#C9A84C;color:#000;padding:12px 28px;border-radius:6px;font-weight:700;text-decoration:none;">' + b.buttonText + '</a>' : '') +
+        '</section>';
+    }
+    if (b.type === 'text') {
+      return '<section style="padding:60px 20px;max-width:800px;margin:0 auto;">' +
+        (b.heading ? '<h2 style="font-size:1.8rem;font-weight:800;color:#111;margin-bottom:16px;">' + b.heading + '</h2>' : '') +
+        (b.body ? '<p style="font-size:1rem;color:#444;line-height:1.75;white-space:pre-wrap;">' + b.body + '</p>' : '') +
+        '</section>';
+    }
+    if (b.type === 'image_text') {
+      var imgSide = b.imagePosition === 'right' ? 'row-reverse' : 'row';
+      return '<section style="padding:60px 20px;">' +
+        '<div style="max-width:1000px;margin:0 auto;display:flex;flex-direction:' + imgSide + ';gap:40px;align-items:center;flex-wrap:wrap;">' +
+        (b.imageUrl ? '<img src="' + b.imageUrl + '" style="width:100%;max-width:420px;border-radius:10px;object-fit:cover;flex-shrink:0;" />' : '') +
+        '<div style="flex:1;min-width:260px;">' +
+          (b.heading ? '<h2 style="font-size:1.8rem;font-weight:800;color:#111;margin-bottom:14px;">' + b.heading + '</h2>' : '') +
+          (b.body ? '<p style="font-size:1rem;color:#444;line-height:1.75;white-space:pre-wrap;">' + b.body + '</p>' : '') +
+        '</div></div></section>';
+    }
+    if (b.type === 'cta') {
+      var ctaBg = b.bgColor || '#C9A84C';
+      var ctaFg = (ctaBg === '#C9A84C' || ctaBg.toLowerCase() === '#c9a84c') ? '#000' : '#fff';
+      return '<section style="background:' + ctaBg + ';padding:64px 20px;text-align:center;">' +
+        (b.heading ? '<h2 style="font-size:2rem;font-weight:800;color:' + ctaFg + ';margin:0 0 10px;">' + b.heading + '</h2>' : '') +
+        (b.subtext ? '<p style="font-size:1rem;color:' + ctaFg + ';opacity:0.85;max-width:600px;margin:0 auto 24px;">' + b.subtext + '</p>' : '') +
+        (b.buttonText && b.buttonUrl ? '<a href="' + b.buttonUrl + '" style="display:inline-block;background:#000;color:#C9A84C;padding:12px 28px;border-radius:6px;font-weight:700;text-decoration:none;">' + b.buttonText + '</a>' : '') +
+        '</section>';
+    }
+    return '';
+  }).join('');
+}
+(async function() {
+  try {
+    var res = await fetch(SUPABASE_URL + '/rest/v1/site_content?content_key=eq.page_blocks_events&select=content_json&limit=1', { headers: sbHeaders() });
+    if (!res.ok) return;
+    var rows = await res.json();
+    var blocks = rows && rows[0] && Array.isArray(rows[0].content_json) ? rows[0].content_json : [];
+    var html = renderPageBuilderBlocks(blocks);
+    if (html) document.getElementById('page-builder-blocks').innerHTML = html;
+  } catch(e) {}
 })();
 
 // ── Utility: escape HTML ──

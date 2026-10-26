@@ -1068,6 +1068,29 @@
     }
     .section-tab:hover:not(.active) { border-color: var(--gold); color: var(--gold-light); }
 
+    /* ── Page Builder ── */
+    .pb-page-tab { padding:7px 16px;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;border:1.5px solid rgba(255,255,255,0.15);background:var(--dark2);color:rgba(255,255,255,0.55);transition:all 0.2s;font-family:'Inter',sans-serif; }
+    .pb-page-tab.active { background:var(--gold);color:#000;border-color:var(--gold); }
+    .pb-page-tab:hover:not(.active) { border-color:var(--gold);color:var(--gold); }
+    .pb-type-btn { background:var(--dark3);border:1px solid rgba(255,255,255,0.12);color:var(--white);border-radius:8px;padding:14px 10px;cursor:pointer;font-size:0.8rem;font-weight:700;text-align:center;transition:border-color 0.2s,background 0.2s; }
+    .pb-type-btn:hover { border-color:var(--gold);background:rgba(201,168,76,0.08); }
+    .pb-block-row { display:flex;align-items:center;gap:10px;background:var(--dark2);border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:12px 14px;margin-bottom:8px;cursor:default;transition:border-color 0.15s; }
+    .pb-block-row.pb-drag-over { border-color:var(--gold);box-shadow:0 0 0 2px rgba(201,168,76,0.3); }
+    .pb-drag-handle { color:rgba(255,255,255,0.3);cursor:grab;font-size:1rem;padding:2px 4px;flex-shrink:0; }
+    .pb-drag-handle:active { cursor:grabbing; }
+    .pb-block-info { flex:1;min-width:0; }
+    .pb-block-type { font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:2px; }
+    .pb-block-preview { font-size:0.82rem;color:rgba(255,255,255,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+    .pb-block-actions { display:flex;gap:6px;flex-shrink:0; }
+    .pb-edit-form { background:var(--dark3);border:1px solid rgba(201,168,76,0.3);border-radius:9px;padding:16px;margin-bottom:8px; }
+    .pb-field-label { font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--gray-400);display:block;margin-bottom:4px; }
+    .pb-input { width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark2);color:var(--white);font-size:0.88rem;font-family:'Inter',sans-serif;box-sizing:border-box; }
+    .pb-input:focus { outline:none;border-color:var(--gold); }
+    .pb-textarea { width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.15);border-radius:6px;background:var(--dark2);color:var(--white);font-size:0.88rem;font-family:'Inter',sans-serif;box-sizing:border-box;min-height:90px;resize:vertical; }
+    .pb-textarea:focus { outline:none;border-color:var(--gold); }
+    .pb-grid-2 { display:grid;grid-template-columns:1fr 1fr;gap:10px; }
+    @media(max-width:600px){ .pb-grid-2{grid-template-columns:1fr;} }
+
     /* ═══════════════════════════════════════
        PAST PRESIDENTS MANAGER
     ═══════════════════════════════════════ */
@@ -1685,6 +1708,43 @@
          PAGE EDITOR PANEL
     ══════════════════════════════════ -->
     <div class="panel" id="panel-pages">
+
+      <!-- ── PAGE BUILDER ── -->
+      <div class="section-card" style="margin-bottom:24px;">
+        <div class="section-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+          <h3><i class="fas fa-cubes" style="color:var(--gold);margin-right:8px;"></i>Page Builder <span style="font-size:0.75rem;font-weight:400;color:var(--gray-400);margin-left:6px;">Drag &amp; drop blocks</span></h3>
+          <button class="btn-save" onclick="pbSavePage()" style="min-width:130px;"><i class="fas fa-save"></i> Save Page</button>
+        </div>
+        <div class="section-card-body">
+          <!-- Page tabs -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;" id="pbPageTabs">
+            <button class="pb-page-tab active" data-page="home" onclick="pbSwitchPage('home')">Home</button>
+            <button class="pb-page-tab" data-page="events" onclick="pbSwitchPage('events')">Events</button>
+            <button class="pb-page-tab" data-page="gallery" onclick="pbSwitchPage('gallery')">Gallery</button>
+            <button class="pb-page-tab" data-page="leadership" onclick="pbSwitchPage('leadership')">Leadership</button>
+            <button class="pb-page-tab" data-page="about" onclick="pbSwitchPage('about')">About</button>
+          </div>
+
+          <!-- Block list -->
+          <div id="pbBlockList" style="min-height:60px;"></div>
+
+          <!-- Add block picker (hidden by default) -->
+          <div id="pbBlockPicker" style="display:none;background:var(--dark2);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:16px;margin-top:12px;">
+            <div style="font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:12px;">Choose a Block Type</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;">
+              <button class="pb-type-btn" onclick="pbAddBlock('hero')"><i class="fas fa-image" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Hero / Banner</button>
+              <button class="pb-type-btn" onclick="pbAddBlock('text')"><i class="fas fa-align-left" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Text Section</button>
+              <button class="pb-type-btn" onclick="pbAddBlock('image_text')"><i class="fas fa-columns" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Image + Text</button>
+              <button class="pb-type-btn" onclick="pbAddBlock('cta')"><i class="fas fa-bullhorn" style="font-size:1.3rem;display:block;margin-bottom:6px;"></i>Call to Action</button>
+            </div>
+            <button onclick="pbHidePicker()" style="margin-top:12px;background:transparent;border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.6);border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.8rem;">Cancel</button>
+          </div>
+
+          <button onclick="pbShowPicker()" id="pbAddBtn" style="margin-top:14px;background:var(--dark2);border:1px dashed rgba(201,168,76,0.5);color:var(--gold);border-radius:8px;padding:10px 20px;cursor:pointer;font-size:0.85rem;font-weight:700;width:100%;"><i class="fas fa-plus"></i> Add Block</button>
+        </div>
+      </div>
+      <!-- ── END PAGE BUILDER ── -->
+
       <div class="section-card">
         <div class="section-card-header">
           <h3><i class="fas fa-edit" style="color:var(--gold);margin-right:8px;"></i>Page Content Editor</h3>
@@ -4346,7 +4406,7 @@ function showPanel(id) {
   if (id === 'announcements')  loadAnnouncement();
   if (id === 'newsletter')     nlInitPanel();
   if (id === 'gallery')        { loadGalleryPanel(); }
-  if (id === 'pages')          setPageEditorStorageNotice('', '');
+  if (id === 'pages')          { setPageEditorStorageNotice('', ''); if (typeof pbLoadPanel === 'function') pbLoadPanel(); }
   if (id === 'meetings')       { loadMeetingRequests(); loadMeetingsPanel(); }
   if (id === 'chapter-news')   { if (!_panelLoaded.chapterNews)   loadChapterNewsPanel(); }
   if (id === 'settings')       { if (!_panelLoaded.settings)      loadSettings(); }
@@ -15699,6 +15759,222 @@ function openImpersonateModal() {
   window.open('member-portal.html?_imp=1', '_blank');
 }
 
+</script>
+
+<!-- ═══════════════════════════════════════════
+     PAGE BUILDER JS
+═══════════════════════════════════════════ -->
+<script>
+(function() {
+  // ── State ──────────────────────────────────────────────────────────
+  var _pbPage    = 'home';
+  var _pbBlocks  = [];      // [{id,type,...fields}]
+  var _pbDragIdx = null;
+  var _pbOpenId  = null;    // block id whose edit form is open
+
+  var PB_PAGES = {
+    home:       { label: 'Home',       key: 'page_blocks_home' },
+    events:     { label: 'Events',     key: 'page_blocks_events' },
+    gallery:    { label: 'Gallery',    key: 'page_blocks_gallery' },
+    leadership: { label: 'Leadership', key: 'page_blocks_leadership' },
+    about:      { label: 'About',      key: 'page_blocks_about' }
+  };
+
+  var PB_TYPE_META = {
+    hero:       { icon: 'fa-image',      label: 'Hero / Banner' },
+    text:       { icon: 'fa-align-left', label: 'Text Section' },
+    image_text: { icon: 'fa-columns',    label: 'Image + Text' },
+    cta:        { icon: 'fa-bullhorn',   label: 'Call to Action' }
+  };
+
+  // ── Public API (window.pb*) ─────────────────────────────────────────
+  window.pbSwitchPage = function(page) {
+    _pbPage  = page;
+    _pbOpenId = null;
+    document.querySelectorAll('.pb-page-tab').forEach(function(b){
+      b.classList.toggle('active', b.dataset.page === page);
+    });
+    pbLoadBlocks();
+  };
+
+  window.pbLoadPanel = function() {
+    pbSwitchPage('home');
+  };
+
+  window.pbShowPicker = function() {
+    document.getElementById('pbBlockPicker').style.display = '';
+    document.getElementById('pbAddBtn').style.display = 'none';
+  };
+
+  window.pbHidePicker = function() {
+    document.getElementById('pbBlockPicker').style.display = 'none';
+    document.getElementById('pbAddBtn').style.display = '';
+  };
+
+  window.pbAddBlock = function(type) {
+    var id = 'b' + Date.now() + Math.random().toString(36).slice(2,6);
+    var defaults = {
+      hero:       { id:id, type:'hero',       heading:'New Banner', subtext:'', buttonText:'', buttonUrl:'', imageUrl:'' },
+      text:       { id:id, type:'text',       heading:'New Section', body:'' },
+      image_text: { id:id, type:'image_text', heading:'New Section', body:'', imageUrl:'', imagePosition:'left' },
+      cta:        { id:id, type:'cta',        heading:'Take Action', subtext:'', buttonText:'Learn More', buttonUrl:'', bgColor:'#C9A84C' }
+    };
+    _pbBlocks.push(defaults[type]);
+    _pbOpenId = id;
+    pbHidePicker();
+    pbRender();
+    // scroll to new block
+    setTimeout(function(){
+      var el = document.getElementById('pb-form-' + id);
+      if (el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }, 80);
+  };
+
+  window.pbEditBlock = function(id) {
+    _pbOpenId = (_pbOpenId === id) ? null : id;
+    pbRender();
+  };
+
+  window.pbSaveBlock = function(id) {
+    var block = _pbBlocks.find(function(b){return b.id===id;});
+    if (!block) return;
+    var form = document.getElementById('pb-form-' + id);
+    if (!form) return;
+    form.querySelectorAll('[data-field]').forEach(function(el){
+      block[el.dataset.field] = el.value;
+    });
+    _pbOpenId = null;
+    pbRender();
+  };
+
+  window.pbCancelEdit = function() {
+    _pbOpenId = null;
+    pbRender();
+  };
+
+  window.pbDeleteBlock = function(id) {
+    _pbBlocks = _pbBlocks.filter(function(b){return b.id!==id;});
+    if (_pbOpenId === id) _pbOpenId = null;
+    pbRender();
+  };
+
+  window.pbSavePage = async function() {
+    var key = PB_PAGES[_pbPage].key;
+    try {
+      await saveContentJson(key, _pbBlocks);
+      showToast('Page saved! Blocks published to ' + PB_PAGES[_pbPage].label + '.', 'success');
+    } catch(e) {
+      showToast('Save failed: ' + (e && e.message ? e.message : e), 'error');
+    }
+  };
+
+  // ── Load ───────────────────────────────────────────────────────────
+  async function pbLoadBlocks() {
+    var key = PB_PAGES[_pbPage].key;
+    var list = document.getElementById('pbBlockList');
+    if (list) list.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:12px 0;"><i class="fas fa-spinner fa-spin"></i> Loading…</div>';
+    _pbBlocks = await getContentJson(key, []);
+    if (!Array.isArray(_pbBlocks)) _pbBlocks = [];
+    pbRender();
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────
+  function pbRender() {
+    var list = document.getElementById('pbBlockList');
+    if (!list) return;
+    if (!_pbBlocks.length) {
+      list.innerHTML = '<div style="color:var(--gray-400);font-size:0.85rem;padding:12px 0;text-align:center;">No blocks yet. Add your first block below.</div>';
+      return;
+    }
+    list.innerHTML = _pbBlocks.map(function(block, idx) {
+      var meta  = PB_TYPE_META[block.type] || {icon:'fa-cube', label:block.type};
+      var title = block.heading || block.body || '(untitled)';
+      var row = '<div class="pb-block-row" id="pb-row-' + escHtml(block.id) + '" draggable="true"' +
+        ' ondragstart="pbDragStart(' + idx + ')"' +
+        ' ondragover="pbDragOver(event,' + idx + ')"' +
+        ' ondrop="pbDrop(' + idx + ')"' +
+        ' ondragleave="pbDragLeave(' + idx + ')">' +
+        '<span class="pb-drag-handle" title="Drag to reorder"><i class="fas fa-grip-lines"></i></span>' +
+        '<div class="pb-block-info">' +
+          '<div class="pb-block-type"><i class="fas ' + escHtml(meta.icon) + '" style="margin-right:5px;"></i>' + escHtml(meta.label) + '</div>' +
+          '<div class="pb-block-preview">' + escHtml(title.substring(0,80)) + '</div>' +
+        '</div>' +
+        '<div class="pb-block-actions">' +
+          '<button class="btn-sm edit" onclick="pbEditBlock(\'' + escHtml(block.id) + '\')" title="Edit"><i class="fas fa-pencil-alt"></i></button>' +
+          '<button class="btn-sm danger" onclick="pbDeleteBlock(\'' + escHtml(block.id) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' +
+        '</div>' +
+        '</div>';
+      var form = (_pbOpenId === block.id) ? pbBuildForm(block) : '';
+      return row + form;
+    }).join('');
+  }
+
+  function pbBuildForm(block) {
+    var h = '<div class="pb-edit-form" id="pb-form-' + escHtml(block.id) + '">';
+    function field(label, fieldKey, type, extra) {
+      extra = extra || '';
+      var val = escHtml(String(block[fieldKey] || ''));
+      if (type === 'textarea') {
+        return '<div style="margin-bottom:10px;"><label class="pb-field-label">' + label + '</label>' +
+          '<textarea class="pb-textarea" data-field="' + fieldKey + '" ' + extra + '>' + val + '</textarea></div>';
+      }
+      return '<div style="margin-bottom:10px;"><label class="pb-field-label">' + label + '</label>' +
+        '<input class="pb-input" type="text" data-field="' + fieldKey + '" value="' + val + '" ' + extra + ' /></div>';
+    }
+
+    if (block.type === 'hero') {
+      h += '<div class="pb-grid-2">' + field('Heading', 'heading','text') + field('Image URL', 'imageUrl','text') + '</div>';
+      h += field('Subtext', 'subtext','textarea','style="min-height:60px;"');
+      h += '<div class="pb-grid-2">' + field('Button Text', 'buttonText','text') + field('Button URL', 'buttonUrl','text') + '</div>';
+    } else if (block.type === 'text') {
+      h += field('Heading', 'heading','text');
+      h += field('Body Text', 'body','textarea');
+    } else if (block.type === 'image_text') {
+      h += '<div class="pb-grid-2">' + field('Heading', 'heading','text') + field('Image URL', 'imageUrl','text') + '</div>';
+      h += field('Body Text', 'body','textarea');
+      h += '<div style="margin-bottom:10px;"><label class="pb-field-label">Image Position</label>' +
+        '<select class="pb-input" data-field="imagePosition">' +
+          '<option value="left"' + (block.imagePosition==='left'?' selected':'') + '>Left</option>' +
+          '<option value="right"' + (block.imagePosition==='right'?' selected':'') + '>Right</option>' +
+        '</select></div>';
+    } else if (block.type === 'cta') {
+      h += '<div class="pb-grid-2">' + field('Heading', 'heading','text') + field('Background Color', 'bgColor','text','placeholder="#C9A84C"') + '</div>';
+      h += field('Subtext', 'subtext','textarea','style="min-height:60px;"');
+      h += '<div class="pb-grid-2">' + field('Button Text', 'buttonText','text') + field('Button URL', 'buttonUrl','text') + '</div>';
+    }
+
+    h += '<div style="display:flex;gap:8px;margin-top:4px;">' +
+      '<button class="btn-save" onclick="pbSaveBlock(\'' + escHtml(block.id) + '\')"><i class="fas fa-check"></i> Save Block</button>' +
+      '<button class="btn-cancel" onclick="pbCancelEdit()">Cancel</button>' +
+      '</div>';
+    h += '</div>';
+    return h;
+  }
+
+  // ── Drag & Drop ────────────────────────────────────────────────────
+  window.pbDragStart = function(idx) { _pbDragIdx = idx; };
+
+  window.pbDragOver = function(e, idx) {
+    e.preventDefault();
+    document.querySelectorAll('.pb-block-row').forEach(function(r){ r.classList.remove('pb-drag-over'); });
+    var rows = document.querySelectorAll('.pb-block-row');
+    if (rows[idx]) rows[idx].classList.add('pb-drag-over');
+  };
+
+  window.pbDragLeave = function(idx) {
+    var rows = document.querySelectorAll('.pb-block-row');
+    if (rows[idx]) rows[idx].classList.remove('pb-drag-over');
+  };
+
+  window.pbDrop = function(toIdx) {
+    document.querySelectorAll('.pb-block-row').forEach(function(r){ r.classList.remove('pb-drag-over'); });
+    if (_pbDragIdx === null || _pbDragIdx === toIdx) { _pbDragIdx = null; return; }
+    var moved = _pbBlocks.splice(_pbDragIdx, 1)[0];
+    _pbBlocks.splice(toIdx, 0, moved);
+    _pbDragIdx = null;
+    pbRender();
+  };
+})();
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
