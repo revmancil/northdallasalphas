@@ -2260,15 +2260,19 @@ async function renderDuesPanel() {
   var duesBtn = document.getElementById('duesStripeBtn');
   if (duesBtn) duesBtn.disabled = getDuesStatus().isLocked;
   if (!currentMember) { c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>Sign in to view your dues.</p></div>'; return; }
-  sbGet('dues', 'member_id=eq.' + currentMember.id + '&order=year.desc', currentSession.access_token)
+  sbGet('dues', 'member_id=eq.' + currentMember.id + '&order=year.desc&select=*', currentSession.access_token)
     .then(function(dues) {
       if (!dues || !dues.length) {
         c.innerHTML = '<div class="empty-state"><i class="fas fa-dollar-sign"></i><p>No dues records found for your account.</p></div>';
         return;
       }
       c.innerHTML = dues.map(function(d) {
+        var payDate = d.created_at ? new Date(d.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
         return '<div class="dues-row">' +
-          '<span class="dues-year">' + escHtml(d.year) + '</span>' +
+          '<span class="dues-year">' +
+            'FY ' + escHtml(String(d.year || '')) +
+            (payDate ? '<span style="display:block;font-size:0.72rem;font-weight:400;color:var(--gray-400);margin-top:2px;">Paid ' + escHtml(payDate) + '</span>' : '') +
+          '</span>' +
           '<span class="dues-amount">' + (d.amount ? '$' + parseFloat(d.amount).toFixed(2) : '--') + '</span>' +
           '<span class="dues-status ' + (d.paid ? 'paid' : 'unpaid') + '"><i class="fas fa-' + (d.paid ? 'check' : 'times') + '-circle"></i> ' + (d.paid ? 'Paid' : 'Unpaid') + '</span>' +
           '</div>';
