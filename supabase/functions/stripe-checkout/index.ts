@@ -234,7 +234,12 @@ serve(async (req) => {
 
     const duesCategory      = trimStr(payload.duesCategory, 40)      || "renewing";
     const duesCategoryLabel = trimStr(payload.duesCategoryLabel, 120) || "Chapter Dues";
-    const fiscalYear        = trimStr(payload.fiscalYear, 10)         || String(new Date().getFullYear());
+    // Fiscal year rule: payment on/after September 1 applies to the NEXT calendar year
+    const now = new Date();
+    const serverFiscalYear = (now.getMonth() + 1 >= 9)
+      ? now.getFullYear() + 1
+      : now.getFullYear();
+    const fiscalYear        = String(serverFiscalYear);
     const amountCents       = parseInt(String(payload.amountCents ?? duesCents), 10) || duesCents;
     const baseCents         = amountCents - (applyLateFee ? lateFeeCents : 0) - (applyBldFund ? bldFundCents : 0);
 

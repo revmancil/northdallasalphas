@@ -103,7 +103,12 @@ serve(async (req) => {
     const email             = String(meta.email ?? "").slice(0, 320);
     const duesCategory      = String(meta.dues_category      ?? "renewing");
     const duesCategoryLabel = String(meta.dues_category_label ?? "Chapter Dues");
-    const fiscalYear        = String(meta.fiscal_year ?? String(new Date().getFullYear()));
+    // Always derive fiscal year from the actual payment time — Sep 1+ means next year
+    const paidAt = session.created ? new Date(session.created * 1000) : new Date();
+    const serverFiscalYear = (paidAt.getMonth() + 1 >= 9)
+      ? paidAt.getFullYear() + 1
+      : paidAt.getFullYear();
+    const fiscalYear        = String(serverFiscalYear);
     const lateFee           = meta.late_fee === "true";
     const buildingFund      = meta.building_fund === "true";
     const amountCents       = parseInt(String(meta.amount_cents ?? amountTotal), 10) || amountTotal;
