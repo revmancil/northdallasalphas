@@ -2559,6 +2559,7 @@
             <!-- Toolbar -->
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
               <button class="btn-sm edit" onclick="event.stopPropagation();document.getElementById('alphaMxCsvInput').click()"><i class="fas fa-file-upload"></i> Upload AlphaMX CSV</button>
+              <button class="btn-sm" onclick="event.stopPropagation();downloadAlphaMxTemplate()" style="background:rgba(201,168,76,0.08);color:#C9A84C;border-color:rgba(201,168,76,0.3);"><i class="fas fa-file-csv"></i> Download AlphaMX Template</button>
               <button class="btn-sm" onclick="event.stopPropagation();exportRosterCsv()" style="background:rgba(52,152,219,0.1);color:#3498db;border-color:rgba(52,152,219,0.3);"><i class="fas fa-download"></i> Export Roster</button>
               <button class="btn-sm" onclick="event.stopPropagation();window.open('member-roster.html','_blank')" style="background:rgba(201,168,76,0.1);color:#C9A84C;border-color:rgba(201,168,76,0.3);"><i class="fas fa-file-pdf"></i> Download PDF Roster</button>
             </div>
@@ -7518,6 +7519,45 @@ async function handleBrothersDirectoryUpload(event) {
   } finally {
     if (event && event.target) event.target.value = '';
   }
+}
+
+// ── AlphaMX Template Download ──
+function downloadAlphaMxTemplate() {
+  var headers = [
+    'Alpha ID',
+    'First Name',
+    'Last Name',
+    'Email',
+    'Chapter Active Date',
+    'IMDP Certification Date',
+    'IMDP Expiration',
+    'Risk Management Certification Date',
+    'Risk Mgmt Expiration',
+    'Grand Tax Paid',
+    'Life Member',
+    'Brother Status'
+  ];
+  var example = [
+    '203823',
+    'John',
+    'Doe',
+    'john.doe@example.com',
+    '2012-03-31',
+    '2015-12-31',
+    '2020-12-31',
+    '2023-06-15',
+    '2025-06-15',
+    'Yes',
+    'No',
+    'Brother-Alumni-Active'
+  ];
+  var csv = headers.join(',') + '\n' + example.join(',') + '\n';
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'AlphaMX_Import_Template.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 // ── AlphaMX Compliance CSV Upload ──
