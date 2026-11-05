@@ -2281,13 +2281,23 @@
         </div>
       </div>
       <!-- Approved docs -->
-      <div class="section-card">
+      <div class="section-card" style="margin-bottom:20px;">
         <div class="section-card-header">
           <h3><i class="fas fa-folder-open" style="color:var(--gold);margin-right:8px;"></i>Chapter Documents</h3>
           <span id="docCountLabel" style="font-size:0.82rem;color:var(--gray-400);">Loading…</span>
         </div>
         <div class="section-card-body" id="adminDocumentsList">
           <div class="empty-state"><i class="fas fa-folder-open"></i><p>Loading documents…</p></div>
+        </div>
+      </div>
+      <!-- Archived docs -->
+      <div class="section-card" id="archivedDocsCard" style="display:none;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-archive" style="color:var(--gray-400);margin-right:8px;"></i>Archived Documents</h3>
+          <span id="archivedDocCount" style="font-size:0.82rem;color:var(--gray-400);"></span>
+        </div>
+        <div class="section-card-body" id="archivedDocsList">
+          <div class="hint-text">No archived documents.</div>
         </div>
       </div>
     </div>
@@ -12878,6 +12888,8 @@ function renderDocRow(doc, opts) {
     (doc.file_url ? '<button class="btn-sm" onclick="copyDocLink(\'' + escHtml(doc.file_url) + '\')" title="Copy link for slides" style="background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.3);"><i class="fas fa-link"></i> Copy Link</button>' : '') +
     (opts.approve ? '<button class="btn-sm success" onclick="approveDocument(\'' + escHtml(String(doc.id)) + '\')"><i class="fas fa-check"></i> Approve</button>' : '') +
     (opts.approve ? '<button class="btn-sm danger" onclick="rejectDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')"><i class="fas fa-times"></i> Reject</button>' : '') +
+    (!opts.approve && !doc.archived ? '<button class="btn-sm" onclick="archiveDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Archive" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5);"><i class="fas fa-archive"></i> Archive</button>' : '') +
+    (doc.archived ? '<button class="btn-sm success" onclick="unarchiveDocument(\'' + escHtml(String(doc.id)) + '\')" title="Restore"><i class="fas fa-undo"></i> Restore</button>' : '') +
     (!opts.approve ? '<button class="btn-sm danger" onclick="deleteDocument(\'' + escHtml(String(doc.id)) + '\',\'' + escHtml(doc.title) + '\')" title="Delete"><i class="fas fa-trash"></i></button>' : '') +
     '</div>' +
     '</div>';
@@ -12893,8 +12905,9 @@ async function loadAdminDocuments() {
   if (!listEl) return;
   try {
     const docs = await sbGet('documents', 'order=created_at.desc', token);
-    const pending  = (docs || []).filter(function(d) { return (d.status || 'approved') === 'pending'; });
-    const approved = (docs || []).filter(function(d) { return (d.status || 'approved') !== 'pending'; });
+    const pending  = (docs || []).filter(function(d) { return (d.status || 'approved') === 'pending' && !d.archived; });
+    const approved = (docs || []).filter(function(d) { return (d.status || 'approved') !== 'pending' && !d.archived; });
+    const archived = (docs || []).filter(function(d) { return !!d.archived; });
 
     // Pending section
     if (pendEl) {
@@ -12919,6 +12932,15 @@ async function loadAdminDocuments() {
     }
     if (countEl) countEl.textContent = approved.length + ' document' + (approved.length !== 1 ? 's' : '');
     listEl.innerHTML = approved.map(function(doc) { return renderDocRow(doc, {}); }).join('');
+
+    // Archived section
+    var archEl = document.getElementById('archivedDocsList');
+    var archCard = document.getElementById('archivedDocsCard');
+    if (archCard) archCard.style.display = archived.length ? '' : 'none';
+    if (archEl) archEl.innerHTML = archived.map(function(doc) { return renderDocRow(doc, {}); }).join('') ||
+      '<div class="hint-text">No archived documents.</div>';
+    var archCount = document.getElementById('archivedDocCount');
+    if (archCount) archCount.textContent = archived.length + ' archived';
   } catch (err) {
     if (listEl) listEl.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Could not load documents: ' + escHtml(err.message || '') + '</p></div>';
   }
@@ -12984,6 +13006,29 @@ async function deleteDocument(id, title) {
     await loadAdminDocuments();
   } catch (err) {
     showToast('Could not delete: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function archiveDocument(id, title) {
+  if (!confirm('Archive "' + title + '"? It will be hidden from brothers but can be restored.')) return;
+  const token = getAdminToken();
+  try {
+    await sbPatch('documents', 'id=eq.' + encodeURIComponent(id), { archived: true }, token);
+    showToast('Document archived.');
+    await loadAdminDocuments();
+  } catch (err) {
+    showToast('Could not archive: ' + (err.message || 'error'), 'error');
+  }
+}
+
+async function unarchiveDocument(id) {
+  const token = getAdminToken();
+  try {
+    await sbPatch('documents', 'id=eq.' + encodeURIComponent(id), { archived: false }, token);
+    showToast('Document restored.');
+    await loadAdminDocuments();
+  } catch (err) {
+    showToast('Could not restore: ' + (err.message || 'error'), 'error');
   }
 }
 
