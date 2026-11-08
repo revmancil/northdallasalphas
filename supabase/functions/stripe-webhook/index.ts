@@ -140,9 +140,10 @@ serve(async (req) => {
 
     // Update member dues_paid_year and upsert dues table row
     if (memberId && /^[0-9a-f-]{36}$/i.test(memberId)) {
+      const duesExpiration = `${serverFiscalYear}-12-31`;
       const { error: memErr } = await admin
         .from("members")
-        .update({ dues_paid_year: fiscalYear, dues_current: true })
+        .update({ dues_paid_year: fiscalYear, dues_current: true, chapter_dues_expiration: duesExpiration })
         .eq("id", memberId);
       if (memErr) console.warn("members dues_paid_year update:", memErr);
 
