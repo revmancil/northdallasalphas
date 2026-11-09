@@ -1054,12 +1054,12 @@ backdrop-filter:blur(4px);}
               <i class="fas fa-info-circle"></i> Selecting <strong>Personal Reimbursement</strong> means you paid out of pocket. Once this requisition is approved, a reimbursement request will be automatically created for you to add your receipt and payment details.
             </div>
             <div class="pfield">
-              <label>Supporting Document <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — quote, invoice, or receipt)</span></label>
-              <input type="file" id="rqDocInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleRqDocSelect(event)" />
+              <label>Supporting Documents <span style="color:rgba(255,255,255,0.35);font-weight:400;">(optional — quotes, invoices, or receipts)</span></label>
+              <input type="file" id="rqDocInput" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none;" onchange="handleRqDocSelect(event)" />
               <div id="rqDocDropzone" onclick="document.getElementById('rqDocInput').click()"
                 style="border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.83rem;">
                 <i class="fas fa-paperclip" style="font-size:1.2rem;margin-bottom:5px;display:block;color:var(--gold);"></i>
-                Click to attach a document
+                Click to attach documents (up to 5)
               </div>
               <div id="rqDocPreview" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--gold);"></div>
             </div>
@@ -1141,12 +1141,12 @@ backdrop-filter:blur(4px);}
             </div>
 
             <div class="pfield">
-              <label>Receipt <span style="color:var(--red);">*</span></label>
-              <input type="file" id="rbReceiptInput" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="handleRbReceiptSelect(event)" />
+              <label>Receipts <span style="color:var(--red);">*</span></label>
+              <input type="file" id="rbReceiptInput" accept=".pdf,.jpg,.jpeg,.png" multiple style="display:none;" onchange="handleRbReceiptSelect(event)" />
               <div id="rbReceiptDropzone" onclick="document.getElementById('rbReceiptInput').click()"
                 style="border:2px dashed rgba(255,255,255,0.15);border-radius:8px;padding:18px 16px;text-align:center;cursor:pointer;color:rgba(255,255,255,0.4);font-size:0.83rem;">
                 <i class="fas fa-receipt" style="font-size:1.2rem;margin-bottom:5px;display:block;color:var(--gold);"></i>
-                Click to upload your receipt (PDF or image)
+                Click to upload receipts (PDF or image, up to 5)
               </div>
               <div id="rbReceiptPreview" style="display:none;margin-top:8px;font-size:0.82rem;color:var(--gold);"></div>
             </div>
@@ -5222,7 +5222,7 @@ async function loadMyNewsSubmissions() {
 /* ══════════════════════════════════════════
    REQUISITION — portal inline form
 ══════════════════════════════════════════ */
-var rqDocFile = null;
+var rqDocFiles = [];
 
 function toggleRqMethodNotice() {
   var method = document.getElementById('rqMethod').value;
@@ -5230,11 +5230,14 @@ function toggleRqMethodNotice() {
 }
 
 function handleRqDocSelect(e) {
-  rqDocFile = e.target.files[0] || null;
+  var all = Array.from(e.target.files || []).slice(0, 5);
+  rqDocFiles = all;
   var preview = document.getElementById('rqDocPreview');
-  if (rqDocFile) {
+  if (rqDocFiles.length) {
     preview.style.display = '';
-    preview.innerHTML = '<i class="fas fa-paperclip"></i> ' + escHtml(rqDocFile.name);
+    preview.innerHTML = rqDocFiles.map(function(f) {
+      return '<div><i class="fas fa-paperclip"></i> ' + escHtml(f.name) + '</div>';
+    }).join('');
   } else {
     preview.style.display = 'none';
   }
@@ -5256,16 +5259,17 @@ async function submitPortalRequisition() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
 
   try {
-    var docUrl = null;
-    if (rqDocFile) {
-      var ext = rqDocFile.name.split('.').pop();
-      var path = 'requisitions/' + currentMember.id + '_' + Date.now() + '.' + ext;
+    var docUrls = [];
+    for (var ri = 0; ri < rqDocFiles.length; ri++) {
+      var rqFile = rqDocFiles[ri];
+      var ext = rqFile.name.split('.').pop();
+      var path = 'requisitions/' + currentMember.id + '_' + Date.now() + '_' + ri + '.' + ext;
       var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
         method: 'POST',
-        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rqDocFile.type, 'x-upsert': 'true' },
-        body: rqDocFile
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rqFile.type, 'x-upsert': 'true' },
+        body: rqFile
       });
-      if (upRes.ok) docUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+      if (upRes.ok) docUrls.push(SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path);
     }
 
     // Generate sequential reference number
@@ -5285,7 +5289,8 @@ async function submitPortalRequisition() {
       payee:        (document.getElementById('rqPayee').value || '').trim() || null,
       payee_name:   (document.getElementById('rqPayee').value || '').trim() || null,
       method:       document.getElementById('rqMethod').value,
-      doc_url:      docUrl,
+      doc_url:      docUrls[0] || null,
+      attachment_urls: docUrls,
       status:       'pending',
       submitted_at: new Date().toISOString(),
       ref_number:   refNumber
@@ -5307,7 +5312,7 @@ async function submitPortalRequisition() {
     document.getElementById('rqAmount').value = '';
     document.getElementById('rqPayee').value = '';
     document.getElementById('rqDocPreview').style.display = 'none';
-    rqDocFile = null;
+    rqDocFiles = [];
     loadMyRequisitions();
   } catch(e) {
     errEl.textContent = 'Error submitting: ' + (e.message || 'Unknown error');
@@ -5346,7 +5351,7 @@ async function loadMyRequisitions() {
 /* ══════════════════════════════════════════
    REIMBURSEMENT — portal inline form
 ══════════════════════════════════════════ */
-var rbReceiptFile = null;
+var rbReceiptFiles = [];
 var rbPayMethod = 'zelle';
 
 function selectRbMethod(method) {
@@ -5366,11 +5371,13 @@ function selectRbMethod(method) {
 }
 
 function handleRbReceiptSelect(e) {
-  rbReceiptFile = e.target.files[0] || null;
+  rbReceiptFiles = Array.from(e.target.files || []).slice(0, 5);
   var preview = document.getElementById('rbReceiptPreview');
-  if (rbReceiptFile) {
+  if (rbReceiptFiles.length) {
     preview.style.display = '';
-    preview.innerHTML = '<i class="fas fa-receipt"></i> ' + escHtml(rbReceiptFile.name);
+    preview.innerHTML = rbReceiptFiles.map(function(f) {
+      return '<div><i class="fas fa-receipt"></i> ' + escHtml(f.name) + '</div>';
+    }).join('');
   } else {
     preview.style.display = 'none';
   }
@@ -5387,7 +5394,7 @@ async function submitPortalReimbursement() {
   var amountRaw   = parseFloat(document.getElementById('rbAmount').value || '0');
   if (!description) { errEl.textContent = 'Please enter a description.'; errEl.style.display = ''; return; }
   if (!amountRaw || amountRaw <= 0) { errEl.textContent = 'Please enter a valid amount.'; errEl.style.display = ''; return; }
-  if (!rbReceiptFile) { errEl.textContent = 'Please attach your receipt.'; errEl.style.display = ''; return; }
+  if (!rbReceiptFiles.length) { errEl.textContent = 'Please attach at least one receipt.'; errEl.style.display = ''; return; }
 
   var paymentDetails = {};
   if (rbPayMethod === 'zelle') {
@@ -5407,15 +5414,19 @@ async function submitPortalReimbursement() {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
 
   try {
-    var ext = rbReceiptFile.name.split('.').pop();
-    var path = 'reimbursements/' + currentMember.id + '_' + Date.now() + '.' + ext;
-    var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rbReceiptFile.type, 'x-upsert': 'true' },
-      body: rbReceiptFile
-    });
-    if (!upRes.ok) throw new Error('Receipt upload failed: ' + await upRes.text());
-    var receiptUrl = SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path;
+    var receiptUrls = [];
+    for (var rbi = 0; rbi < rbReceiptFiles.length; rbi++) {
+      var rbFile = rbReceiptFiles[rbi];
+      var ext = rbFile.name.split('.').pop();
+      var path = 'reimbursements/' + currentMember.id + '_' + Date.now() + '_' + rbi + '.' + ext;
+      var upRes = await fetch(SUPABASE_URL + '/storage/v1/object/chapter-media/' + path, {
+        method: 'POST',
+        headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': rbFile.type, 'x-upsert': 'true' },
+        body: rbFile
+      });
+      if (!upRes.ok) throw new Error('Receipt upload failed: ' + await upRes.text());
+      receiptUrls.push(SUPABASE_URL + '/storage/v1/object/public/chapter-media/' + path);
+    }
 
     // Generate sequential reference number
     var rbYear = new Date().getFullYear();
@@ -5431,8 +5442,9 @@ async function submitPortalReimbursement() {
       description:     description,
       item_service:    description,
       amount_cents:    Math.round(amountRaw * 100),
-      receipt_url:     receiptUrl,
-      doc_url:         receiptUrl,
+      receipt_url:     receiptUrls[0] || null,
+      doc_url:         receiptUrls[0] || null,
+      attachment_urls: receiptUrls,
       payment_method:  rbPayMethod,
       method:          rbPayMethod,
       payment_details: paymentDetails,
@@ -5455,7 +5467,7 @@ async function submitPortalReimbursement() {
     document.getElementById('rbZelleContact').value = '';
     document.getElementById('rbZelleName').value = '';
     document.getElementById('rbReceiptPreview').style.display = 'none';
-    rbReceiptFile = null;
+    rbReceiptFiles = [];
     loadMyReimbursements();
   } catch(e) {
     errEl.textContent = 'Error submitting: ' + (e.message || 'Unknown error');
