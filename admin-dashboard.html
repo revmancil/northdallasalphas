@@ -13682,6 +13682,30 @@ function setReqFilter(f, btn) {
 
 var REQ_METHOD_LABEL = { chapter_card:'Chapter Card', check:'Check', personal_reimbursement:'Personal Reimbursement' };
 
+// Returns all attachment links as btn-sm anchors (for card rows)
+function renderAttachmentLinks(r, icon, label) {
+  var urls = Array.isArray(r.attachment_urls) && r.attachment_urls.length
+    ? r.attachment_urls
+    : (r.doc_url || r.receipt_url ? [r.doc_url || r.receipt_url] : []);
+  if (!urls.length) return '';
+  return urls.map(function(url, i) {
+    var num = urls.length > 1 ? ' ' + (i + 1) : '';
+    return '<a href="' + escHtml(url) + '" target="_blank" class="btn-sm"><i class="' + icon + '"></i> ' + label + num + '</a>';
+  }).join('');
+}
+
+// Returns all attachment links as inline anchor tags (for modals)
+function renderAttachmentLinksModal(r, icon, label) {
+  var urls = Array.isArray(r.attachment_urls) && r.attachment_urls.length
+    ? r.attachment_urls
+    : (r.doc_url || r.receipt_url ? [r.doc_url || r.receipt_url] : []);
+  if (!urls.length) return '';
+  return urls.map(function(url, i) {
+    var num = urls.length > 1 ? ' ' + (i + 1) : '';
+    return '<a href="' + escHtml(url) + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--blue);margin-right:12px;"><i class="' + icon + '"></i> View ' + label + num + '</a>';
+  }).join('');
+}
+
 function renderRequisitionsAdmin() {
   var list = _allRequisitions.filter(function(r){ return _reqFilter === 'all' || r.status === _reqFilter; });
   var countEl = document.getElementById('reqAdminCount');
@@ -13708,7 +13732,7 @@ function renderRequisitionsAdmin() {
       '</div>' +
       '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.55;">' + escHtml((r.description||'').substring(0,300)) + '</p>' +
       (r.admin_note ? '<div style="font-size:0.82rem;color:var(--gray-500);font-style:italic;margin-bottom:10px;"><i class="fas fa-comment" style="color:var(--gold);margin-right:5px;"></i>' + escHtml(r.admin_note) + '</div>' : '') +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + (r.doc_url ? '<a href="' + escHtml(r.doc_url) + '" target="_blank" class="btn-sm"><i class="fas fa-paperclip"></i> Document</a>' : '') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + renderAttachmentLinks(r, 'fas fa-paperclip', 'Document') + '</div>' +
     '</div>';
   }).join('');
 }
@@ -13732,12 +13756,10 @@ function openReqModal(id) {
     '<strong>Amount:</strong> ' + amt + '<br>' +
     '<strong>Payment Method:</strong> ' + escHtml(mLabel) +
     (r.method==='personal_reimbursement' ? ' <em style="color:#e67e22;">(A reimbursement form will be auto-created on approval)</em>' : '');
-  var reqDocUrl = r.doc_url || r.receipt_url || null;
   var docWrap = document.getElementById('reqModalDocLink');
-  if (reqDocUrl) {
-    docWrap.style.display = '';
-    docWrap.innerHTML = '<a href="' + escHtml(reqDocUrl) + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--blue);"><i class="fas fa-paperclip"></i> View Supporting Document</a>';
-  } else { docWrap.style.display = 'none'; }
+  var reqAttachHtml = renderAttachmentLinksModal(r, 'fas fa-paperclip', 'Supporting Document');
+  if (reqAttachHtml) { docWrap.style.display = ''; docWrap.innerHTML = reqAttachHtml; }
+  else { docWrap.style.display = 'none'; }
   document.getElementById('reqModal').style.display = 'flex';
 }
 
@@ -13904,7 +13926,7 @@ function renderReimbursementsAdmin() {
       '</div>' +
       '<p style="margin:0 0 12px;font-size:0.85rem;color:var(--gray-600);line-height:1.5;">' + escHtml(rDesc.substring(0,250)) + '</p>' +
       (r.admin_note ? '<div style="font-size:0.82rem;color:var(--gray-500);font-style:italic;margin-bottom:10px;"><i class="fas fa-comment" style="color:var(--gold);margin-right:5px;"></i>' + escHtml(r.admin_note) + '</div>' : '') +
-      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + (rDocUrl ? '<a href="' + escHtml(rDocUrl) + '" target="_blank" class="btn-sm"><i class="fas fa-receipt"></i> Receipt</a>' : '') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' + actions + renderAttachmentLinks(r, 'fas fa-receipt', 'Receipt') + '</div>' +
     '</div>';
   }).join('');
 }
@@ -13948,9 +13970,10 @@ function openReimbModal(id) {
   }
   document.getElementById('reimbModalPaymentDetails').innerHTML = pdHtml;
 
-  // Receipt
+  // Receipts / attachments
   var docWrap = document.getElementById('reimbModalDocWrap');
-  if (rmbDocUrl) { document.getElementById('reimbModalDocLink').href = rmbDocUrl; docWrap.style.display = ''; }
+  var rmbAttachHtml = renderAttachmentLinksModal(r, 'fas fa-receipt', 'Receipt');
+  if (rmbAttachHtml) { document.getElementById('reimbModalDocLink').outerHTML = rmbAttachHtml; docWrap.style.display = ''; }
   else { docWrap.style.display = 'none'; }
 
   // Overdue
