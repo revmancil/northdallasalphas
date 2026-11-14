@@ -4139,6 +4139,21 @@
         </div>
       </div>
 
+      <!-- Backfill Receipts -->
+      <div class="section-card" style="margin-top:24px;">
+        <div class="section-card-header">
+          <h3><i class="fas fa-envelope-open-text" style="color:var(--gold);margin-right:8px;"></i>Backfill Dues Receipts</h3>
+        </div>
+        <div class="section-card-body">
+          <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:16px;">Send receipt emails to brothers who paid via Stripe but never received one. Run the dry run first to preview, then send.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+            <button class="btn-save" style="background:var(--gray-100);color:var(--gray-700);border:1px solid var(--gray-300);" onclick="runBackfill(true)"><i class="fas fa-eye"></i> Dry Run (Preview)</button>
+            <button class="btn-save" onclick="runBackfill(false)"><i class="fas fa-paper-plane"></i> Send Receipts</button>
+          </div>
+          <div id="backfillResult" style="display:none;"></div>
+        </div>
+      </div>
+
     </div><!-- end panel-dues-admin -->
 
     <!-- ─── HELPDESK PANEL ─────────────────────────── -->
@@ -15013,6 +15028,47 @@ async function saveDuesConfig() {
     errEl.textContent = e.message || 'Could not save.'; errEl.style.display = '';
   } finally {
     btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Configuration';
+  }
+}
+
+async function runBackfill(dryRun) {
+  var token = getAdminToken();
+  if (!token) { showToast('Session expired.', 'error'); return; }
+  var resultEl = document.getElementById('backfillResult');
+  resultEl.style.display = 'block';
+  resultEl.innerHTML = '<div style="font-size:0.85rem;color:var(--gray-500);"><i class="fas fa-spinner fa-spin" style="color:var(--gold);margin-right:6px;"></i>' + (dryRun ? 'Running dry run…' : 'Sending receipts…') + '</div>';
+  try {
+    var res = await fetch(SUPABASE_URL + '/functions/v1/backfill-dues-receipts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': token },
+      body: JSON.stringify(dryRun ? { dry_run: true } : {})
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.message || JSON.stringify(data));
+    var rows = (data.results || []);
+    var html = '<div style="margin-bottom:10px;font-size:0.85rem;">';
+    if (dryRun) {
+      html += '<strong style="color:var(--gold);">Dry Run Results</strong> — no emails sent<br>';
+    } else {
+      html += '<strong style="color:#4ade80;">Done!</strong><br>';
+    }
+    html += '<span style="color:var(--gray-600);">Sent: <strong>' + (data.sent||0) + '</strong> &nbsp; Skipped: <strong>' + (data.skipped||0) + '</strong> &nbsp; Errors: <strong>' + (data.errors||0) + '</strong></span></div>';
+    if (rows.length) {
+      html += '<div style="max-height:260px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;">';
+      html += '<table style="width:100%;border-collapse:collapse;font-size:0.78rem;">';
+      html += '<tr style="background:var(--gray-50);"><th style="padding:6px 10px;text-align:left;color:var(--gray-500);">Name</th><th style="padding:6px 10px;text-align:left;color:var(--gray-500);">Email</th><th style="padding:6px 10px;text-align:left;color:var(--gray-500);">Status</th></tr>';
+      rows.forEach(function(r) {
+        var color = r.status === 'sent' ? '#4ade80' : r.status === 'dry_run' ? 'var(--gold)' : r.status.startsWith('skipped') ? 'var(--gray-400)' : '#f87171';
+        html += '<tr style="border-top:1px solid var(--gray-100);">' +
+          '<td style="padding:5px 10px;">' + escHtml(r.name||'') + '</td>' +
+          '<td style="padding:5px 10px;color:var(--gray-500);">' + escHtml(r.email||'—') + '</td>' +
+          '<td style="padding:5px 10px;color:' + color + ';font-weight:600;">' + escHtml(r.status) + '</td></tr>';
+      });
+      html += '</table></div>';
+    }
+    resultEl.innerHTML = html;
+  } catch(e) {
+    resultEl.innerHTML = '<div style="color:var(--red);font-size:0.85rem;"><i class="fas fa-exclamation-triangle" style="margin-right:6px;"></i>' + escHtml(e.message||'Unknown error') + '</div>';
   }
 }
 
