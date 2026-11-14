@@ -37,11 +37,10 @@ serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  // Fetch all Stripe dues payments
+  // Fetch all paid dues payments (Stripe and Zelle)
   const { data: payments, error: fetchErr } = await admin
     .from("finance_payments")
-    .select("id, member_id, member_name, category_label, fiscal_year, amount_cents, stripe_session_id, created_at")
-    .eq("method", "stripe")
+    .select("id, member_id, member_name, category_label, fiscal_year, amount_cents, method, stripe_session_id, created_at")
     .eq("status", "paid")
     .order("created_at", { ascending: true });
 
@@ -56,15 +55,30 @@ serve(async (req) => {
   const results: { id: string; name: string; email: string; status: string; error?: string }[] = [];
 
   for (const payment of payments) {
-    // Look up member email
+    // Look up member email — by id first, then fall back to name match
     let email = "";
     if (payment.member_id) {
       const { data: member } = await admin
         .from("members")
-        .select("email, first_name, last_name")
+        .select("email")
         .eq("id", payment.member_id)
         .maybeSingle();
       if (member?.email) email = member.email;
+    }
+
+    if (!email && payment.member_name) {
+      const nameParts = payment.member_name.trim().split(/\s+/);
+      const firstName = nameParts[0] ?? "";
+      const lastName  = nameParts[nameParts.length - 1] ?? "";
+      if (firstName && lastName) {
+        const { data: matched } = await admin
+          .from("members")
+          .select("email")
+          .ilike("first_name", firstName)
+          .ilike("last_name", lastName)
+          .maybeSingle();
+        if (matched?.email) email = matched.email;
+      }
     }
 
     if (!email) {
@@ -94,6 +108,7 @@ serve(async (req) => {
           categoryLabel:   payment.category_label ?? "Chapter Dues",
           lateFee:         false,
           buildingFund:    false,
+          paymentMethod:   payment.method ?? "stripe",
           stripeSessionId: payment.stripe_session_id ?? "",
         }),
       });

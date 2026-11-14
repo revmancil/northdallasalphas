@@ -20,6 +20,7 @@ function buildReceiptHtml(p: {
   lateFee: boolean;
   buildingFund: boolean;
   stripeSessionId: string;
+  paymentMethod?: string;
 }): string {
   const dateStr = new Date(p.paidAt).toLocaleDateString("en-US", {
     month: "long", day: "numeric", year: "numeric",
@@ -80,7 +81,7 @@ function buildReceiptHtml(p: {
               </tr>
               <tr>
                 <td style="font-size:12px;color:#888;padding:4px 0;">Payment Method</td>
-                <td style="font-size:13px;color:#d4d4d4;text-align:right;padding:4px 0;">Credit / Debit Card (Stripe)</td>
+                <td style="font-size:13px;color:#d4d4d4;text-align:right;padding:4px 0;">${p.paymentMethod === "zelle" ? "Zelle" : "Credit / Debit Card (Stripe)"}</td>
               </tr>
               <tr>
                 <td style="font-size:12px;color:#888;padding:4px 0;">Reference</td>
@@ -142,6 +143,7 @@ serve(async (req) => {
   const lateFee         = payload.lateFee  === true;
   const buildingFund    = payload.buildingFund === true;
   const stripeSessionId = String(payload.stripeSessionId ?? "");
+  const paymentMethod   = String(payload.paymentMethod   ?? "stripe").toLowerCase();
 
   if (!email || !email.includes("@")) {
     return new Response("Invalid email", { status: 400 });
@@ -149,7 +151,7 @@ serve(async (req) => {
 
   const html = buildReceiptHtml({
     fullName, email, fiscalYear, amountCents, paidAt,
-    categoryLabel, lateFee, buildingFund, stripeSessionId,
+    categoryLabel, lateFee, buildingFund, stripeSessionId, paymentMethod,
   });
 
   const res = await fetch("https://api.resend.com/emails", {
