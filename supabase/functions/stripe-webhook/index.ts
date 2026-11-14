@@ -161,6 +161,31 @@ serve(async (req) => {
       if (duesErr) console.warn("dues upsert:", duesErr);
     }
 
+    // Send receipt to the paying brother
+    try {
+      await fetch(`${supabaseUrl}/functions/v1/send-dues-receipt`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+          "apikey": serviceKey,
+        },
+        body: JSON.stringify({
+          email,
+          fullName:        full_name,
+          fiscalYear,
+          amountCents,
+          paidAt:          new Date(session.created ? session.created * 1000 : Date.now()).toISOString(),
+          categoryLabel:   duesCategoryLabel,
+          lateFee,
+          buildingFund,
+          stripeSessionId: sessionId,
+        }),
+      });
+    } catch (e) {
+      console.warn("send-dues-receipt failed:", e);
+    }
+
     // Notify finance admins
     await fireNotification(supabaseUrl, serviceKey, {
       type:        "dues_payment",

@@ -3540,12 +3540,12 @@ function renderDuesLateFeeNotice() {
   } else if (status.isLate) {
     noticeEl.style.display = '';
     noticeEl.innerHTML = '<i class="fas fa-exclamation-triangle" style="color:#f59e0b;margin-right:8px;"></i>' +
-      '<span>A <strong style="color:#f59e0b;">$' + status.lateFee + ' late fee</strong> has been added. Dues collection ran Sept 1 – Dec 31.</span>';
+      '<span>A <strong style="color:#f59e0b;">$' + status.lateFee + ' late fee</strong> has been added. Dues paid after November 15 are subject to a late fee.</span>';
     if (duesBtn) duesBtn.disabled = false;
   } else if (status.inWindow) {
     noticeEl.style.display = '';
     noticeEl.innerHTML = '<i class="fas fa-calendar-check" style="color:var(--gold);margin-right:8px;"></i>' +
-      '<span>Dues collection is open through <strong>December 31</strong>. Pay by Dec 31 to avoid a $' + status.lateFee + ' late fee.</span>';
+      '<span>Dues collection is open. Dues paid after <strong>November 15</strong> are subject to a <strong>$10 late fee</strong>.</span>';
     if (duesBtn) duesBtn.disabled = false;
   } else {
     noticeEl.style.display = 'none';
