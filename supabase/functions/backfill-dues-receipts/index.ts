@@ -1,21 +1,29 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-      },
-    });
+    return new Response("ok", { headers: CORS });
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
   if (!supabaseUrl || !serviceKey) {
-    return new Response("Server misconfiguration", { status: 500 });
+    return new Response("Server misconfiguration", { status: 500, headers: CORS });
   }
 
   // Optional dry_run param — POST body { "dry_run": true } skips sends
@@ -38,13 +46,11 @@ serve(async (req) => {
     .order("created_at", { ascending: true });
 
   if (fetchErr) {
-    return new Response("Failed to fetch payments: " + fetchErr.message, { status: 500 });
+    return json({ error: "Failed to fetch payments: " + fetchErr.message }, 500);
   }
 
   if (!payments || payments.length === 0) {
-    return new Response(JSON.stringify({ sent: 0, skipped: 0, errors: 0, message: "No Stripe dues payments found." }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return json({ sent: 0, skipped: 0, errors: 0, message: "No Stripe dues payments found." });
   }
 
   const results: { id: string; name: string; email: string; status: string; error?: string }[] = [];
@@ -110,8 +116,5 @@ serve(async (req) => {
   const skipped = results.filter((r) => r.status.startsWith("skipped") || r.status === "dry_run").length;
   const errors  = results.filter((r) => r.status === "error").length;
 
-  return new Response(
-    JSON.stringify({ sent, skipped, errors, dryRun, results }),
-    { headers: { "Content-Type": "application/json" } },
-  );
+  return json({ sent, skipped, errors, dryRun, results });
 });
