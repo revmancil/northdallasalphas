@@ -15040,7 +15040,7 @@ async function runBackfill(dryRun) {
   try {
     var res = await fetch(SUPABASE_URL + '/functions/v1/backfill-dues-receipts', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': token },
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
       body: JSON.stringify(dryRun ? { dry_run: true } : {})
     });
     var data = await res.json();
