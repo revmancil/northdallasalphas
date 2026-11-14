@@ -2556,7 +2556,7 @@
         <div class="section-card-header" onclick="toggleComplianceAccordion()" style="cursor:pointer;user-select:none;">
           <h3><i class="fas fa-id-badge" style="color:var(--gold);margin-right:8px;"></i>Member Compliance Records</h3>
           <div style="display:flex;align-items:center;gap:12px;">
-            <span><span id="memberComplianceCount">0</span> active members</span>
+            <span><span id="memberComplianceCount">0</span> members</span>
             <i class="fas fa-chevron-down" id="complianceChevron" style="color:var(--gray-400);transition:transform 0.2s;"></i>
           </div>
         </div>
@@ -6497,7 +6497,7 @@ async function loadMemberRequests() {
   try {
     const [portalMembers, activeMembers] = await Promise.all([
       sbGet('members', 'portal_access=eq.pending&order=id.desc', token),
-      sbGet('members', 'status=eq.active&order=last_name.asc', token)
+      sbGet('members', 'status=in.(active,inactive)&order=last_name.asc', token)
     ]);
     const pending = portalMembers || [];
     countEl.textContent = String(pending.length);
@@ -6609,14 +6609,17 @@ function renderRosterGroup(m) {
   const lifeMem  = String(m.life_member || '').toLowerCase();
   const isLife   = lifeMem === 'yes' || lifeMem === 'y' || lifeMem === 'true' || lifeMem === '1';
 
+  const isVisiting = m.status === 'inactive';
   const duesStatus = rosterDuesStatus(m);
-  const activeBadge = duesStatus === 'renewal_needed'
-    ? '<span class="roster-badge roster-badge-renewal"><i class="fas fa-clock" style="font-size:0.6rem;margin-right:3px;"></i>Renewal Needed</span>'
-    : duesStatus === 'lapsed'
-      ? '<span class="roster-badge roster-badge-lapsed"><i class="fas fa-ban" style="font-size:0.6rem;margin-right:3px;"></i>Membership Lapsed</span>'
-      : isActive
-        ? '<span class="roster-badge roster-badge-active">Active</span>'
-        : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
+  const activeBadge = isVisiting
+    ? '<span class="roster-badge" style="background:rgba(201,168,76,0.18);color:#C9A84C;border:1px solid rgba(201,168,76,0.45);"><i class="fas fa-user-clock" style="font-size:0.6rem;margin-right:3px;"></i>Visiting Brother</span>'
+    : duesStatus === 'renewal_needed'
+      ? '<span class="roster-badge roster-badge-renewal"><i class="fas fa-clock" style="font-size:0.6rem;margin-right:3px;"></i>Renewal Needed</span>'
+      : duesStatus === 'lapsed'
+        ? '<span class="roster-badge roster-badge-lapsed"><i class="fas fa-ban" style="font-size:0.6rem;margin-right:3px;"></i>Membership Lapsed</span>'
+        : isActive
+          ? '<span class="roster-badge roster-badge-active">Active</span>'
+          : '<span class="roster-badge roster-badge-inactive">Inactive</span>';
   const lifeBadge = isLife
     ? ' <span class="roster-badge roster-badge-life"><i class="fas fa-star" style="font-size:0.6rem;margin-right:3px;"></i>Life Member</span>'
     : '';
@@ -16299,9 +16302,9 @@ async function loadVotingPanel() {
       sbGet('meetings', 'select=id,title,meeting_date&order=meeting_date.desc', tok).catch(() => [])
     ]);
     vtgRoster = (members || []).filter(function(m) {
-      return rosterComputeActive(m);
+      return m.status === 'active' || m.status === 'inactive';
     }).map(function(m) {
-      return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '', email: (m.email || '').toLowerCase() };
+      return { id: m.id, alphaId: m.alpha_id || '', first: m.first_name || '', last: m.last_name || '', middle: m.middle_name || '', suffix: m.suffix || '', email: (m.email || '').toLowerCase(), visiting: m.status === 'inactive' };
     });
     vtgScheduledMtgs = (scheduledMtgs || []).map(function(s) {
       return { id: s.id, title: s.title || '', date: s.meeting_date || '' };
@@ -16481,7 +16484,8 @@ function vtgRenderAttendance() {
       ? 'padding:7px 13px;border-radius:999px;border:1.5px solid #C9A84C;background:rgba(201,168,76,0.12);font-size:0.82rem;font-weight:600;cursor:pointer;color:#111;display:inline-flex;align-items:center;gap:6px;'
       : 'padding:7px 13px;border-radius:999px;border:1.5px solid var(--gray-300);background:var(--white);font-size:0.82rem;font-weight:600;cursor:pointer;color:var(--gray-500);display:inline-flex;align-items:center;gap:6px;';
     var dot = present ? 'width:7px;height:7px;border-radius:50%;background:#C9A84C;flex:none;' : 'width:7px;height:7px;border-radius:50%;background:var(--gray-300);flex:none;';
-    return '<button style="' + style + '" onclick="vtgToggleAttend(\'' + r.id + '\')"><span style="' + dot + '"></span>' + escHtml(vtgShortName(r)) + '</button>';
+    var visitTag = r.visiting ? ' <span style="font-size:0.65rem;font-weight:700;color:#C9A84C;opacity:0.8;">(Visiting)</span>' : '';
+    return '<button style="' + style + '" onclick="vtgToggleAttend(\'' + r.id + '\')"><span style="' + dot + '"></span>' + escHtml(vtgShortName(r)) + visitTag + '</button>';
   }).join('') || '<p style="color:var(--gray-400);font-size:0.83rem;">No brothers match.</p>';
   vtgUpdateQuorumBadge();
 }
