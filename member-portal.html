@@ -611,9 +611,10 @@ backdrop-filter:blur(4px);}
             </div>
           </div>
           <div style="margin-bottom:10px;">
-            <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:6px;">Zelle confirmation / memo <span style="color:var(--gray-600);font-weight:400;text-transform:none;">(optional)</span></label>
-            <input type="text" id="zelleConfirmation" placeholder="e.g. confirmation code or memo you included"
-              style="width:100%;box-sizing:border-box;background:var(--input-bg,rgba(255,255,255,0.06));border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:0.85rem;color:var(--white);outline:none;" />
+            <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px;">Zelle confirmation code(s) <span style="color:#e74c3c;font-weight:700;">*</span></label>
+            <div style="font-size:0.78rem;color:var(--gray-500);margin-bottom:8px;">Required. If you sent dues and late fee as separate payments, enter both confirmation codes — one per line.</div>
+            <textarea id="zelleConfirmation" rows="3" placeholder="e.g. ABC123&#10;DEF456 (if two separate payments)"
+              style="width:100%;box-sizing:border-box;background:var(--input-bg,rgba(255,255,255,0.06));border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:0.85rem;color:var(--white);outline:none;resize:vertical;font-family:inherit;"></textarea>
           </div>
           <button type="button" class="btn-gold" style="margin-top:6px;" id="zelleSubmitBtn" onclick="submitZelleNotification()">
             <i class="fas fa-paper-plane"></i> I've sent my Zelle payment
@@ -2203,8 +2204,19 @@ async function startDuesStripeCheckout() {
 async function submitZelleNotification() {
   var btn = document.getElementById('zelleSubmitBtn');
   var msg = document.getElementById('zelleMsg');
-  var confirmation = (document.getElementById('zelleConfirmation').value || '').trim();
+  var confirmationRaw = (document.getElementById('zelleConfirmation').value || '').trim();
   if (!currentMember || !currentSession) return;
+  if (!confirmationRaw) {
+    var msg2 = document.getElementById('zelleMsg');
+    msg2.textContent = 'Please enter your Zelle confirmation code(s) before submitting.';
+    msg2.style.color = '#e74c3c';
+    msg2.style.display = 'block';
+    btn.disabled = false;
+    return;
+  }
+  // Normalize: split by newlines or commas, trim each, filter blanks
+  var confirmationCodes = confirmationRaw.split(/[\n,]+/).map(function(s){ return s.trim(); }).filter(Boolean);
+  var confirmation = confirmationCodes.join(', ');
   var name = [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ');
   var email = currentMember.email || _userEmail || '';
   var fiscalYear = String(new Date().getFullYear() + 1); // membership year = year dues expire
