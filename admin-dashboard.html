@@ -14818,7 +14818,7 @@ async function loadPendingZelle() {
       var amtCents = r.amount_cents || (r.amount ? Math.round(r.amount * 100) : 0);
       var amtStr = amtCents ? '$' + (amtCents / 100).toFixed(2) : '(amount not recorded)';
       var todayStr2 = new Date().toISOString().slice(0, 10);
-      var isLatePeriod = todayStr2 >= todayStr2.slice(0, 4) + '-11-15';
+      var isLatePeriod = todayStr2 > todayStr2.slice(0, 4) + '-11-15';
       var requiredCents2 = isLatePeriod ? 31000 : 30000;
       var lateFeeWarning = (isLatePeriod && amtCents > 0 && amtCents < requiredCents2)
         ? '<div style="font-size:0.78rem;font-weight:700;color:#e74c3c;margin-top:6px;"><i class="fas fa-exclamation-triangle"></i> Late fee required — submitted $' + (amtCents/100).toFixed(2) + ', need $' + (requiredCents2/100).toFixed(2) + '</div>' : '';
@@ -14852,7 +14852,7 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
     // Late fee enforcement: check if payment period is past late date
     var todayStr = new Date().toISOString().slice(0, 10);
     var lateDate = todayStr.slice(0, 4) + '-11-15';
-    var isLate = todayStr >= lateDate;
+    var isLate = todayStr > lateDate;
     if (isLate) {
       var duesCents = 30000; // $300 base dues
       var lateFeeCents = 1000; // $10 late fee

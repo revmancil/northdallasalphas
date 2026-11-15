@@ -3540,7 +3540,7 @@ function getDuesStatus() {
     var month = now.getMonth() + 1;
     isLocked = (month === 8);
   }
-  var isLate = todayStr >= lateDate;
+  var isLate = todayStr > lateDate;
   var inWindow = !isLocked;
   return { isLocked: isLocked, inWindow: inWindow, isLate: isLate, unlockDate: unlockDate, lateDate: lateDate, lateFee: lateFee };
 }
