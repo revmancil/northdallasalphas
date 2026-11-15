@@ -240,8 +240,8 @@ serve(async (req) => {
       ? now.getFullYear() + 1
       : now.getFullYear();
     const fiscalYear        = String(serverFiscalYear);
-    const amountCents       = parseInt(String(payload.amountCents ?? duesCents), 10) || duesCents;
-    const baseCents         = amountCents - (applyLateFee ? lateFeeCents : 0) - (applyBldFund ? bldFundCents : 0);
+    const baseCents         = duesCents;
+    const amountCents       = baseCents + (applyLateFee ? lateFeeCents : 0) + (applyBldFund ? bldFundCents : 0);
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       {
