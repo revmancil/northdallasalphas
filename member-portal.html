@@ -598,6 +598,7 @@ backdrop-filter:blur(4px);}
         <div class="section-card-header"><h3><i class="fas fa-mobile-alt"></i> Pay dues via Zelle</h3></div>
         <div class="section-card-body">
           <p style="color:var(--gray-400);font-size:0.85rem;line-height:1.6;">Send your dues payment via Zelle to the chapter treasurer. Once sent, submit the form below and an admin will confirm your payment.</p>
+          <div id="zelleAmountNotice" style="display:none;margin:12px 0 4px;padding:12px 16px;border-radius:8px;font-size:0.85rem;line-height:1.5;"></div>
           <div style="margin:16px 0;padding:16px 20px;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.25);border-radius:8px;display:flex;align-items:center;gap:14px;">
             <div style="width:40px;height:40px;border-radius:50%;background:rgba(201,168,76,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
               <i class="fas fa-mobile-alt" style="color:var(--gold);font-size:1.1rem;"></i>
@@ -606,6 +607,7 @@ backdrop-filter:blur(4px);}
               <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--gray-500);margin-bottom:3px;">Zelle to</div>
               <div style="font-size:1rem;font-weight:700;color:var(--gold);letter-spacing:0.01em;">treasurer@northdallasalphas.org</div>
               <div style="font-size:0.78rem;color:var(--gray-500);margin-top:2px;">Xi Tau Lambda Chapter · Alpha Phi Alpha</div>
+              <div id="zelleAmountLine" style="font-size:0.85rem;font-weight:700;color:var(--gold);margin-top:6px;"></div>
             </div>
           </div>
           <div style="margin-bottom:10px;">
@@ -2206,6 +2208,10 @@ async function submitZelleNotification() {
   var name = [currentMember.first_name, currentMember.last_name].filter(Boolean).join(' ');
   var email = currentMember.email || _userEmail || '';
   var fiscalYear = String(new Date().getFullYear() + 1); // membership year = year dues expire
+  var duesStatus = getDuesStatus();
+  var duesCents = (_duesWindowConfig && _duesWindowConfig.dues_amount_cents) ? _duesWindowConfig.dues_amount_cents : 30000;
+  var lateFeeAdditional = duesStatus.isLate ? Math.round(duesStatus.lateFee * 100) : 0;
+  var totalAmountCents = duesCents + lateFeeAdditional;
   btn.disabled = true;
   msg.style.display = 'none';
   try {
@@ -2216,10 +2222,11 @@ async function submitZelleNotification() {
       body: JSON.stringify({
         member_id:      currentMember.id,
         year:           fiscalYear,
-        amount:         null,
+        amount:         totalAmountCents / 100,
+        amount_cents:   totalAmountCents,
         paid:           false,
         payment_method: 'zelle',
-        notes:          'Zelle payment submitted — pending admin confirmation' + (confirmation ? '. Memo: ' + confirmation : ''),
+        notes:          'Zelle payment submitted — pending admin confirmation' + (duesStatus.isLate ? ' (includes $' + duesStatus.lateFee + ' late fee)' : '') + (confirmation ? '. Memo: ' + confirmation : ''),
       })
     });
     // Notify admins
@@ -3550,6 +3557,27 @@ function renderDuesLateFeeNotice() {
   } else {
     noticeEl.style.display = 'none';
     if (duesBtn) duesBtn.disabled = false;
+  }
+
+  // Update Zelle section with required amount
+  var duesCents = (_duesWindowConfig && _duesWindowConfig.dues_amount_cents) ? _duesWindowConfig.dues_amount_cents : 30000;
+  var totalDollars = (duesCents / 100) + (status.isLate ? status.lateFee : 0);
+  var zelleAmountLine = document.getElementById('zelleAmountLine');
+  var zelleAmountNotice = document.getElementById('zelleAmountNotice');
+  if (zelleAmountLine) {
+    zelleAmountLine.textContent = 'Send: $' + totalDollars.toFixed(2);
+  }
+  if (zelleAmountNotice) {
+    if (status.isLate) {
+      zelleAmountNotice.style.display = '';
+      zelleAmountNotice.style.background = 'rgba(245,158,11,0.1)';
+      zelleAmountNotice.style.border = '1px solid rgba(245,158,11,0.35)';
+      zelleAmountNotice.style.color = '#f59e0b';
+      zelleAmountNotice.innerHTML = '<i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>' +
+        '<strong>Late fee applies.</strong> You must send <strong>$' + totalDollars.toFixed(2) + '</strong> ($' + (duesCents/100).toFixed(2) + ' dues + $' + status.lateFee.toFixed(2) + ' late fee). Payments without the late fee cannot be confirmed.';
+    } else {
+      zelleAmountNotice.style.display = 'none';
+    }
   }
 }
 

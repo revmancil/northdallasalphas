@@ -14815,11 +14815,19 @@ async function loadPendingZelle() {
       var email = m.email || '—';
       var date = r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
       var notes = escHtml(r.notes || '');
+      var amtCents = r.amount_cents || (r.amount ? Math.round(r.amount * 100) : 0);
+      var amtStr = amtCents ? '$' + (amtCents / 100).toFixed(2) : '(amount not recorded)';
+      var todayStr2 = new Date().toISOString().slice(0, 10);
+      var isLatePeriod = todayStr2 >= todayStr2.slice(0, 4) + '-11-15';
+      var requiredCents2 = isLatePeriod ? 31000 : 30000;
+      var lateFeeWarning = (isLatePeriod && amtCents > 0 && amtCents < requiredCents2)
+        ? '<div style="font-size:0.78rem;font-weight:700;color:#e74c3c;margin-top:6px;"><i class="fas fa-exclamation-triangle"></i> Late fee required — submitted $' + (amtCents/100).toFixed(2) + ', need $' + (requiredCents2/100).toFixed(2) + '</div>' : '';
       return '<div style="display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border-bottom:1px solid var(--gray-100);background:#fff;flex-wrap:wrap;">' +
         '<div style="flex:1;min-width:200px;">' +
         '<div style="font-weight:700;font-size:0.9rem;color:#111;">' + escHtml(name) + '</div>' +
-        '<div style="font-size:0.78rem;color:#888;margin-top:2px;">' + escHtml(email) + ' · FY ' + escHtml(r.year||'') + ' · ' + date + '</div>' +
+        '<div style="font-size:0.78rem;color:#888;margin-top:2px;">' + escHtml(email) + ' · FY ' + escHtml(r.year||'') + ' · ' + date + ' · ' + amtStr + '</div>' +
         (notes ? '<div style="font-size:0.78rem;color:#666;margin-top:6px;font-style:italic;">' + notes + '</div>' : '') +
+        lateFeeWarning +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-shrink:0;align-items:center;">' +
         '<button onclick="confirmZellePayment(\'' + r.id + '\',\'' + escHtml(r.member_id||'') + '\',\'' + escHtml(r.year||'') + '\')" style="background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:700;font-size:0.82rem;padding:8px 16px;cursor:pointer;"><i class="fas fa-check"></i> Confirm Paid</button>' +
@@ -14840,6 +14848,22 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
     // 1. Mark dues record as paid
     var duesRows = await sbGet('dues', 'id=eq.' + encodeURIComponent(duesId) + '&select=*', token);
     var duesRow = duesRows && duesRows[0];
+
+    // Late fee enforcement: check if payment period is past late date
+    var todayStr = new Date().toISOString().slice(0, 10);
+    var lateDate = todayStr.slice(0, 4) + '-11-15';
+    var isLate = todayStr >= lateDate;
+    if (isLate) {
+      var duesCents = 30000; // $300 base dues
+      var lateFeeCents = 1000; // $10 late fee
+      var requiredCents = duesCents + lateFeeCents;
+      var submittedCents = (duesRow && duesRow.amount_cents) ? duesRow.amount_cents : (duesRow && duesRow.amount ? Math.round(duesRow.amount * 100) : 0);
+      if (submittedCents > 0 && submittedCents < requiredCents) {
+        alert('Cannot confirm — late fee required.\n\nThis brother submitted $' + (submittedCents / 100).toFixed(2) + ' but the required amount is $' + (requiredCents / 100).toFixed(2) + ' ($' + (duesCents / 100).toFixed(2) + ' dues + $' + (lateFeeCents / 100).toFixed(2) + ' late fee).\n\nAsk the brother to send an additional $' + ((requiredCents - submittedCents) / 100).toFixed(2) + ' before confirming.');
+        return;
+      }
+    }
+
     await sbPatch('dues', 'id=eq.' + duesId, { paid: true, paid_date: now }, token);
 
     // 2. Update member record
