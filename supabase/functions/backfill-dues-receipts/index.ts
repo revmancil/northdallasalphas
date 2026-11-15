@@ -49,10 +49,12 @@ serve(async (req) => {
   }
 
   // Fetch Zelle payments from dues_payments (stored separately)
+  // dues_payments already stores email and full_name directly — no join needed
   const { data: zellePayments, error: zpErr } = await admin
     .from("dues_payments")
-    .select("id, full_name, email, amount_cents, payment_method, created_at, member_id, members(email, first_name, last_name)")
+    .select("id, full_name, email, amount_cents, payment_method, payment_status, created_at, member_id")
     .eq("payment_method", "zelle")
+    .eq("payment_status", "paid")
     .order("created_at", { ascending: true });
 
   if (zpErr) {
@@ -74,11 +76,8 @@ serve(async (req) => {
       created_at:       p.created_at ?? "",
     })),
     ...(zellePayments ?? []).map((p) => {
-      const memberEmail = (p.members as { email?: string } | null)?.email ?? p.email ?? "";
-      const memberName  = p.full_name ?? [
-        (p.members as { first_name?: string } | null)?.first_name,
-        (p.members as { last_name?: string }  | null)?.last_name,
-      ].filter(Boolean).join(" ");
+      const memberEmail = p.email ?? "";
+      const memberName  = p.full_name ?? "";
       return {
         id:               String(p.id),
         member_name:      memberName,
