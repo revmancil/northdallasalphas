@@ -14889,7 +14889,27 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
     var dpRes = await fetch(SUPABASE_URL + '/rest/v1/dues_payments', { method:'POST', headers: Object.assign({}, sbHeaders(token), {'Prefer':'return=minimal'}), body: JSON.stringify(dpPayload) });
     if (!dpRes.ok) { var dpErr = await dpRes.text(); throw new Error('Could not save payment record: ' + dpErr); }
 
-    showToast('Payment confirmed — record added to Payment History.');
+    // 5. Send receipt email
+    if (memberInfo.email) {
+      fetch(SUPABASE_URL + '/functions/v1/send-dues-receipt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          email:           memberInfo.email,
+          fullName:        fullName,
+          fiscalYear:      fy,
+          amountCents:     amountCents,
+          paidAt:          now,
+          categoryLabel:   'Chapter Dues',
+          lateFee:         false,
+          buildingFund:    false,
+          paymentMethod:   'zelle',
+          stripeSessionId: '',
+        }),
+      }).catch(function(e) { console.warn('Receipt email failed:', e); });
+    }
+
+    showToast('Payment confirmed — receipt sent to ' + (memberInfo.email || 'member') + '.');
     loadPendingZelle();
     _fetchDuesPayments();
   } catch(e) {
