@@ -37,19 +37,7 @@ serve(async (req) => {
 
   const admin = createClient(supabaseUrl, serviceKey);
 
-  // Fetch Stripe/manual payments from finance_payments
-  const { data: financePayments, error: fpErr } = await admin
-    .from("finance_payments")
-    .select("id, member_id, member_name, category_label, fiscal_year, amount_cents, method, stripe_session_id, created_at, members(email)")
-    .eq("status", "paid")
-    .order("created_at", { ascending: true });
-
-  if (fpErr) {
-    return json({ error: "Failed to fetch finance_payments: " + fpErr.message }, 500);
-  }
-
-  // Fetch Zelle payments from dues_payments (stored separately)
-  // dues_payments already stores email and full_name directly — no join needed
+  // Only Zelle payers — Stripe receipts were already sent at checkout
   const { data: zellePayments, error: zpErr } = await admin
     .from("dues_payments")
     .select("id, full_name, email, amount_cents, payment_method, payment_status, created_at, member_id")
@@ -61,35 +49,18 @@ serve(async (req) => {
     console.warn("dues_payments fetch failed:", zpErr.message);
   }
 
-  // Normalize both into a common shape
   type PaymentRow = { id: string; member_name: string; email: string; fiscal_year: string; amount_cents: number; method: string; stripe_session_id: string; created_at: string; };
 
-  const payments: PaymentRow[] = [
-    ...(financePayments ?? []).map((p) => ({
-      id:               String(p.id),
-      member_name:      p.member_name ?? "",
-      email:            (p.members as { email?: string } | null)?.email ?? "",
-      fiscal_year:      p.fiscal_year ?? "",
-      amount_cents:     p.amount_cents ?? 0,
-      method:           p.method ?? "stripe",
-      stripe_session_id: p.stripe_session_id ?? "",
-      created_at:       p.created_at ?? "",
-    })),
-    ...(zellePayments ?? []).map((p) => {
-      const memberEmail = p.email ?? "";
-      const memberName  = p.full_name ?? "";
-      return {
-        id:               String(p.id),
-        member_name:      memberName,
-        email:            memberEmail,
-        fiscal_year:      "",
-        amount_cents:     p.amount_cents ?? 0,
-        method:           "zelle",
-        stripe_session_id: "",
-        created_at:       p.created_at ?? "",
-      };
-    }),
-  ];
+  const payments: PaymentRow[] = (zellePayments ?? []).map((p) => ({
+    id:               String(p.id),
+    member_name:      p.full_name ?? "",
+    email:            p.email ?? "",
+    fiscal_year:      "",
+    amount_cents:     p.amount_cents ?? 0,
+    method:           "zelle",
+    stripe_session_id: "",
+    created_at:       p.created_at ?? "",
+  }));
 
   if (payments.length === 0) {
     return json({ sent: 0, skipped: 0, errors: 0, message: "No dues payments found." });
