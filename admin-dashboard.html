@@ -14842,24 +14842,47 @@ async function loadPendingZelle() {
 
 async function confirmZellePayment(duesId, memberId, fiscalYear) {
   if (!confirm('Confirm this Zelle payment as received and mark the brother as paid?')) return;
+  // Disable button immediately to prevent double-confirmation
+  var confirmBtn = document.querySelector('button[onclick*="confirmZellePayment(\'' + duesId + '\'"]');
+  if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'Confirming…'; }
   var token = getAdminToken();
   try {
     var now = new Date().toISOString();
-    // 1. Mark dues record as paid
+    // 1. Check for existing dues_payments record to prevent duplicates
+    var existingPayments = await sbGet('dues_payments', 'payment_method=eq.zelle&payment_status=eq.paid&notes=like.Chapter Dues*', token);
+    // Look up member info first so we can check by name
+    var memberInfoPre = {};
+    if (memberId) {
+      var mrowsPre = await sbGet('members', 'id=eq.' + encodeURIComponent(memberId) + '&select=first_name,last_name,email', token);
+      memberInfoPre = (mrowsPre && mrowsPre[0]) || {};
+    }
+    var checkName = [memberInfoPre.first_name, memberInfoPre.last_name].filter(Boolean).join(' ');
+    var alreadyPaid = (existingPayments || []).some(function(p) {
+      return p.full_name === checkName && p.payment_method === 'zelle';
+    });
+    if (alreadyPaid) {
+      alert('This brother already has a confirmed Zelle dues payment on record. Confirming again would create a duplicate.');
+      if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Paid'; }
+      return;
+    }
+
+    // 2. Mark dues record as paid
     var duesRows = await sbGet('dues', 'id=eq.' + encodeURIComponent(duesId) + '&select=*', token);
     var duesRow = duesRows && duesRows[0];
 
-    // Late fee enforcement: check if payment period is past late date
+    // Late fee enforcement: if past Nov 15, treat missing amount as base dues ($300) and require $310
     var todayStr = new Date().toISOString().slice(0, 10);
     var lateDate = todayStr.slice(0, 4) + '-11-15';
     var isLate = todayStr > lateDate;
     if (isLate) {
-      var duesCents = 30000; // $300 base dues
-      var lateFeeCents = 1000; // $10 late fee
+      var duesCents = 30000;
+      var lateFeeCents = 1000;
       var requiredCents = duesCents + lateFeeCents;
-      var submittedCents = (duesRow && duesRow.amount_cents) ? duesRow.amount_cents : (duesRow && duesRow.amount ? Math.round(duesRow.amount * 100) : 0);
-      if (submittedCents > 0 && submittedCents < requiredCents) {
+      var submittedCents = (duesRow && duesRow.amount_cents) ? duesRow.amount_cents
+        : (duesRow && duesRow.amount ? Math.round(duesRow.amount * 100) : duesCents);
+      if (submittedCents < requiredCents) {
         alert('Cannot confirm — late fee required.\n\nThis brother submitted $' + (submittedCents / 100).toFixed(2) + ' but the required amount is $' + (requiredCents / 100).toFixed(2) + ' ($' + (duesCents / 100).toFixed(2) + ' dues + $' + (lateFeeCents / 100).toFixed(2) + ' late fee).\n\nAsk the brother to send an additional $' + ((requiredCents - submittedCents) / 100).toFixed(2) + ' before confirming.');
+        if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Paid'; }
         return;
       }
     }
@@ -14913,6 +14936,7 @@ async function confirmZellePayment(duesId, memberId, fiscalYear) {
     loadPendingZelle();
     _fetchDuesPayments();
   } catch(e) {
+    if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.innerHTML = '<i class="fas fa-check"></i> Confirm Paid'; }
     alert('Failed to confirm: ' + (e.message||''));
   }
 }
